@@ -1,4 +1,4 @@
 flashls
 =======
 
-HLS Flash Plugin/Player
+HLS Flash Plugin/Player, without JWPlayer
