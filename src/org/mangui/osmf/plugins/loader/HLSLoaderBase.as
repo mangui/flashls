@@ -1,0 +1,173 @@
+package org.mangui.osmf.plugins.loader {
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSError;
+    import org.mangui.hls.HLSEvent;
+	import org.mangui.hls.model.Level;
+    import org.mangui.hls.HLSTypes;
+    import org.mangui.osmf.plugins.HLSMediaElement;
+    import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;
+    import org.osmf.events.MediaError;
+    import org.osmf.events.MediaErrorCodes;
+    import org.osmf.events.MediaErrorEvent;
+    import org.osmf.media.MediaElement;
+    import org.osmf.media.MediaResourceBase;
+    import org.osmf.media.URLResource;
+    import org.osmf.net.DynamicStreamingItem;
+    import org.osmf.net.DynamicStreamingResource;
+    import org.osmf.net.StreamType;
+    import org.osmf.net.StreamingURLResource;
+    import org.osmf.traits.LoadState;
+    import org.osmf.traits.LoadTrait;
+    import org.osmf.traits.LoaderBase;
+    
+    CONFIG::LOGGING {
+    import org.mangui.hls.utils.Log;
+    }
+
+    /**
+     * Loader for .m3u8 playlist file.
+     * Works like a F4MLoader
+     */
+    public class HLSLoaderBase extends LoaderBase {
+        private var _loadTrait : LoadTrait;
+        /** Reference to the framework. **/
+        private static var _hls : HLS = null;
+
+        public function HLSLoaderBase() {
+            super();
+        }
+
+        public static function canHandle(resource : MediaResourceBase) : Boolean {
+            if (resource !== null && resource is URLResource) {
+                var urlResource : URLResource = URLResource(resource);
+                if (urlResource.url.search(/(https?|file)\:\/\/.*?\m3u8(\?.*)?/i) !== -1) {
+                    return true;
+                }
+
+                var contentType : Object = urlResource.getMetadataValue("content-type");
+                if (contentType && contentType is String) {
+                    // If the filename doesn't include a .m3u8 extension, but
+                    // explicit content-type metadata is found on the
+                    // URLResource, we can handle it.  Must be either of:
+                    // - "application/x-mpegURL"
+                    // - "vnd.apple.mpegURL"
+                    if ((contentType as String).search(/(application\/x-mpegURL|vnd.apple.mpegURL)/i) !== -1) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        override public function canHandleResource(resource : MediaResourceBase) : Boolean {
+            return canHandle(resource);
+        }
+
+        override protected function executeLoad(loadTrait : LoadTrait) : void {
+            _loadTrait = loadTrait;
+            updateLoadTrait(loadTrait, LoadState.LOADING);
+
+            if (_hls != null) {
+                _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
+                _hls.removeEventListener(HLSEvent.ERROR, _errorHandler);
+                _hls.dispose();
+                _hls = null;
+            }
+            _hls = new HLS();
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
+            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
+            /* load playlist */
+            _hls.load(URLResource(loadTrait.resource).url);
+        }
+
+        override protected function executeUnload(loadTrait : LoadTrait) : void {
+            updateLoadTrait(loadTrait, LoadState.UNINITIALIZED);
+        }
+
+        /** Update video A/R on manifest load. **/
+        private function _manifestHandler(event : HLSEvent) : void {
+            var resource : MediaResourceBase = URLResource(_loadTrait.resource);
+
+            // retrieve stream type
+            var streamType : String = (resource as StreamingURLResource).streamType;
+            if (streamType == null || streamType == StreamType.LIVE_OR_RECORDED) {
+                if (_hls.type == HLSTypes.LIVE) {
+                    streamType = StreamType.LIVE;
+                } else {
+                    streamType = StreamType.RECORDED;
+                }
+            }
+
+            var levels : Vector.<Level> = _hls.levels;
+            var nbLevel : int = levels.length;
+            var urlRes : URLResource = resource as URLResource;
+            var dynamicRes : DynamicStreamingResource = new DynamicStreamingResource(urlRes.url);
+            var streamItems : Vector.<DynamicStreamingItem> = new Vector.<DynamicStreamingItem>();
+
+            for (var i : int = 0; i < nbLevel; i++) {
+                if (levels[i].width) {
+                    streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024, levels[i].width, levels[i].height));
+                } else {
+                    streamItems.push(new DynamicStreamingItem(level2label(levels[i]), levels[i].bitrate / 1024));
+                }
+            }
+            dynamicRes.streamItems = streamItems;
+            dynamicRes.initialIndex = 0;
+            resource = dynamicRes;
+            // set Stream Type
+            var streamUrlRes : StreamingURLResource = resource as StreamingURLResource;
+            streamUrlRes.streamType = streamType;
+            try {
+                var loadedElem : MediaElement = new HLSMediaElement(resource, _hls, event.levels[_hls.startlevel].duration);
+                LoadFromDocumentLoadTrait(_loadTrait).mediaElement = loadedElem;
+                updateLoadTrait(_loadTrait, LoadState.READY);
+            } catch(e : Error) {
+                updateLoadTrait(_loadTrait, LoadState.LOAD_ERROR);
+                _loadTrait.dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, false, false, new MediaError(e.errorID, e.message)));
+            }
+        };
+
+        private function level2label(level : Level) : String {
+            if (level.name) {
+                return level.name;
+            } else {
+                if (level.height) {
+                    return(level.height + 'p / ' + Math.round(level.bitrate / 1024) + 'kb');
+                } else {
+                    return(Math.round(level.bitrate / 1024) + 'kb');
+                }
+            }
+        }
+
+        private function _errorHandler(event : HLSEvent) : void {
+            var errorCode : int = MediaErrorCodes.NETSTREAM_PLAY_FAILED;
+            var errorMsg : String = "Unknown error";
+            if (event && event.error) {
+                errorMsg = event.error.msg;
+                switch (event.error.code) {
+                    case HLSError.FRAGMENT_LOADING_ERROR:
+                    case HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR:
+                    case HLSError.KEY_LOADING_ERROR:
+                    case HLSError.KEY_LOADING_CROSSDOMAIN_ERROR:
+                    case HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR:
+                    case HLSError.MANIFEST_LOADING_IO_ERROR:
+                        errorCode = MediaErrorCodes.IO_ERROR;
+                        break;
+                    case HLSError.FRAGMENT_PARSING_ERROR:
+                    case HLSError.KEY_PARSING_ERROR:
+                    case HLSError.MANIFEST_PARSING_ERROR:
+                        errorCode = MediaErrorCodes.NETSTREAM_FILE_STRUCTURE_INVALID;
+                        break;
+                    case HLSError.TAG_APPENDING_ERROR:
+                        errorCode = MediaErrorCodes.ARGUMENT_ERROR;
+                        break;
+                }
+            }
+            CONFIG::LOGGING {
+            Log.warn("HLS Error event received, dispatching MediaError " + errorCode + "," + errorMsg);
+            }
+            updateLoadTrait(_loadTrait, LoadState.LOAD_ERROR);
+            dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, true, true, new MediaError(errorCode, errorMsg)));
+        }
+    }
+}

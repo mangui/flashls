@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><title>Flowplayer - flashls</title>
+
+<script type="text/javascript" src="flowplayer-3.2.12.min.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+</head>
+
+
+
+
+<body id="plugins_httpstreamingm3u8">
+<div id="wrap">
+<div id="content">
+<script type="text/javascript" src="flowplayer.ipad-3.2.12.min.js"></script>
+<h1> <strong><span style="font-style: italic;">flashls</span></strong><em>
+within Flowplayer</em>
+</h1>
+<div style="margin: 30px auto; width: 660px; height: 350px;">
+<!-- player container--><a style="display: block; width: 660px; height: 350px;" id="player">
+</a><!-- Flowplayer installation and configuration -->
+<script type="text/javascript">
+flowplayer("player", "flowplayer.swf", {
+// configure the required plugins
+wmode: 'direct',
+plugins: {
+httpstreaming: {
+url: '../../bin/release/flashlsFlowPlayer.swf',
+hls_debug : false,
+hls_debug2 : false,
+hls_lowbufferlength : 3,
+hls_minbufferlength : -1,
+hls_maxbufferlength : 60,
+hls_startfromlevel : -1,
+hls_seekfromlevel : -1,
+hls_live_flushurlcache : false,
+hls_seekmode : "ACCURATE",
+hls_fragmentloadmaxretry : -1,
+hls_manifestloadmaxretry : -1,
+hls_capleveltostage : false,
+hls_maxlevelcappingmode : "downscale"
+}
+},
+clip: {
+accelerated: true,
+url: "http://streambox.fr/playlists/test_001/stream.m3u8",
+ipadUrl: "http://streambox.fr/playlists/test_001/stream.m3u8",
+urlResolvers: "httpstreaming",
+lang: "fr",
+provider: "httpstreaming",
+autoPlay: false
+},
+log: {
+level: 'debug',
+filter: 'org.flowplayer.controller.*'
+}
+}).ipad();
+</script></div>
+<p>
+This demonstrates a setup to play a VOD HLS stream within Flowplayer
+with a fallback to Html5 for Ipad.
+</p>
+Examples
+<a name="anchor"></a>
+<h2><em>Basic</em> example with a single bitrate</h2>
+<div class="box code">
+<pre><code class="javascript"><br />flowplayer("player", "flowplayer.swf", {<br />// configure the required plugins<br />plugins: {<br />httpstreaming: {<br />url: 'flashlsFlowPlayer.swf'<br />}<br />},<br />clip: {<br />url: "http://184.72.239.149/vod/smil:bigbuckbunnyiphone.smil/chunklist-b400000.m3u8",<br />ipadUrl: "http://184.72.239.149/vod/smil:bigbuckbunnyiphone.smil/chunklist-b400000.m3u8",<br />urlResolvers: ["httpstreaming","brselect"],<br />provider: "httpstreaming",<br />autoPlay: false<br />},<br />log: {<br />level: 'debug',<br />filter: 'org.osmf.*, org.electroteque.m3u8.*, org.flowplayer.bitrateselect.*'<br />}<br />}).ipad();<br /></code></pre>
+</div>
+</div>
+</div>
+</body></html>

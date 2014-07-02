@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html><head><title>flashls - Chromeless HLS Flash Player</title>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<meta name="author" content="mangui">
+<meta name="description" content="flashls is an HLS flash plugin/player (it can be embedded into any custom Flash Player, plugins are also available for JWPlayer 5.x,6.x and OSMF 2.0)">
+<meta name="keywords" content="hls, jwplayer, m3u8, http live streaming, apple hls, plugin, h264, H.264, x264, aac, mp3, flash, flashplayer, flash player, video, audio, mbr, multibitrate, multi bitrate, vod, video on demand, live, live stream, dvr, dvr stream, digital video recorder">
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-46096337-3', 'flashls.org');
+  ga('send', 'pageview');
+
+</script>
+<style type="text/css">
+a:link {
+  color: blue;
+}
+a:visited {
+  color: purple;
+}
+</style>
+</head>
+<body style="color: black; background-color: white;">
+
+<big style="font-weight: bold;"><big><code>flashls - Chromeless HLS Flash player</code></big></big><br>
+
+</p><div style="text-align: left;">
+<header>
+  <div>flashls is a Flash/AS3 plugin that plays back HLS streams.<br>
+   visit <a href="http://mangui.github.io/flashls"> http://mangui.github.io/flashls</a> for more details.<br>
+   player below is flashls Chromeless Flash Player. it can be controlled through JS call<br>
+   press green buttons to interact with it.<br>
+</div>
+</header>
+
+Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
+<input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Load</button><br>
+
+<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
+ codebase="" id="mymoviename" width="640" height="360">
+<param name="movie"  value="../../bin/debug/flashlsChromeless.swf?inline=1" />
+<param name="quality" value="autohigh" />
+<param name="swliveconnect" value="true" />
+<param name="allowScriptAccess" value="sameDomain" />
+<param name="bgcolor" value="#0" />
+<param name="allowFullScreen" value="true" />
+<param name="wmode" value="window" />
+
+<embed src="../../bin/debug/flashlsChromeless.swf?inline=1" width="640" height="360" name="mymoviename"
+            quality="autohigh"
+            bgcolor="#0"
+            align="middle" allowFullScreen="true"
+            allowScriptAccess="sameDomain"
+            type="application/x-shockwave-flash"
+            swliveconnect="true"
+            wmode="window"
+            pluginspage="http://www.macromedia.com/go/getflashplayer" >
+</embed>
+</object>
+
+<br />
+
+<div>
+  selectable audio tracks:
+  <div id="audioControl" style="display: inline;">
+  </div>
+</div>
+
+<table border id="mediaInfo" width="640">
+  <tr>
+    <th colspan="2"><button onclick="play()">Play</button></th>
+    <th colspan="2"><button onclick="pause()">Pause</button></th>
+    <th colspan="2"><button onclick="resume()">Resume</button></th>
+    <th colspan="3"><button onclick="stop()">Stop</button></th>
+    <th colspan="1"><button onclick="toggleDebugLogs()">Toggle Debug1 Logs</button></th>
+    <th colspan="1"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></th>
+    <th colspan="3"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></th> 
+    <th colspan="1"><button onclick="toggleJSURLStream()">Use JS URL Stream Loader</button></th>
+    <th colspan="1"><button onclick="toggleCapLeveltoStage()">Toggle Cap Max Auto-Level to Stage</button></th>
+  </tr>
+  <tr><td>state</td>
+      <td>Relative Position</td>
+      <td>Playlist Duration</td>
+      <td>Low Buffer Size</td>
+      <td>Min Buffer Size</td>
+      <td>Buffer Size</td>
+      <td>Max Buffer Size</td>
+      <td>Quality Level</td>
+      <td>Audio Track Id</td>
+      <td>Log debug</td>
+      <td>Log debug2</td>
+      <td>Flush Live URL</td>
+      <td>Start From Level</td>
+      <td>Seek From Level</td>
+      <td>Use JS Stream Loader</td>
+      <td>cap Max Auto-Level to Stage</td>
+      <td>Live Playlist Sliding</td>
+      <td>UTC Date</td>
+  </tr>
+  <tr>
+    <td>IDLE</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
+    <td>false</td>
+    <td>false</td>
+    <td>false</td>
+    <td>-1</td>
+    <td>-1</td>
+    <td>false</td>
+    <td>false</td>
+    <td>0</td>
+    <td>0</td>
+  </tr>
+</table>
+
+<table border id="mediaControl">
+  <tr>
+    <th><button onclick="seek(document.getElementById('mediaControl').rows[0].cells[1].children[0].value)">Seek to</button></th>
+    <td><input type="text" name="seek_position"></td>
+  </tr>
+  <tr>
+    <th><button onclick="volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)">Set Volume</button></th>
+    <td><input type="text" name="volume_level"></td>
+  </tr>
+  <tr>
+    <th><button onclick="setstartfromlevel(document.getElementById('mediaControl').rows[2].cells[1].children[0].value)">Set Start From Level</button></th>
+    <td><input type="text" name="quality_level"></td>
+  </tr>
+  <tr>
+    <th><button onclick="setseekfromlevel(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)">Set Seek From Level</button></th>
+    <td><input type="text" name="quality_level"></td>
+  </tr>  
+  <tr>
+    <th><button onclick="setlevel(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set Level</button></th>
+    <td><input type="text" name="quality_level"></td>
+  </tr>
+  <tr>
+  <th><button onclick="setlowBufferLength(document.getElementById('mediaControl').rows[5].cells[1].children[0].value)">Set low Buffer Size</button></th>
+    <td><input type="text" name="low_buffer_size"></td>
+  </tr>
+  <tr>
+  <th><button onclick="setminBufferLength(document.getElementById('mediaControl').rows[6].cells[1].children[0].value)">Set min Buffer Size</button></th>
+    <td><input type="text" name="min_buffer_size"></td>
+  </tr>
+  <tr>
+    <th><button onclick="setmaxBufferLength(document.getElementById('mediaControl').rows[7].cells[1].children[0].value)">Set max Buffer Size</button></th>
+    <td><input type="text" name="max_buffer_size"></td>
+  </tr>
+</table>
+
+<h3> Test Videos </h3>
+<div> The following videos should stream correctly. Each time an
+issue is reported with a sample playlist, it will be added in the list
+and verified after bugfixing </div>
+<ul id="streamlist">
+</ul>
+
+<p>
+
+<script type="text/javascript">
+function userSubmit() {
+   load(document.getElementById('userInput').value);
+}
+</script>
+
+</p><div style="text-align: left;">
+<script type="text/javascript" src="../../../playlists/streams.js"></script>
+<script type="text/javascript">
+
+var current_url;
+var player_id = "mymoviename";
+
+function loadStream(url) {
+  stop();
+  current_url = url;
+  load(url);
+  document.getElementById('userInput').value = url;
+}
+
+function listStreams(list, container) {
+  for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
+    entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
+    document.getElementById(container).appendChild(entry);
+  }
+  loadStream(list[0].file);
+}
+
+function appendLog(txt)
+{
+  var d = new Date();
+  var msg = '[' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + '] ' + txt;
+  console.log(msg);
+  document.getElementById("videoStatus").innerHTML += msg + "<br />";
+}
+
+function load(url) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerLoad(url);
+    appendLog("load URL " + url);
+    document.getElementById('mediaInfo').rows[2].cells[1].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[3].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[4].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[7].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[8].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[16].innerHTML =  0;
+    document.getElementById('mediaInfo').rows[2].cells[17].innerHTML =  0;
+  }
+}
+
+function play(url) {
+  if (url && current_url != url) {
+    loadStream(url);
+  }
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerPlay();
+    appendLog("start playback");
+  }
+}
+
+function pause() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerPause();
+    appendLog("pause playback");
+  }
+}
+
+function resume() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerResume();
+    appendLog("resume playback");
+  }
+}
+
+function stop() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerStop();
+    appendLog("stopping playback");
+  }
+}
+
+function setlevel(level) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetLevel(level);
+    appendLog("force level to :" + level);
+  }
+}
+
+function setstartfromlevel(level) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetstartFromLevel(level);
+    document.getElementById('mediaInfo').rows[2].cells[12].innerHTML =  level;
+    appendLog("set start From level to :" + level);
+  }
+}
+
+function setseekfromlevel(level) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetseekFromLevel(level);
+    document.getElementById('mediaInfo').rows[2].cells[13].innerHTML =  level;
+    appendLog("set seek From level to :" + level);
+  }
+}
+
+
+function seek(position) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSeek(position);
+    appendLog("seek to :"+ position);
+  }
+}
+
+function volume(percent) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerVolume(percent);
+    appendLog("set volume to :"+ percent + "%");
+  }
+}
+
+function getbufferLength() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    return obj.getbufferLength();
+  }
+}
+
+function getLowBufferLength() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    return obj.getlowBufferLength();
+  }
+}
+
+function setlowBufferLength(new_len) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetlowBufferLength(new_len);
+    appendLog("force low buffer len to :" + new_len);
+  }
+}
+
+function getMinBufferLength() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    return obj.getminBufferLength();
+  }
+}
+
+function setminBufferLength(new_len) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetminBufferLength(new_len);
+    appendLog("force min buffer len to :" + new_len);
+  }
+}
+
+function getMaxBufferLength() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    return obj.getmaxBufferLength();
+  }
+}
+
+function setmaxBufferLength(new_len) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetmaxBufferLength(new_len);
+    appendLog("force max buffer len to :" + new_len);
+  }
+}
+
+function toggleDebugLogs() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getLogDebug();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[9].innerHTML =  state;
+    obj.playerSetLogDebug(state);
+    appendLog("toggle debug logs to:" + state);
+  }
+}
+
+function toggleDebug2Logs() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getLogDebug2();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[10].innerHTML =  state;
+    obj.playerSetLogDebug2(state);
+    appendLog("toggle debug2 logs to:" + state);
+  }
+}
+
+function toggleFlushLiveURLCache() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getflushLiveURLCache();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[11].innerHTML =  state;
+    obj.playerSetflushLiveURLCache(state);
+    appendLog("toggle flush live URL cache to:" + state);
+  }
+}
+
+function toggleJSURLStream() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getJSURLStream();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[14].innerHTML =  state;
+    obj.playerSetJSURLStream(state);
+    appendLog("toggle JS URL stream to:" + state);
+  }
+}
+
+function toggleCapLeveltoStage() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var state = obj.getCapLeveltoStage();
+    state = !state;
+    document.getElementById('mediaInfo').rows[2].cells[15].innerHTML =  state;
+    obj.playerCapLeveltoStage(state);
+    appendLog("toggle cap Level to Stage to:" + state);
+  }
+}
+
+
+function getAudioTrackList() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    var ret = obj.getAudioTrackList();
+    return ret;
+  }
+}
+
+function setAudioTrack(val) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetAudioTrack(val);
+  }
+}
+
+function onHLSReady(message) {
+    listStreams(teststreams,"streamlist");
+    appendLog("onHLSReady()");
+
+    // warn about old swf file
+    var obj = getFlashMovieObject(player_id);
+    if (obj != null) {
+      if (!obj.getPlayerVersion || obj.getPlayerVersion() < 2) {
+        alert('You are using an old swf player file, or perhaps your browser is using a cached version of the swf file.');
+      }
+    }
+}
+
+function onVideoSize(width, height) {
+  appendLog("onVideoSize(), " + width + "x" + height);
+  var obj = getFlashMovieObject(player_id);
+  if (obj != null) {    
+    var state = obj.getCapLeveltoStage(); 
+    if(!state) {
+      var ratio = width / height;
+      if (height > 720) {
+        height = 720;
+        width = height * ratio;
+      }
+      appendLog("onVideoSize(),resize stage to " + width + "x" + height);
+      obj.width = width;
+      obj.height = height;
+    }
+  }
+}
+
+function onComplete(message) {
+  appendLog("onComplete(), playback completed");
+}
+function onError(code,url,message) {
+  appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
+}
+
+function onFragment(bandwidth,level,width) {
+  //appendLog("onFragment(): bandwidth:" + bandwidth + " level:" + level + " width:" + width);
+}
+function onManifest(duration) {
+  appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
+  document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
+}
+
+function onPosition(position,duration,live_sliding,buffer,program_date) {
+  document.getElementById('mediaInfo').rows[2].cells[1].innerHTML =  position.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[3].innerHTML = getLowBufferLength().toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[4].innerHTML = getMinBufferLength().toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  buffer.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  getMaxBufferLength().toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[16].innerHTML =  live_sliding.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[17].innerHTML =  new Date(program_date).toUTCString();
+}
+
+function onState(newState) {
+  appendLog("switching state to "+ newState);
+  document.getElementById('mediaInfo').rows[2].cells[0].innerHTML =  newState;
+}
+
+function onSwitch(newLevel) {
+  appendLog("switching level to "+ newLevel);
+  document.getElementById('mediaInfo').rows[2].cells[7].innerHTML =  newLevel;
+}
+
+function onAudioTracksListChange(trackList) {
+  // update audio switcher
+  var d = document.getElementById('audioControl');
+  var html = '';
+  appendLog("new track list");
+  for (var t in trackList) {
+    appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
+    html += '<button onclick="setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
+  }
+  d.innerHTML = html;
+}
+
+function onAudioTrackChange(trackId) {
+  appendLog("switching audio track to "+ trackId);
+  document.getElementById('mediaInfo').rows[2].cells[8].innerHTML = trackId;
+}
+
+function onRequestResource0(URL) {
+  appendLog("loading fragment "+ URL + " for instance 0");
+  URL_request(URL,URL_readBytes0, transferFailed0, "arraybuffer");  
+}
+
+function onRequestResource1(URL) {
+  appendLog("loading fragment "+ URL + " for instance 1");
+  URL_request(URL,URL_readBytes1,transferFailed1, "arraybuffer");  
+}
+
+function URL_request(url, loadcallback, errorcallback,responseType) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, loadcallback? true: false);
+    if (responseType) {
+      xhr.responseType = responseType;
+    }
+    if (loadcallback) {
+      xhr.onload = loadcallback;
+      xhr.onerror= errorcallback;
+      xhr.send();
+    } else {
+      xhr.send();
+      return xhr.status == 200? xhr.response: "";
+    }
+}
+function transferFailed0(oEvent) {
+    appendLog("An error occurred while transferring the file :" + oEvent.target.status);
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.resourceLoadingError0();
+  }
+}
+
+function transferFailed1(oEvent) {
+    appendLog("An error occurred while transferring the file :" + oEvent.target.status);
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.resourceLoadingError1();
+  }
+}
+
+
+function URL_readBytes0(event) {
+  appendLog("fragment loaded");
+  var res = base64ArrayBuffer(event.currentTarget.response);
+  resourceLoaded0(res);
+}
+
+function URL_readBytes1(event) {
+  appendLog("fragment loaded");
+  var res = base64ArrayBuffer(event.currentTarget.response);
+  resourceLoaded1(res);
+}
+
+
+function resourceLoaded0(res) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.resourceLoaded0(res);
+  }
+}
+
+function resourceLoaded1(res) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.resourceLoaded1(res);    
+  }
+}
+
+function base64ArrayBuffer(arrayBuffer) {
+    var base64 = ''
+    var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    var bytes = new Uint8Array(arrayBuffer)
+    var byteLength = bytes.byteLength
+    var byteRemainder = byteLength % 3
+    var mainLength = byteLength - byteRemainder
+    var a, b, c, d, chunk
+
+    for (var i = 0; i < mainLength; i = i + 3) {
+      chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2]
+      a = (chunk & 16515072) >> 18 // 16515072 = (2^6 - 1) << 18
+      b = (chunk & 258048) >> 12 // 258048 = (2^6 - 1) << 12
+      c = (chunk & 4032) >> 6 // 4032 = (2^6 - 1) << 6
+      d = chunk & 63 // 63 = 2^6 - 1
+      base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d]
+    }
+
+    if (byteRemainder == 1) {
+      chunk = bytes[mainLength]
+      a = (chunk & 252) >> 2 // 252 = (2^6 - 1) << 2
+      b = (chunk & 3) << 4 // 3 = 2^2 - 1
+      base64 += encodings[a] + encodings[b] + '=='
+    } else if (byteRemainder == 2) {
+      chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1]
+      a = (chunk & 64512) >> 10 // 64512 = (2^6 - 1) << 10
+      b = (chunk & 1008) >> 4 // 1008 = (2^6 - 1) << 4
+      c = (chunk & 15) << 2 // 15 = 2^4 - 1
+      base64 += encodings[a] + encodings[b] + encodings[c] + '='
+    }
+
+    return base64;
+}
+
+function getFlashMovieObject(movieName)
+{
+  if (window.document[movieName])
+  {
+      return window.document[movieName];
+  }
+  if (navigator.appName.indexOf("Microsoft Internet")==-1)
+  {
+    if (document.embeds && document.embeds[movieName])
+      return document.embeds[movieName];
+  }
+  else // if (navigator.appName.indexOf("Microsoft Internet")!=-1)
+  {
+    return document.getElementById(movieName);
+  }
+}
+</script>
+<div id="videoStatus">Video status messages<br /></div>
+</body>
+</html>

@@ -1,0 +1,4 @@
+*.swf.cache
+*.swc.cache
+.metadata
+.settings
