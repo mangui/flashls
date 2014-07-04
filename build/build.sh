@@ -15,7 +15,7 @@ OPT_RELEASE="-library-path+=../lib/as3crypto.swc \
     -optimize=true \
     -incremental=true \
     -static-link-runtime-shared-libraries=true \
-    -define=CONFIG::LOGGING,true"
+    -define=CONFIG::LOGGING,false"
 
 echo "Compiling bin/debug/flashls.swc"
 $FLEXPATH/bin/compc \
@@ -28,7 +28,7 @@ echo "Compiling bin/release/flashls.swc"
 $FLEXPATH/bin/compc \
     $OPT_RELEASE \
     -include-sources ../src/org/mangui/hls \
-    -output ../bin/debug/flashls.swc \
+    -output ../bin/release/flashls.swc \
     -target-player="10.1"
 
 
@@ -107,7 +107,7 @@ echo "Compiling bin/release/flashlsOSMF.swc"
 $FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf \
     -output ../bin/release/flashlsOSMF.swc \
     $OPT_RELEASE \
-    -library-path+=../lib/flashls.swc \
+    -library-path+=../bin/release/flashls.swc \
     -library-path+=../lib/osmf \
     -target-player="10.1" \
     -debug=false \
@@ -117,8 +117,10 @@ echo "Compiling bin/debug/flashlsOSMF.swc"
 $FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf \
     -output ../bin/debug/flashlsOSMF.swc \
     $OPT_DEBUG \
-    -library-path+=../lib/flashls.swc \
+    -library-path+=../bin/debug/flashls.swc \
     -library-path+=../lib/osmf \
     -target-player="10.1" \
     -debug=false \
     -external-library-path+=../lib/osmf
+
+

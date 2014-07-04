@@ -1,7 +1,7 @@
 package org.mangui.hls.demux {
     import flash.utils.ByteArray;
     import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.utils.Log;
+    import org.mangui.hls.utils.*;
     
     public class AVCC {
         
