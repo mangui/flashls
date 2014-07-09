@@ -87,10 +87,10 @@ The plugin accepts several **optional** configuration options, such as:
 
 ## Examples :
 
-* http://www.flashls.org/latest/test/chromeless
-* http://www.flashls.org/latest/test/osmf/GrindPlayer.html
-* http://www.flashls.org/latest/test/osmf/StrobeMediaPlayback.html
-* http://www.flashls.org/latest/test/flowplayer/index.html
+* http://www.flashls.org/latest/examples/chromeless
+* http://www.flashls.org/latest/examples/osmf/GrindPlayer.html
+* http://www.flashls.org/latest/examples/osmf/StrobeMediaPlayback.html
+* http://www.flashls.org/latest/examples/flowplayer/index.html
 * http://www.flashls.org/mediaelement/demo/mediaelementplayer-hls.html
 * http://www.flashls.org/videojs/flash_demo.html
 
