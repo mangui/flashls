@@ -2,7 +2,6 @@ package org.mangui.osmf.plugins.traits {
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSAudioTrack;
     import org.mangui.hls.HLSEvent;
-    import org.mangui.hls.utils.*;
     import org.osmf.events.AlternativeAudioEvent;
     import org.osmf.media.MediaElement;
     import org.osmf.net.StreamingItem;

@@ -1,9 +1,5 @@
 package org.mangui.hls.model {
     import flash.utils.ByteArray;
-    
-    CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    }
 
     /** HLS streaming chunk. **/
     public class Fragment {

@@ -1,8 +1,5 @@
 package org.mangui.hls.model {
 	import org.mangui.hls.utils.PTS;    
-    CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    }
 
     /** HLS streaming quality level. **/
     public class Level {
