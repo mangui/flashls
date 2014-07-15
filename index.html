@@ -31,37 +31,275 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <h1>
+<a name="flashls" class="anchor" href="#flashls"><span class="octicon octicon-link"></span></a>flashls</h1>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>An Open-source HLS Flash plugin that allows you to play HLS streams.</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<p>The plugin is compatible with the following players:</p>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<ul>
+<li>
+<a href="#flowplayer">Flowplayer</a> 3.2.12</li>
+<li>
+<a href="#strobe-media-playback-smp-and-other-osmf-based-players">OSMF 2.0</a> based players (such as SMP and GrindPlayer)</li>
+<li>video.js</li>
+<li>MediaElement.js</li>
+</ul><h2>
+<a name="features" class="anchor" href="#features"><span class="octicon octicon-link"></span></a>Features</h2>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<ul>
+<li>VoD &amp; Live playlists
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<ul>
+<li>Sliding window (aka DVR) support on Live playlists</li>
+</ul>
+</li>
+<li>Adaptive streaming
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<ul>
+<li>Manual &amp; Auto switching</li>
+<li>Serial segment fetching method from <a href="http://www.cs.tut.fi/%7Emoncef/publications/rate-adaptation-IC-2011.pdf">http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf</a>
+</li>
+</ul>
+</li>
+<li>Configurable seeking method on VoD &amp; Live
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<ul>
+<li>Accurate seeking to exact requested position</li>
+<li>Key frame based seeking (nearest key frame)</li>
+<li>Segment based seeking (beginning of segment)</li>
+</ul>
+</li>
+<li>AES-128 decryption </li>
+<li>Buffer progress report</li>
+<li>Error resilience
 
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<ul>
+<li>Retry mechanism on I/O errors </li>
+<li>Recovery mechanism on badly segmented TS streams</li>
+</ul>
+</li>
+</ul><h3>
+<a name="supported-m3u8-tags" class="anchor" href="#supported-m3u8-tags"><span class="octicon octicon-link"></span></a>Supported M3U8 tags</h3>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<ul>
+<li><code>#EXTM3U</code></li>
+<li><code>#EXTINF</code></li>
+<li>
+<code>#EXT-X-STREAM-INF</code> (Multiple bitrate)</li>
+<li>
+<code>#EXT-X-ENDLIST</code> (VoD / Live playlist)</li>
+<li><code>#EXT-X-MEDIA-SEQUENCE</code></li>
+<li><code>#EXT-X-TARGETDURATION</code></li>
+<li><code>#EXT-X-DISCONTINUITY</code></li>
+<li><code>#EXT-X-DISCONTINUITY-SEQUENCE</code></li>
+<li>
+<code>#EXT-X-PROGRAM-DATE-TIME</code> (optional, used to synchronize time-stamps and sequence number when switching from one level to another)</li>
+<li>
+<code>#EXT-X-KEY</code> (AES-128 method supported only)</li>
+<li><code>#EXT-X-BYTERANGE</code></li>
+</ul><h2>
+<a name="configuration" class="anchor" href="#configuration"><span class="octicon octicon-link"></span></a>Configuration</h2>
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<p>The plugin accepts several <strong>optional</strong> configuration options, such as:</p>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<ul>
+<li>
+<code>hls_debug</code> (default false) - Toggle <em>debug</em> traces, outputted on JS console</li>
+<li>
+<code>hls_debug2</code> (default false) - Toggle <em>verbose debug</em> traces, outputted on JS console</li>
+<li>
+<code>hls_minbufferlength</code> (default -1) - Minimum buffer length in <em>seconds</em> that needs to be reached before playback can start (after seeking) or restart (in case of empty buffer)
+
+<ul>
+<li>If set to <code>-1</code> some heuristics based on past metrics are used to define an accurate value that should prevent buffer to stall</li>
+</ul>
+</li>
+<li>
+<code>hls_lowbufferlength</code> (default 3) - Low buffer threshold in <em>seconds</em>. When crossing down this threshold, HLS will switch to buffering state, usually the player will report this buffering state through a rotating icon. Playback will still continue.</li>
+<li>
+<code>hls_maxbufferlength</code> (default 60) - Maximum buffer length in <em>seconds</em> (0 means infinite buffering)</li>
+<li>
+<code>hls_startfromlevel</code> (default -1) 
+
+<ul>
+<li>from 0 to 1 : indicates the "normalized" preferred bitrate. As such,
+
+<ul>
+<li>if 0, lowest non-audio bitrate is used,</li>
+<li>if 1, highest bitrate is used,</li>
+<li>if 0.5, the closest to the middle bitrate will be selected and used first.</li>
+</ul>
+</li>
+<li>-1 : automatic start level selection, playback will start from level matching download bandwidth (determined from download of first segment)</li>
+</ul>
+</li>
+<li>
+<code>hls_seekfromlevel</code> (default -1) - If set to true, playback will start from lowest non-audio level after any seek operation. If set to false, playback will start from level used before seeking
+
+<ul>
+<li>from 0 to 1 : indicates the "normalized" preferred bitrate. As such,
+
+<ul>
+<li>if 0, lowest non-audio bitrate is used,</li>
+<li>if 1, highest bitrate is used,</li>
+<li>if 0.5, the closest to the middle bitrate will be selected and used first.</li>
+</ul>
+</li>
+<li>-1 : automatic seek level selection, keep level before seek.<br>
+</li>
+</ul>
+</li>
+<li>
+<code>hls_live_flushurlcache</code> (default false) - If set to true, Live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player / IE version)</li>
+<li>
+<code>hls_seekmode</code>
+
+<ul>
+<li>"ACCURATE" - Seek to exact position</li>
+<li>"KEYFRAME" - Seek to last keyframe before requested position</li>
+<li>"SEGMENT" - Seek to beginning of segment containing requested position</li>
+</ul>
+</li>
+<li>
+<code>hls_manifestloadmaxretry</code> (default -1): max number of Manifest load retries after I/O Error.
+
+<ul>
+<li>if any I/O error is met during initial Manifest load, it will not be reloaded. an HLSError will be triggered immediately.</li>
+<li>After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
+
+<ul>
+<li>0, means no retry, error message will be triggered automatically</li>
+<li>-1 means infinite retry</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<code>hls_fragmentloadmaxretry</code> (default -1): max number of Fragment load retries after I/O Error.
+
+<ul>
+<li>any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
+
+<ul>
+<li>0, means no retry, error message will be triggered automatically</li>
+<li>-1 means infinite retry<br>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<code>hls_capleveltostage</code> (default false) : limit levels usable in auto-quality by the stage dimensions (width and height)
+
+<ul>
+<li>true : level width and height (defined in m3u8 playlist) will be compared with the player width and height (stage.stageWidth and stage.stageHeight). Max level will be set depending on the <code>hls_maxlevelcappingmode</code> option. Note: this setting is ignored in manual mode so all the levels could be selected manually.</li>
+<li>false : levels will not be limited. All available levels could be used in auto-quality mode taking only bandwidth into consideration.</li>
+</ul>
+</li>
+<li>
+<code>hls_maxlevelcappingmode</code> (default downscale) : defines the max level capping mode to the one available in HLSMaxLevelCappingMode:
+
+<ul>
+<li>"downscale" - max capped level should be the one with the dimensions equal or greater than the stage dimensions (so the video will be downscaled)</li>
+<li>"upscale" - max capped level should be the one with the dimensions equal or lower than the stage dimensions (so the video will be upscaled)</li>
+</ul>
+</li>
+</ul><h2>
+<a name="examples-" class="anchor" href="#examples-"><span class="octicon octicon-link"></span></a>Examples :</h2>
+
+<ul>
+<li><a href="http://www.flashls.org/latest/examples/chromeless">http://www.flashls.org/latest/examples/chromeless</a></li>
+<li><a href="http://www.flashls.org/latest/examples/osmf/GrindPlayer.html">http://www.flashls.org/latest/examples/osmf/GrindPlayer.html</a></li>
+<li><a href="http://www.flashls.org/latest/examples/osmf/StrobeMediaPlayback.html">http://www.flashls.org/latest/examples/osmf/StrobeMediaPlayback.html</a></li>
+<li><a href="http://www.flashls.org/latest/examples/flowplayer/index.html">http://www.flashls.org/latest/examples/flowplayer/index.html</a></li>
+<li><a href="http://www.flashls.org/mediaelement/demo/mediaelementplayer-hls.html">http://www.flashls.org/mediaelement/demo/mediaelementplayer-hls.html</a></li>
+<li><a href="http://www.flashls.org/videojs/flash_demo.html">http://www.flashls.org/videojs/flash_demo.html</a></li>
+</ul><h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<ul>
+<li>Download flashls from <a href="https://github.com/mangui/flashls/releases">https://github.com/mangui/flashls/releases</a>
+</li>
+<li>Unzip, extract and upload the appropiate version to your server</li>
+<li>In the <code>examples</code> directory you will find examples for ChromelessPlayer, Flowplayer, Strobe Media Playback (SMP) and GrindPlayer</li>
+</ul><h3>
+<a name="setup" class="anchor" href="#setup"><span class="octicon octicon-link"></span></a>Setup</h3>
+
+<hr><h4>
+<a name="flowplayer" class="anchor" href="#flowplayer"><span class="octicon octicon-link"></span></a>Flowplayer</h4>
+
+<div class="highlight highlight-javascript"><pre><span class="nx">flowplayer</span><span class="p">(</span><span class="s2">"player"</span><span class="p">,</span> <span class="s1">'http://releases.flowplayer.org/swf/flowplayer-3.2.12.swf'</span><span class="p">,</span> <span class="p">{</span>
+  <span class="c1">// Flowplayer configuration options</span>
+  <span class="c1">// ...</span>
+  <span class="nx">plugins</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">httpstreaming</span><span class="o">:</span> <span class="p">{</span>
+      <span class="c1">// HLSProvider configuration options</span>
+      <span class="nx">url</span><span class="o">:</span> <span class="s1">'HLSProviderFlowPlayer.swf'</span><span class="p">,</span>
+      <span class="nx">hls_debug</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nx">hls_debug2</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nx">hls_lowbufferlength</span><span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+      <span class="nx">hls_minbufferlength</span><span class="o">:</span> <span class="mi">8</span><span class="p">,</span>
+      <span class="nx">hls_maxbufferlength</span><span class="o">:</span> <span class="mi">60</span><span class="p">,</span>
+      <span class="nx">hls_startfromlowestlevel</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nx">hls_seekfromlowestlevel</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nx">hls_live_flushurlcache</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nx">hls_seekmode</span><span class="o">:</span> <span class="s1">'ACCURATE'</span><span class="p">,</span>
+      <span class="nx">hls_capleveltostage</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nx">hls_maxlevelcappingmode</span><span class="o">:</span> <span class="s1">'downscale'</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+</pre></div>
+
+<hr><h4>
+<a name="strobe-media-playback-smp-and-other-osmf-based-players" class="anchor" href="#strobe-media-playback-smp-and-other-osmf-based-players"><span class="octicon octicon-link"></span></a>Strobe Media Playback (SMP) and other OSMF based players</h4>
+
+<div class="highlight highlight-javascript"><pre><span class="kd">var</span> <span class="nx">playerOptions</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="c1">// Strobe Media Playback configuration options</span>
+  <span class="c1">// ...</span>
+  <span class="nx">source</span><span class="o">:</span> <span class="s1">'http://example.com/stream.m3u8'</span><span class="p">,</span>
+  <span class="c1">// HLSProvider configuration options</span>
+  <span class="nx">plugin_hls</span><span class="o">:</span> <span class="s2">"HLSProvider.swf"</span><span class="p">,</span>
+  <span class="nx">hls_debug</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">hls_debug2</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">hls_minbufferlength</span><span class="o">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+  <span class="nx">hls_lowbufferlength</span><span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="nx">hls_maxbufferlength</span><span class="o">:</span> <span class="mi">60</span><span class="p">,</span>
+  <span class="nx">hls_startfromlowestlevel</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">hls_seekfromlowestlevel</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">hls_live_flushurlcache</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">hls_seekmode</span><span class="o">:</span> <span class="s1">'ACCURATE'</span><span class="p">,</span>
+  <span class="nx">hls_capleveltostage</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">hls_maxlevelcappingmode</span><span class="o">:</span> <span class="s1">'downscale'</span>
+<span class="p">};</span>
+
+<span class="nx">swfobject</span><span class="p">.</span><span class="nx">embedSWF</span><span class="p">(</span><span class="s1">'StrobeMediaPlayback.swf'</span><span class="p">,</span> <span class="s1">'player'</span><span class="p">,</span> <span class="mi">640</span><span class="p">,</span> <span class="mi">360</span><span class="p">,</span> <span class="s1">'10.2'</span><span class="p">,</span> <span class="kc">null</span><span class="p">,</span> <span class="nx">playerOptions</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">allowFullScreen</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">allowScriptAccess</span><span class="o">:</span> <span class="s1">'always'</span><span class="p">,</span>
+  <span class="nx">bgColor</span><span class="o">:</span> <span class="s1">'#000000'</span><span class="p">,</span>
+  <span class="nx">wmode</span><span class="o">:</span> <span class="s1">'opaque'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'player'</span>
+<span class="p">});</span>
+</pre></div>
+
+<h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<ul>
+<li><a href="https://github.com/mangui/flashls/LICENSE">MPL 2.0</a></li>
+<li>
+<a href="https://github.com/timkurvers/as3-crypto">as3crypto.swc</a> is governed by a <code>BSD</code> license</li>
+</ul><h2>
+<a name="donation" class="anchor" href="#donation"><span class="octicon octicon-link"></span></a>Donation</h2>
+
+<p>If you'd like to support future development and new product features, please make a donation via PayPal. These donations are used to cover my ongoing expenses - web hosting, domain registrations, and software and hardware purchases.</p>
+
+<p><a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=463RB2ALVXJLA"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" alt="Donate"></a></p>
+
+<hr><p><a href="https://bitdeli.com/free" title="Bitdeli Badge"><img src="https://d2weczhvl823v0.cloudfront.net/mangui/flashls/trend.png" alt="Bitdeli Badge"></a></p>
       </section>
     </div>
 
