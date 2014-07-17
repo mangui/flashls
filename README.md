@@ -6,8 +6,8 @@ The plugin is compatible with the following players:
 
   - [Flowplayer](#flowplayer) 3.2.12
   - [OSMF 2.0](#strobe-media-playback-smp-and-other-osmf-based-players) based players (such as SMP and GrindPlayer)
-  - video.js
-  - MediaElement.js
+  - [Video.js][1] 4.6.2 (adaptation done here [https://github.com/mangui/video-js-swf][2])
+  - [MediaElement.js][3] (adaptation done here [https://github.com/mangui/mediaelement][4])
 
 ## Features
 
@@ -179,3 +179,9 @@ If you'd like to support future development and new product features, please mak
 ---
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mangui/flashls/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
+
+  [1]: http://www.videojs.com
+  [2]: https://github.com/mangui/video-js-swf
+  [3]: http://mediaelementjs.com
+  [4]: https://github.com/mangui/mediaelement
