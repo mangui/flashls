@@ -44,7 +44,7 @@ package org.mangui.chromeless {
             setTimeout(_pingJavascript, 50);
         };
 
-        private function _setupExternalGetters():void {
+        protected function _setupExternalGetters():void {
             ExternalInterface.addCallback("getLevel", _getLevel);
             ExternalInterface.addCallback("getLevels", _getLevels);
             ExternalInterface.addCallback("getAutoLevel", _getAutoLevel);
@@ -70,7 +70,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getAudioTrackId", _getAudioTrackId);
         };
 
-        private function _setupExternalCallers():void {
+        protected function _setupExternalCallers():void {
             ExternalInterface.addCallback("playerLoad", _load);
             ExternalInterface.addCallback("playerPlay", _play);
             ExternalInterface.addCallback("playerPause", _pause);
@@ -93,7 +93,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetJSURLStream", _setJSURLStream);
         };
 
-        private function _setupStage():void {
+        protected function _setupStage():void {
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;
             stage.fullScreenSourceRect = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
@@ -101,7 +101,7 @@ package org.mangui.chromeless {
             stage.addEventListener(Event.RESIZE, _onStageResize);
         }
 
-        private function _setupSheet():void {
+        protected function _setupSheet():void {
             // Draw sheet for catching clicks
             _sheet = new Sprite();
             _sheet.graphics.beginFill(0x000000, 0);
