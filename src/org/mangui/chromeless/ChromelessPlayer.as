@@ -36,20 +36,15 @@ package org.mangui.chromeless {
 
         /** Initialization. **/
         public function ChromelessPlayer() {
-            // Set stage properties
-            stage.scaleMode = StageScaleMode.NO_SCALE;
-            stage.align = StageAlign.TOP_LEFT;
-            stage.fullScreenSourceRect = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
-            stage.addEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
-            stage.addEventListener(Event.RESIZE, _onStageResize);
-            // Draw sheet for catching clicks
-            _sheet = new Sprite();
-            _sheet.graphics.beginFill(0x000000, 0);
-            _sheet.graphics.drawRect(0, 0, stage.stageWidth, stage.stageHeight);
-            _sheet.addEventListener(MouseEvent.CLICK, _clickHandler);
-            _sheet.buttonMode = true;
-            addChild(_sheet);
-            // Connect getters to JS.
+            _setupStage();
+            _setupSheet();
+            _setupExternalGetters();
+            _setupExternalCallers();
+
+            setTimeout(_pingJavascript, 50);
+        };
+
+        private function _setupExternalGetters():void {
             ExternalInterface.addCallback("getLevel", _getLevel);
             ExternalInterface.addCallback("getLevels", _getLevels);
             ExternalInterface.addCallback("getAutoLevel", _getAutoLevel);
@@ -73,7 +68,9 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getPlayerVersion", _getPlayerVersion);
             ExternalInterface.addCallback("getAudioTrackList", _getAudioTrackList);
             ExternalInterface.addCallback("getAudioTrackId", _getAudioTrackId);
-            // Connect calls to JS.
+        };
+
+        private function _setupExternalCallers():void {
             ExternalInterface.addCallback("playerLoad", _load);
             ExternalInterface.addCallback("playerPlay", _play);
             ExternalInterface.addCallback("playerPause", _pause);
@@ -94,9 +91,25 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerCapLeveltoStage", _setCapLeveltoStage);
             ExternalInterface.addCallback("playerSetAudioTrack", _setAudioTrack);
             ExternalInterface.addCallback("playerSetJSURLStream", _setJSURLStream);
-
-            setTimeout(_pingJavascript, 50);
         };
+
+        private function _setupStage():void {
+            stage.scaleMode = StageScaleMode.NO_SCALE;
+            stage.align = StageAlign.TOP_LEFT;
+            stage.fullScreenSourceRect = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
+            stage.addEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
+            stage.addEventListener(Event.RESIZE, _onStageResize);
+        }
+
+        private function _setupSheet():void {
+            // Draw sheet for catching clicks
+            _sheet = new Sprite();
+            _sheet.graphics.beginFill(0x000000, 0);
+            _sheet.graphics.drawRect(0, 0, stage.stageWidth, stage.stageHeight);
+            _sheet.addEventListener(MouseEvent.CLICK, _clickHandler);
+            _sheet.buttonMode = true;
+            addChild(_sheet);
+        }
 
         /** Notify javascript the framework is ready. **/
         protected function _pingJavascript() : void {
