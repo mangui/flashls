@@ -103,6 +103,7 @@ package org.mangui.flowplayer {
             // }
             if (_pauseAfterStart == false) {
                 _hls.stream.play();
+                _clip.dispatch(ClipEventType.SEEK);
             }
         };
 
