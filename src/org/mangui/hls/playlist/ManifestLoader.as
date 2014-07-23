@@ -2,11 +2,11 @@ package org.mangui.hls.playlist {
     import flash.events.*;
     import flash.net.*;
     import flash.utils.*;
-    
+
     import org.mangui.hls.*;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.model.Fragment;
-    
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
@@ -314,7 +314,7 @@ package org.mangui.hls.playlist {
             } else {
                 if (HLSSettings.seekFromLevel > 0) {
                     // adjust start level using a rule by 3
-                    seek_level += Math.round(HLSSettings.startFromLevel * (_levels.length - seek_level - 1));
+                    seek_level += Math.round(HLSSettings.seekFromLevel * (_levels.length - seek_level - 1));
                 }
             }
             CONFIG::LOGGING {
