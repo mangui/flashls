@@ -68,7 +68,7 @@ package org.mangui.hls.model {
         };
 
         /** Return the sequence number nearest a PTS **/
-        public function getSeqNumNearestPTS(pts : Number, continuity : int) : Number {
+        public function getSeqNumNearestPTS(pts : Number, continuity : int, current_seqnum : int) : Number {
             if (fragments.length == 0)
                 return -1;
             var firstIndex : Number = getFirstIndexfromContinuity(continuity);
@@ -78,7 +78,7 @@ package org.mangui.hls.model {
 
             for (var i : int = firstIndex; i <= lastIndex; i++) {
                 /* check nearest fragment */
-                if ( fragments[i].valid && (Math.abs(fragments[i].start_pts_computed - pts) < Math.abs(fragments[i].start_pts_computed + 1000 * fragments[i].duration - pts))) {
+                if ( fragments[i].seqnum > current_seqnum && fragments[i].valid && (Math.abs(fragments[i].start_pts_computed - pts) < Math.abs(fragments[i].start_pts_computed + 1000 * fragments[i].duration - pts))) {
                     return fragments[i].seqnum;
                 }
             }

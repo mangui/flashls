@@ -666,7 +666,7 @@ package org.mangui.hls.stream {
                 }
                 if (last_seqnum == -1) {
                     // if we are here, it means that no program date info is available in the playlist. try to get last seqnum position from PTS + continuity counter
-                    last_seqnum = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts, _last_segment_continuity_counter);
+                    last_seqnum = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts, _last_segment_continuity_counter, _seqnum);
                     CONFIG::LOGGING {
                     Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + _level + "," + _last_segment_start_pts + "," + _last_segment_continuity_counter + ")=" + last_seqnum);
                     }
@@ -1042,7 +1042,7 @@ package org.mangui.hls.stream {
                         if this is the expected one, then continue
                         if not, then cancel current fragment loading, next call to loadnextfragment() will load the right seqnum
                          */
-                        var next_seqnum : Number = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts, _last_segment_continuity_counter) + 1;
+                        var next_seqnum : Number = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts, _last_segment_continuity_counter, _seqnum) + 1;
                         // CONFIG::LOGGING {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
                         // }
