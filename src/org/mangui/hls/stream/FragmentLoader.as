@@ -416,13 +416,7 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
             Log.debug("probe fragment type");
             }
-            if (TSDemuxer.probe(data) == true) {
-                CONFIG::LOGGING {
-                Log.debug("MPEG2-TS found");
-                }
-                _video_tags_expected = true;
-                return new TSDemuxer(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _switchlevel || _hasDiscontinuity);
-            } else if (AACDemuxer.probe(data) == true) {
+						if (AACDemuxer.probe(data) == true) {
                 CONFIG::LOGGING {
                 Log.debug("AAC ES found");
                 }
@@ -434,6 +428,12 @@ package org.mangui.hls.stream {
                 }
                 _video_tags_expected = false;
                 return new MP3Demuxer(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
+            } else if (TSDemuxer.probe(data) == true) {
+                CONFIG::LOGGING {
+                Log.debug("MPEG2-TS found");
+                }
+                _video_tags_expected = true;
+                return new TSDemuxer(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _switchlevel || _hasDiscontinuity);
             } else {
                 CONFIG::LOGGING {
                 Log.debug("probe fails");
