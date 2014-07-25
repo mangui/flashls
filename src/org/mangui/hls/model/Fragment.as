@@ -49,5 +49,10 @@ package org.mangui.hls.model {
             // Log.info("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
             // }
         };
+
+         public function toString():String
+	{
+	    return "Fragment (seqnum: " + seqnum + ", start_time:" + start_time + ", start_pts_computed:" + start_pts_computed + ", duration:" + duration + ")";
+         }        
     }
 }

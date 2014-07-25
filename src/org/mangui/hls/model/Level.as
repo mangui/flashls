@@ -1,5 +1,8 @@
 package org.mangui.hls.model {
-	import org.mangui.hls.utils.PTS;    
+CONFIG::LOGGING {  
+	import org.mangui.hls.utils.Log;
+}
+	import org.mangui.hls.utils.PTS;
 
     /** HLS streaming quality level. **/
     public class Level {
@@ -77,9 +80,10 @@ package org.mangui.hls.model {
             var lastIndex : Number = getLastIndexfromContinuity(continuity);
 
             for (var i : int = firstIndex; i <= lastIndex; i++) {
+                var frag : Fragment = fragments[i];
                 /* check nearest fragment */
-                if ( fragments[i].valid && (Math.abs(fragments[i].start_pts_computed - pts) < Math.abs(fragments[i].start_pts_computed + 1000 * fragments[i].duration - pts))) {
-                    return fragments[i].seqnum;
+                if ( frag.valid && (frag.duration >= 0) && (Math.abs(frag.start_pts_computed - pts) < Math.abs(frag.start_pts_computed + 1000 * frag.duration - pts))) {
+                    return frag.seqnum;
                 }
             }
             // requested PTS above max PTS of this level
@@ -222,10 +226,21 @@ package org.mangui.hls.model {
                     var from_pts : Number = PTS.normalize(frag_to.start_pts, frag_from.start_pts_computed);
                     /* update fragment duration. 
                     it helps to fix drifts between playlist reported duration and fragment real duration */
-                    if (to_index > from_index)
+                    if (to_index > from_index) {
                         frag_from.duration = (frag_to.start_pts - from_pts) / 1000;
-                    else
+                        CONFIG::LOGGING {
+                            if (frag_from.duration < 0) {
+                                Log.error("negative duration computed for " + frag_from + ", there should be some duration drift between playlist and fragment!");
+                            }
+                        }
+                    } else {
                         frag_to.duration = ( from_pts - frag_to.start_pts) / 1000;
+                        CONFIG::LOGGING {
+                            if (frag_to.duration < 0) {
+                                Log.error("negative duration computed for " + frag_to + ", there should be some duration drift between playlist and fragment!");
+                            }
+                        }
+                    }
                 } else {
                     // we dont know PTS[to_index]
                     if (to_index > from_index)
