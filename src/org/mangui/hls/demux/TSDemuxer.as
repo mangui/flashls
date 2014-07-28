@@ -1,7 +1,5 @@
 package org.mangui.hls.demux {
-    import org.mangui.hls.HLSSettings;
-
-    import com.hurlant.util.Hex;
+    import org.mangui.hls.utils.Hex;
 
   	import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLSAudioTrack;
@@ -14,6 +12,7 @@ package org.mangui.hls.demux {
     
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
+    import org.mangui.hls.HLSSettings;
     }
 
     /** Representation of an MPEG transport stream. **/

@@ -1,13 +1,11 @@
 package org.mangui.hls.utils {
     import flash.utils.ByteArray;
 
-    import com.hurlant.crypto.symmetric.ISymmetricKey;
-
     /* word based AES encryption/decryption
      * inspired by
      * https://code.google.com/p/crypto-js/source/browse/tags/3.1.2/src/aes.js
      */
-    public class FastAESKey implements ISymmetricKey {
+    public class FastAESKey {
         /* private data, specific to each key */
         private var keySize : uint;
         private var nRounds : uint;
@@ -19,10 +17,6 @@ package org.mangui.hls.utils {
         // static Lookup tables
         private static var _SBOX : Vector.<uint>;
         private static var _INV_SBOX : Vector.<uint>;
-        private static var _SUB_MIX_0 : Vector.<uint>;
-        private static var _SUB_MIX_1 : Vector.<uint>;
-        private static var _SUB_MIX_2 : Vector.<uint>;
-        private static var _SUB_MIX_3 : Vector.<uint>;
         private static var _INV_SUB_MIX_0 : Vector.<uint>;
         private static var _INV_SUB_MIX_1 : Vector.<uint>;
         private static var _INV_SUB_MIX_2 : Vector.<uint>;
@@ -35,10 +29,6 @@ package org.mangui.hls.utils {
         private static function _initTable() : void {
             _SBOX = new Vector.<uint>(256);
             _INV_SBOX = new Vector.<uint>(256);
-            _SUB_MIX_0 = new Vector.<uint>(256);
-            _SUB_MIX_1 = new Vector.<uint>(256);
-            _SUB_MIX_2 = new Vector.<uint>(256);
-            _SUB_MIX_3 = new Vector.<uint>(256);
             _INV_SUB_MIX_0 = new Vector.<uint>(256);
             _INV_SUB_MIX_1 = new Vector.<uint>(256);
             _INV_SUB_MIX_2 = new Vector.<uint>(256);
@@ -70,15 +60,8 @@ package org.mangui.hls.utils {
                 var x4 : uint = d[x2];
                 var x8 : uint = d[x4];
 
-                // Compute sub bytes, mix columns tables
-                var t : uint = (d[sx] * 0x101) ^ (sx * 0x1010100);
-                _SUB_MIX_0[x] = (t << 24) | (t >>> 8);
-                _SUB_MIX_1[x] = (t << 16) | (t >>> 16);
-                _SUB_MIX_2[x] = (t << 8) | (t >>> 24);
-                _SUB_MIX_3[x] = t;
-
                 // Compute inv sub bytes, inv mix columns tables
-                t = (x8 * 0x1010101) ^ (x4 * 0x10001) ^ (x2 * 0x101) ^ (x * 0x1010100);
+                var t: uint  = (x8 * 0x1010101) ^ (x4 * 0x10001) ^ (x2 * 0x101) ^ (x * 0x1010100);
                 _INV_SUB_MIX_0[sx] = (t << 24) | (t >>> 8);
                 _INV_SUB_MIX_1[sx] = (t << 16) | (t >>> 16);
                 _INV_SUB_MIX_2[sx] = (t << 8) | (t >>> 24);
@@ -152,27 +135,19 @@ package org.mangui.hls.utils {
                 }
             }
         }
-
-        public function decrypt(block : ByteArray, index : uint = 0) : void {
-            block.position = index;
-            for (var i : int = 0; i < keySize; i++) {
-                // state.push(block.readUnsignedInt());
-                state[i] = block.readUnsignedInt();
-            }
+        
+        public function decrypt128(input : Vector.<uint>,output : Vector.<uint>) : void {
             // Swap 2nd and 4th rows
-            var t : uint = state[1];
-            state[1] = state[3];
-            state[3] = t;
-            _doCryptBlock(invKeySchedule, _INV_SUB_MIX_0, _INV_SUB_MIX_1, _INV_SUB_MIX_2, _INV_SUB_MIX_3, _INV_SBOX);
-            // Inv swap 2nd and 4th rows
-            t = state[1];
-            state[1] = state[3];
-            state[3] = t;
-
-            block.position = index;
-            for (i = 0; i < keySize; i++) {
-                block.writeUnsignedInt(state[i]);
-            }
+          state[0] = input[0];
+          state[1] = input[3];
+          state[2] = input[2];
+          state[3] = input[1];          
+          _doCryptBlock(invKeySchedule, _INV_SUB_MIX_0, _INV_SUB_MIX_1, _INV_SUB_MIX_2, _INV_SUB_MIX_3, _INV_SBOX);
+          // Inv swap 2nd and 4th rows
+          output[0] = state[0];
+          output[1] = state[3];
+          output[2] = state[2];
+          output[3] = state[1];
         }
 
         private function  _doCryptBlock(keySchedule : Vector.<uint>, SUB_MIX_0 : Vector.<uint>, SUB_MIX_1 : Vector.<uint>, SUB_MIX_2 : Vector.<uint>, SUB_MIX_3 : Vector.<uint>, SBOX : Vector.<uint>) : void {
@@ -219,27 +194,6 @@ package org.mangui.hls.utils {
         public function dispose() : void {
             keyWords.length = 0;
             keyWords = null;
-        }
-
-        public function encrypt(block : ByteArray, index : uint = 0) : void {
-            block.position = index;
-            for (var i : int = 0; i < keySize; i++) {
-                // state.push(block.readUnsignedInt());
-                state[i] = block.readUnsignedInt();
-            }
-            _doCryptBlock(keySchedule, _SUB_MIX_0, _SUB_MIX_1, _SUB_MIX_2, _SUB_MIX_3, _SBOX);
-            block.position = index;
-            for (i = 0; i < keySize; i++) {
-                block.writeUnsignedInt(state[i]);
-            }
-        }
-
-        public function getBlockSize() : uint {
-            return 16;
-        }
-
-        public function toString() : String {
-            return "aes" + (32 * keySize);
         }
     }
 }

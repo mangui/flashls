@@ -1,5 +1,5 @@
 package org.mangui.hls.playlist {
-    import com.hurlant.util.Hex;
+    import org.mangui.hls.utils.Hex;
     
     import flash.events.*;
     import flash.net.*;
