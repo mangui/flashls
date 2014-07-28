@@ -1,23 +1,18 @@
 package org.mangui.hls.utils {
-    import com.hurlant.crypto.symmetric.CBCMode;
-    import com.hurlant.crypto.symmetric.ICipher;
-    import com.hurlant.crypto.symmetric.IPad;
-    import com.hurlant.crypto.symmetric.IVMode;
-    import com.hurlant.crypto.symmetric.NullPad;
-    import com.hurlant.crypto.symmetric.PKCS5;
-
     import flash.utils.ByteArray;
     import flash.utils.Timer;
     import flash.events.Event;
     import flash.events.TimerEvent;
 
     /**
-     * Contains Utility functions for Decryption
+     * Contains Utility functions for AES-128 CBC Decryption
      */
     public class AES {
         private var _key : FastAESKey;
-        private var _mode : ICipher;
-        private var _iv : ByteArray;
+        private var iv0 : uint;
+        private var iv1 : uint;
+        private var iv2 : uint;
+        private var iv3 : uint;
         /* callback function upon decrypt progress */
         private var _progress : Function;
         /* callback function upon decrypt complete */
@@ -36,15 +31,12 @@ package org.mangui.hls.utils {
         private var _data_complete : Boolean;
 
         public function AES(key : ByteArray, iv : ByteArray, notifyprogress : Function, notifycomplete : Function) {
-            var pad : IPad = new PKCS5;
             _key = new FastAESKey(key);
-            _mode = new CBCMode(_key, pad);
-            pad.setBlockSize(_mode.getBlockSize());
-            _iv = iv;
-            if (_mode is IVMode) {
-                var ivmode : IVMode = _mode as IVMode;
-                ivmode.IV = iv;
-            }
+            iv.position = 0;
+            iv0 = iv.readUnsignedInt();
+            iv1 = iv.readUnsignedInt();
+            iv2 = iv.readUnsignedInt();
+            iv3 = iv.readUnsignedInt();
             _data = new ByteArray();
             _data_complete = false;
             _progress = notifyprogress;
@@ -61,7 +53,7 @@ package org.mangui.hls.utils {
             // }
             _data.position = _write_position;
             _data.writeBytes(data);
-            _write_position+= data.length;
+            _write_position += data.length;
             _timer.start();
         }
 
@@ -91,55 +83,29 @@ package org.mangui.hls.utils {
         /** decrypt a small chunk of packets each time to avoid blocking **/
         private function _decryptData() : void {
             _data.position = _read_position;
+            var decryptdata : ByteArray;
             if (_data.bytesAvailable) {
-                var dumpByteArray : ByteArray = new ByteArray();
-                var newIv : ByteArray;
-                var pad : IPad;
                 if (_data.bytesAvailable <= CHUNK_SIZE) {
                     if (_data_complete) {
                         // CONFIG::LOGGING {
                         // Log.info("data complete, last chunk");
                         // }
-                        pad = new PKCS5;
                         _read_position += _data.bytesAvailable;
-                        _data.readBytes(dumpByteArray, 0, _data.bytesAvailable);
+                        decryptdata = _decryptCBC(_data, _data.bytesAvailable);
+                        unpad(decryptdata);
                     } else {
+                        // data not complete, and available data less than chunk size, stop timer and return
                         // CONFIG::LOGGING {
                         // Log.info("data not complete, stop timer");
                         // }
-                        // data not complete, and available data less than chunk size, stop timer and return
                         _timer.stop();
                         return;
                     }
                 } else {
-                    // bytesAvailable > CHUNK_SIZE
-                    // CONFIG::LOGGING {
-                    // Log.info("process chunk");
-                    // }
-                    pad = new NullPad;
                     _read_position += CHUNK_SIZE;
-                    _data.readBytes(dumpByteArray, 0, CHUNK_SIZE);
-                    // Save new IV from ciphertext
-                    newIv = new ByteArray();
-                    dumpByteArray.position = (CHUNK_SIZE - 16);
-                    dumpByteArray.readBytes(newIv, 0, 16);
+                    decryptdata = _decryptCBC(_data, CHUNK_SIZE);
                 }
-                dumpByteArray.position = 0;
-                // CONFIG::LOGGING {
-                // Log.info("before decrypt");
-                // }
-                _mode = new CBCMode(_key, pad);
-                pad.setBlockSize(_mode.getBlockSize());
-                (_mode as IVMode).IV = _iv;
-                _mode.decrypt(dumpByteArray);
-                // CONFIG::LOGGING {
-                // Log.info("after decrypt");
-                // }
-                _progress(dumpByteArray);
-                // switch IV to new one in case more bytes are available
-                if (newIv) {
-                    _iv = newIv;
-                }
+                _progress(decryptdata);
             } else {
                 // CONFIG::LOGGING {
                 // Log.info("no bytes available, stop timer");
@@ -147,7 +113,7 @@ package org.mangui.hls.utils {
                 _timer.stop();
                 if (_data_complete) {
                     CONFIG::LOGGING {
-                    Log.debug("AES:data+decrypt completed, callback");
+                        Log.debug("AES:data+decrypt completed, callback");
                     }
                     // callback
                     _complete();
@@ -155,10 +121,56 @@ package org.mangui.hls.utils {
             }
         }
 
+        /* Cypher Block Chaining Decryption, refer to 
+         * http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher-block_chaining_
+         * for algorithm description
+         */
+        private function _decryptCBC(crypt : ByteArray, len : uint) : ByteArray {
+            var src : Vector.<uint> = new Vector.<uint>(4);
+            var dst : Vector.<uint> = new Vector.<uint>(4);
+            var decrypt : ByteArray = new ByteArray();
+            decrypt.length = len;
+
+            for (var i : uint = 0; i < len / 16; i++) {
+                // read src byte array
+                src[0] = crypt.readUnsignedInt();
+                src[1] = crypt.readUnsignedInt();
+                src[2] = crypt.readUnsignedInt();
+                src[3] = crypt.readUnsignedInt();
+
+                // AES decrypt src vector into dst vector
+                _key.decrypt128(src, dst);
+
+                // CBC : write output = XOR(decrypted,IV)
+                decrypt.writeUnsignedInt(dst[0] ^ iv0);
+                decrypt.writeUnsignedInt(dst[1] ^ iv1);
+                decrypt.writeUnsignedInt(dst[2] ^ iv2);
+                decrypt.writeUnsignedInt(dst[3] ^ iv3);
+
+                // CBC : next IV = (input)
+                iv0 = src[0];
+                iv1 = src[1];
+                iv2 = src[2];
+                iv3 = src[3];
+            }
+            decrypt.position = 0;
+            return decrypt;
+        }
+
+        public function unpad(a : ByteArray) : void {
+            var c : uint = a.length % 16;
+            if (c != 0) throw new Error("PKCS#5::unpad: ByteArray.length isn't a multiple of the blockSize");
+            c = a[a.length - 1];
+            for (var i : uint = c; i > 0; i--) {
+                var v : uint = a[a.length - 1];
+                a.length--;
+                if (c != v) throw new Error("PKCS#5:unpad: Invalid padding value. expected [" + c + "], found [" + v + "]");
+            }
+        }
+
         public function destroy() : void {
             _key.dispose();
             // _key = null;
-            _mode = null;
         }
     }
 }

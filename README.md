@@ -168,7 +168,6 @@ swfobject.embedSWF('StrobeMediaPlayback.swf', 'player', 640, 360, '10.2', null, 
 ## License
 
   - [MPL 2.0](https://github.com/mangui/flashls/blob/master/LICENSE)
-  - [as3crypto.swc](https://github.com/timkurvers/as3-crypto) is governed by a `BSD` license
 
 ## Donation
 

@@ -3,15 +3,13 @@ FLEXPATH=../../flex_sdk_4.6
 #FLEXPATH=../../../apache_flex_sdk
 #FLEXPATH=../../../AIRSDK_Compiler
 
-OPT_DEBUG="-library-path+=../lib/as3crypto.swc \
-    -use-network=false \
+OPT_DEBUG="-use-network=false \
     -optimize=true \
     -incremental=true \
     -static-link-runtime-shared-libraries=true \
     -define=CONFIG::LOGGING,true"
 
-OPT_RELEASE="-library-path+=../lib/as3crypto.swc \
-    -use-network=false \
+OPT_RELEASE="-use-network=false \
     -optimize=true \
     -incremental=true \
     -static-link-runtime-shared-libraries=true \

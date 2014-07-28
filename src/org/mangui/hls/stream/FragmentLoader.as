@@ -1,5 +1,4 @@
 package org.mangui.hls.stream {
-    import com.hurlant.util.Hex;
     
     import flash.events.*;
     import flash.net.*;
@@ -18,6 +17,7 @@ package org.mangui.hls.stream {
 
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
+    import org.mangui.hls.utils.Hex;
     }
 
     /** Class that fetches fragments. **/
