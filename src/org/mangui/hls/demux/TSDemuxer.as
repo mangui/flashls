@@ -1,6 +1,4 @@
 package org.mangui.hls.demux {
-    import org.mangui.hls.utils.Hex;
-
   	import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLSAudioTrack;
 
@@ -13,6 +11,7 @@ package org.mangui.hls.demux {
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.utils.Hex;
     }
 
     /** Representation of an MPEG transport stream. **/
@@ -28,22 +27,22 @@ package org.mangui.hls.demux {
         /** loop counter to avoid blocking **/
         private static const COUNT : uint = 5000;
         /** Packet ID of the PAT (is always 0). **/
-        private static const _patId : int = 0;
+        private static const PAT_ID : int = 0;
         /** Packet ID of the SDT (is always 17). **/
-        private static const _sdtId : int = 17;
+        private static const SDT_ID : int = 17;
         /** has PMT been parsed ? **/
-        private var _pmtParsed : Boolean = false;
+        private var _pmtParsed : Boolean;
         /** any TS packets before PMT ? **/
-        private var _packetsBeforePMT : Boolean = false;
-        /** Packet ID of the Program Map Table. **/
-        private var _pmtId : int = -1;
-        /** Packet ID of the video stream. **/
-        private var _avcId : int = -1;
-        /** Packet ID of selected audio stream. **/
+        private var _packetsBeforePMT : Boolean;
+        /** PMT PID **/
+        private var _pmtId : int;
+        /** video PID **/
+        private var _avcId : int;
+        /** audio PID **/
         private static var _audioId : int = -1;
-        private var _audioIsAAC : Boolean = false;
+        private var _audioIsAAC : Boolean;
         /** Vector of audio/video tags **/
-        private var _tags : Vector.<FLVTag> = new Vector.<FLVTag>();
+        private var _tags : Vector.<FLVTag>;
         /** Timer for reading packets **/
         private var _timer : Timer;
         /** Byte data to be read **/
@@ -98,6 +97,11 @@ package org.mangui.hls.demux {
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
             _read_position = 0;
+            _pmtParsed = false;
+            _packetsBeforePMT = false;
+            _pmtId = _avcId = -1;
+            _audioIsAAC = false;
+            _tags = new Vector.<FLVTag>();
             _timer = new Timer(0, 0);
             _timer.addEventListener(TimerEvent.TIMER, _readData);
         };
@@ -399,7 +403,7 @@ package org.mangui.hls.demux {
 
             // Parse the PES, split by Packet ID.
             switch (pid) {
-                case _patId:
+                case PAT_ID:
                     todo -= _readPAT(stt);
                     if (_pmtParsed == false) {
                         null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
@@ -469,7 +473,7 @@ package org.mangui.hls.demux {
                         }
                     }
                     break;
-                case _sdtId:
+                case SDT_ID:
                     break;
                 default:
                     _packetsBeforePMT = true;
