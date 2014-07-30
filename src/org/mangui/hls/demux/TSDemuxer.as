@@ -124,6 +124,7 @@ package org.mangui.hls.demux {
             CONFIG::LOGGING {
                 Log.debug("TS: flushing demux");
             }
+            _parsingEnd();
             // push last video tag if any
             if (_curVideoTag) {
                 _tags.push(_curVideoTag);
@@ -158,19 +159,19 @@ package org.mangui.hls.demux {
                     _data = null;
                     // first check if TS parsing was successful
                     if (_pmtParsed == false) {
+                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
                         CONFIG::LOGGING {
                         Log.error("TS: no PMT found, report parsing complete");
                         }
-                        _callback_complete();
                     } else {
                         _timer.stop();
-                        _parsingEnd();
                     }
+                    _callback_complete();
                 }
             }
         }
 
-        /** notify end of parsing **/
+        /** end of parsing **/
         private function _parsingEnd() : void {
             // check whether last parsed audio PES is complete
             if (_curAudioPES && _curAudioPES.length > 14) {
@@ -217,7 +218,7 @@ package org.mangui.hls.demux {
             CONFIG::LOGGING {
             Log.debug("TS: parsing complete");
             }
-            _callback_complete();
+
         }
 
         /** parse ADTS audio PES packet **/
