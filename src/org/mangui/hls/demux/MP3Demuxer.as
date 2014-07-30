@@ -2,12 +2,11 @@ package org.mangui.hls.demux {
     import flash.utils.ByteArray;
 
     import org.mangui.hls.HLSAudioTrack;
-	import org.mangui.hls.flv.FLVTag;
-    
-    CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    }
+    import org.mangui.hls.flv.FLVTag;
 
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+    }
     public class MP3Demuxer implements Demuxer {
         /* MPEG1-Layer3 syncword */
         private static const SYNCWORD : uint = 0xFFFB;
@@ -23,9 +22,9 @@ package org.mangui.hls.demux {
 
         /** append new data */
         public function append(data : ByteArray) : void {
-            // CONFIG::LOGGING {
-            // Log.info("notify append");
-            // }
+            if (_data == null) {
+                _data = new ByteArray();
+            }
             _data.writeBytes(data);
         }
 
@@ -34,9 +33,14 @@ package org.mangui.hls.demux {
             _data = null;
         }
 
+        /** flush demux */
+        public function flush() : void {
+            return;
+        }
+
         public function notifycomplete() : void {
             CONFIG::LOGGING {
-            Log.debug("MP3: extracting MP3 tags");
+                Log.debug("MP3: extracting MP3 tags");
             }
             var audioTags : Vector.<FLVTag> = new Vector.<FLVTag>();
             /* parse MP3, convert Elementary Streams to TAG */
@@ -64,8 +68,9 @@ package org.mangui.hls.demux {
             // report unique audio track. dont check return value as obviously the track will be selected
             _callback_audioselect(audiotracks);
             CONFIG::LOGGING {
-            Log.debug("MP3: all tags extracted, callback demux");
+                Log.debug("MP3: all tags extracted, callback demux");
             }
+            _data = null;
             _callback_progress(audioTags);
             _callback_complete();
         }
@@ -74,7 +79,6 @@ package org.mangui.hls.demux {
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
-            _data = new ByteArray();
         };
 
         public static function probe(data : ByteArray) : Boolean {

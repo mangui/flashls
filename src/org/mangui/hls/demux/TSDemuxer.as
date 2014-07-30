@@ -39,7 +39,7 @@ package org.mangui.hls.demux {
         /** video PID **/
         private var _avcId : int;
         /** audio PID **/
-        private static var _audioId : int = -1;
+        private var _audioId : int;
         private var _audioIsAAC : Boolean;
         /** Vector of audio/video tags **/
         private var _tags : Vector.<FLVTag>;
@@ -52,11 +52,11 @@ package org.mangui.hls.demux {
         private var _callback_progress : Function;
         private var _callback_complete : Function;
         /* current audio PES */
-        private static var _curAudioPES : ByteArray = null;
+        private var _curAudioPES : ByteArray;
         /* current video PES */
-        private static var _curVideoPES : ByteArray = null;
+        private var _curVideoPES : ByteArray;
         /* ADTS frame overflow */
-        private static var _adtsFrameOverflow : ByteArray = null;
+        private var _adtsFrameOverflow : ByteArray;
         /* current AVC Tag */
         private var _curVideoTag : FLVTag;
         /* ADIF tag inserted ? */
@@ -84,22 +84,17 @@ package org.mangui.hls.demux {
         }
 
         /** Transmux the M2TS file into an FLV file. **/
-        public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, discontinuity : Boolean) {
-            // in case of discontinuity, flush any partially parsed audio/video PES packet
-            if (discontinuity) {
-                _curAudioPES = null;
-                _curVideoPES = null;
-                _adtsFrameOverflow = null;
-            }
-            _data = new ByteArray();
-            _data_complete = false;
+        public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function) {
+            _curAudioPES = null;
+            _curVideoPES = null;
+            _curVideoTag = null;
+            _adtsFrameOverflow = null;
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
-            _read_position = 0;
             _pmtParsed = false;
             _packetsBeforePMT = false;
-            _pmtId = _avcId = -1;
+            _pmtId = _avcId = _audioId = -1;
             _audioIsAAC = false;
             _tags = new Vector.<FLVTag>();
             _timer = new Timer(0, 0);
@@ -108,6 +103,11 @@ package org.mangui.hls.demux {
 
         /** append new TS data */
         public function append(data : ByteArray) : void {
+            if (_data == null) {
+                _data = new ByteArray();
+                _data_complete = false;
+                _read_position = 0;
+            }
             _data.position = _data.length;
             _data.writeBytes(data, data.position);
             _timer.start();
@@ -117,6 +117,21 @@ package org.mangui.hls.demux {
         public function cancel() : void {
             _data = null;
             _timer.stop();
+        }
+
+        /** flush demux */
+        public function flush() : void {
+            CONFIG::LOGGING {
+                Log.debug("TS: flushing demux");
+            }
+            // push last video tag if any
+            if (_curVideoTag) {
+                _tags.push(_curVideoTag);
+                _curVideoTag = null;
+                _callback_progress(_tags);
+                _tags = new Vector.<FLVTag>();
+            }
+            return;
         }
 
         public function notifycomplete() : void {
@@ -139,6 +154,8 @@ package org.mangui.hls.demux {
                 _read_position = _data.position;
                 // finish reading TS fragment
                 if (_data_complete && _data.bytesAvailable < 188) {
+                    // free ByteArray
+                    _data = null;
                     // first check if TS parsing was successful
                     if (_pmtParsed == false) {
                         CONFIG::LOGGING {
@@ -192,11 +209,6 @@ package org.mangui.hls.demux {
                     }
                     _curVideoPES.position = _curVideoPES.length;
                 }
-            }
-            // push last video tag if any
-            if (_curVideoTag) {
-                _tags.push(_curVideoTag);
-                _curVideoTag = null;
             }
             // push remaining tags and notify complete
             if (_tags.length) {

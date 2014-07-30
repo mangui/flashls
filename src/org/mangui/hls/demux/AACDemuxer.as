@@ -1,13 +1,12 @@
 package org.mangui.hls.demux {
     import org.mangui.hls.HLSAudioTrack;
-	import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.flv.FLVTag;
 
     import flash.utils.ByteArray;
-    
-    CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    }
 
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+    }
     /** Constants and utilities for the AAC audio format. **/
     public class AACDemuxer implements Demuxer {
         /** ADTS Syncword (111111111111), ID (MPEG4), layer (00) and protection_absent (1).**/
@@ -29,6 +28,9 @@ package org.mangui.hls.demux {
 
         /** append new data */
         public function append(data : ByteArray) : void {
+            if (_data == null) {
+                _data = new ByteArray();
+            }
             _data.writeBytes(data);
         }
 
@@ -37,9 +39,14 @@ package org.mangui.hls.demux {
             _data = null;
         }
 
+        /** flush demux */
+        public function flush() : void {
+            return;
+        }
+
         public function notifycomplete() : void {
             CONFIG::LOGGING {
-            Log.debug("AAC: extracting AAC tags");
+                Log.debug("AAC: extracting AAC tags");
             }
             var audioTags : Vector.<FLVTag> = new Vector.<FLVTag>();
             /* parse AAC, convert Elementary Streams to TAG */
@@ -72,8 +79,9 @@ package org.mangui.hls.demux {
             // report unique audio track. dont check return value as obviously the track will be selected
             _callback_audioselect(audiotracks);
             CONFIG::LOGGING {
-            Log.debug("AAC: all tags extracted, callback demux");
+                Log.debug("AAC: all tags extracted, callback demux");
             }
+            _data = null;
             _callback_progress(audioTags);
             _callback_complete();
         }
@@ -82,7 +90,6 @@ package org.mangui.hls.demux {
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
-            _data = new ByteArray();
         };
 
         public static function probe(data : ByteArray) : Boolean {
@@ -135,7 +142,7 @@ package org.mangui.hls.demux {
             adif.writeByte((profile << 3) + (srate >> 1));
             adif.writeByte((srate << 7) + (channels << 3));
             CONFIG::LOGGING {
-            Log.debug('AAC: ' + PROFILES[profile] + ', ' + RATES[srate] + ' Hz ' + channels + ' channel(s)');
+                Log.debug('AAC: ' + PROFILES[profile] + ', ' + RATES[srate] + ' Hz ' + channels + ' channel(s)');
             }
             // Reset position and return adif.
             adts.position -= 4;
@@ -180,7 +187,7 @@ package org.mangui.hls.demux {
                     }
                 } else {
                     CONFIG::LOGGING {
-                    Log.debug("no ADTS header found, probing...");
+                        Log.debug("no ADTS header found, probing...");
                     }
                     adts.position--;
                 }
@@ -193,14 +200,13 @@ package org.mangui.hls.demux {
                     frames.push(new AudioFrame(frame_start, frame_length, frame_length, samplerate));
                 } else {
                     CONFIG::LOGGING {
-                    Log.debug2("ADTS overflow at the end of PES packet, missing " + overflow + " bytes to complete the ADTS frame");
+                        Log.debug2("ADTS overflow at the end of PES packet, missing " + overflow + " bytes to complete the ADTS frame");
                     }
                 }
-            } 
-            else if (frames.length == 0) {
+            } else if (frames.length == 0) {
                 null;
                 CONFIG::LOGGING {
-                Log.warn("No ADTS headers found in this stream.");  
+                    Log.warn("No ADTS headers found in this stream.");  
                 }
             }
             adts.position = position;
