@@ -115,24 +115,16 @@ package org.mangui.hls.demux {
 
         /** cancel demux operation */
         public function cancel() : void {
-            _data = null;
-            _timer.stop();
-        }
-
-        /** flush demux */
-        public function flush() : void {
             CONFIG::LOGGING {
-                Log.debug("TS: flushing demux");
-            }
-            _parsingEnd();
-            // push last video tag if any
-            if (_curVideoTag) {
-                _tags.push(_curVideoTag);
-                _curVideoTag = null;
-                _callback_progress(_tags);
-                _tags = new Vector.<FLVTag>();
-            }
-            return;
+                Log.debug("TS: cancel demux");
+            } 
+            _data = null;
+            _curAudioPES = null;
+            _curVideoPES = null;
+            _curVideoTag = null;
+            _adtsFrameOverflow = null;
+            _tags = new Vector.<FLVTag>();
+            _timer.stop();            
         }
 
         public function notifycomplete() : void {
@@ -171,8 +163,11 @@ package org.mangui.hls.demux {
             }
         }
 
-        /** end of parsing **/
-        private function _parsingEnd() : void {
+        /** flux demux **/
+        public function flush() : void {
+            CONFIG::LOGGING {
+                Log.debug("TS: flushing demux");
+            }            
             // check whether last parsed audio PES is complete
             if (_curAudioPES && _curAudioPES.length > 14) {
                 var pes : PES = new PES(_curAudioPES, true);
@@ -204,6 +199,11 @@ package org.mangui.hls.demux {
                     // complete PES, parse and push into the queue
                     _parseAVCPES(pes);
                     _curVideoPES = null;
+                    // push last video tag if any
+                    if (_curVideoTag) {
+                        _tags.push(_curVideoTag);
+                        _curVideoTag = null;
+                    }
                 } else {
                     CONFIG::LOGGING {
                     Log.debug("TS: partial AVC PES at end of segment");
@@ -213,12 +213,15 @@ package org.mangui.hls.demux {
             }
             // push remaining tags and notify complete
             if (_tags.length) {
+                CONFIG::LOGGING {
+                    Log.debug2("TS: flush " + _tags.length + " tags");
+                }
                 _callback_progress(_tags);
+                _tags = new Vector.<FLVTag>();
             }
             CONFIG::LOGGING {
-            Log.debug("TS: parsing complete");
+                Log.debug("TS: parsing complete");
             }
-
         }
 
         /** parse ADTS audio PES packet **/

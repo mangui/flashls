@@ -630,6 +630,18 @@ package org.mangui.hls.stream {
             _loadfragment(frag);
             return 0;
         }
+        
+        private function _flush_demux() : void {
+            if (_demux) {
+                _demux.flush();
+                // update fragment duration after flushing demux to avoid drifts
+                if (_audio_tags_found) {
+                    _levels[_level].updateFragment(_seqnum, true, _min_audio_pts_frag, _max_audio_pts_tags);
+                } else {
+                    _levels[_level].updateFragment(_seqnum, true, _min_video_pts_frag, _max_video_pts_frag);
+                }
+            }
+        }
 
         /** Load a fragment **/
         private function _loadnextfragment() : int {
@@ -656,6 +668,8 @@ package org.mangui.hls.stream {
             if (_switchlevel == false || _last_segment_continuity_counter == -1) {
                 last_seqnum = _seqnum;
             } else {
+                // flux demux as next fragment will not be continuous
+                _flush_demux();
                 // level switch
                 // trust program-time : if program-time defined in previous loaded fragment, try to find seqnum matching program-time in new level.
                 if (_last_segment_program_date) {
@@ -705,10 +719,8 @@ package org.mangui.hls.stream {
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
                         // stop loading timer as well, as no other fragments can be loaded
                         _timer.stop();
-                        // flush demux
-                        if (_demux) {
-                            _demux.flush();
-                        }
+                        // flush demux to avoid missing the last frames of the playlist
+                        _flush_demux();
                     }
                     return 1;
                 } else {
@@ -728,13 +740,12 @@ package org.mangui.hls.stream {
                     // update program date
                     _last_segment_program_date = frag.program_date;
                     // check whether there is a discontinuity between last segment and new segment
-                    _hasDiscontinuity = (frag.continuity != _last_segment_continuity_counter);
-                    if (_hasDiscontinuity || _switchlevel) {
-                        // flush demux
-                        if (_demux) {
-                            _demux.flush();
-                        }
+                    var hasDiscontinuity : Boolean = (frag.continuity != _last_segment_continuity_counter);
+                    if (hasDiscontinuity) {
+                        // flush demux in case of discontinuity
+                        _flush_demux();
                     }
+                    _hasDiscontinuity = hasDiscontinuity;
                     // update discontinuity counter
                     _last_segment_continuity_counter = frag.continuity;
                     log_prefix = "Loading       ";
@@ -1060,6 +1071,9 @@ package org.mangui.hls.stream {
                         // }
                         if (next_seqnum != _seqnum) {
                             _pts_just_loaded = true;
+                            CONFIG::LOGGING {
+                                Log.debug("PTS analysis done on " + _seqnum +  ", matching seqnum is " + next_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],cancel loading and get new one");
+                            }                            
                             // cancel loading
                             _stop_load();
                             // tell that new fragment could be loaded
@@ -1171,6 +1185,10 @@ package org.mangui.hls.stream {
                 if (_tags.length) {
                     _callback(_tags, min_pts_tags, max_pts_tags, _hasDiscontinuity, start_offset + (min_pts_tags - min_pts_frag) / 1000, _last_segment_program_date + (min_pts_tags - min_pts_frag));
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, metrics));
+                    _min_audio_pts_tags = _max_audio_pts_tags;
+                    _min_video_pts_tags = _max_video_pts_tags;
+                    _hasDiscontinuity = false;
+                    _tags = new Vector.<FLVTag>();                    
                 }
                 _pts_loading_in_progress = false;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));
