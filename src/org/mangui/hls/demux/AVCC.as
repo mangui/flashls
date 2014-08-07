@@ -1,8 +1,9 @@
 package org.mangui.hls.demux {
     import flash.utils.ByteArray;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.utils.*;
-    
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+        import org.mangui.hls.HLSSettings;
+    }
     public class AVCC {
         
         /** H264 profiles. **/
@@ -46,7 +47,5 @@ package org.mangui.hls.demux {
             return avcc;
         }
         ;
-    
     }
-
 }
