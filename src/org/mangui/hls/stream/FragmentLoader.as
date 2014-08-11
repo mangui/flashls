@@ -331,10 +331,10 @@ package org.mangui.hls.stream {
                 // decrypt data if needed
                 if (_last_segment_decrypt_key_url != null) {
                     _frag_decrypt_start_time = new Date().valueOf();
-                    CONFIG::LOGGING {
-                    Log.debug("init AES context");
-                    }
                     _decryptAES = new AES(_keymap[_last_segment_decrypt_key_url], _last_segment_decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
+                    CONFIG::LOGGING {
+                    Log.debug("init AES context:"+ _decryptAES);
+                    }
                 } else {
                     _decryptAES = null;
                 }
@@ -376,7 +376,7 @@ package org.mangui.hls.stream {
             Log.debug("Loading       duration/length/speed:" + _loading_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _loading_duration) / 1024).toFixed(0) + " kb/s");
             }
             _cancel_load = false;
-            if (_decryptAES != null) {
+            if (_decryptAES) {
                 _decryptAES.notifycomplete();
             } else {
                 _fragDecryptCompleteHandler();

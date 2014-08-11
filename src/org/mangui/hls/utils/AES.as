@@ -9,6 +9,7 @@ package org.mangui.hls.utils {
      */
     public class AES {
         private var _key : FastAESKey;
+        //private var _keyArray : ByteArray;
         private var iv0 : uint;
         private var iv1 : uint;
         private var iv2 : uint;
@@ -31,6 +32,7 @@ package org.mangui.hls.utils {
         private var _data_complete : Boolean;
 
         public function AES(key : ByteArray, iv : ByteArray, notifyprogress : Function, notifycomplete : Function) {
+            // _keyArray = key;
             _key = new FastAESKey(key);
             iv.position = 0;
             iv0 = iv.readUnsignedInt();
@@ -104,6 +106,17 @@ package org.mangui.hls.utils {
                 } else {
                     _read_position += CHUNK_SIZE;
                     decryptdata = _decryptCBC(_data, CHUNK_SIZE);
+                    /*
+                    if (_read_position == CHUNK_SIZE && decryptdata[0] != 0x47) {
+                    _data.position = 0;
+                    var ba : ByteArray = new ByteArray();
+                    _data.readBytes(ba, 0, 512);
+                    _data.position = _read_position;
+                    Log.debug("encrypt:" + Hex.fromArray(ba));
+                    Log.debug("key:" + Hex.fromArray(_keyArray));
+                    Log.debug("decrypt:" + Hex.fromArray(decryptdata));
+                    }
+                     */
                 }
                 _progress(decryptdata);
             } else {
