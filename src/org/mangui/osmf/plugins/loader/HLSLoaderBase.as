@@ -145,7 +145,7 @@ package org.mangui.osmf.plugins.loader {
             Log.warn("HLS Error event received, dispatching MediaError " + errorCode + "," + errorMsg);
             }
             updateLoadTrait(_loadTrait, LoadState.LOAD_ERROR);
-            dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, true, true, new MediaError(errorCode, errorMsg)));
+            _loadTrait.dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, false, false, new MediaError(errorCode, errorMsg)));
         }
     }
 }
