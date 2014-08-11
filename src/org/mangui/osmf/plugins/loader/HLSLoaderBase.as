@@ -1,13 +1,12 @@
 package org.mangui.osmf.plugins.loader {
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSError;
     import org.mangui.hls.HLSEvent;
 	import org.mangui.hls.model.Level;
     import org.mangui.hls.HLSTypes;
     import org.mangui.osmf.plugins.HLSMediaElement;
+    import org.mangui.osmf.plugins.utils.ErrorManager;
     import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;
     import org.osmf.events.MediaError;
-    import org.osmf.events.MediaErrorCodes;
     import org.osmf.events.MediaErrorEvent;
     import org.osmf.media.MediaElement;
     import org.osmf.media.MediaResourceBase;
@@ -140,29 +139,8 @@ package org.mangui.osmf.plugins.loader {
         }
 
         private function _errorHandler(event : HLSEvent) : void {
-            var errorCode : int = MediaErrorCodes.NETSTREAM_PLAY_FAILED;
-            var errorMsg : String = "Unknown error";
-            if (event && event.error) {
-                errorMsg = event.error.msg;
-                switch (event.error.code) {
-                    case HLSError.FRAGMENT_LOADING_ERROR:
-                    case HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR:
-                    case HLSError.KEY_LOADING_ERROR:
-                    case HLSError.KEY_LOADING_CROSSDOMAIN_ERROR:
-                    case HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR:
-                    case HLSError.MANIFEST_LOADING_IO_ERROR:
-                        errorCode = MediaErrorCodes.IO_ERROR;
-                        break;
-                    case HLSError.FRAGMENT_PARSING_ERROR:
-                    case HLSError.KEY_PARSING_ERROR:
-                    case HLSError.MANIFEST_PARSING_ERROR:
-                        errorCode = MediaErrorCodes.NETSTREAM_FILE_STRUCTURE_INVALID;
-                        break;
-                    case HLSError.TAG_APPENDING_ERROR:
-                        errorCode = MediaErrorCodes.ARGUMENT_ERROR;
-                        break;
-                }
-            }
+            var errorCode : int = ErrorManager.getMediaErrorCode(event);
+            var errorMsg : String = ErrorManager.getMediaErrorMessage(event);
             CONFIG::LOGGING {
             Log.warn("HLS Error event received, dispatching MediaError " + errorCode + "," + errorMsg);
             }
