@@ -3,8 +3,10 @@ package org.mangui.osmf.plugins {
     import flash.net.NetStream;
     
     import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSEvent;
     import org.mangui.osmf.plugins.loader.HLSNetLoader;
     import org.mangui.osmf.plugins.traits.*;
+    import org.mangui.osmf.plugins.utils.ErrorManager;
     
     import org.osmf.media.LoadableElementBase;
     import org.osmf.media.MediaElement;
@@ -23,6 +25,8 @@ package org.mangui.osmf.plugins {
     import org.osmf.traits.SeekTrait;
     import org.osmf.traits.TimeTrait;
     import org.osmf.utils.OSMFSettings;
+    import org.osmf.events.MediaError;
+    import org.osmf.events.MediaErrorEvent;
     
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
@@ -39,6 +43,7 @@ package org.mangui.osmf.plugins {
             _hls = hls;
             _defaultduration = duration;
             super(resource, new HLSNetLoader(hls));
+            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
         }
 
         protected function createVideo() : Video {
@@ -155,6 +160,15 @@ package org.mangui.osmf.plugins {
             // setup alternative audio trait
             var alternateAudioTrait : HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls, this as MediaElement);
             addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
+        }
+
+        private function _errorHandler(event : HLSEvent) : void {
+            var errorCode : int = ErrorManager.getMediaErrorCode(event);
+            var errorMsg : String = ErrorManager.getMediaErrorMessage(event);
+            CONFIG::LOGGING {
+            Log.warn("HLS Error event received, dispatching MediaError " + errorCode + "," + errorMsg);
+            }
+            dispatchEvent(new MediaErrorEvent(MediaErrorEvent.MEDIA_ERROR, false, false, new MediaError(errorCode, errorMsg)));
         }
     }
 }
