@@ -33,11 +33,6 @@ package org.mangui.hls.demux {
             _data = null;
         }
 
-        /** flush demux */
-        public function flush() : void {
-            return;
-        }
-
         public function notifycomplete() : void {
             CONFIG::LOGGING {
                 Log.debug("MP3: extracting MP3 tags");

@@ -5,6 +5,5 @@ package org.mangui.hls.demux {
         function append(data : ByteArray) : void;
         function notifycomplete() : void;
         function cancel() : void;
-        function flush() : void;
     }
 }

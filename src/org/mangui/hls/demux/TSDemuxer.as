@@ -158,13 +158,14 @@ package org.mangui.hls.demux {
                     } else {
                         _timer.stop();
                     }
+                    _flush();
                     _callback_complete();
                 }
             }
         }
 
         /** flux demux **/
-        public function flush() : void {
+        private function _flush() : void {
             CONFIG::LOGGING {
                 Log.debug("TS: flushing demux");
             }            
