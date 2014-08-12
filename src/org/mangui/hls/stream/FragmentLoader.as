@@ -433,7 +433,7 @@ package org.mangui.hls.stream {
                 Log.debug("MPEG2-TS found");
                 }
                 _video_tags_expected = true;
-                return new TSDemuxer(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
+                return new TSDemuxer(_hls.stage,_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else {
                 CONFIG::LOGGING {
                 Log.debug("probe fails");
