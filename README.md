@@ -114,8 +114,8 @@ flowplayer("player", 'http://releases.flowplayer.org/swf/flowplayer-3.2.12.swf',
   // ...
   plugins: {
     httpstreaming: {
-      // HLSProvider configuration options
-      url: 'HLSProviderFlowPlayer.swf',
+      // flashls configuration options
+      url: 'flashlsFlowPlayer.swf',
       hls_debug: false,
       hls_debug2: false,
       hls_lowbufferlength: 3,
@@ -140,8 +140,8 @@ var playerOptions = {
   // Strobe Media Playback configuration options
   // ...
   source: 'http://example.com/stream.m3u8',
-  // HLSProvider configuration options
-  plugin_hls: "HLSProvider.swf",
+  // flashls configuration options
+  plugin_hls: "flashlsOSMF.swf",
   hls_debug: false,
   hls_debug2: false,
   hls_minbufferlength: -1,
