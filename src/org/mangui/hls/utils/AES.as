@@ -1,8 +1,8 @@
 package org.mangui.hls.utils {
+    import flash.display.DisplayObject;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
     import flash.events.Event;
-    import flash.events.TimerEvent;
 
     /**
      * Contains Utility functions for AES-128 CBC Decryption
@@ -18,8 +18,6 @@ package org.mangui.hls.utils {
         private var _progress : Function;
         /* callback function upon decrypt complete */
         private var _complete : Function;
-        /** Timer for decrypting packets **/
-        private var _timer : Timer;
         /** Byte data to be decrypt **/
         private var _data : ByteArray;
         /** read position **/
@@ -30,8 +28,10 @@ package org.mangui.hls.utils {
         private static const CHUNK_SIZE : uint = 2048;
         /** is bytearray full ? **/
         private var _data_complete : Boolean;
+        /** display object used for ENTER_FRAME listener */
+        private var _displayObject : DisplayObject;
 
-        public function AES(key : ByteArray, iv : ByteArray, notifyprogress : Function, notifycomplete : Function) {
+        public function AES(displayObject : DisplayObject, key : ByteArray, iv : ByteArray, notifyprogress : Function, notifycomplete : Function) {
             // _keyArray = key;
             _key = new FastAESKey(key);
             iv.position = 0;
@@ -45,8 +45,7 @@ package org.mangui.hls.utils {
             _complete = notifycomplete;
             _read_position = 0;
             _write_position = 0;
-            _timer = new Timer(0, 0);
-            _timer.addEventListener(TimerEvent.TIMER, _decryptTimer);
+            _displayObject = displayObject;
         }
 
         public function append(data : ByteArray) : void {
@@ -55,8 +54,10 @@ package org.mangui.hls.utils {
             // }
             _data.position = _write_position;
             _data.writeBytes(data);
+            if (_write_position == 0) {
+                _displayObject.addEventListener(Event.ENTER_FRAME, _decryptTimer)
+            }
             _write_position += data.length;
-            _timer.start();
         }
 
         public function notifycomplete() : void {
@@ -64,26 +65,23 @@ package org.mangui.hls.utils {
             // Log.info("notify complete");
             // }
             _data_complete = true;
-            _timer.start();
         }
 
         public function cancel() : void {
-            if (_timer) {
-                _timer.stop();
-                _timer = null;
-            }
+            _displayObject.removeEventListener(Event.ENTER_FRAME, _decryptTimer);
         }
 
         private function _decryptTimer(e : Event) : void {
             var start_time : Number = new Date().getTime();
+            var decrypted : Boolean;
             do {
-                _decryptData();
+                decrypted = _decryptChunk();
                 // dont spend more than 20 ms in the decrypt timer to avoid blocking/freezing video
-            } while (_timer.running && new Date().getTime() - start_time < 20);
+            } while (decrypted && new Date().getTime() - start_time < 20);
         }
 
         /** decrypt a small chunk of packets each time to avoid blocking **/
-        private function _decryptData() : void {
+        private function _decryptChunk() : Boolean {
             _data.position = _read_position;
             var decryptdata : ByteArray;
             if (_data.bytesAvailable) {
@@ -96,41 +94,25 @@ package org.mangui.hls.utils {
                         decryptdata = _decryptCBC(_data, _data.bytesAvailable);
                         unpad(decryptdata);
                     } else {
-                        // data not complete, and available data less than chunk size, stop timer and return
-                        // CONFIG::LOGGING {
-                        // Log.info("data not complete, stop timer");
-                        // }
-                        _timer.stop();
-                        return;
+                        // data not complete, and available data less than chunk size, return
+                        return false;
                     }
                 } else {
                     _read_position += CHUNK_SIZE;
                     decryptdata = _decryptCBC(_data, CHUNK_SIZE);
-                    /*
-                    if (_read_position == CHUNK_SIZE && decryptdata[0] != 0x47) {
-                    _data.position = 0;
-                    var ba : ByteArray = new ByteArray();
-                    _data.readBytes(ba, 0, 512);
-                    _data.position = _read_position;
-                    Log.debug("encrypt:" + Hex.fromArray(ba));
-                    Log.debug("key:" + Hex.fromArray(_keyArray));
-                    Log.debug("decrypt:" + Hex.fromArray(decryptdata));
-                    }
-                     */
                 }
                 _progress(decryptdata);
+                return true;
             } else {
-                // CONFIG::LOGGING {
-                // Log.info("no bytes available, stop timer");
-                // }
-                _timer.stop();
                 if (_data_complete) {
                     CONFIG::LOGGING {
                         Log.debug("AES:data+decrypt completed, callback");
                     }
                     // callback
                     _complete();
+                    _displayObject.removeEventListener(Event.ENTER_FRAME, _decryptTimer);
                 }
+                return false;
             }
         }
 
