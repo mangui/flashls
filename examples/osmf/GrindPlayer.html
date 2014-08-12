@@ -15,7 +15,7 @@
   ga('create', 'UA-52843650-1', 'auto');
   ga('send', 'pageview');
 
-</script> 
+</script>
           
         <script type="text/javascript" src="lib/swfobject.js">
         </script>
@@ -115,7 +115,7 @@ function listStreams(list, container) {
             // Embed the player SWF:                
             swfobject.embedSWF(
                 "GrindPlayer.swf"
-                , "StrobeMediaPlayback"
+                , "GrindPlayer"
                 , 640
                 , 480
                 , "10.1.0"
@@ -126,7 +126,7 @@ function listStreams(list, container) {
                     wmode: wmodeValue
                 }
                 , {
-                    name: "StrobeMediaPlayback"
+                    name: "GrindPlayer"
                 }
             );
             
@@ -139,7 +139,7 @@ function listStreams(list, container) {
                     <img src="images/adobe-lq.png" alt="" width="43" height="72" />
                 </td>
                 <td width="320" class="Verdana">
-                    Strobe Media Playback
+                    GrindPlayer
                 </td>
                 <td width="262">
                     <img src="images/osmf_horizontal_red.png" width="262" height="57" alt="osmf logo"/>
@@ -151,7 +151,7 @@ function listStreams(list, container) {
         <table width="100%" border="0" cellspacing="5">
             <tr>
                 <td>
-                    <div id="StrobeMediaPlayback">
+                    <div id="GrindPlayer">
                         <p>
                             Alternative content
                         </p>
