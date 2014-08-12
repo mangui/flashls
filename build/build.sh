@@ -1,18 +1,14 @@
 #!/bin/bash
-FLEXPATH=../../flex_sdk_4.6
-#FLEXPATH=../../../apache_flex_sdk
-#FLEXPATH=../../../AIRSDK_Compiler
+#FLEXPATH=../../flex_sdk_4.6
+#FLEXPATH=../../apache_flex_sdk
+FLEXPATH=../../AIR_SDK
 
 OPT_DEBUG="-use-network=false \
     -optimize=true \
-    -incremental=true \
-    -static-link-runtime-shared-libraries=true \
     -define=CONFIG::LOGGING,true"
 
 OPT_RELEASE="-use-network=false \
     -optimize=true \
-    -incremental=true \
-    -static-link-runtime-shared-libraries=true \
     -define=CONFIG::LOGGING,false"
 
 echo "Compiling bin/debug/flashls.swc"
