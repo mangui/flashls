@@ -235,6 +235,6 @@ if __name__ == "__main__":
 	outFile.close()
 	
 	if passwordClear:
-		print("Added opt-in flag with encrypted password " + passwordClear)
+		print("Added Telemetry flag with encrypted password " + passwordClear + " in " + infile)
 	else:
-		print("Added opt-in flag with no password")
+		print("Added Telemetry flag in " + infile)
