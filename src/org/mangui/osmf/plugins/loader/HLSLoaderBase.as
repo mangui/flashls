@@ -111,7 +111,7 @@ package org.mangui.osmf.plugins.loader {
                 }
             }
             dynamicRes.streamItems = streamItems;
-            dynamicRes.initialIndex = 0;
+            dynamicRes.initialIndex = _hls.startlevel;
             resource = dynamicRes;
             // set Stream Type
             var streamUrlRes : StreamingURLResource = resource as StreamingURLResource;

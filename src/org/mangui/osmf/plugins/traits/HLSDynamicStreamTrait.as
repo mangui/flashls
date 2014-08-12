@@ -17,7 +17,7 @@ package org.mangui.osmf.plugins.traits {
             }
             _hls = hls;
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
-            super(true, 0, hls.levels.length);
+            super(true, _hls.startlevel, hls.levels.length);
         }
 
         override public function dispose() : void {
