@@ -15,6 +15,9 @@
   ga('send', 'pageview');
 
 </script>
+
+<script type="text/javascript" src="../libs/ParsedQueryString.js"></script>
+
 <style type="text/css">
 a:link {
   color: blue;
@@ -192,7 +195,14 @@ function listStreams(list, container) {
     entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
     document.getElementById(container).appendChild(entry);
   }
-  loadStream(list[0].file);
+  var pqs = new ParsedQueryString();
+  var queryUrl = pqs.param("src");
+  if(queryUrl) {
+  	document.getElementById("userInput").value=queryUrl;
+  	loadStream(queryUrl);
+  } else {
+    loadStream(list[0].file);
+  }
 }
 
 function appendLog(txt)
