@@ -1,13 +1,12 @@
 package org.mangui.hls.stream {
-    
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
-    
+
     import org.mangui.hls.*;
     import org.mangui.hls.demux.*;
-	import org.mangui.hls.flv.*;
+    import org.mangui.hls.flv.*;
     import org.mangui.hls.playlist.*;
     import org.mangui.hls.stream.*;
     import org.mangui.hls.model.Fragment;
@@ -16,10 +15,9 @@ package org.mangui.hls.stream {
     import org.mangui.hls.utils.PTS;
 
     CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    import org.mangui.hls.utils.Hex;
+        import org.mangui.hls.utils.Log;
+        import org.mangui.hls.utils.Hex;
     }
-
     /** Class that fetches fragments. **/
     public class FragmentLoader {
         /** Reference to the HLS controller. **/
@@ -112,8 +110,6 @@ package org.mangui.hls.stream {
         private var _max_audio_pts_tags : Number;
         private var _min_video_pts_tags : Number;
         private var _max_video_pts_tags : Number;
-        /* ref PTS / DTS value for PTS looping */
-        private var _ref_pts : Number;
         /* demux instance */
         private var _demux : Demuxer;
         private var _audio_tags_found : Boolean;
@@ -184,7 +180,7 @@ package org.mangui.hls.stream {
                     - after long pause
                     seek to offset 0 to force a restart of the playback session  */
                     CONFIG::LOGGING {
-                    Log.warn("long pause on live stream or bad network quality");
+                        Log.warn("long pause on live stream or bad network quality");
                     }
                     _timer.stop();
                     seek(-1, _callback);
@@ -215,7 +211,7 @@ package org.mangui.hls.stream {
                 ev.audioTrack = _audioTrackId;
                 _hls.dispatchEvent(ev);
                 CONFIG::LOGGING {
-                Log.info('Setting audio track to ' + num);
+                    Log.info('Setting audio track to ' + num);
                 }
             }
         }
@@ -235,29 +231,28 @@ package org.mangui.hls.stream {
         /** key load completed. **/
         private function _keyLoadCompleteHandler(event : Event) : void {
             CONFIG::LOGGING {
-            Log.debug("key loading completed");
+                Log.debug("key loading completed");
             }
             var hlsError : HLSError;
-            var frag : Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
             // Collect key data
             if ( _keystreamloader.bytesAvailable == 16 ) {
                 var keyData : ByteArray = new ByteArray();
                 _keystreamloader.readBytes(keyData, 0, 0);
-                _keymap[frag.decrypt_url] = keyData;
+                _keymap[_current_frag.decrypt_url] = keyData;
                 // now load fragment
                 try {
                     CONFIG::LOGGING {
-                    Log.debug("loading fragment:" + frag.url);
+                        Log.debug("loading fragment:" + _current_frag.url);
                     }
                     _fragByteArray = null;
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, frag.url));
-                    _fragstreamloader.load(new URLRequest(frag.url));
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, _current_frag.url));
+                    _fragstreamloader.load(new URLRequest(_current_frag.url));
                 } catch (error : Error) {
-                    hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
+                    hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _current_frag.url, error.message);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                 }
             } else {
-                hlsError = new HLSError(HLSError.KEY_PARSING_ERROR, frag.decrypt_url, "invalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes");
+                hlsError = new HLSError(HLSError.KEY_PARSING_ERROR, _current_frag.decrypt_url, "invalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         };
@@ -276,13 +271,13 @@ package org.mangui.hls.stream {
             we need to report it.
              */
             CONFIG::LOGGING {
-            Log.error("I/O Error while loading fragment:" + message);
+                Log.error("I/O Error while loading fragment:" + message);
             }
             if (HLSSettings.fragmentLoadMaxRetry == -1 || _retry_count < HLSSettings.fragmentLoadMaxRetry) {
                 _bIOError = true;
                 _nIOErrorDate = new Date().valueOf() + _retry_timeout;
                 CONFIG::LOGGING {
-                Log.warn("retry fragment load in " + _retry_timeout + " ms, count=" + _retry_count);
+                    Log.warn("retry fragment load in " + _retry_timeout + " ms, count=" + _retry_count);
                 }
                 /* exponential increase of retry timeout, capped to fragmentLoadMaxRetryTimeout */
                 _retry_count++;
@@ -309,18 +304,13 @@ package org.mangui.hls.stream {
                 _video_tags_found = false;
                 _min_audio_pts_frag = _min_video_pts_frag = _min_audio_pts_tags = _min_video_pts_tags = Number.POSITIVE_INFINITY;
                 _max_audio_pts_frag = _max_video_pts_frag = _max_audio_pts_tags = _max_video_pts_tags = Number.NEGATIVE_INFINITY;
-                var frag : Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
-                if (frag && frag.metrics.pts_start_computed != Number.NEGATIVE_INFINITY) {
-                    _ref_pts = frag.metrics.pts_start_computed;
-                } else {
-                    _ref_pts = NaN;
-                }
+
                 // decrypt data if needed
                 if (_current_frag.decrypt_url != null) {
                     _frag_decrypt_start_time = new Date().valueOf();
-                    _decryptAES = new AES(_hls.stage,_keymap[_current_frag.decrypt_url], _current_frag.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
+                    _decryptAES = new AES(_hls.stage, _keymap[_current_frag.decrypt_url], _current_frag.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
-                    Log.debug("init AES context:"+ _decryptAES);
+                        Log.debug("init AES context:" + _decryptAES);
                     }
                 } else {
                     _decryptAES = null;
@@ -348,7 +338,7 @@ package org.mangui.hls.stream {
             _retry_timeout = 1000;
             if (_fragByteArray == null) {
                 CONFIG::LOGGING {
-                Log.warn("fragment size is null, invalid it and load next one");
+                    Log.warn("fragment size is null, invalid it and load next one");
                 }
                 _levels[_level].updateFragment(_seqnum, false);
                 _need_reload = true;
@@ -356,11 +346,11 @@ package org.mangui.hls.stream {
             }
             _last_segment_size = _fragWritePosition;
             CONFIG::LOGGING {
-            Log.debug("loading completed");
+                Log.debug("loading completed");
             }
             var _loading_duration : uint = (new Date().valueOf() - _frag_loading_start_time);
             CONFIG::LOGGING {
-            Log.debug("Loading       duration/length/speed:" + _loading_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _loading_duration) / 1024).toFixed(0) + " kb/s");
+                Log.debug("Loading       duration/length/speed:" + _loading_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _loading_duration) / 1024).toFixed(0) + " kb/s");
             }
             _cancel_load = false;
             if (_decryptAES) {
@@ -401,29 +391,29 @@ package org.mangui.hls.stream {
         private function probe(data : ByteArray) : Demuxer {
             data.position = 0;
             CONFIG::LOGGING {
-            Log.debug("probe fragment type");
+                Log.debug("probe fragment type");
             }
             if (AACDemuxer.probe(data) == true) {
                 CONFIG::LOGGING {
-                Log.debug("AAC ES found");
+                    Log.debug("AAC ES found");
                 }
                 _video_tags_expected = false;
                 return new AACDemuxer(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else if (MP3Demuxer.probe(data) == true) {
                 CONFIG::LOGGING {
-                Log.debug("MP3 ES found");
+                    Log.debug("MP3 ES found");
                 }
                 _video_tags_expected = false;
                 return new MP3Demuxer(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else if (TSDemuxer.probe(data) == true) {
                 CONFIG::LOGGING {
-                Log.debug("MPEG2-TS found");
+                    Log.debug("MPEG2-TS found");
                 }
                 _video_tags_expected = true;
-                return new TSDemuxer(_hls.stage,_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
+                return new TSDemuxer(_hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else {
                 CONFIG::LOGGING {
-                Log.debug("probe fails");
+                    Log.debug("probe fails");
                 }
                 return null;
             }
@@ -436,7 +426,7 @@ package org.mangui.hls.stream {
             if (_decryptAES) {
                 var decrypt_duration : Number = (new Date().valueOf() - _frag_decrypt_start_time);
                 CONFIG::LOGGING {
-                Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + _fragWritePosition + "/" + ((8000 * _fragWritePosition / decrypt_duration) / 1024).toFixed(0) + " kb/s");
+                    Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + _fragWritePosition + "/" + ((8000 * _fragWritePosition / decrypt_duration) / 1024).toFixed(0) + " kb/s");
                 }
                 _decryptAES = null;
             }
@@ -444,7 +434,7 @@ package org.mangui.hls.stream {
             // deal with byte range here
             if (_current_frag.byterange_start_offset != -1) {
                 CONFIG::LOGGING {
-                Log.debug("trim byte range, start/end offset:" + _current_frag.byterange_start_offset + "/" + _current_frag.byterange_end_offset);
+                    Log.debug("trim byte range, start/end offset:" + _current_frag.byterange_start_offset + "/" + _current_frag.byterange_end_offset);
                 }
                 var ba : ByteArray = new ByteArray();
                 _fragByteArray.position = _current_frag.byterange_start_offset;
@@ -458,14 +448,14 @@ package org.mangui.hls.stream {
 
             if (_demux == null) {
                 CONFIG::LOGGING {
-                Log.error("unknown fragment type");
-                if (HLSSettings.logDebug2) {
-                    _fragByteArray.position = 0;
-                    var ba2 : ByteArray = new ByteArray();
-                    _fragByteArray.readBytes(ba2, 0, 512);
-                    Log.debug2("frag dump(512 bytes)");
-                    Log.debug2(Hex.fromArray(ba2));
-                }
+                    Log.error("unknown fragment type");
+                    if (HLSSettings.logDebug2) {
+                        _fragByteArray.position = 0;
+                        var ba2 : ByteArray = new ByteArray();
+                        _fragByteArray.readBytes(ba2, 0, 512);
+                        Log.debug2("frag dump(512 bytes)");
+                        Log.debug2(Hex.fromArray(ba2));
+                    }
                 }
                 // invalid fragment
                 _fraghandleIOError("invalid content received");
@@ -552,7 +542,7 @@ package org.mangui.hls.stream {
             } else if (_manual_level == -1 && _levels.length > 1 ) {
                 level = _autoLevelManager.getnextlevel(_level, buffer, _last_segment_duration, _last_fragment_processing_duration, _last_bandwidth);
             } else if (_manual_level == -1 && _levels.length == 1 ) {
-                level = 0;  
+                level = 0;
             } else {
                 level = _manual_level;
             }
@@ -566,7 +556,7 @@ package org.mangui.hls.stream {
 
         private function _loadfirstfragment(position : Number) : int {
             CONFIG::LOGGING {
-            Log.debug("loadfirstfragment(" + position + ")");
+                Log.debug("loadfirstfragment(" + position + ")");
             }
             _need_reload = false;
             _switchlevel = true;
@@ -576,7 +566,7 @@ package org.mangui.hls.stream {
             if ((_levels[_level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != _level)) {
                 // playlist not yet received
                 CONFIG::LOGGING {
-                Log.debug("loadfirstfragment : playlist not received for level:" + _level);
+                    Log.debug("loadfirstfragment : playlist not received for level:" + _level);
                 }
                 return 1;
             }
@@ -600,7 +590,7 @@ package org.mangui.hls.stream {
                 seek_position = Math.max(position, 0);
             }
             CONFIG::LOGGING {
-            Log.debug("loadfirstfragment : requested position:" + position + ",seek position:" + seek_position);
+                Log.debug("loadfirstfragment : requested position:" + position + ",seek position:" + seek_position);
             }
             position = seek_position;
 
@@ -612,16 +602,16 @@ package org.mangui.hls.stream {
             _last_segment_continuity_counter = frag.continuity;
             _last_segment_program_date = frag.program_date;
             CONFIG::LOGGING {
-            Log.debug("Loading       " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
+                Log.debug("Loading       " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
             }
             _loadfragment(frag);
             return 0;
         }
-        
+
         /** Load a fragment **/
         private function _loadnextfragment() : int {
             CONFIG::LOGGING {
-            Log.debug("loadnextfragment()");
+                Log.debug("loadnextfragment()");
             }
             _need_reload = false;
 
@@ -630,7 +620,7 @@ package org.mangui.hls.stream {
             if ((_levels[_level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != _level)) {
                 // playlist not yet received
                 CONFIG::LOGGING {
-                Log.debug("loadnextfragment : playlist not received for level:" + _level);
+                    Log.debug("loadnextfragment : playlist not received for level:" + _level);
                 }
                 return 1;
             }
@@ -648,14 +638,14 @@ package org.mangui.hls.stream {
                 if (_last_segment_program_date) {
                     last_seqnum = _levels[_level].getSeqNumFromProgramDate(_last_segment_program_date);
                     CONFIG::LOGGING {
-                    Log.debug("loadnextfragment : getSeqNumFromProgramDate(level,date,cc:" + _level + "," + _last_segment_program_date + ")=" + last_seqnum);
+                        Log.debug("loadnextfragment : getSeqNumFromProgramDate(level,date,cc:" + _level + "," + _last_segment_program_date + ")=" + last_seqnum);
                     }
                 }
                 if (last_seqnum == -1) {
                     // if we are here, it means that no program date info is available in the playlist. try to get last seqnum position from PTS + continuity counter
                     last_seqnum = _levels[_level].getSeqNumNearestPTS(_last_segment_start_pts, _last_segment_continuity_counter);
                     CONFIG::LOGGING {
-                    Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + _level + "," + _last_segment_start_pts + "," + _last_segment_continuity_counter + ")=" + last_seqnum);
+                        Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + _level + "," + _last_segment_start_pts + "," + _last_segment_continuity_counter + ")=" + last_seqnum);
                     }
                     if (last_seqnum == Number.POSITIVE_INFINITY) {
                         /* requested PTS above max PTS of this level:
@@ -670,7 +660,7 @@ package org.mangui.hls.stream {
                         get first fragment from playlist matching with criteria and load pts */
                         last_seqnum = _levels[_level].getFirstSeqNumfromContinuity(_last_segment_continuity_counter);
                         CONFIG::LOGGING {
-                        Log.debug("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:" + _level + "," + _last_segment_continuity_counter + ")=" + last_seqnum);
+                            Log.debug("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:" + _level + "," + _last_segment_continuity_counter + ")=" + last_seqnum);
                         }
                         if (last_seqnum == Number.NEGATIVE_INFINITY) {
                             // playlist not yet received
@@ -704,14 +694,15 @@ package org.mangui.hls.stream {
                     frag = _levels[_level].getFragmentfromSeqNum(new_seqnum);
                     if (frag == null) {
                         CONFIG::LOGGING {
-                        Log.warn("error trying to load " + new_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
+                            Log.warn("error trying to load " + new_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
                         }
                         return 1;
                     }
                     // update program date
                     _last_segment_program_date = frag.program_date;
                     // check whether there is a discontinuity between last segment and new segment
-                    _hasDiscontinuity = (frag.continuity != _last_segment_continuity_counter);;
+                    _hasDiscontinuity = (frag.continuity != _last_segment_continuity_counter);
+                    ;
                     // update discontinuity counter
                     _last_segment_continuity_counter = frag.continuity;
                     log_prefix = "Loading       ";
@@ -721,7 +712,7 @@ package org.mangui.hls.stream {
             _frag_loading_start_time = new Date().valueOf();
             frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
             CONFIG::LOGGING {
-            Log.debug(log_prefix + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
+                Log.debug(log_prefix + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
             }
             _loadfragment(frag);
             return 0;
@@ -750,7 +741,7 @@ package org.mangui.hls.stream {
                 if (_keymap[frag.decrypt_url] == undefined) {
                     // load key
                     CONFIG::LOGGING {
-                    Log.debug("loading key:" + frag.decrypt_url);
+                        Log.debug("loading key:" + frag.decrypt_url);
                     }
                     _keystreamloader.load(new URLRequest(frag.decrypt_url));
                     return;
@@ -759,7 +750,7 @@ package org.mangui.hls.stream {
             try {
                 _fragByteArray = null;
                 CONFIG::LOGGING {
-                Log.debug("loading fragment:" + frag.url);
+                    Log.debug("loading fragment:" + frag.url);
                 }
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, frag.url));
                 _fragstreamloader.load(new URLRequest(frag.url));
@@ -773,7 +764,7 @@ package org.mangui.hls.stream {
         private function _altAudioTracksListChangedHandler(event : HLSEvent) : void {
             _altAudioTrackLists = event.altAudioTracks;
             CONFIG::LOGGING {
-            Log.info(_altAudioTrackLists.length + " alternate audio tracks found");
+                Log.info(_altAudioTrackLists.length + " alternate audio tracks found");
             }
         }
 
@@ -804,7 +795,7 @@ package org.mangui.hls.stream {
                         if (altAudioTrack.group_id == stream_id) {
                             var isDefault : Boolean = (altAudioTrack.default_track == true || altAudioTrack.autoselect == true);
                             CONFIG::LOGGING {
-                            Log.debug(" audio track[" + audioTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
+                                Log.debug(" audio track[" + audioTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
                             }
                             audioTrackList.push(new HLSAudioTrack(altAudioTrack.name, HLSAudioTrack.FROM_PLAYLIST, idx, isDefault));
                         }
@@ -858,7 +849,7 @@ package org.mangui.hls.stream {
                 // if URL set, default audio track is not embedded into MPEG2-TS
                 if (_altAudioTrackLists[audioTrack_.id].url || default_demux == -1) {
                     CONFIG::LOGGING {
-                    Log.debug("default audio track found in Manifest");
+                        Log.debug("default audio track found in Manifest");
                     }
                     default_found = true;
                     _audioTracks.push(audioTrack_);
@@ -867,7 +858,7 @@ package org.mangui.hls.stream {
                     default_track_title = audioTrack_.title;
                     if (default_demux != -1) {
                         CONFIG::LOGGING {
-                        Log.debug("default audio track signaled in Manifest, will be retrieved from MPEG2-TS");
+                            Log.debug("default audio track signaled in Manifest, will be retrieved from MPEG2-TS");
                         }
                         audioTrack_ = _audioTracksfromDemux[default_demux];
                         audioTrack_.title = default_track_title;
@@ -884,7 +875,7 @@ package org.mangui.hls.stream {
             for (i = 0; i < _audioTracksfromManifest.length; i++) {
                 if (i != default_manifest) {
                     CONFIG::LOGGING {
-                    Log.debug("alternate audio track found in Manifest");
+                        Log.debug("alternate audio track found in Manifest");
                     }
                     audioTrack_ = _audioTracksfromManifest[i];
                     _audioTracks.push(audioTrack_);
@@ -894,7 +885,7 @@ package org.mangui.hls.stream {
             for (i = 0; i < _audioTracksfromDemux.length; i++) {
                 if (i != default_demux) {
                     CONFIG::LOGGING {
-                    Log.debug("alternate audio track retrieved from demux");
+                        Log.debug("alternate audio track retrieved from demux");
                     }
                     audioTrack_ = _audioTracksfromDemux[i];
                     _audioTracks.push(audioTrack_);
@@ -944,13 +935,15 @@ package org.mangui.hls.stream {
 
         private function _fragParsingProgressHandler(tags : Vector.<FLVTag>) : void {
             CONFIG::LOGGING {
-            Log.debug2(tags.length + " tags extracted");
+                Log.debug2(tags.length + " tags extracted");
             }
             var tag : FLVTag;
+            /* ref PTS / DTS value for PTS looping */
+            var ref_pts : Number = _current_frag.metrics.pts_start_computed;
             // Audio PTS/DTS normalization + min/max computation
             for each (tag in tags) {
-                tag.pts = PTS.normalize(_ref_pts, tag.pts);
-                tag.dts = PTS.normalize(_ref_pts, tag.dts);
+                tag.pts = PTS.normalize(ref_pts, tag.pts);
+                tag.dts = PTS.normalize(ref_pts, tag.dts);
                 if (tag.type == FLVTag.AAC_HEADER || tag.type == FLVTag.AAC_RAW || tag.type == FLVTag.MP3_RAW) {
                     _audio_tags_found = true;
                     _min_audio_pts_tags = Math.min(_min_audio_pts_tags, tag.pts);
@@ -1019,7 +1012,7 @@ package org.mangui.hls.stream {
                         _levels[_level].updateFragment(_seqnum, true, frag_min_pts, frag_min_pts + _current_frag.duration * 1000);
                         /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
                         CONFIG::LOGGING {
-                        Log.debug("analyzed  PTS " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + min_pts);
+                            Log.debug("analyzed  PTS " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + min_pts);
                         }
                         /* check if fragment loaded for PTS analysis is the next one
                         if this is the expected one, then continue
@@ -1032,8 +1025,8 @@ package org.mangui.hls.stream {
                         if (next_seqnum != _seqnum) {
                             _pts_just_loaded = true;
                             CONFIG::LOGGING {
-                                Log.debug("PTS analysis done on " + _seqnum +  ", matching seqnum is " + next_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],cancel loading and get new one");
-                            }                            
+                                Log.debug("PTS analysis done on " + _seqnum + ", matching seqnum is " + next_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],cancel loading and get new one");
+                            }
                             // cancel loading
                             _stop_load();
                             // tell that new fragment could be loaded
@@ -1080,13 +1073,13 @@ package org.mangui.hls.stream {
                 min_pts_tags = _min_audio_pts_tags;
                 max_pts_tags = _max_audio_pts_tags;
                 CONFIG::LOGGING {
-                Log.debug("m/M audio PTS:" + min_pts_frag + "/" + max_pts_frag);
+                    Log.debug("m/M audio PTS:" + min_pts_frag + "/" + max_pts_frag);
                 }
             }
 
             if (_video_tags_found) {
                 CONFIG::LOGGING {
-                Log.debug("m/M video PTS:" + _min_video_pts_frag + "/" + _max_video_pts_frag);
+                    Log.debug("m/M video PTS:" + _min_video_pts_frag + "/" + _max_video_pts_frag);
                 }
                 if (!_audio_tags_found) {
                     // no audio, video only stream
@@ -1095,9 +1088,10 @@ package org.mangui.hls.stream {
                     min_pts_tags = _min_video_pts_tags;
                     max_pts_tags = _max_video_pts_tags;
                 } else {
-                    null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
+                    null;
+                    // just to avoid compilaton warnings if CONFIG::LOGGING is false
                     CONFIG::LOGGING {
-                    Log.debug("Delta audio/video m/M PTS:" + (_min_video_pts_frag - _min_audio_pts_frag) + "/" + (_max_video_pts_frag - _max_audio_pts_frag));
+                        Log.debug("Delta audio/video m/M PTS:" + (_min_video_pts_frag - _min_audio_pts_frag) + "/" + (_max_video_pts_frag - _max_audio_pts_frag));
                     }
                 }
             } else {
@@ -1109,7 +1103,7 @@ package org.mangui.hls.stream {
             _last_fragment_processing_duration = (new Date().valueOf() - _frag_loading_start_time);
             _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_fragment_processing_duration);
             CONFIG::LOGGING {
-            Log.debug("Total Process duration/length/speed:" + _last_fragment_processing_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _last_fragment_processing_duration) / 1024).toFixed(0) + " kb/s");
+                Log.debug("Total Process duration/length/speed:" + _last_fragment_processing_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _last_fragment_processing_duration) / 1024).toFixed(0) + " kb/s");
             }
 
             if (_manifest_just_loaded) {
@@ -1119,7 +1113,7 @@ package org.mangui.hls.stream {
                     var bestlevel : int = _autoLevelManager.getbestlevel(_last_bandwidth);
                     if (bestlevel > _level) {
                         CONFIG::LOGGING {
-                        Log.info("enough download bandwidth, adjust start level from " + _level + " to " + bestlevel);
+                            Log.info("enough download bandwidth, adjust start level from " + _level + " to " + bestlevel);
                         }
                         // let's directly jump to the accurate level to improve quality at player start
                         _level = bestlevel;
@@ -1137,7 +1131,7 @@ package org.mangui.hls.stream {
                 _last_segment_start_pts = min_pts_frag;
 
                 CONFIG::LOGGING {
-                Log.debug("Loaded        " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + min_pts_frag + "/" + max_pts_frag);
+                    Log.debug("Loaded        " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + min_pts_frag + "/" + max_pts_frag);
                 }
                 var start_offset : Number = _levels[_level].updateFragment(_seqnum, true, min_pts_frag, max_pts_frag);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
@@ -1148,7 +1142,7 @@ package org.mangui.hls.stream {
                     _min_audio_pts_tags = _max_audio_pts_tags;
                     _min_video_pts_tags = _max_video_pts_tags;
                     _hasDiscontinuity = false;
-                    _tags = new Vector.<FLVTag>();                    
+                    _tags = new Vector.<FLVTag>();
                 }
                 _pts_loading_in_progress = false;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));

@@ -75,7 +75,7 @@ CONFIG::LOGGING {
             if (fragments.length == 0)
                 return -1;
             var firstIndex : Number = getFirstIndexfromContinuity(continuity);
-            if (firstIndex == -1 || fragments[firstIndex].metrics.pts_start_computed == Number.NEGATIVE_INFINITY)
+            if (firstIndex == -1 || isNaN(fragments[firstIndex].metrics.pts_start_computed))
                 return -1;
             var lastIndex : Number = getLastIndexfromContinuity(continuity);
 
@@ -94,7 +94,7 @@ CONFIG::LOGGING {
             if (fragments.length)
                 return fragments[0].metrics.pts_start_computed;
             else
-                return Number.NEGATIVE_INFINITY;
+                return NaN;
         }
 
         /** Return the fragment index from fragment sequence number **/
@@ -170,7 +170,7 @@ CONFIG::LOGGING {
             // update PTS from previous fragments
             for (var i : int = 0; i < len; i++) {
                 frag = getFragmentfromSeqNum(_fragments[i].seqnum);
-                if (frag != null && frag.metrics.pts_start != Number.NEGATIVE_INFINITY) {
+                if (frag != null && !isNaN(frag.metrics.pts_start)) {
                     _fragments[i].metrics = frag.metrics;
                     idx_with_metrics = i;
                 }
@@ -217,7 +217,7 @@ CONFIG::LOGGING {
             var frag_to : Fragment = fragments[to_index];
 
             if (frag_from.metrics.valid && frag_to.metrics.valid) {
-                if (frag_to.metrics.pts_start != Number.NEGATIVE_INFINITY) {
+                if (!isNaN(frag_to.metrics.pts_start)) {
                     // we know PTS[to_index]
                     frag_to.metrics.pts_start_computed = frag_to.metrics.pts_start;
                     /* normalize computed PTS value based on known PTS value.

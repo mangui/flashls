@@ -10,8 +10,8 @@ package org.mangui.hls.model {
 
         /** Fragment metrics **/
         public function FragmentMetrics() {
-            this.pts_start = Number.NEGATIVE_INFINITY;
-            this.pts_start_computed = Number.NEGATIVE_INFINITY;
+            this.pts_start = NaN;
+            this.pts_start_computed = NaN;
             this.valid = true;
         };
     }
