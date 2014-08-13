@@ -10,6 +10,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.playlist.*;
     import org.mangui.hls.stream.*;
     import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.AES;
     import org.mangui.hls.utils.PTS;
@@ -97,21 +98,13 @@ package org.mangui.hls.stream {
         private var _seek_position_requested : Number;
         /** first fragment loaded ? **/
         private var _fragment_first_loaded : Boolean;
-        // Tags used for PTS analysis
-        private var _min_audio_pts_frag : Number;
-        private var _max_audio_pts_frag : Number;
-        private var _min_video_pts_frag : Number;
-        private var _max_video_pts_frag : Number;
+        /* demux instance */
+        private var _demux : Demuxer;
+        /** tag related stuff */
         private var _min_audio_pts_tags : Number;
         private var _max_audio_pts_tags : Number;
         private var _min_video_pts_tags : Number;
         private var _max_video_pts_tags : Number;
-        /* demux instance */
-        private var _demux : Demuxer;
-        private var _audio_tags_found : Boolean;
-        private var _video_tags_found : Boolean;
-        private var _audio_tags_expected : Boolean;
-        private var _video_tags_expected : Boolean;
         private var _tags : Vector.<FLVTag>;
         /* fragment retry timeout */
         private var _retry_timeout : Number;
@@ -296,10 +289,10 @@ package org.mangui.hls.stream {
                 _fragByteArray = new ByteArray();
                 _fragWritePosition = 0;
                 _tags = new Vector.<FLVTag>();
-                _audio_tags_found = false;
-                _video_tags_found = false;
-                _min_audio_pts_frag = _min_video_pts_frag = _min_audio_pts_tags = _min_video_pts_tags = Number.POSITIVE_INFINITY;
-                _max_audio_pts_frag = _max_video_pts_frag = _max_audio_pts_tags = _max_video_pts_tags = Number.NEGATIVE_INFINITY;
+                var fragMetrics : FragmentMetrics = _current_frag.metrics;
+                fragMetrics.audio_found = fragMetrics.video_found = false;
+                fragMetrics.pts_min_audio = fragMetrics.pts_min_video = _min_audio_pts_tags = _min_video_pts_tags = Number.POSITIVE_INFINITY;
+                fragMetrics.pts_max_audio = fragMetrics.pts_max_video = _max_audio_pts_tags = _max_video_pts_tags = Number.NEGATIVE_INFINITY;
 
                 // decrypt data if needed
                 if (_current_frag.decrypt_url != null) {
@@ -393,19 +386,19 @@ package org.mangui.hls.stream {
                 CONFIG::LOGGING {
                     Log.debug("AAC ES found");
                 }
-                _video_tags_expected = false;
+                _current_frag.metrics.video_expected = false;
                 return new AACDemuxer(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else if (MP3Demuxer.probe(data) == true) {
                 CONFIG::LOGGING {
                     Log.debug("MP3 ES found");
                 }
-                _video_tags_expected = false;
+                _current_frag.metrics.video_expected = false;
                 return new MP3Demuxer(_fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else if (TSDemuxer.probe(data) == true) {
                 CONFIG::LOGGING {
                     Log.debug("MPEG2-TS found");
                 }
-                _video_tags_expected = true;
+                _current_frag.metrics.video_expected = true;
                 return new TSDemuxer(_hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler);
             } else {
                 CONFIG::LOGGING {
@@ -919,11 +912,11 @@ package org.mangui.hls.stream {
             /* if audio track not defined, or audio from external source (playlist) 
             return null (demux audio not selected) */
             if (_audioTrackId == -1 || _audioTracks[_audioTrackId].source == HLSAudioTrack.FROM_PLAYLIST) {
-                _audio_tags_expected = false;
+                _current_frag.metrics.audio_expected = false;
                 return null;
             } else {
                 // source is demux,return selected audio track
-                _audio_tags_expected = true;
+                _current_frag.metrics.audio_expected = true;
                 return _audioTracks[_audioTrackId];
             }
         }
@@ -934,23 +927,24 @@ package org.mangui.hls.stream {
             }
             var tag : FLVTag;
             /* ref PTS / DTS value for PTS looping */
-            var ref_pts : Number = _current_frag.metrics.pts_start_computed;
+            var fragMetrics : FragmentMetrics = _current_frag.metrics;
+            var ref_pts : Number = fragMetrics.pts_start_computed;
             // Audio PTS/DTS normalization + min/max computation
             for each (tag in tags) {
                 tag.pts = PTS.normalize(ref_pts, tag.pts);
                 tag.dts = PTS.normalize(ref_pts, tag.dts);
                 if (tag.type == FLVTag.AAC_HEADER || tag.type == FLVTag.AAC_RAW || tag.type == FLVTag.MP3_RAW) {
-                    _audio_tags_found = true;
+                    fragMetrics.audio_found = true;
                     _min_audio_pts_tags = Math.min(_min_audio_pts_tags, tag.pts);
                     _max_audio_pts_tags = Math.max(_max_audio_pts_tags, tag.pts);
-                    _min_audio_pts_frag = Math.min(_min_audio_pts_frag, tag.pts);
-                    _max_audio_pts_frag = Math.max(_max_audio_pts_frag, tag.pts);
+                    fragMetrics.pts_min_audio = Math.min(fragMetrics.pts_min_audio, tag.pts);
+                    fragMetrics.pts_max_audio = Math.max(fragMetrics.pts_max_audio, tag.pts);
                 } else {
-                    _video_tags_found = true;
+                    fragMetrics.video_found = true;
                     _min_video_pts_tags = Math.min(_min_video_pts_tags, tag.pts);
                     _max_video_pts_tags = Math.max(_max_video_pts_tags, tag.pts);
-                    _min_video_pts_frag = Math.min(_min_video_pts_frag, tag.pts);
-                    _max_video_pts_frag = Math.max(_max_video_pts_frag, tag.pts);
+                    fragMetrics.pts_min_video = Math.min(fragMetrics.pts_min_video, tag.pts);
+                    fragMetrics.pts_max_video = Math.max(fragMetrics.pts_max_video, tag.pts);
                 }
                 _tags.push(tag);
             }
@@ -967,12 +961,12 @@ package org.mangui.hls.stream {
                 var pts_start_offset : Number;
                 var pts_end_offset : Number;
 
-                if (_audio_tags_expected) {
-                    if (_audio_tags_found) {
+                if (fragMetrics.audio_expected) {
+                    if (fragMetrics.audio_found) {
                         min_pts = _min_audio_pts_tags;
                         max_pts = _max_audio_pts_tags;
-                        pts_start_offset = _min_audio_pts_tags - _min_audio_pts_frag;
-                        pts_end_offset = _max_audio_pts_tags - _min_audio_pts_frag;
+                        pts_start_offset = _min_audio_pts_tags - fragMetrics.pts_min_audio;
+                        pts_end_offset = _max_audio_pts_tags - fragMetrics.pts_min_audio;
                     } else {
                         /* if no audio tags found, it means that only video tags have been retrieved here
                          * we cannot do progressive buffering in that case.
@@ -980,12 +974,12 @@ package org.mangui.hls.stream {
                          */
                         return;
                     }
-                } else if (_video_tags_found) {
+                } else if (fragMetrics.video_found) {
                     // no audio, video only stream, and tags found
                     min_pts = _min_video_pts_tags;
                     max_pts = _max_video_pts_tags;
-                    pts_start_offset = _min_video_pts_tags - _min_video_pts_frag;
-                    pts_end_offset = _max_video_pts_tags - _min_video_pts_frag;
+                    pts_start_offset = _min_video_pts_tags - fragMetrics.pts_min_video;
+                    pts_end_offset = _max_video_pts_tags - fragMetrics.pts_min_video;
                 }
 
                 if (min_pts != Number.POSITIVE_INFINITY && max_pts != Number.NEGATIVE_INFINITY) {
@@ -1031,7 +1025,7 @@ package org.mangui.hls.stream {
                     }
                     // provide tags to HLSNetStream
                     _callback(_tags, min_pts, max_pts, _hasDiscontinuity, min_offset, _last_segment_program_date + pts_start_offset);
-                    var processing_duration : Number = (new Date().valueOf() - _current_frag.metrics.loading_start_time);
+                    var processing_duration : Number = (new Date().valueOf() - fragMetrics.loading_start_time);
                     var bandwidth : Number = Math.round(_fragWritePosition * 8000 / processing_duration);
                     var tagsMetrics : HLSMetrics = new HLSMetrics(_level, bandwidth, pts_end_offset, processing_duration);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
@@ -1052,7 +1046,8 @@ package org.mangui.hls.stream {
             // reset IO error, as if we reach this point, it means fragment has been successfully retrieved and demuxed
             _bIOError = false;
 
-            if (!_audio_tags_found && !_video_tags_found) {
+            var fragMetrics : FragmentMetrics = _current_frag.metrics;
+            if (!fragMetrics.audio_found && !fragMetrics.video_found) {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _current_frag.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
@@ -1062,9 +1057,9 @@ package org.mangui.hls.stream {
             var max_pts_frag : Number;
             var min_pts_tags : Number;
             var max_pts_tags : Number;
-            if (_audio_tags_found) {
-                min_pts_frag = _min_audio_pts_frag;
-                max_pts_frag = _max_audio_pts_frag;
+            if (fragMetrics.audio_found) {
+                min_pts_frag = fragMetrics.pts_min_audio;
+                max_pts_frag = fragMetrics.pts_max_audio;
                 min_pts_tags = _min_audio_pts_tags;
                 max_pts_tags = _max_audio_pts_tags;
                 CONFIG::LOGGING {
@@ -1072,21 +1067,21 @@ package org.mangui.hls.stream {
                 }
             }
 
-            if (_video_tags_found) {
+            if (fragMetrics.video_found) {
                 CONFIG::LOGGING {
-                    Log.debug("m/M video PTS:" + _min_video_pts_frag + "/" + _max_video_pts_frag);
+                    Log.debug("m/M video PTS:" + fragMetrics.pts_min_video + "/" + fragMetrics.pts_max_video);
                 }
-                if (!_audio_tags_found) {
+                if (!fragMetrics.audio_found) {
                     // no audio, video only stream
-                    min_pts_frag = _min_video_pts_frag;
-                    max_pts_frag = _max_video_pts_frag;
+                    min_pts_frag = fragMetrics.pts_min_video;
+                    max_pts_frag = fragMetrics.pts_max_video;
                     min_pts_tags = _min_video_pts_tags;
                     max_pts_tags = _max_video_pts_tags;
                 } else {
                     null;
                     // just to avoid compilaton warnings if CONFIG::LOGGING is false
                     CONFIG::LOGGING {
-                        Log.debug("Delta audio/video m/M PTS:" + (_min_video_pts_frag - _min_audio_pts_frag) + "/" + (_max_video_pts_frag - _max_audio_pts_frag));
+                        Log.debug("Delta audio/video m/M PTS:" + (fragMetrics.pts_min_video - fragMetrics.pts_min_audio) + "/" + (fragMetrics.pts_max_video - fragMetrics.pts_max_audio));
                     }
                 }
             } else {
