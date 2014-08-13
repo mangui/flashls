@@ -32,26 +32,16 @@ package org.mangui.hls.stream {
         private var _last_bandwidth : int = 0;
         /** overall processing time of the last loaded fragment (loading+decrypting+parsing) **/
         private var _last_fragment_processing_duration : Number = 0;
-        /** duration of the current fragment **/
-        private var _current_segment_duration : Number = 0;
         /** duration of the last loaded fragment **/
         private var _last_segment_duration : Number = 0;
         /** last loaded fragment size **/
         private var _last_segment_size : int = 0;
         /** loaded fragment start pts**/
         private var _last_segment_start_pts : Number = 0;
-        /** current fragment start time **/
-        private var _current_segment_start_time : Number = 0;
         /** continuity counter of the last fragment load. **/
         private var _last_segment_continuity_counter : int = 0;
         /** program date of the last fragment load. **/
         private var _last_segment_program_date : Number = 0;
-        /** URL of last segment **/
-        private var _last_segment_url : String;
-        /** decrypt URL of last segment **/
-        private var _last_segment_decrypt_key_url : String;
-        /** IV of  last segment **/
-        private var _last_segment_decrypt_iv : ByteArray;
         /** last updated level. **/
         private var _last_updated_level : int = 0;
         /** Callback for passing forward the fragment tags. **/
@@ -74,10 +64,6 @@ package org.mangui.hls.stream {
         private var _fragByteArray : ByteArray;
         /** fragment bytearray write position **/
         private var _fragWritePosition : int;
-        /** fragment byte range start offset **/
-        private var _frag_byterange_start_offset : int;
-        /** fragment byte range end offset **/
-        private var _frag_byterange_end_offset : int;
         /** AES decryption instance **/
         private var _decryptAES : AES;
         /** Time the loading started. **/
@@ -139,6 +125,7 @@ package org.mangui.hls.stream {
         private var _retry_timeout : Number;
         private var _retry_count : int;
         private var _frag_load_status : int;
+        private var _current_frag : Fragment;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS) : void {
@@ -303,7 +290,7 @@ package org.mangui.hls.stream {
                 // in case IO Error reload same fragment
                 _seqnum--;
             } else {
-                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _last_segment_url, "I/O Error :" + message);
+                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _current_frag.url, "I/O Error :" + message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
             _need_reload = true;
@@ -329,9 +316,9 @@ package org.mangui.hls.stream {
                     _ref_pts = NaN;
                 }
                 // decrypt data if needed
-                if (_last_segment_decrypt_key_url != null) {
+                if (_current_frag.decrypt_url != null) {
                     _frag_decrypt_start_time = new Date().valueOf();
-                    _decryptAES = new AES(_hls.stage,_keymap[_last_segment_decrypt_key_url], _last_segment_decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
+                    _decryptAES = new AES(_hls.stage,_keymap[_current_frag.decrypt_url], _current_frag.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
                     Log.debug("init AES context:"+ _decryptAES);
                     }
@@ -385,11 +372,11 @@ package org.mangui.hls.stream {
 
         private function _fragDecryptProgressHandler(data : ByteArray) : void {
             data.position = 0;
-            if (_frag_byterange_start_offset != -1) {
+            if (_current_frag.byterange_start_offset != -1) {
                 _fragByteArray.position = _fragByteArray.length;
                 _fragByteArray.writeBytes(data);
                 // if we have retrieved all the data, disconnect loader and notify fragment complete
-                if (_fragByteArray.length >= _frag_byterange_end_offset) {
+                if (_fragByteArray.length >= _current_frag.byterange_end_offset) {
                     if (_fragstreamloader.connected) {
                         _fragstreamloader.close();
                         _fragLoadCompleteHandler(null);
@@ -455,13 +442,13 @@ package org.mangui.hls.stream {
             }
 
             // deal with byte range here
-            if (_frag_byterange_start_offset != -1) {
+            if (_current_frag.byterange_start_offset != -1) {
                 CONFIG::LOGGING {
-                Log.debug("trim byte range, start/end offset:" + _frag_byterange_start_offset + "/" + _frag_byterange_end_offset);
+                Log.debug("trim byte range, start/end offset:" + _current_frag.byterange_start_offset + "/" + _current_frag.byterange_end_offset);
                 }
                 var ba : ByteArray = new ByteArray();
-                _fragByteArray.position = _frag_byterange_start_offset;
-                _fragByteArray.readBytes(ba, 0, _frag_byterange_end_offset - _frag_byterange_start_offset);
+                _fragByteArray.position = _current_frag.byterange_start_offset;
+                _fragByteArray.readBytes(ba, 0, _current_frag.byterange_end_offset - _current_frag.byterange_start_offset);
                 _demux = probe(ba);
                 if (_demux) {
                     ba.position = 0;
@@ -526,7 +513,7 @@ package org.mangui.hls.stream {
                 txt = "Cannot load key: IO Error:" + event.text;
                 code = HLSError.KEY_LOADING_ERROR;
             }
-            var hlsError : HLSError = new HLSError(code, _last_segment_decrypt_key_url, txt);
+            var hlsError : HLSError = new HLSError(code, _current_frag.decrypt_url, txt);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
         };
 
@@ -534,7 +521,7 @@ package org.mangui.hls.stream {
         private function _fragLoadErrorHandler(event : ErrorEvent) : void {
             if (event is SecurityErrorEvent) {
                 var txt : String = "Cannot load fragment: crossdomain access denied:" + event.text;
-                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR, _last_segment_url, txt);
+                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR, _current_frag.url, txt);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             } else {
                 _fraghandleIOError("HTTP status:" + _frag_load_status + ",msg:" + event.text);
@@ -758,20 +745,14 @@ package org.mangui.hls.stream {
             if (_hasDiscontinuity || _switchlevel) {
                 _demux = null;
             }
-            _last_segment_url = frag.url;
-            _last_segment_decrypt_key_url = frag.decrypt_url;
-            _current_segment_start_time = frag.start_time;
-            _current_segment_duration = frag.duration;
-            _frag_byterange_start_offset = frag.byterange_start_offset;
-            _frag_byterange_end_offset = frag.byterange_end_offset;
-            if (_last_segment_decrypt_key_url != null) {
-                _last_segment_decrypt_iv = frag.decrypt_iv;
-                if (_keymap[_last_segment_decrypt_key_url] == undefined) {
+            _current_frag = frag;
+            if (frag.decrypt_url != null) {
+                if (_keymap[frag.decrypt_url] == undefined) {
                     // load key
                     CONFIG::LOGGING {
-                    Log.debug("loading key:" + _last_segment_decrypt_key_url);
+                    Log.debug("loading key:" + frag.decrypt_url);
                     }
-                    _keystreamloader.load(new URLRequest(_last_segment_decrypt_key_url));
+                    _keystreamloader.load(new URLRequest(frag.decrypt_url));
                     return;
                 }
             }
@@ -1020,8 +1001,8 @@ package org.mangui.hls.stream {
                 }
 
                 if (min_pts != Number.POSITIVE_INFINITY && max_pts != Number.NEGATIVE_INFINITY) {
-                    var min_offset : Number = _current_segment_start_time + pts_start_offset / 1000;
-                    var max_offset : Number = _current_segment_start_time + pts_end_offset / 1000;
+                    var min_offset : Number = _current_frag.start_time + pts_start_offset / 1000;
+                    var max_offset : Number = _current_frag.start_time + pts_end_offset / 1000;
                     // in case of cold start/seek use case,
                     if (!_fragment_first_loaded ) {
                         /* ensure buffer max offset is greater than requested seek position. 
@@ -1035,7 +1016,7 @@ package org.mangui.hls.stream {
                     if (_pts_loading_in_progress == true) {
                         _pts_loading_in_progress = false;
                         var frag_min_pts : Number = min_pts - pts_start_offset;
-                        _levels[_level].updateFragment(_seqnum, true, frag_min_pts, frag_min_pts + _current_segment_duration * 1000);
+                        _levels[_level].updateFragment(_seqnum, true, frag_min_pts, frag_min_pts + _current_frag.duration * 1000);
                         /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
                         CONFIG::LOGGING {
                         Log.debug("analyzed  PTS " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + min_pts);
@@ -1084,7 +1065,7 @@ package org.mangui.hls.stream {
             _bIOError = false;
 
             if (!_audio_tags_found && !_video_tags_found) {
-                hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _last_segment_url, "error parsing fragment, no tag found");
+                hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _current_frag.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
 
@@ -1173,7 +1154,7 @@ package org.mangui.hls.stream {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, metrics));
                 _fragment_first_loaded = true;
             } catch (error : Error) {
-                hlsError = new HLSError(HLSError.OTHER_ERROR, _last_segment_url, error.message);
+                hlsError = new HLSError(HLSError.OTHER_ERROR, _current_frag.url, error.message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         }
