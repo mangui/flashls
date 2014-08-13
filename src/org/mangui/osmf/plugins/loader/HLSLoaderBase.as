@@ -30,7 +30,7 @@ package org.mangui.osmf.plugins.loader {
     public class HLSLoaderBase extends LoaderBase {
         private var _loadTrait : LoadTrait;
         /** Reference to the framework. **/
-        private static var _hls : HLS = null;
+        private var _hls : HLS = null;
 
         public function HLSLoaderBase() {
             super();
