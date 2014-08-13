@@ -64,10 +64,6 @@ package org.mangui.hls.stream {
         private var _fragWritePosition : int;
         /** AES decryption instance **/
         private var _decryptAES : AES;
-        /** Time the loading started. **/
-        private var _frag_loading_start_time : Number;
-        /** Time the decryption started. **/
-        private var _frag_decrypt_start_time : Number;
         /** Did the stream switch quality levels. **/
         private var _switchlevel : Boolean;
         /** Did a discontinuity occurs in the stream **/
@@ -307,7 +303,7 @@ package org.mangui.hls.stream {
 
                 // decrypt data if needed
                 if (_current_frag.decrypt_url != null) {
-                    _frag_decrypt_start_time = new Date().valueOf();
+                    _current_frag.metrics.decrypting_start_time = new Date().valueOf();
                     _decryptAES = new AES(_hls.stage, _keymap[_current_frag.decrypt_url], _current_frag.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
                         Log.debug("init AES context:" + _decryptAES);
@@ -348,7 +344,7 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug("loading completed");
             }
-            var _loading_duration : uint = (new Date().valueOf() - _frag_loading_start_time);
+            var _loading_duration : uint = (new Date().valueOf() - _current_frag.metrics.loading_start_time);
             CONFIG::LOGGING {
                 Log.debug("Loading       duration/length/speed:" + _loading_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _loading_duration) / 1024).toFixed(0) + " kb/s");
             }
@@ -424,7 +420,7 @@ package org.mangui.hls.stream {
                 return;
 
             if (_decryptAES) {
-                var decrypt_duration : Number = (new Date().valueOf() - _frag_decrypt_start_time);
+                var decrypt_duration : Number = (new Date().valueOf() - _current_frag.metrics.decrypting_start_time);
                 CONFIG::LOGGING {
                     Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + _fragWritePosition + "/" + ((8000 * _fragWritePosition / decrypt_duration) / 1024).toFixed(0) + " kb/s");
                 }
@@ -595,7 +591,6 @@ package org.mangui.hls.stream {
             position = seek_position;
 
             var seqnum : int = _levels[_level].getSeqNumBeforePosition(position);
-            _frag_loading_start_time = new Date().valueOf();
             var frag : Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
             _seqnum = seqnum;
             _hasDiscontinuity = true;
@@ -709,7 +704,6 @@ package org.mangui.hls.stream {
                 }
             }
             _seqnum = new_seqnum;
-            _frag_loading_start_time = new Date().valueOf();
             frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
             CONFIG::LOGGING {
                 Log.debug(log_prefix + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
@@ -736,6 +730,7 @@ package org.mangui.hls.stream {
             if (_hasDiscontinuity || _switchlevel) {
                 _demux = null;
             }
+            frag.metrics.loading_start_time = new Date().valueOf();
             _current_frag = frag;
             if (frag.decrypt_url != null) {
                 if (_keymap[frag.decrypt_url] == undefined) {
@@ -1036,7 +1031,7 @@ package org.mangui.hls.stream {
                     }
                     // provide tags to HLSNetStream
                     _callback(_tags, min_pts, max_pts, _hasDiscontinuity, min_offset, _last_segment_program_date + pts_start_offset);
-                    var processing_duration : Number = (new Date().valueOf() - _frag_loading_start_time);
+                    var processing_duration : Number = (new Date().valueOf() - _current_frag.metrics.loading_start_time);
                     var bandwidth : Number = Math.round(_fragWritePosition * 8000 / processing_duration);
                     var tagsMetrics : HLSMetrics = new HLSMetrics(_level, bandwidth, pts_end_offset, processing_duration);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
@@ -1100,7 +1095,7 @@ package org.mangui.hls.stream {
             }
 
             // Calculate bandwidth
-            _last_fragment_processing_duration = (new Date().valueOf() - _frag_loading_start_time);
+            _last_fragment_processing_duration = (new Date().valueOf() - _current_frag.metrics.loading_start_time);
             _last_bandwidth = Math.round(_last_segment_size * 8000 / _last_fragment_processing_duration);
             CONFIG::LOGGING {
                 Log.debug("Total Process duration/length/speed:" + _last_fragment_processing_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _last_fragment_processing_duration) / 1024).toFixed(0) + " kb/s");
