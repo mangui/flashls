@@ -310,8 +310,8 @@ package org.mangui.hls.stream {
                 _min_audio_pts_frag = _min_video_pts_frag = _min_audio_pts_tags = _min_video_pts_tags = Number.POSITIVE_INFINITY;
                 _max_audio_pts_frag = _max_video_pts_frag = _max_audio_pts_tags = _max_video_pts_tags = Number.NEGATIVE_INFINITY;
                 var frag : Fragment = _levels[_level].getFragmentfromSeqNum(_seqnum);
-                if (frag && frag.start_pts_computed != Number.NEGATIVE_INFINITY) {
-                    _ref_pts = frag.start_pts_computed;
+                if (frag && frag.metrics.pts_start_computed != Number.NEGATIVE_INFINITY) {
+                    _ref_pts = frag.metrics.pts_start_computed;
                 } else {
                     _ref_pts = NaN;
                 }

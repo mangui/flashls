@@ -1,16 +1,12 @@
 package org.mangui.hls.model {
     import flash.utils.ByteArray;
 
-    /** HLS streaming chunk. **/
+    /** Fragment model **/
     public class Fragment {
         /** Duration of this chunk. **/
         public var duration : Number;
         /** Start time of this chunk. **/
         public var start_time : Number;
-        /** Start PTS of this chunk. **/
-        public var start_pts : Number;
-        /** computed Start PTS of this chunk. **/
-        public var start_pts_computed : Number;
         /** sequence number of this chunk. **/
         public var seqnum : int;
         /** URL to this chunk. **/
@@ -27,13 +23,13 @@ package org.mangui.hls.model {
         public var byterange_start_offset : int;
         /** byte range offset **/
         public var byterange_end_offset : int;
-        /** valid fragment **/
-        public var valid : Boolean;
+        /** metrics **/
+        public var metrics : FragmentMetrics;
 
         /** Create the fragment. **/
         public function Fragment(url : String, duration : Number, seqnum : int, start_time : Number, continuity : int, program_date : Number, decrypt_url : String, decrypt_iv : ByteArray, byterange_start_offset : int, byterange_end_offset : int) {
-            this.duration = duration;
             this.url = url;
+            this.duration = duration;
             this.seqnum = seqnum;
             this.start_time = start_time;
             this.continuity = continuity;
@@ -42,9 +38,7 @@ package org.mangui.hls.model {
             this.decrypt_iv = decrypt_iv;
             this.byterange_start_offset = byterange_start_offset;
             this.byterange_end_offset = byterange_end_offset;
-            this.start_pts = Number.NEGATIVE_INFINITY;
-            this.start_pts_computed = Number.NEGATIVE_INFINITY;
-            this.valid = true;
+            metrics = new FragmentMetrics();
             // CONFIG::LOGGING {
             // Log.info("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
             // }
@@ -52,7 +46,7 @@ package org.mangui.hls.model {
 
          public function toString():String
 	{
-	    return "Fragment (seqnum: " + seqnum + ", start_time:" + start_time + ", start_pts_computed:" + start_pts_computed + ", duration:" + duration + ")";
+	    return "Fragment (seqnum: " + seqnum + ", start_time:" + start_time + ", duration:" + duration + ")";
          }        
     }
 }
