@@ -290,6 +290,7 @@ package org.mangui.hls.stream {
                 _fragWritePosition = 0;
                 _tags = new Vector.<FLVTag>();
                 var fragMetrics : FragmentMetrics = _current_frag.metrics;
+                fragMetrics.loading_return_trip_time = new Date().valueOf() - fragMetrics.loading_start_time;
                 fragMetrics.audio_found = fragMetrics.video_found = false;
                 fragMetrics.pts_min_audio = fragMetrics.pts_min_video = _min_audio_pts_tags = _min_video_pts_tags = Number.POSITIVE_INFINITY;
                 fragMetrics.pts_max_audio = fragMetrics.pts_max_video = _max_audio_pts_tags = _max_video_pts_tags = Number.NEGATIVE_INFINITY;
@@ -339,7 +340,7 @@ package org.mangui.hls.stream {
             }
             var _loading_duration : uint = (new Date().valueOf() - _current_frag.metrics.loading_start_time);
             CONFIG::LOGGING {
-                Log.debug("Loading       duration/length/speed:" + _loading_duration + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _loading_duration) / 1024).toFixed(0) + " kb/s");
+                Log.debug("Loading       duration/RTT/length/speed:" + _loading_duration + "/" + _current_frag.metrics.loading_return_trip_time + "/" + _last_segment_size + "/" + ((8000 * _last_segment_size / _loading_duration) / 1024).toFixed(0) + " kb/s");
             }
             _cancel_load = false;
             if (_decryptAES) {

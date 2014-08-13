@@ -14,6 +14,8 @@ package org.mangui.hls.model {
         public var pts_max_video : Number;
         /** fragment loading start time **/
         public var loading_start_time : Number;
+        /** fragment loading RTT */
+        public var loading_return_trip_time : Number;
         /** fragment decrypting start time **/
         public var decrypting_start_time : Number;
         /** audio/video expected ? */
