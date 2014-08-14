@@ -45,6 +45,10 @@ package org.mangui.osmf.plugins {
             super(resource, new HLSNetLoader(hls));
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
         }
+        
+        public function getHLS():HLS{
+            return _hls;
+        }
 
         protected function createVideo() : Video {
             return new Video();

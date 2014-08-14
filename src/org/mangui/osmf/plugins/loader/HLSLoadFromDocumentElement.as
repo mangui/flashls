@@ -29,6 +29,7 @@ package org.mangui.osmf.plugins.loader {
     import org.osmf.traits.MediaTraitType;
     import org.osmf.utils.OSMFStrings;
     import org.osmf.elements.ProxyElement;
+    import org.mangui.hls.HLSEvent;
 
     /**
      * LoadFromDocumentElement is the base class for MediaElements that load documents
@@ -82,6 +83,11 @@ package org.mangui.osmf.plugins.loader {
             if (loader == null) {
                 throw new ArgumentError(OSMFStrings.getString(OSMFStrings.NULL_PARAM));
             }
+            this.loader.addEventListener(HLSEvent.ENDLIST_FOUND, _endlist);
+        }
+        private function _endlist(param:* = null):void
+        {
+            dispatchEvent(new HLSEvent(HLSEvent.ENDLIST_FOUND, param));
         }
 
         /**
