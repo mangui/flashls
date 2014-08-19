@@ -12,7 +12,7 @@ package org.mangui.hls.model {
         public var parsing_begin_time : Number;
         public var parsing_end_time : Number;
         /** fragment size **/
-        public var size : int = 0;
+        public var size : int;
         
         /** Fragment metrics **/
         public function FragmentMetrics() {
