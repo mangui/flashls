@@ -23,6 +23,8 @@ package org.mangui.hls.model {
         public var byterange_start_offset : int;
         /** byte range offset **/
         public var byterange_end_offset : int;
+        /** data **/
+        public var data : FragmentData;
         /** metrics **/
         public var metrics : FragmentMetrics;
 
@@ -38,6 +40,7 @@ package org.mangui.hls.model {
             this.decrypt_iv = decrypt_iv;
             this.byterange_start_offset = byterange_start_offset;
             this.byterange_end_offset = byterange_end_offset;
+            data = new FragmentData();
             metrics = new FragmentMetrics();
             // CONFIG::LOGGING {
             // Log.info("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
