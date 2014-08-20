@@ -13,9 +13,21 @@ package org.mangui.hls.model {
         public var parsing_end_time : Number;
         /** fragment size **/
         public var size : int;
-        
+
         /** Fragment metrics **/
         public function FragmentMetrics() {
         };
+
+        public function get processing_duration() : Number {
+            return (parsing_end_time - loading_request_time);
+        }
+
+        public function get rtt_duration() : Number {
+            return (loading_begin_time - loading_request_time);
+        }
+
+        public function get bandwidth() : int {
+            return(Math.round(size * 8000 / (parsing_end_time - loading_request_time)));
+        }
     }
 }

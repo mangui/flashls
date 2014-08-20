@@ -93,11 +93,6 @@ package org.mangui.hls {
             return _manifestLoader.levels;
         };
 
-        /** Return metrics info **/
-        public function get metrics() : HLSMetrics {
-            return _fragmentLoader.metrics;
-        };
-
         /** Return the current playback position. **/
         public function get position() : Number {
             return _hlsNetStream.position;

@@ -48,7 +48,6 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getLevel", _getLevel);
             ExternalInterface.addCallback("getLevels", _getLevels);
             ExternalInterface.addCallback("getAutoLevel", _getAutoLevel);
-            ExternalInterface.addCallback("getMetrics", _getMetrics);
             ExternalInterface.addCallback("getDuration", _getDuration);
             ExternalInterface.addCallback("getPosition", _getPosition);
             ExternalInterface.addCallback("getPlaybackState", _getPlaybackState);
@@ -206,10 +205,6 @@ package org.mangui.chromeless {
 
         protected function _getAutoLevel() : Boolean {
             return _hls.autolevel;
-        };
-
-        protected function _getMetrics() : Object {
-            return _hls.metrics;
         };
 
         protected function _getDuration() : Number {
