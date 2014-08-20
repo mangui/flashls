@@ -1,7 +1,9 @@
 package org.mangui.hls.model {
     import org.mangui.hls.utils.AES;
     import org.mangui.hls.flv.FLVTag;
+
     import flash.utils.ByteArray;
+
     /** Fragment Data. **/
     public class FragmentData {
         /** valid fragment **/
@@ -11,7 +13,7 @@ package org.mangui.hls.model {
         /** bytes Loaded **/
         public var bytesLoaded : int;
         /** AES decryption instance **/
-        public var decryptAES : AES;        
+        public var decryptAES : AES;
         /** Start PTS of this chunk. **/
         public var pts_start : Number;
         /** computed Start PTS of this chunk. **/
@@ -40,5 +42,53 @@ package org.mangui.hls.model {
             this.pts_start_computed = NaN;
             this.valid = true;
         };
+
+        public function get pts_min() : Number {
+            if (audio_found) {
+                return pts_min_audio;
+            } else {
+                return pts_min_video;
+            }
+        }
+
+        public function get pts_max() : Number {
+            if (audio_found) {
+                return pts_max_audio;
+            } else {
+                return pts_max_video;
+            }
+        }
+
+        public function get tag_pts_min() : Number {
+            if (audio_found) {
+                return tags_pts_min_audio;
+            } else {
+                return tags_pts_min_video;
+            }
+        }
+
+        public function get tag_pts_max() : Number {
+            if (audio_found) {
+                return tags_pts_max_audio;
+            } else {
+                return tags_pts_max_video;
+            }
+        }
+
+        public function get tag_pts_start_offset() : Number {
+            if (audio_found) {
+                return tags_pts_min_audio - pts_min_audio;
+            } else {
+                return tags_pts_min_video - pts_min_video;
+            }
+        }
+
+        public function get tag_pts_end_offset() : Number {
+            if (audio_found) {
+                return tags_pts_max_audio - pts_min_audio;
+            } else {
+                return tags_pts_max_video - pts_min_video;
+            }
+        }
     }
 }

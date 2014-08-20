@@ -526,7 +526,7 @@ package org.mangui.hls.stream {
                 level = _level;
             } else if (_manual_level == -1 && _levels.length > 1 ) {
                 if (_metrics_previous) {
-                    var last_segment_duration : Number = (_frag_previous ? _frag_previous.duration : 0);
+                    var last_segment_duration : Number = (_frag_previous ? 1000*_frag_previous.duration : 0);
                     level = _autoLevelManager.getnextlevel(_level, buffer, last_segment_duration, _metrics_previous.processing_duration, _metrics_previous.bandwidth);
                 } else {
                     level = _autoLevelManager.getnextlevel(_level, buffer, 0, 0, 0);
@@ -949,37 +949,17 @@ package org.mangui.hls.stream {
              *      it is not a cold start use case. in case of cold start, accept progressive buffering if we start playback from lowest level
              */
             if (( _fragment_first_loaded || (_manifest_just_loaded && HLSSettings.startFromLevel != -1) )) {
-                // compute min/max PTS
-                var min_pts : Number;
-                var max_pts : Number;
-                // PTS offset to fragment start
-                var pts_start_offset : Number;
-                var pts_end_offset : Number;
-
-                if (fragData.audio_expected) {
-                    if (fragData.audio_found) {
-                        min_pts = fragData.tags_pts_min_audio;
-                        max_pts = fragData.tags_pts_max_audio;
-                        pts_start_offset = min_pts - fragData.pts_min_audio;
-                        pts_end_offset = max_pts - fragData.pts_min_audio;
-                    } else {
-                        /* if no audio tags found, it means that only video tags have been retrieved here
-                         * we cannot do progressive buffering in that case.
-                         * we need to have some new audio tags to inject as well
-                         */
-                        return;
-                    }
-                } else if (fragData.video_found) {
-                    // no audio, video only stream, and tags found
-                    min_pts = fragData.tags_pts_min_video;
-                    max_pts = fragData.tags_pts_max_video;
-                    pts_start_offset = min_pts - fragData.pts_min_video;
-                    pts_end_offset = max_pts - fragData.pts_min_video;
+                if (fragData.audio_expected && !fragData.audio_found) {
+                    /* if no audio tags found, it means that only video tags have been retrieved here
+                     * we cannot do progressive buffering in that case.
+                     * we need to have some new audio tags to inject as well
+                     */
+                    return;
                 }
 
-                if (min_pts != Number.POSITIVE_INFINITY && max_pts != Number.NEGATIVE_INFINITY) {
-                    var min_offset : Number = _frag_current.start_time + pts_start_offset / 1000;
-                    var max_offset : Number = _frag_current.start_time + pts_end_offset / 1000;
+                if (fragData.tag_pts_min != Number.POSITIVE_INFINITY && fragData.tag_pts_max != Number.NEGATIVE_INFINITY) {
+                    var min_offset : Number = _frag_current.start_time + fragData.tag_pts_start_offset / 1000;
+                    var max_offset : Number = _frag_current.start_time + fragData.tag_pts_end_offset / 1000;
                     // in case of cold start/seek use case,
                     if (!_fragment_first_loaded ) {
                         /* ensure buffer max offset is greater than requested seek position. 
@@ -992,11 +972,10 @@ package org.mangui.hls.stream {
 
                     if (_pts_loading_in_progress == true) {
                         _pts_loading_in_progress = false;
-                        var frag_min_pts : Number = min_pts - pts_start_offset;
-                        _levels[_level].updateFragment(_seqnum, true, frag_min_pts, frag_min_pts + _frag_current.duration * 1000);
+                        _levels[_level].updateFragment(_seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);
                         /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
                         CONFIG::LOGGING {
-                            Log.debug("analyzed  PTS " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + min_pts);
+                            Log.debug("analyzed  PTS " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + fragData.pts_min);
                         }
                         /* check if fragment loaded for PTS analysis is the next one
                         if this is the expected one, then continue
@@ -1019,10 +998,10 @@ package org.mangui.hls.stream {
                         }
                     }
                     // provide tags to HLSNetStream
-                    _callback(fragData.tags, min_pts, max_pts, _hasDiscontinuity, min_offset, _frag_current.program_date + pts_start_offset);
+                    _callback(fragData.tags, fragData.pts_min, fragData.pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
                     var processing_duration : Number = (new Date().valueOf() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
-                    var tagsMetrics : HLSMetrics = new HLSMetrics(_level, bandwidth, pts_end_offset, processing_duration);
+                    var tagsMetrics : HLSMetrics = new HLSMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     _hasDiscontinuity = false;
                     fragData.tags = new Vector.<FLVTag>();
@@ -1046,19 +1025,9 @@ package org.mangui.hls.stream {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
-
-            // Tags used for PTS analysis
-            var min_pts_frag : Number;
-            var max_pts_frag : Number;
-            var min_pts_tags : Number;
-            var max_pts_tags : Number;
             if (fragData.audio_found) {
-                min_pts_frag = fragData.pts_min_audio;
-                max_pts_frag = fragData.pts_max_audio;
-                min_pts_tags = fragData.tags_pts_min_audio;
-                max_pts_tags = fragData.tags_pts_max_audio;
                 CONFIG::LOGGING {
-                    Log.debug("m/M audio PTS:" + min_pts_frag + "/" + max_pts_frag);
+                    Log.debug("m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
                 }
             }
 
@@ -1067,11 +1036,6 @@ package org.mangui.hls.stream {
                     Log.debug("m/M video PTS:" + fragData.pts_min_video + "/" + fragData.pts_max_video);
                 }
                 if (!fragData.audio_found) {
-                    // no audio, video only stream
-                    min_pts_frag = fragData.pts_min_video;
-                    max_pts_frag = fragData.pts_max_video;
-                    min_pts_tags = fragData.tags_pts_min_video;
-                    max_pts_tags = fragData.tags_pts_max_video;
                 } else {
                     null;
                     // just to avoid compilation warnings if CONFIG::LOGGING is false
@@ -1113,16 +1077,16 @@ package org.mangui.hls.stream {
             try {
                 _switchlevel = false;
                 CONFIG::LOGGING {
-                    Log.debug("Loaded        " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + min_pts_frag + "/" + max_pts_frag);
+                    Log.debug("Loaded        " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
-                var start_offset : Number = _levels[_level].updateFragment(_seqnum, true, min_pts_frag, max_pts_frag);
+                var start_offset : Number = _levels[_level].updateFragment(_seqnum, true, fragData.pts_min, fragData.pts_max);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
                 _frag_loading = false;
 
-                var tagsMetrics : HLSMetrics = new HLSMetrics(_level, fragMetrics.bandwidth, max_pts_frag - min_pts_frag, fragMetrics.processing_duration);
+                var tagsMetrics : HLSMetrics = new HLSMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
 
                 if (fragData.tags.length) {
-                    _callback(fragData.tags, min_pts_tags, max_pts_tags, _hasDiscontinuity, start_offset + (min_pts_tags - min_pts_frag) / 1000, _frag_current.program_date + (min_pts_tags - min_pts_frag));
+                    _callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
                     fragData.tags_pts_min_video = fragData.tags_pts_max_video;
