@@ -441,7 +441,7 @@ package org.mangui.chromeless {
                 _video.height = rect.height;
                 _video.x = rect.x;
                 _video.y = rect.y;
-            } else if (_stageVideo) {
+            } else if (_stageVideo && rect.width > 0) {
                 _stageVideo.viewPort = rect;
             }
         }
