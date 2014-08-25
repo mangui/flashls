@@ -526,7 +526,7 @@ package org.mangui.hls.stream {
                 level = _level;
             } else if (_manual_level == -1 && _levels.length > 1 ) {
                 if (_metrics_previous) {
-                    var last_segment_duration : Number = (_frag_previous ? 1000*_frag_previous.duration : 0);
+                    var last_segment_duration : Number = (_frag_previous ? 1000 * _frag_previous.duration : 0);
                     level = _autoLevelManager.getnextlevel(_level, buffer, last_segment_duration, _metrics_previous.processing_duration, _metrics_previous.bandwidth);
                 } else {
                     level = _autoLevelManager.getnextlevel(_level, buffer, 0, 0, 0);
@@ -883,7 +883,7 @@ package org.mangui.hls.stream {
             }
         }
 
-        // should return PID of selected audio track
+        /** triggered by demux, it should return the audio track to be parsed */
         private function _fragParsingAudioSelectionHandler(audioTrackList : Vector.<HLSAudioTrack>) : HLSAudioTrack {
             var audio_track_changed : Boolean = false;
             audioTrackList = audioTrackList.sort(function(a : HLSAudioTrack, b : HLSAudioTrack) : int {
@@ -916,6 +916,7 @@ package org.mangui.hls.stream {
             }
         }
 
+        /** triggered when demux has retrieved some tags from fragment **/
         private function _fragParsingProgressHandler(tags : Vector.<FLVTag>) : void {
             CONFIG::LOGGING {
                 Log.debug2(tags.length + " tags extracted");
@@ -998,7 +999,7 @@ package org.mangui.hls.stream {
                         }
                     }
                     // provide tags to HLSNetStream
-                    _callback(fragData.tags, fragData.pts_min, fragData.pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
                     var processing_duration : Number = (new Date().valueOf() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSMetrics = new HLSMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
@@ -1011,7 +1012,7 @@ package org.mangui.hls.stream {
             }
         }
 
-        /** Handles the actual reading of the TS fragment **/
+        /** triggered when demux has completed fragment parsing **/
         private function _fragParsingCompleteHandler() : void {
             if (_cancel_load == true)
                 return;
