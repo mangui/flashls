@@ -97,14 +97,14 @@ package org.mangui.hls {
          *  from 0 to 1 : indicates the "normalized" preferred bitrate. As such, if it is 0.5, the closest to the middle bitrate will be selected and used first.
          * -1 : automatic start level selection, playback will start from level matching download bandwidth (determined from download of first segment) 
          */
-        public static var startFromLevel : int = -1;
+        public static var startFromLevel : Number = -1;
         
 
         /** seek level : 
          *  from 0 to 1 : indicates the "normalized" preferred bitrate. As such, if it is 0.5, the closest to the middle bitrate will be selected and used first.
          * -1 : automatic start level selection, keep previous level matching previous download bandwidth 
          */
-        public static var seekFromLevel : int = -1;
+        public static var seekFromLevel : Number = -1;
         /**
          * Defines whether INFO level log messages will will appear in the console
          * Default is true.
