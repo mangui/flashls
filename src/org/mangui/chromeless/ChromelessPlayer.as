@@ -139,7 +139,7 @@ package org.mangui.chromeless {
             _duration = event.levels[_hls.startlevel].duration;
 
             if (_autoLoad) {
-                _play();
+                _play(-1);
             }
 
             if (ExternalInterface.available) {
@@ -293,8 +293,8 @@ package org.mangui.chromeless {
             _hls.load(url);
         };
 
-        protected function _play() : void {
-            _hls.stream.play();
+        protected function _play(position : Number) : void {
+            _hls.stream.play(null,position);
         };
 
         protected function _pause() : void {

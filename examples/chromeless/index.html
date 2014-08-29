@@ -237,7 +237,7 @@ function play(url) {
   }
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.playerPlay();
+    obj.playerPlay(-1);
     appendLog("start playback");
   }
 }
