@@ -77,6 +77,12 @@ package org.mangui.hls.stream {
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
         };
 
+        public function onHLSContinuityChange() : void {
+            CONFIG::LOGGING {
+                Log.debug("continuity change");
+            }
+        }
+
         /** Check the bufferlength. **/
         private function _checkBuffer(e : Event) : void {
             var playback_absolute_position : Number;
@@ -187,9 +193,8 @@ package org.mangui.hls.stream {
                         if (tagBuffer.type == FLVTag.DISCONTINUITY) {
                             super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
                             super.appendBytes(FLVTag.getHeader());
-                        } else {
-                            super.appendBytes(tagBuffer.data);
                         }
+                        super.appendBytes(tagBuffer.data);
                     } catch (error : Error) {
                         var hlsError : HLSError = new HLSError(HLSError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
@@ -295,7 +300,13 @@ package org.mangui.hls.stream {
                 _buffered_before_last_continuity += (_buffer_cur_max_pts - _buffer_cur_min_pts);
                 _buffer_cur_min_pts = first_pts;
                 _buffer_cur_max_pts = max_pts;
-                _flvTagBuffer.push(new FLVTag(FLVTag.DISCONTINUITY, first_pts, first_pts, false));
+                tag = new FLVTag(FLVTag.DISCONTINUITY, first_pts, first_pts, false);
+                var data : ByteArray = new ByteArray();
+                data.objectEncoding = ObjectEncoding.AMF0;
+                data.writeObject("onHLSContinuityChange");
+                // data.writeObject(hasDiscontinuity);
+                tag.push(data, 0, data.length);
+                _flvTagBuffer.push(tag);
             } else {
                 // same continuity than previously, update its max PTS
                 _buffer_cur_max_pts = max_pts;
