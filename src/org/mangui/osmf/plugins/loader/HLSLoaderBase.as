@@ -75,8 +75,14 @@ package org.mangui.osmf.plugins.loader {
             _hls = new HLS();
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
+            _hls.addEventListener(HLSEvent.ENDLIST_FOUND, _endlistfound);
             /* load playlist */
             _hls.load(URLResource(loadTrait.resource).url);
+        }
+        
+        private function _endlistfound(param:* = null):void
+        {
+            dispatchEvent(new HLSEvent(HLSEvent.ENDLIST_FOUND, param));
         }
 
         override protected function executeUnload(loadTrait : LoadTrait) : void {

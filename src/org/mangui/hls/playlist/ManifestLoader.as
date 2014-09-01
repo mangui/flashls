@@ -141,6 +141,7 @@ package org.mangui.hls.playlist {
 
             // Check whether the stream is live or not finished yet
             if (Manifest.hasEndlist(string)) {
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ENDLIST_FOUND));
                 _type = HLSTypes.VOD;
             } else {
                 _type = HLSTypes.LIVE;

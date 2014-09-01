@@ -14,7 +14,9 @@ package org.mangui.hls {
         public static const MANIFEST_PARSED : String = "hlsEventManifestParsed";
         /** Identifier for a manifest loaded event, when this event is received, main manifest and start level has been retrieved */
         public static const MANIFEST_LOADED : String = "hlsEventManifestLoaded";
-
+        /** Identifier for if a playlist has #EXT-X-ENDLIST*/
+        public static const ENDLIST_FOUND : String = "hlsPlaylistEndlistFound";
+        
 
         /** Identifier for a level loading event  **/
         public static const LEVEL_LOADING : String = "hlsEventLevelLoading";
