@@ -1,8 +1,10 @@
 package org.mangui.basic {
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.event.HLSEvent;
+
     import flash.display.Sprite;
     import flash.media.Video;
 
-    import org.mangui.hls.*;
 
     public class Player extends Sprite {
         private var hls : HLS = null;

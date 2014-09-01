@@ -1,9 +1,14 @@
 package org.mangui.hls.playlist {
+    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSTypes;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.event.HLSEvent;
     import flash.events.*;
     import flash.net.*;
     import flash.utils.*;
 
-    import org.mangui.hls.*;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.model.Fragment;
 

@@ -1,7 +1,6 @@
 package org.mangui.hls.utils {
     import flash.display.DisplayObject;
     import flash.utils.ByteArray;
-    import flash.utils.Timer;
     import flash.events.Event;
 
     /**

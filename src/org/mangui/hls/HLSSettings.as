@@ -1,4 +1,6 @@
 package org.mangui.hls {
+    import org.mangui.hls.constant.HLSSeekMode;
+    import org.mangui.hls.constant.HLSMaxLevelCappingMode;
     public final class HLSSettings extends Object {
         /**
          * Limit levels usable in auto-quality by the stage dimensions (width and height).

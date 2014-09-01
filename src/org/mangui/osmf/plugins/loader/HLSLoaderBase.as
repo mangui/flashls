@@ -1,8 +1,8 @@
 package org.mangui.osmf.plugins.loader {
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSEvent;
+    import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.model.Level;
-    import org.mangui.hls.HLSTypes;
+    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.osmf.plugins.HLSMediaElement;
     import org.mangui.osmf.plugins.utils.ErrorManager;
     import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;

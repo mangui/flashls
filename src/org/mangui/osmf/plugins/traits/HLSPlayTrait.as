@@ -1,6 +1,6 @@
 package org.mangui.osmf.plugins.traits {
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSEvent;
+    import org.mangui.hls.event.HLSEvent;
     import org.osmf.traits.PlayState;
     import org.osmf.traits.PlayTrait;
 

@@ -1,4 +1,4 @@
-package org.mangui.hls {
+package org.mangui.hls.constant {
     /** Max Level Capping Modes **/
     public class HLSMaxLevelCappingMode {
         /**

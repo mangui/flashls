@@ -1,4 +1,4 @@
-package org.mangui.hls {
+package org.mangui.hls.constant {
     /** Identifiers for the different stream types. **/
     public class HLSTypes {
         /** Identifier for live events. **/

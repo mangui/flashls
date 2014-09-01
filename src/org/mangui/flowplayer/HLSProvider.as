@@ -1,4 +1,5 @@
 package org.mangui.flowplayer {
+    import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.utils.Params2Settings;
 
     import flash.display.DisplayObject;
@@ -8,8 +9,7 @@ package org.mangui.flowplayer {
     import flash.media.Video;
 
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSEvent;
-    import org.mangui.hls.HLSPlayStates;
+    import org.mangui.hls.constant.HLSPlayStates;
 
     import org.flowplayer.model.Plugin;
     import org.flowplayer.model.PluginModel;

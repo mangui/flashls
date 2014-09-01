@@ -1,4 +1,4 @@
-package org.mangui.hls {
+package org.mangui.hls.event {
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.model.Level;
 
@@ -27,6 +27,8 @@ package org.mangui.hls {
         public static const FRAGMENT_LOADING : String = "hlsEventFragmentLoading";
         /** Identifier for a fragment loaded event. **/
         public static const FRAGMENT_LOADED : String = "hlsEventFragmentLoaded";
+        /** Identifier for a fragment playing event. **/
+        public static const FRAGMENT_PLAYING : String = "hlsEventFragmentPlaying";
 
         /** Identifier for a audio only fragment **/
         public static const AUDIO_ONLY : String = "audioOnly";
@@ -69,8 +71,10 @@ package org.mangui.hls {
         public var altAudioTracks : Vector.<AltAudioTrack>;
         /** The error message. **/
         public var error : HLSError;
-        /** The current QOS metrics. **/
-        public var metrics : HLSMetrics;
+        /** Load Metrics. **/
+        public var loadMetrics : HLSLoadMetrics;
+        /** Play Metrics. **/
+        public var playMetrics : HLSPlayMetrics;
         /** The time position. **/
         public var mediatime : HLSMediatime;
         /** The new playback state. **/
@@ -90,7 +94,7 @@ package org.mangui.hls {
                     break;
                 case HLSEvent.TAGS_LOADED:
                 case HLSEvent.FRAGMENT_LOADED:
-                    metrics = parameter as HLSMetrics;
+                    loadMetrics = parameter as HLSLoadMetrics;
                     break;
                 case HLSEvent.MANIFEST_PARSED:
                 case HLSEvent.MANIFEST_LOADED:
@@ -113,6 +117,9 @@ package org.mangui.hls {
                     break;
                 case HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE:
                     altAudioTracks = parameter as Vector.<AltAudioTrack>;
+                    break;
+                case HLSEvent.FRAGMENT_PLAYING:
+                    playMetrics = parameter as HLSPlayMetrics;
                     break;
             }
             super(type, false, false);

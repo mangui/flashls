@@ -1,4 +1,5 @@
 package org.mangui.hls {
+    import org.mangui.hls.event.HLSEvent;
     import flash.display.Stage;
     import flash.net.NetConnection;
     import flash.net.NetStream;

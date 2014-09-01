@@ -1,4 +1,4 @@
-package org.mangui.hls {
+package org.mangui.hls.event {
     /** Error Identifier **/
     public class HLSError {
         public static const OTHER_ERROR : int = 0;

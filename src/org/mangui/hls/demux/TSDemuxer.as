@@ -5,9 +5,7 @@ package org.mangui.hls.demux {
 
     import flash.events.Event;
     import flash.events.EventDispatcher;
-    import flash.events.TimerEvent;
     import flash.utils.ByteArray;
-    import flash.utils.Timer;
     
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;

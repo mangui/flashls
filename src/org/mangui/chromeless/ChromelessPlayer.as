@@ -1,9 +1,14 @@
 package org.mangui.chromeless {
+    import org.mangui.hls.utils.ScaleVideo;
+    import org.mangui.hls.HLSAudioTrack;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.HLS;
+
     import flash.net.URLStream;
 
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.*;
-    import org.mangui.hls.utils.*;
 
     import flash.display.*;
     import flash.events.*;
@@ -131,7 +136,7 @@ package org.mangui.chromeless {
 
         protected function _fragmentHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("onFragment", event.metrics.bandwidth, event.metrics.level, stage.stageWidth);
+                ExternalInterface.call("onFragment", event.loadMetrics.bandwidth, event.loadMetrics.level, stage.stageWidth);
             }
         };
 

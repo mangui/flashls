@@ -1,20 +1,28 @@
 package org.mangui.hls.stream {
-    import flash.events.*;
-    import flash.net.*;
-    import flash.utils.ByteArray;
-    import flash.utils.Timer;
-
-    import org.mangui.hls.*;
-    import org.mangui.hls.demux.*;
-    import org.mangui.hls.flv.*;
-    import org.mangui.hls.playlist.*;
-    import org.mangui.hls.stream.*;
+    import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.constant.HLSTypes;
+    import org.mangui.hls.demux.TSDemuxer;
+    import org.mangui.hls.demux.MP3Demuxer;
+    import org.mangui.hls.demux.AACDemuxer;
+    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.demux.Demuxer;
+    import org.mangui.hls.HLSAudioTrack;
+    import org.mangui.hls.playlist.AltAudioTrack;
+    import org.mangui.hls.HLS;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
     import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.AES;
     import org.mangui.hls.utils.PTS;
+
+    import flash.events.*;
+    import flash.net.*;
+    import flash.utils.ByteArray;
+    import flash.utils.Timer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -993,16 +1001,18 @@ package org.mangui.hls.stream {
                             }
                             // cancel loading
                             _stop_load();
+                            // clean-up tags
+                            fragData.tags = new Vector.<FLVTag>();
                             // tell that new fragment could be loaded
                             _need_reload = true;
                             return;
                         }
                     }
                     // provide tags to HLSNetStream
-                    _callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _callback(_level, _frag_current.continuity,_frag_current.seqnum,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
                     var processing_duration : Number = (new Date().valueOf() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
-                    var tagsMetrics : HLSMetrics = new HLSMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
+                    var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     _hasDiscontinuity = false;
                     fragData.tags = new Vector.<FLVTag>();
@@ -1084,10 +1094,10 @@ package org.mangui.hls.stream {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
                 _frag_loading = false;
 
-                var tagsMetrics : HLSMetrics = new HLSMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
+                var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
 
                 if (fragData.tags.length) {
-                    _callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _callback(_level, _frag_current.continuity,_frag_current.seqnum,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
                     fragData.tags_pts_min_video = fragData.tags_pts_max_video;

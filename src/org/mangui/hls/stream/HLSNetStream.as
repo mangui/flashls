@@ -1,14 +1,21 @@
 package org.mangui.hls.stream {
+    import org.mangui.hls.event.HLSPlayMetrics;
+    import org.mangui.hls.constant.HLSSeekMode;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSMediatime;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSSeekStates;
+    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.event.HLSEvent;
+
     import flash.events.Event;
     import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
     import flash.net.*;
     import flash.utils.*;
     
-    import org.mangui.hls.*;
-    //import org.mangui.hls.demux.*;
-	import org.mangui.hls.flv.*;
-    import org.mangui.hls.stream.*;
     
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
@@ -61,6 +68,9 @@ package org.mangui.hls.stream {
         private var _buffer_threshold : Number;
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
+        /** level/sn used to detect fragment change **/
+        private var _cur_level : int;
+        private var _cur_sn : int;
 
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader) : void {
@@ -77,10 +87,11 @@ package org.mangui.hls.stream {
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
         };
 
-        public function onHLSContinuityChange() : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int) : void {
             CONFIG::LOGGING {
-                Log.debug("continuity change");
+                Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc)));
         }
 
         /** Check the bufferlength. **/
@@ -230,7 +241,7 @@ package org.mangui.hls.stream {
         };
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
+        private function _loaderCallback(level : int, cc : int, sn : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -301,15 +312,24 @@ package org.mangui.hls.stream {
                 _buffer_cur_min_pts = first_pts;
                 _buffer_cur_max_pts = max_pts;
                 tag = new FLVTag(FLVTag.DISCONTINUITY, first_pts, first_pts, false);
-                var data : ByteArray = new ByteArray();
-                data.objectEncoding = ObjectEncoding.AMF0;
-                data.writeObject("onHLSContinuityChange");
-                // data.writeObject(hasDiscontinuity);
-                tag.push(data, 0, data.length);
                 _flvTagBuffer.push(tag);
             } else {
                 // same continuity than previously, update its max PTS
                 _buffer_cur_max_pts = max_pts;
+            }
+
+            if (_cur_level != level || _cur_sn != sn) {
+                _cur_level = level;
+                _cur_sn = sn;
+                tag = new FLVTag(FLVTag.FRAGMENT_METADATA , first_pts, first_pts, false);
+                var data : ByteArray = new ByteArray();
+                data.objectEncoding = ObjectEncoding.AMF0;
+                data.writeObject("onHLSFragmentChange");
+                data.writeObject(level);
+                data.writeObject(sn);
+                data.writeObject(cc);
+                tag.push(data, 0, data.length);
+                _flvTagBuffer.push(tag);
             }
 
             /* if no seek in progress or if in segment seeking mode : push all FLV tags */

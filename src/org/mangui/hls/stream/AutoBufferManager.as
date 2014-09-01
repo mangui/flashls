@@ -1,5 +1,7 @@
 package org.mangui.hls.stream {
-    import org.mangui.hls.*;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.event.HLSEvent;
     
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
@@ -42,7 +44,7 @@ package org.mangui.hls.stream {
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
-            var cur_bw : Number = event.metrics.bandwidth;
+            var cur_bw : Number = event.loadMetrics.bandwidth;
             _bw[_nb_samples % MAX_SAMPLES] = cur_bw;
             _nb_samples++;
 
@@ -65,7 +67,7 @@ package org.mangui.hls.stream {
              *                                  this part is a simple rule by 3, assuming we keep same dl bandwidth 
              *  bw ratio is the conservative factor, assuming that next segment will be downloaded with min bandwidth
              */
-            _minBufferLength = event.metrics.frag_processing_time * (_targetduration / event.metrics.frag_duration) * bw_ratio;
+            _minBufferLength = event.loadMetrics.frag_processing_time * (_targetduration / event.loadMetrics.frag_duration) * bw_ratio;
             // avoid min > max
             if (HLSSettings.maxBufferLength) {
                 _minBufferLength = Math.min(HLSSettings.maxBufferLength, _minBufferLength);

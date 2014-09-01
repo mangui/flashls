@@ -1,6 +1,6 @@
 package org.mangui.osmf.plugins.utils {
-    import org.mangui.hls.HLSError;
-    import org.mangui.hls.HLSEvent;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
     import org.osmf.events.MediaErrorCodes;
 
     public class ErrorManager {
@@ -17,12 +17,12 @@ package org.mangui.osmf.plugins.utils {
                     case HLSError.MANIFEST_LOADING_IO_ERROR:
                         errorCode = MediaErrorCodes.IO_ERROR;
                         break;
-                    case org.mangui.hls.HLSError.FRAGMENT_PARSING_ERROR:
-                    case org.mangui.hls.HLSError.KEY_PARSING_ERROR:
-                    case org.mangui.hls.HLSError.MANIFEST_PARSING_ERROR:
+                    case org.mangui.hls.event.HLSError.FRAGMENT_PARSING_ERROR:
+                    case org.mangui.hls.event.HLSError.KEY_PARSING_ERROR:
+                    case org.mangui.hls.event.HLSError.MANIFEST_PARSING_ERROR:
                         errorCode = MediaErrorCodes.NETSTREAM_FILE_STRUCTURE_INVALID;
                         break;
-                    case org.mangui.hls.HLSError.TAG_APPENDING_ERROR:
+                    case org.mangui.hls.event.HLSError.TAG_APPENDING_ERROR:
                         errorCode = MediaErrorCodes.ARGUMENT_ERROR;
                         break;
                 }

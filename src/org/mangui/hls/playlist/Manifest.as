@@ -5,7 +5,7 @@ package org.mangui.hls.playlist {
     import flash.net.*;
     import flash.utils.ByteArray;
     
-    import org.mangui.hls.HLSTypes;
+    import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.model.Level;
     import org.mangui.hls.model.Fragment;
     
