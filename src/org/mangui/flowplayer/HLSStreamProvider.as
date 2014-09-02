@@ -28,7 +28,7 @@ package org.mangui.flowplayer {
     import org.mangui.hls.utils.Log;
     }
 
-    public class HLSProvider  implements StreamProvider,Plugin {
+    public class HLSStreamProvider  implements StreamProvider,Plugin {
         private var _volumecontroller : VolumeController;
         private var _playlist : Playlist;
         private var _timeProvider : TimeProvider;
