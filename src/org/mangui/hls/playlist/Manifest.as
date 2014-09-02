@@ -132,6 +132,7 @@ package org.mangui.hls.playlist {
             var extinf_found : Boolean = false;
             var byterange_start_offset : int = -1;
             var byterange_end_offset : int = -1;
+            var custom_tags : Vector.<String>;
 
             while (i < lines.length) {
                 var line : String = lines[i++];
@@ -228,8 +229,12 @@ package org.mangui.hls.playlist {
                     var comma_position : int = line.indexOf(',');
                     var duration : Number = (comma_position == -1) ? parseFloat(line.substr(FRAGMENT.length)) : parseFloat(line.substr(FRAGMENT.length, comma_position - FRAGMENT.length));
                     extinf_found = true;
+                    custom_tags = new Vector.<String>();
                 } else if (line.indexOf('#') == 0) {
-                    // unsupported tag, skip line
+                    // unsupported/custom tags, store them if extinf found previously
+                    if (extinf_found) {
+                        custom_tags.push(line);
+                    }
                 } else if (extinf_found == true) {
                     var url : String = _extractURL(line, base);
                     var fragment_decrypt_iv : ByteArray;
@@ -250,7 +255,7 @@ package org.mangui.hls.playlist {
                     } else {
                         fragment_decrypt_iv = null;
                     }
-                    fragments.push(new Fragment(url, duration, seqnum++, start_time, continuity_index, program_date, decrypt_url, fragment_decrypt_iv, byterange_start_offset, byterange_end_offset));
+                    fragments.push(new Fragment(url, duration, seqnum++, start_time, continuity_index, program_date, decrypt_url, fragment_decrypt_iv, byterange_start_offset, byterange_end_offset, custom_tags));
                     start_time += duration;
                     if (program_date_defined) {
                         program_date += 1000 * duration;

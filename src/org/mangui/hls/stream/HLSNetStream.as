@@ -87,11 +87,18 @@ package org.mangui.hls.stream {
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
         };
 
-        public function onHLSFragmentChange(level : int, seqnum : int, cc : int) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc)));
+            var custom_tags : Vector.<String> = new Vector.<String>();
+            for (var i : uint = 0; i < tags.length; i++) {
+                custom_tags.push(tags[i]);
+                CONFIG::LOGGING {
+                    Log.debug("custom tag:" + tags[i]);
+                }
+            }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, custom_tags)));
         }
 
         /** Check the bufferlength. **/
@@ -241,7 +248,7 @@ package org.mangui.hls.stream {
         };
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(level : int, cc : int, sn : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
+        private function _loaderCallback(level : int, cc : int, sn : int, custom_tags : Vector.<String>, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -321,13 +328,16 @@ package org.mangui.hls.stream {
             if (_cur_level != level || _cur_sn != sn) {
                 _cur_level = level;
                 _cur_sn = sn;
-                tag = new FLVTag(FLVTag.FRAGMENT_METADATA , first_pts, first_pts, false);
+                tag = new FLVTag(FLVTag.FRAGMENT_METADATA, first_pts, first_pts, false);
                 var data : ByteArray = new ByteArray();
                 data.objectEncoding = ObjectEncoding.AMF0;
                 data.writeObject("onHLSFragmentChange");
                 data.writeObject(level);
                 data.writeObject(sn);
                 data.writeObject(cc);
+                for each (var custom_tag : String in custom_tags) {
+                    data.writeObject(custom_tag);
+                }
                 tag.push(data, 0, data.length);
                 _flvTagBuffer.push(tag);
             }
