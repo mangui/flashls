@@ -1,12 +1,13 @@
 package org.mangui.hls {
     import org.mangui.hls.event.HLSEvent;
+
     import flash.display.Stage;
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.URLStream;
     import flash.events.EventDispatcher;
     import flash.events.Event;
-    
+
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.ManifestLoader;
@@ -14,9 +15,8 @@ package org.mangui.hls {
     import org.mangui.hls.stream.HLSNetStream;
 
     CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
+        import org.mangui.hls.utils.Log;
     }
-    
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
         /** The quality monitor. **/
@@ -45,7 +45,7 @@ package org.mangui.hls {
         override public function dispatchEvent(event : Event) : Boolean {
             if (event.type == HLSEvent.ERROR) {
                 CONFIG::LOGGING {
-                Log.error((event as HLSEvent).error);
+                    Log.error((event as HLSEvent).error);
                 }
                 _hlsNetStream.close();
             }
@@ -64,32 +64,37 @@ package org.mangui.hls {
             _hlsNetStream = null;
         }
 
-        /** Return the playback quality start level **/
+        /** Return the quality level used when starting a fresh playback **/
         public function get startlevel() : int {
             return _manifestLoader.startlevel;
         };
 
-        /** Return the playback quality seek level **/
+        /** Return the quality level used after a seek operation **/
         public function get seeklevel() : int {
             return _manifestLoader.seeklevel;
         };
 
-        /** Return the playback quality level of last loaded fragment **/
+        /** Return the quality level of the currently played fragment **/
+        public function get playbacklevel() : int {
+            return _hlsNetStream.playbackLevel;
+        };
+
+        /** Return the quality level of last loaded fragment **/
         public function get level() : int {
             return _fragmentLoader.level;
         };
 
-        /*  set playback quality level (-1 for automatic level selection) */
+        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set level(level : int) : void {
             _fragmentLoader.level = level;
         };
 
-        /* check if we are in autolevel mode */
+        /* check if we are in automatic level selection mode */
         public function get autolevel() : Boolean {
             return _fragmentLoader.autolevel;
         };
 
-        /** Return bitrate level lists. **/
+        /** Return a Vector of quality level **/
         public function get levels() : Vector.<Level> {
             return _manifestLoader.levels;
         };

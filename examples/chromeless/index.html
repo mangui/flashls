@@ -93,7 +93,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
       <td>Min Buffer Size</td>
       <td>Buffer Size</td>
       <td>Max Buffer Size</td>
-      <td>Quality Level</td>
+      <td>Load Level</td>
       <td>Audio Track Id</td>
       <td>Log debug</td>
       <td>Log debug2</td>
@@ -470,9 +470,13 @@ function onError(code,url,message) {
   appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
 }
 
-function onFragment(bandwidth,level,width) {
-  //appendLog("onFragment(): bandwidth:" + bandwidth + " level:" + level + " width:" + width);
+function onFragmentLoaded(bandwidth,level,width) {
+  appendLog("onFragmentLoaded(): bandwidth:" + bandwidth + " level:" + level + " width:" + width);
 }
+function onFragmentPlaying(level,seqnum) {
+  appendLog("onFragmentPlaying(): level:" + level + " sn:" + seqnum);
+}
+
 function onManifest(duration) {
   appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
   document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
