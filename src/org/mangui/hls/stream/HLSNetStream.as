@@ -325,10 +325,13 @@ package org.mangui.hls.stream {
                 _buffer_cur_max_pts = max_pts;
             }
 
+			/* detect if we are switching to a new fragment. in that case inject a metadata tag
+			 * Netstream will notify the metadata back when starting playback of this fragment  
+			 */
             if (_cur_level != level || _cur_sn != sn) {
                 _cur_level = level;
                 _cur_sn = sn;
-                tag = new FLVTag(FLVTag.FRAGMENT_METADATA, first_pts, first_pts, false);
+                tag = new FLVTag(FLVTag.METADATA, first_pts, first_pts, false);
                 var data : ByteArray = new ByteArray();
                 data.objectEncoding = ObjectEncoding.AMF0;
                 data.writeObject("onHLSFragmentChange");
@@ -492,6 +495,7 @@ package org.mangui.hls.stream {
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;
             _reached_vod_end = false;
+            _cur_level = _cur_sn = NaN;
             if (HLSSettings.minBufferLength == -1) {
                 _buffer_threshold = _autoBufferManager.minBufferLength;
             } else {

@@ -17,8 +17,8 @@ package org.mangui.hls.flv
 		public static const MP3_RAW:int = 4;
 		/** Discontinuity Data Type ID. **/
 		public static const DISCONTINUITY:int = 5;
-		/** Fragment metadata Type ID. **/
-		public static const FRAGMENT_METADATA :int = 6;
+		/** metadata Type ID. **/
+		public static const METADATA :int = 6;
 
         /* FLV TAG TYPE */
 		private static var TAG_TYPE_AUDIO : int = 8;
@@ -122,7 +122,7 @@ package org.mangui.hls.flv
 				array.writeByte(compositionTime >> 16);
 				array.writeByte(compositionTime >> 8);
 				array.writeByte(compositionTime);
-            } else if (type == DISCONTINUITY || type == FRAGMENT_METADATA) {
+            } else if (type == DISCONTINUITY || type == METADATA) {
                 array = getTagHeader(FLVTag.TAG_TYPE_SCRIPT, length, pts);
             } else {
 				array = getTagHeader(TAG_TYPE_AUDIO, length + 2, pts);
