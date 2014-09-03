@@ -143,7 +143,7 @@ package org.mangui.chromeless {
 
         protected function _fragmentPlayingHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("onFragmentPlaying", event.playMetrics.level,event.playMetrics.seqnum);
+                ExternalInterface.call("onFragmentPlaying", event.playMetrics);
             }
         };
 

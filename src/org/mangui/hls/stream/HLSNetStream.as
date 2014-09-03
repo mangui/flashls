@@ -91,14 +91,14 @@ package org.mangui.hls.stream {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
             _playbackLevel = level;
-            var custom_tags : Vector.<String> = new Vector.<String>();
+            var tag_list : Vector.<String> = new Vector.<String>();
             for (var i : uint = 0; i < tags.length; i++) {
-                custom_tags.push(tags[i]);
+                tag_list.push(tags[i]);
                 CONFIG::LOGGING {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, custom_tags)));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, tag_list)));
         }
 
         /** Check the bufferlength. **/
@@ -253,7 +253,7 @@ package org.mangui.hls.stream {
         };
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(level : int, cc : int, sn : int, custom_tags : Vector.<String>, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
+        private function _loaderCallback(level : int, cc : int, sn : int, tag_list : Vector.<String>, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -343,7 +343,7 @@ package org.mangui.hls.stream {
                 data.writeObject(level);
                 data.writeObject(sn);
                 data.writeObject(cc);
-                for each (var custom_tag : String in custom_tags) {
+                for each (var custom_tag : String in tag_list) {
                     data.writeObject(custom_tag);
                 }
                 tag.push(data, 0, data.length);
