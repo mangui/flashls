@@ -69,8 +69,6 @@ package org.mangui.hls.stream {
         private var _pts_just_loaded : Boolean = false;
         /** boolean to indicate whether Buffer could request new fragment load **/
         private var _need_reload : Boolean = true;
-        /** Reference to the alternate audio track list. **/
-        private var _altAudioTrackLists : Vector.<AltAudioTrack>;
         /** list of audio tracks from demuxed fragments **/
         private var _audioTracksfromDemux : Vector.<HLSAudioTrack>;
         /** list of audio tracks from Manifest, matching with current level **/
@@ -105,7 +103,6 @@ package org.mangui.hls.stream {
             _autoLevelManager = new AutoLevelManager(hls);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            _hls.addEventListener(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE, _altAudioTracksListChangedHandler);
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
         };
@@ -115,7 +112,6 @@ package org.mangui.hls.stream {
             _autoLevelManager.dispose();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            _hls.removeEventListener(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE, _altAudioTracksListChangedHandler);
         }
 
         /**  fragment loading Timer **/
@@ -199,10 +195,6 @@ package org.mangui.hls.stream {
 
         public function get audioTracks() : Vector.<HLSAudioTrack> {
             return _audioTracks;
-        }
-
-        public function get altAudioTracks() : Vector.<AltAudioTrack> {
-            return _altAudioTrackLists;
         }
 
         /** key load completed. **/
@@ -751,14 +743,6 @@ package org.mangui.hls.stream {
             }
         }
 
-        /** Store the alternate audio track lists. **/
-        private function _altAudioTracksListChangedHandler(event : HLSEvent) : void {
-            _altAudioTrackLists = event.altAudioTracks;
-            CONFIG::LOGGING {
-                Log.info(_altAudioTrackLists.length + " alternate audio tracks found");
-            }
-        }
-
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _levels = event.levels;
@@ -775,14 +759,13 @@ package org.mangui.hls.stream {
         private function _levelLoadedHandler(event : HLSEvent) : void {
             _last_updated_level = event.level;
             if (_last_updated_level == _level) {
-                var altAudioTrack : AltAudioTrack;
                 var audioTrackList : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
                 var stream_id : String = _levels[_level].audio_stream_id;
                 // check if audio stream id is set, and alternate audio tracks available
-                if (stream_id && _altAudioTrackLists) {
+                if (stream_id && _hls.altAudioTracks) {
                     // try to find alternate audio streams matching with this ID
-                    for (var idx : int = 0; idx < _altAudioTrackLists.length; idx++) {
-                        altAudioTrack = _altAudioTrackLists[idx];
+                    for (var idx : int = 0; idx < _hls.altAudioTracks.length; idx++) {
+                        var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[idx];
                         if (altAudioTrack.group_id == stream_id) {
                             var isDefault : Boolean = (altAudioTrack.default_track == true || altAudioTrack.autoselect == true);
                             CONFIG::LOGGING {
@@ -838,7 +821,7 @@ package org.mangui.hls.stream {
             if (default_manifest != -1) {
                 audioTrack_ = _audioTracksfromManifest[default_manifest];
                 // if URL set, default audio track is not embedded into MPEG2-TS
-                if (_altAudioTrackLists[audioTrack_.id].url || default_demux == -1) {
+                if (_hls.altAudioTracks[audioTrack_.id].url || default_demux == -1) {
                     CONFIG::LOGGING {
                         Log.debug("default audio track found in Manifest");
                     }
@@ -1009,7 +992,7 @@ package org.mangui.hls.stream {
                         }
                     }
                     // provide tags to HLSNetStream
-                    _callback(_level, _frag_current.continuity,_frag_current.seqnum,_frag_current.custom_tags,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _callback(_level, _frag_current.continuity, _frag_current.seqnum, _frag_current.custom_tags, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
                     var processing_duration : Number = (new Date().valueOf() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
@@ -1097,7 +1080,7 @@ package org.mangui.hls.stream {
                 var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
 
                 if (fragData.tags.length) {
-                    _callback(_level, _frag_current.continuity,_frag_current.seqnum,_frag_current.custom_tags , fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _callback(_level, _frag_current.continuity, _frag_current.seqnum, _frag_current.custom_tags, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
                     fragData.tags_pts_min_video = fragData.tags_pts_max_video;

@@ -150,7 +150,7 @@ package org.mangui.hls {
 
         /** get alternate audio tracks list from playlist **/
         public function get altAudioTracks() : Vector.<AltAudioTrack> {
-            return _fragmentLoader.altAudioTracks;
+            return _manifestLoader.altAudioTracks;
         };
 
         /** get index of the selected audio track (index in audio track lists) **/
