@@ -19,6 +19,8 @@ package org.mangui.hls.playlist {
         public static const FRAGMENT : String = '#EXTINF:';
         /** Header tag that must be at the first line. **/
         public static const HEADER : String = '#EXTM3U';
+        /** Version of the playlist file. **/
+        public static const VERSION : String = '#EXT-X-VERSION'
         /** Starttag for a level. **/
         public static const LEVEL : String = '#EXT-X-STREAM-INF:';
         /** Tag that delimits the end of a playlist. **/
@@ -140,12 +142,16 @@ package org.mangui.hls.playlist {
                 if (line.length <= 1) {
                     continue;
                 }
+
+                // discard tags pertaining to a playlist and not a fragment, that require no further processing
+                if (line.indexOf(HEADER) == 0 || line.indexOf(TARGETDURATION) == 0 || line.indexOf(VERSION) == 0) {
+                    continue;
+                }
+
                 if (line.indexOf(SEQNUM) == 0) {
                     seqnum = parseInt(line.substr(SEQNUM.length));
-                    tags.push(line);
                 } else if (line.indexOf(DISCONTINUITY_SEQ) == 0) {
                     continuity_index = parseInt(line.substr(DISCONTINUITY_SEQ.length));
-                    tags.push(line);
                 } else if (line.indexOf(BYTERANGE) == 0) {
                     var params : Array = line.substr(BYTERANGE.length).split('@');
                     if (params.length == 1) {
@@ -154,7 +160,7 @@ package org.mangui.hls.playlist {
                         byterange_start_offset = parseInt(params[1]);
                     }
                     byterange_end_offset = parseInt(params[0]) + byterange_start_offset;
-                    tags.push(line);
+                    tag_list.push(line);
                 } else if (line.indexOf(KEY) == 0) {
                     // #EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=52",IV=.....
                     var keyLine : String = line.substr(KEY.length);
@@ -213,7 +219,7 @@ package org.mangui.hls.playlist {
                                 break;
                         }
                     }
-                    tags.push(line);
+                    tag_list.push(line);
                 } else if (line.indexOf(PROGRAMDATETIME) == 0) {
                     // CONFIG::LOGGING {
                     // Log.info(line);
@@ -227,18 +233,18 @@ package org.mangui.hls.playlist {
                     // month should be from 0 (January) to 11 (December).
                     program_date = new Date(year, (month - 1), day, hour, minutes, seconds).getTime();
                     program_date_defined = true;
-                    tags.push(line);
+                    tag_list.push(line);
                 } else if (line.indexOf(DISCONTINUITY) == 0) {
                     continuity_index++;
-                    tags.push(line);
+                    tag_list.push(line);
                 } else if (line.indexOf(FRAGMENT) == 0) {
                     var comma_position : int = line.indexOf(',');
                     var duration : Number = (comma_position == -1) ? parseFloat(line.substr(FRAGMENT.length)) : parseFloat(line.substr(FRAGMENT.length, comma_position - FRAGMENT.length));
                     extinf_found = true;
-                    tags.push(line);
+                    tag_list.push(line);
                 } else if (line.indexOf('#') == 0) {
                     // unsupported/custom tags, store them
-                    tags.push(line);
+                    tag_list.push(line);
                 } else if (extinf_found == true) {
                     var url : String = _extractURL(line, base);
                     var fragment_decrypt_iv : ByteArray;
