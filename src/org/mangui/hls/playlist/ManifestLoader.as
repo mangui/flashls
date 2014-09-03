@@ -132,31 +132,32 @@ package org.mangui.hls.playlist {
         };
 
         /** parse a playlist **/
-        private function _parseLevelPlaylist(string : String, url : String, index : int) : void {
+        private function _parseLevelPlaylist(string : String, url : String, level : int) : void {
             if (string != null && string.length != 0) {
                 CONFIG::LOGGING {
-                Log.debug("level " + index + " playlist:\n" + string);
+                Log.debug("level " + level + " playlist:\n" + string);
                 }
                 var frags : Vector.<Fragment> = Manifest.getFragments(string, url);
                 // set fragment and update sequence number range
-                _levels[index].updateFragments(frags);
-                _levels[index].targetduration = Manifest.getTargetDuration(string);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[index].duration));
+                _levels[level].updateFragments(frags);
+                _levels[level].targetduration = Manifest.getTargetDuration(string);
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[level].duration));
             }
 
             // Check whether the stream is live or not finished yet
             if (Manifest.hasEndlist(string)) {
                 _type = HLSTypes.VOD;
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_ENDLIST,level));
             } else {
                 _type = HLSTypes.LIVE;
-                var timeout : Number = Math.max(100, _reload_playlists_timer + 1000 * _levels[index].averageduration - getTimer());
+                var timeout : Number = Math.max(100, _reload_playlists_timer + 1000 * _levels[level].averageduration - getTimer());
                 CONFIG::LOGGING {
-                Log.debug("Level " + index + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
+                Log.debug("Level " + level + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
                 }
                 _timeoutID = setTimeout(_loadActiveLevelPlaylist, timeout);
             }
             if (!_canStart) {
-                _canStart = (_levels[index].fragments.length > 0);
+                _canStart = (_levels[level].fragments.length > 0);
                 if (_canStart) {
                     CONFIG::LOGGING {
                     Log.debug("first level filled with at least 1 fragment, notify event");
@@ -164,7 +165,7 @@ package org.mangui.hls.playlist {
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED, _levels));
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, index));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, level));
             _manifest_loading = null;
         };
 

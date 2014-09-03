@@ -22,6 +22,9 @@ package org.mangui.hls.event {
         public static const LEVEL_LOADED : String = "hlsEventLevelLoaded";
         /** Identifier for a level switch event. **/
         public static const LEVEL_SWITCH : String = "hlsEventLevelSwitch";
+        /** Identifier for a level ENDLIST event. **/
+        public static const LEVEL_ENDLIST : String = "hlsEventLevelEndList";
+
 
         /** Identifier for a fragment loading event. **/
         public static const FRAGMENT_LOADING : String = "hlsEventFragmentLoading";
