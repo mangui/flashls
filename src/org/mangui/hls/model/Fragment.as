@@ -28,10 +28,10 @@ package org.mangui.hls.model {
         /** metrics **/
         public var metrics : FragmentMetrics;
         /** custom tags **/
-        public var custom_tags : Vector.<String>;
+        public var tag_list : Vector.<String>;
 
         /** Create the fragment. **/
-        public function Fragment(url : String, duration : Number, seqnum : int, start_time : Number, continuity : int, program_date : Number, decrypt_url : String, decrypt_iv : ByteArray, byterange_start_offset : int, byterange_end_offset : int , custom_tags : Vector.<String>) {
+        public function Fragment(url : String, duration : Number, seqnum : int, start_time : Number, continuity : int, program_date : Number, decrypt_url : String, decrypt_iv : ByteArray, byterange_start_offset : int, byterange_end_offset : int , tag_list : Vector.<String>) {
             this.url = url;
             this.duration = duration;
             this.seqnum = seqnum;
@@ -42,7 +42,7 @@ package org.mangui.hls.model {
             this.decrypt_iv = decrypt_iv;
             this.byterange_start_offset = byterange_start_offset;
             this.byterange_end_offset = byterange_end_offset;
-            this.custom_tags = custom_tags;
+            this.tag_list = tag_list;
             data = new FragmentData();
             metrics = new FragmentMetrics();
             // CONFIG::LOGGING {
