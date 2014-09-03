@@ -10,7 +10,6 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.HLS;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
