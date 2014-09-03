@@ -1,5 +1,5 @@
 package org.mangui.hls {
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.model.AudioTrack;
 
     import flash.display.Stage;
     import flash.net.NetConnection;
@@ -8,9 +8,11 @@ package org.mangui.hls {
     import flash.events.EventDispatcher;
     import flash.events.Event;
 
-    import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.ManifestLoader;
+    import org.mangui.hls.stream.AudioTrackController;
     import org.mangui.hls.stream.FragmentLoader;
     import org.mangui.hls.stream.HLSNetStream;
 
@@ -19,10 +21,9 @@ package org.mangui.hls {
     }
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
-        /** The quality monitor. **/
         private var _fragmentLoader : FragmentLoader;
-        /** The manifest parser. **/
         private var _manifestLoader : ManifestLoader;
+        private var _audioTrackController : AudioTrackController;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
         /** HLS URLStream **/
@@ -35,9 +36,10 @@ package org.mangui.hls {
             var connection : NetConnection = new NetConnection();
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
+            _audioTrackController = new AudioTrackController(this);
             _hlsURLStream = URLStream as Class;
             // default loader
-            _fragmentLoader = new FragmentLoader(this);
+            _fragmentLoader = new FragmentLoader(this, _audioTrackController);
             _hlsNetStream = new HLSNetStream(connection, this, _fragmentLoader);
         };
 
@@ -55,9 +57,11 @@ package org.mangui.hls {
         public function dispose() : void {
             _fragmentLoader.dispose();
             _manifestLoader.dispose();
+            _audioTrackController.dispose();
             _hlsNetStream.dispose_();
             _fragmentLoader = null;
             _manifestLoader = null;
+            _audioTrackController = null;
             _hlsNetStream = null;
             _client = null;
             _stage = null;
@@ -144,8 +148,8 @@ package org.mangui.hls {
         };
 
         /** get audio tracks list**/
-        public function get audioTracks() : Vector.<HLSAudioTrack> {
-            return _fragmentLoader.audioTracks;
+        public function get audioTracks() : Vector.<AudioTrack> {
+            return _audioTrackController.audioTracks;
         };
 
         /** get alternate audio tracks list from playlist **/
@@ -155,12 +159,12 @@ package org.mangui.hls {
 
         /** get index of the selected audio track (index in audio track lists) **/
         public function get audioTrack() : int {
-            return _fragmentLoader.audioTrack;
+            return _audioTrackController.audioTrack;
         };
 
         /** select an audio track, based on its index in audio track lists**/
         public function set audioTrack(val : int) : void {
-            _fragmentLoader.audioTrack = val;
+            _audioTrackController.audioTrack = val;
         }
 
         /* set stage */

@@ -1,6 +1,6 @@
 package org.mangui.chromeless {
     import org.mangui.hls.utils.ScaleVideo;
-    import org.mangui.hls.HLSAudioTrack;
+    import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
@@ -293,7 +293,7 @@ package org.mangui.chromeless {
 
         protected function _getAudioTrackList() : Array {
             var list : Array = [];
-            var vec : Vector.<HLSAudioTrack> = _hls.audioTracks;
+            var vec : Vector.<AudioTrack> = _hls.audioTracks;
             for (var i : Object in vec) {
                 list.push(vec[i]);
             }

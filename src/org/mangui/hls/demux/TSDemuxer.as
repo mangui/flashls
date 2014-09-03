@@ -1,7 +1,7 @@
 package org.mangui.hls.demux {
     import flash.display.DisplayObject;
     import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.HLSAudioTrack;
+    import org.mangui.hls.model.AudioTrack;
 
     import flash.events.Event;
     import flash.events.EventDispatcher;
@@ -521,7 +521,7 @@ package org.mangui.hls.demux {
             var pointerField : uint = 0;
 
             /** audio Track List */
-            var audioList : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
+            var audioList : Vector.<AudioTrack> = new Vector.<AudioTrack>();
 
             if (stt) {
                 pointerField = _data.readUnsignedByte();
@@ -546,7 +546,7 @@ package org.mangui.hls.demux {
                 var sid : uint = _data.readUnsignedShort() & 0x1fff;
                 if (typ == 0x0F) {
                     // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
-                    audioList.push(new HLSAudioTrack('TS/AAC ' + audioList.length, HLSAudioTrack.FROM_DEMUX, sid, (audioList.length == 0)));
+                    audioList.push(new AudioTrack('TS/AAC ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0)));
                 } else if (typ == 0x1B) {
                     // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
                     _avcId = sid;
@@ -556,7 +556,7 @@ package org.mangui.hls.demux {
                 } else if (typ == 0x03 || typ == 0x04) {
                     // ISO/IEC 11172-3 (MPEG-1 audio)
                     // or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)
-                    audioList.push(new HLSAudioTrack('TS/MP3 ' + audioList.length, HLSAudioTrack.FROM_DEMUX, sid, (audioList.length == 0)));
+                    audioList.push(new AudioTrack('TS/MP3 ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0)));
                 }
                 // es_info_length
                 var sel : uint = _data.readUnsignedShort() & 0xFFF;
@@ -573,7 +573,7 @@ package org.mangui.hls.demux {
             }
             // provide audio track List to audio select callback. this callback will return the selected audio track
             var audioPID : int;
-            var audioTrack : HLSAudioTrack = _callback_audioselect(audioList);
+            var audioTrack : AudioTrack = _callback_audioselect(audioList);
             if (audioTrack) {
                 audioPID = audioTrack.id;
                 _audioIsAAC = (audioTrack.title.indexOf("AAC") > -1);

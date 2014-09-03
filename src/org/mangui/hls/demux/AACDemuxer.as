@@ -1,5 +1,5 @@
 package org.mangui.hls.demux {
-    import org.mangui.hls.HLSAudioTrack;
+    import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.flv.FLVTag;
 
     import flash.utils.ByteArray;
@@ -69,8 +69,8 @@ package org.mangui.hls.demux {
                 audioTags.push(audioTag);
                 i++;
             }
-            var audiotracks : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
-            audiotracks.push(new HLSAudioTrack('AAC ES', HLSAudioTrack.FROM_DEMUX, 0, true));
+            var audiotracks : Vector.<AudioTrack> = new Vector.<AudioTrack>();
+            audiotracks.push(new AudioTrack('AAC ES', AudioTrack.FROM_DEMUX, 0, true));
             // report unique audio track. dont check return value as obviously the track will be selected
             _callback_audioselect(audiotracks);
             CONFIG::LOGGING {
