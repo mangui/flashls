@@ -175,6 +175,7 @@ package org.mangui.flowplayer {
             _pauseAfterStart = pauseAfterStart;
             clip.type = ClipType.VIDEO;
             clip.dispatch(ClipEventType.BEGIN);
+            clip.setNetStream(_hls.stream);
             return;
         }
 
