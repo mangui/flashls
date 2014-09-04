@@ -91,7 +91,7 @@ package org.mangui.hls.stream {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
             _playbackLevel = level;
-            var tag_list : Vector.<String> = new Vector.<String>();
+            var tag_list : Array = new Array();
             for (var i : uint = 0; i < tags.length; i++) {
                 tag_list.push(tags[i]);
                 CONFIG::LOGGING {

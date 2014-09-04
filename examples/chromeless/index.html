@@ -473,8 +473,8 @@ function onError(code,url,message) {
 function onFragmentLoaded(bandwidth,level,width) {
   appendLog("onFragmentLoaded(): bandwidth:" + bandwidth + " level:" + level + " width:" + width);
 }
-function onFragmentPlaying(level,seqnum) {
-  appendLog("onFragmentPlaying(): level:" + level + " sn:" + seqnum);
+function onFragmentPlaying(playmetrics) {
+  appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " tags:" + playmetrics.tag_list);
 }
 
 function onManifest(duration) {

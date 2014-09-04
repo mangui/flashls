@@ -4,9 +4,9 @@ package org.mangui.hls.event {
         public var level : int;
         public var seqnum : int;
         public var continuity_counter : int;
-        public var tag_list : Vector.<String>;
+        public var tag_list : Array;
 
-        public function HLSPlayMetrics(level : int, seqnum : int, cc : int, tag_list : Vector.<String>) {
+        public function HLSPlayMetrics(level : int, seqnum : int, cc : int, tag_list : Array) {
             this.level = level;
             this.seqnum = seqnum;
             this.continuity_counter = cc;
