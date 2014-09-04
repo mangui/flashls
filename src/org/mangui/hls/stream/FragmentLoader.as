@@ -819,7 +819,7 @@ package org.mangui.hls.stream {
                         }
                     }
                     // provide tags to HLSNetStream
-                    _callback(_level, _frag_current.continuity, _frag_current.seqnum, _frag_current.custom_tags, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _callback(_level, _frag_current.continuity, _frag_current.seqnum, _frag_current.tag_list, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
                     var processing_duration : Number = (new Date().valueOf() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
@@ -907,7 +907,7 @@ package org.mangui.hls.stream {
                 var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
 
                 if (fragData.tags.length) {
-                    _callback(_level, _frag_current.continuity, _frag_current.seqnum, _frag_current.custom_tags, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _callback(_level, _frag_current.continuity, _frag_current.seqnum, _frag_current.tag_list, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
                     fragData.tags_pts_min_video = fragData.tags_pts_max_video;
