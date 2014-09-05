@@ -20,7 +20,7 @@ package org.mangui.hls.playlist {
         /** Header tag that must be at the first line. **/
         public static const HEADER : String = '#EXTM3U';
         /** Version of the playlist file. **/
-        public static const VERSION : String = '#EXT-X-VERSION'
+        public static const VERSION : String = '#EXT-X-VERSION';
         /** Starttag for a level. **/
         public static const LEVEL : String = '#EXT-X-STREAM-INF:';
         /** Tag that delimits the end of a playlist. **/
