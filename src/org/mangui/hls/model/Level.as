@@ -1,8 +1,8 @@
 package org.mangui.hls.model {
-CONFIG::LOGGING {  
-	import org.mangui.hls.utils.Log;
-}
-	import org.mangui.hls.utils.PTS;
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+    }
+    import org.mangui.hls.utils.PTS;
 
     /** HLS streaming quality level. **/
     public class Level {
@@ -40,19 +40,19 @@ CONFIG::LOGGING {
             this.fragments = new Vector.<Fragment>();
         };
 
-        /** Return the sequence number before a given time position. **/
-        public function getSeqNumBeforePosition(position : Number) : int {
+        /** Return the Fragment before a given time position. **/
+        public function getFragmentBeforePosition(position : Number) : Fragment {
             if (fragments[0].data.valid && position < fragments[0].start_time)
-                return start_seqnum;
+                return fragments[0];
 
-            var len:int = fragments.length;
+            var len : int = fragments.length;
             for (var i : int = 0; i < len; i++) {
                 /* check whether fragment contains current position */
                 if (fragments[i].data.valid && fragments[i].start_time <= position && fragments[i].start_time + fragments[i].duration > position) {
-                    return (start_seqnum + i);
+                    return fragments[i];
                 }
             }
-            return end_seqnum;
+            return fragments[len - 1];
         };
 
         /** Return the sequence number from a given program date **/
@@ -60,7 +60,7 @@ CONFIG::LOGGING {
             if (program_date < fragments[0].program_date)
                 return -1;
 
-            var len:int = fragments.length;
+            var len : int = fragments.length;
             for (var i : int = 0; i < len; i++) {
                 /* check whether fragment contains current position */
                 if (fragments[i].data.valid && fragments[i].program_date <= program_date && fragments[i].program_date + 1000 * fragments[i].duration > program_date) {
@@ -82,7 +82,7 @@ CONFIG::LOGGING {
             for (var i : int = firstIndex; i <= lastIndex; i++) {
                 var frag : Fragment = fragments[i];
                 /* check nearest fragment */
-                if ( frag.data.valid && (frag.duration>= 0) && (Math.abs(frag.data.pts_start_computed - pts) < Math.abs(frag.data.pts_start_computed + 1000 * frag.duration - pts))) {
+                if ( frag.data.valid && (frag.duration >= 0) && (Math.abs(frag.data.pts_start_computed - pts) < Math.abs(frag.data.pts_start_computed + 1000 * frag.duration - pts))) {
                     return frag.seqnum;
                 }
             }
@@ -119,7 +119,7 @@ CONFIG::LOGGING {
         /** Return the first index matching with given continuity counter **/
         private function getFirstIndexfromContinuity(continuity : int) : int {
             // look for first fragment matching with given continuity index
-            var len:int = fragments.length;
+            var len : int = fragments.length;
             for (var i : int = 0; i < len; i++) {
                 if (fragments[i].continuity == continuity)
                     return i;
@@ -289,7 +289,7 @@ CONFIG::LOGGING {
 
                 // second, adjust fragment offset
                 var start_time_offset : Number = fragments[0].start_time;
-                var len:int = fragments.length;
+                var len : int = fragments.length;
                 for (i = 0; i < len; i++) {
                     fragments[i].start_time = start_time_offset;
                     start_time_offset += fragments[i].duration;

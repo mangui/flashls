@@ -558,9 +558,8 @@ package org.mangui.hls.stream {
             }
             position = seek_position;
 
-            var seqnum : int = _levels[level].getSeqNumBeforePosition(position);
-            var frag : Fragment = _levels[level].getFragmentfromSeqNum(seqnum);
-            _seqnum = seqnum;
+            var frag : Fragment = _levels[level].getFragmentBeforePosition(position);
+            _seqnum = frag.seqnum;
             _hasDiscontinuity = true;
             CONFIG::LOGGING {
                 Log.debug("Loading       " + _seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
