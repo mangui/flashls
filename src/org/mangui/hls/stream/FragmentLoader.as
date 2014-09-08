@@ -37,8 +37,8 @@ package org.mangui.hls.stream {
         private var _audioTrackController : AudioTrackController;
         /** has manifest just being reloaded **/
         private var _manifest_just_loaded : Boolean = false;
-        /** last updated level. **/
-        private var _last_updated_level : int = 0;
+        /** last loaded level. **/
+        private var _last_loaded_level : int = 0;
         /** Callback for passing forward the fragment tags. **/
         private var _callback : Function;
         /** sequence number that's currently loading. **/
@@ -126,9 +126,10 @@ package org.mangui.hls.stream {
                     }
                 }
                 var level : int;
+                // check if first fragment after seek has been already loaded
                 if (_fragment_first_loaded == false) {
                     _need_reload = false;
-                    // determine first fragment load level, check if we are in fresh start or seek condition
+                    // select level for first fragment load
                     if (_manifest_just_loaded) {
                         level = _hls.startlevel;
                     } else {
@@ -139,14 +140,28 @@ package org.mangui.hls.stream {
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
                     }
                     _switchlevel = true;
-                    // just after seek, load first fragment
-                    loadstatus = _loadfirstfragment(_seek_pos, level);
-                    // check if we need to load next fragment, check if buffer is full
-                } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
+
+                    // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
+                    if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                        // playlist not yet received
+                        CONFIG::LOGGING {
+                            Log.debug("_checkLoading : playlist not received for level:" + level);
+                        }
+                        loadstatus = 1;
+                    } else {
+                        // just after seek, load first fragment
+                        loadstatus = _loadfirstfragment(_seek_pos, level);
+                    }
+
+                    /* first fragment already loaded
+                     * check if we need to load next fragment, do it only if buffer is NOT full
+                     */
+                } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {                    
+                    // select level for next fragment load
                     if (_bIOError == true) {
                         /* in case IO Error has been raised, stick to same level */
                         level = _level;
-                        /* in case fragment was loaded for PTS analysis, stick to same level */
+                        /* in case last fragment was loaded for PTS analysis, stick to same level */
                     } else if (_pts_just_loaded == true) {
                         _pts_just_loaded = false;
                         level = _level;
@@ -154,6 +169,7 @@ package org.mangui.hls.stream {
                     } else if (_switchlevel == true) {
                         level = _level;
                     } else if (_manual_level == -1 && _levels.length > 1 ) {
+                        // select level from heuristics (current level / last fragment duration / buffer length)
                         if (_metrics_previous) {
                             var last_segment_duration : Number = (_frag_previous ? 1000 * _frag_previous.duration : 0);
                             level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength, last_segment_duration, _metrics_previous.processing_duration, _metrics_previous.bandwidth);
@@ -165,13 +181,23 @@ package org.mangui.hls.stream {
                     } else {
                         level = _manual_level;
                     }
+                    // notify in case level switch occurs
                     if (level != _level) {
                         _level = level;
                         _switchlevel = true;
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
                     }
                     _need_reload = false;
-                    loadstatus = _loadnextfragment(_level, _frag_previous);
+                    // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
+                    if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                        // playlist not yet received
+                        CONFIG::LOGGING {
+                            Log.debug("loadnextfragment : playlist not received for level:" + level);
+                        }
+                        loadstatus = 1;
+                    } else {
+                        loadstatus = _loadnextfragment(_level, _frag_previous);
+                    }
                 } else {
                     // no need to load any new fragment, buffer is full already
                     return;
@@ -526,15 +552,6 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug("loadfirstfragment(" + position + ")");
             }
-            // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
-            if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != level)) {
-                // playlist not yet received
-                CONFIG::LOGGING {
-                    Log.debug("loadfirstfragment : playlist not received for level:" + level);
-                }
-                return 1;
-            }
-
             var seek_position : Number;
             if (_hls.type == HLSTypes.LIVE) {
                 /* follow HLS spec :
@@ -573,15 +590,6 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug("loadnextfragment()");
             }
-            // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
-            if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != level)) {
-                // playlist not yet received
-                CONFIG::LOGGING {
-                    Log.debug("loadnextfragment : playlist not received for level:" + level);
-                }
-                return 1;
-            }
-
             var new_seqnum : Number;
             var last_seqnum : Number = -1;
             var log_prefix : String;
@@ -722,7 +730,7 @@ package org.mangui.hls.stream {
 
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
-            _last_updated_level = event.level;
+            _last_loaded_level = event.level;
         };
 
         /** triggered by demux, it should return the audio track to be parsed */
