@@ -309,7 +309,7 @@ package org.mangui.chromeless {
             _hls.load(url);
         };
 
-        protected function _play(position : Number) : void {
+        protected function _play(position : Number=-1) : void {
             _hls.stream.play(null, position);
         };
 
