@@ -41,8 +41,6 @@ package org.mangui.hls.stream {
         private var _last_loaded_level : int = 0;
         /** Callback for passing forward the fragment tags. **/
         private var _tags_callback : Function;
-        /** sequence number that's currently loading. **/
-        private var _seqnum : int;
         /** Quality level of the last fragment load. **/
         private var _level : int;
         /* overrided quality_manual_level level */
@@ -287,8 +285,6 @@ package org.mangui.hls.stream {
                 /* exponential increase of retry timeout, capped to fragmentLoadMaxRetryTimeout */
                 _retry_count++;
                 _retry_timeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _retry_timeout);
-                // in case IO Error reload same fragment
-                _seqnum--;
             } else {
                 var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
@@ -348,7 +344,7 @@ package org.mangui.hls.stream {
                 CONFIG::LOGGING {
                     Log.warn("fragment size is null, invalid it and load next one");
                 }
-                _levels[_level].updateFragment(_seqnum, false);
+                _levels[_level].updateFragment(_frag_current.seqnum, false);
                 _frag_loading = false;
                 return;
             }
@@ -572,10 +568,9 @@ package org.mangui.hls.stream {
             position = seek_position;
 
             var frag : Fragment = _levels[level].getFragmentBeforePosition(position);
-            _seqnum = frag.seqnum;
             _hasDiscontinuity = true;
             CONFIG::LOGGING {
-                Log.debug("Loading       " + _seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
+                Log.debug("Loading       " + frag.seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
             }
             _loadfragment(frag);
             return 0;
@@ -592,7 +587,7 @@ package org.mangui.hls.stream {
             var frag : Fragment;
 
             if (_switchlevel == false || frag_previous.continuity == -1) {
-                last_seqnum = _seqnum;
+                last_seqnum = frag_previous.seqnum;
             } else {
                 // level switch
                 // trust program-time : if program-time defined in previous loaded fragment, try to find seqnum matching program-time in new level.
@@ -628,7 +623,7 @@ package org.mangui.hls.stream {
                             return 1;
                         }
                         /* when probing PTS, take previous sequence number as reference if possible */
-                        new_seqnum = Math.min(_seqnum + 1, _levels[level].getLastSeqNumfromContinuity(frag_previous.continuity));
+                        new_seqnum = Math.min(frag_previous.seqnum + 1, _levels[level].getLastSeqNumfromContinuity(frag_previous.continuity));
                         new_seqnum = Math.max(new_seqnum, _levels[level].getFirstSeqNumfromContinuity(frag_previous.continuity));
                         _pts_loading_in_progress = true;
                         log_prefix = "analyzing PTS ";
@@ -665,10 +660,9 @@ package org.mangui.hls.stream {
                     log_prefix = "Loading       ";
                 }
             }
-            _seqnum = new_seqnum;
-            frag = _levels[level].getFragmentfromSeqNum(_seqnum);
+            frag = _levels[level].getFragmentfromSeqNum(new_seqnum);
             CONFIG::LOGGING {
-                Log.debug(log_prefix + _seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
+                Log.debug(log_prefix + new_seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
             }
             _loadfragment(frag);
             return 0;
@@ -791,10 +785,10 @@ package org.mangui.hls.stream {
 
                     if (_pts_loading_in_progress == true) {
                         _pts_loading_in_progress = false;
-                        _levels[_level].updateFragment(_seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);
+                        _levels[_level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);
                         /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
                         CONFIG::LOGGING {
-                            Log.debug("analyzed  PTS " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + fragData.pts_min);
+                            Log.debug("analyzed  PTS " + _frag_current.seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + fragData.pts_min);
                         }
                         /* check if fragment loaded for PTS analysis is the next one
                         if this is the expected one, then continue
@@ -804,10 +798,10 @@ package org.mangui.hls.stream {
                         // CONFIG::LOGGING {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
                         // }
-                        if (next_seqnum != _seqnum) {
+                        if (next_seqnum != _frag_current.seqnum) {
                             _pts_just_loaded = true;
                             CONFIG::LOGGING {
-                                Log.debug("PTS analysis done on " + _seqnum + ", matching seqnum is " + next_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],cancel loading and get new one");
+                                Log.debug("PTS analysis done on " + _frag_current.seqnum + ", matching seqnum is " + next_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],cancel loading and get new one");
                             }
                             // cancel loading
                             _stop_load();
@@ -898,9 +892,9 @@ package org.mangui.hls.stream {
             try {
                 _switchlevel = false;
                 CONFIG::LOGGING {
-                    Log.debug("Loaded        " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
+                    Log.debug("Loaded        " + _frag_current.seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
-                var start_offset : Number = _levels[_level].updateFragment(_seqnum, true, fragData.pts_min, fragData.pts_max);
+                var start_offset : Number = _levels[_level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
                 _frag_loading = false;
 
