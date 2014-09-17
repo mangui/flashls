@@ -58,6 +58,8 @@ package org.mangui.hls.demux {
         private var _curVideoTag : FLVTag;
         /* ADIF tag inserted ? */
         private var _adifTagInserted : Boolean = false;
+        /* AVCC tag inserted ? */
+        private var _avccTagInserted : Boolean = false;
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : uint = data.position;
@@ -350,7 +352,7 @@ package org.mangui.hls.demux {
                     ppsvect.push(pps);
                 }
             }
-            if (sps_found && pps_found) {
+            if (sps_found && pps_found && _avccTagInserted == false)  {
                 var avcc : ByteArray = AVCC.getAVCC(sps, ppsvect);
                 var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
                 avccTag.push(avcc, 0, avcc.length);
@@ -359,6 +361,7 @@ package org.mangui.hls.demux {
                  * this will fix playback issues with some streams for which there is no IDR NAL unit in same PES packet
                  */
                 _curVideoTag.keyframe = true;
+                _avccTagInserted = true;
             }
         }
 
