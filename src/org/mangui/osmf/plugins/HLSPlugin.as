@@ -7,6 +7,7 @@ package org.mangui.osmf.plugins {
     import org.osmf.media.MediaFactoryItemType;
     import org.osmf.media.MediaResourceBase;
     import org.osmf.media.PluginInfo;
+    import org.mangui.hls.HLSSettings;
     
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
@@ -20,6 +21,14 @@ package org.mangui.osmf.plugins {
             super(items, elementCreatedNotification);
         }
 
+        // can be called to change where logs go - e.g. in Adbobe Air app
+        public static function SetLogger( loggerIn:Function ):void
+        {
+            HLSSettings.logger = loggerIn;
+            HLSSettings.logger( "test", "test2" );
+            Log.info("OSMF HLSPlugin init");
+        }
+		
         /**
          * Called from super class when plugin has been initialized with the MediaFactory from which it was loaded.
          * Used for customize HLSSettings with values provided in resource metadata (that was set eg. in flash vars)
