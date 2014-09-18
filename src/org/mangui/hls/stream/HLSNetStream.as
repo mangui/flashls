@@ -101,6 +101,15 @@ package org.mangui.hls.stream {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, tag_list)));
         }
 
+        // function is called by SCRIPT in FLV
+        public function onID3Data( data:String ) : void {
+            Log.info("NS onID3Data:" + data);
+            CONFIG::LOGGING {
+                Log.debug("id3");
+            }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, data));
+        }
+		
         /** Check the bufferlength. **/
         private function _checkBuffer(e : Event) : void {
             var playback_absolute_position : Number;
