@@ -1,7 +1,7 @@
 package org.mangui.osmf.plugins.traits {
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSEvent;
-    import org.mangui.hls.HLSSeekStates;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.constant.HLSSeekStates;
     import org.osmf.traits.SeekTrait;
     import org.osmf.traits.TimeTrait;
     

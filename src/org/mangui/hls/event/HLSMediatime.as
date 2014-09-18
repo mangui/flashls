@@ -1,4 +1,4 @@
-package org.mangui.hls {
+package org.mangui.hls.event {
     /** Identifiers for the different stream types. **/
     public class HLSMediatime {
         /**  playback position (in seconds), relative to current playlist start. 

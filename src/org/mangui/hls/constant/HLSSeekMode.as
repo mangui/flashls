@@ -1,4 +1,4 @@
-package org.mangui.hls {
+package org.mangui.hls.constant {
     /** HLS Seek mode configuration **/
     public class HLSSeekMode {
         /** seek on segment boundary **/

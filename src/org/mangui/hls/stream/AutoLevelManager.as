@@ -1,6 +1,9 @@
-package org.mangui.hls.stream {
-    import org.mangui.hls.*;
+package org.mangui.hls.stream {    
+    import org.mangui.hls.constant.HLSMaxLevelCappingMode;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.HLS;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.event.HLSEvent;
     
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;

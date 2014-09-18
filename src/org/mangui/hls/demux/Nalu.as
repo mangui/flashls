@@ -1,7 +1,7 @@
 package org.mangui.hls.demux {
 
+    import org.mangui.hls.HLSSettings;
     import flash.utils.ByteArray;
-    import org.mangui.hls.*;
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }

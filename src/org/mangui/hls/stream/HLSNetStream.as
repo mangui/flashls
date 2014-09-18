@@ -1,19 +1,24 @@
 package org.mangui.hls.stream {
+    import org.mangui.hls.event.HLSPlayMetrics;
+    import org.mangui.hls.constant.HLSSeekMode;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSMediatime;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSSeekStates;
+    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.event.HLSEvent;
+
     import flash.events.Event;
     import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
     import flash.net.*;
     import flash.utils.*;
-    
-    import org.mangui.hls.*;
-    //import org.mangui.hls.demux.*;
-	import org.mangui.hls.flv.*;
-    import org.mangui.hls.stream.*;
-    
-    CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    }
 
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+    }
     /** Class that keeps the buffer filled. **/
     public class HLSNetStream extends NetStream {
         /** Reference to the framework controller. **/
@@ -61,6 +66,10 @@ package org.mangui.hls.stream {
         private var _buffer_threshold : Number;
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
+        /** level/sn used to detect fragment change **/
+        private var _cur_level : int;
+        private var _cur_sn : int;
+        private var _playbackLevel : int;
 
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader) : void {
@@ -76,6 +85,21 @@ package org.mangui.hls.stream {
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
         };
+
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, ... tags) : void {
+            CONFIG::LOGGING {
+                Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
+            }
+            _playbackLevel = level;
+            var tag_list : Array = new Array();
+            for (var i : uint = 0; i < tags.length; i++) {
+                tag_list.push(tags[i]);
+                CONFIG::LOGGING {
+                    Log.debug("custom tag:" + tags[i]);
+                }
+            }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, tag_list)));
+        }
 
         /** Check the bufferlength. **/
         private function _checkBuffer(e : Event) : void {
@@ -109,7 +133,7 @@ package org.mangui.hls.stream {
                             // stop timer, report event and switch to IDLE mode.
                             _timer.stop();
                             CONFIG::LOGGING {
-                            Log.debug("reached end of VOD playlist, notify playback complete");
+                                Log.debug("reached end of VOD playlist, notify playback complete");
                             }
                             _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
                             _setPlaybackState(HLSPlayStates.IDLE);
@@ -152,7 +176,7 @@ package org.mangui.hls.stream {
                     // no more in low buffer state
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
-                        Log.debug("resume playback");
+                            Log.debug("resume playback");
                         }
                         super.resume();
                         _setPlaybackState(HLSPlayStates.PLAYING);
@@ -187,9 +211,8 @@ package org.mangui.hls.stream {
                         if (tagBuffer.type == FLVTag.DISCONTINUITY) {
                             super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
                             super.appendBytes(FLVTag.getHeader());
-                        } else {
-                            super.appendBytes(tagBuffer.data);
                         }
+                        super.appendBytes(tagBuffer.data);
                     } catch (error : Error) {
                         var hlsError : HLSError = new HLSError(HLSError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
@@ -224,8 +247,13 @@ package org.mangui.hls.stream {
             return _seekState;
         };
 
+        /** Return the current playback quality level **/
+        public function get playbackLevel() : int {
+            return _playbackLevel;
+        };
+
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
+        private function _loaderCallback(level : int, cc : int, sn : int, tag_list : Vector.<String>, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -295,10 +323,31 @@ package org.mangui.hls.stream {
                 _buffered_before_last_continuity += (_buffer_cur_max_pts - _buffer_cur_min_pts);
                 _buffer_cur_min_pts = first_pts;
                 _buffer_cur_max_pts = max_pts;
-                _flvTagBuffer.push(new FLVTag(FLVTag.DISCONTINUITY, first_pts, first_pts, false));
+                tag = new FLVTag(FLVTag.DISCONTINUITY, first_pts, first_pts, false);
+                _flvTagBuffer.push(tag);
             } else {
                 // same continuity than previously, update its max PTS
                 _buffer_cur_max_pts = max_pts;
+            }
+
+            /* detect if we are switching to a new fragment. in that case inject a metadata tag
+             * Netstream will notify the metadata back when starting playback of this fragment  
+             */
+            if (_cur_level != level || _cur_sn != sn) {
+                _cur_level = level;
+                _cur_sn = sn;
+                tag = new FLVTag(FLVTag.METADATA, first_pts, first_pts, false);
+                var data : ByteArray = new ByteArray();
+                data.objectEncoding = ObjectEncoding.AMF0;
+                data.writeObject("onHLSFragmentChange");
+                data.writeObject(level);
+                data.writeObject(sn);
+                data.writeObject(cc);
+                for each (var custom_tag : String in tag_list) {
+                    data.writeObject(custom_tag);
+                }
+                tag.push(data, 0, data.length);
+                _flvTagBuffer.push(tag);
             }
 
             /* if no seek in progress or if in segment seeking mode : push all FLV tags */
@@ -336,7 +385,7 @@ package org.mangui.hls.stream {
             }
             _flvTagBufferDuration += (max_pts - first_pts) / 1000;
             CONFIG::LOGGING {
-            Log.debug("Loaded position/duration/sliding/discontinuity:" + start_position.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2) + "/" + hasDiscontinuity);
+                Log.debug("Loaded position/duration/sliding/discontinuity:" + start_position.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2) + "/" + hasDiscontinuity);
             }
         };
 
@@ -347,7 +396,7 @@ package org.mangui.hls.stream {
 
         private function _lastVODFragmentLoadedHandler(event : HLSEvent) : void {
             CONFIG::LOGGING {
-            Log.debug("last fragment loaded");
+                Log.debug("last fragment loaded");
             }
             _reached_vod_end = true;
         }
@@ -360,7 +409,7 @@ package org.mangui.hls.stream {
         private function _setPlaybackState(state : String) : void {
             if (state != _playbackState) {
                 CONFIG::LOGGING {
-                Log.debug('[PLAYBACK_STATE] from ' + _playbackState + ' to ' + state);
+                    Log.debug('[PLAYBACK_STATE] from ' + _playbackState + ' to ' + state);
                 }
                 _playbackState = state;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_STATE, _playbackState));
@@ -371,7 +420,7 @@ package org.mangui.hls.stream {
         private function _setSeekState(state : String) : void {
             if (state != _seekState) {
                 CONFIG::LOGGING {
-                Log.debug('[SEEK_STATE] from ' + _seekState + ' to ' + state);
+                    Log.debug('[SEEK_STATE] from ' + _seekState + ' to ' + state);
                 }
                 _seekState = state;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.SEEK_STATE, _seekState));
@@ -386,7 +435,7 @@ package org.mangui.hls.stream {
                 _playStart = -1;
             }
             CONFIG::LOGGING {
-            Log.info("HLSNetStream:play(" + _playStart + ")");
+                Log.info("HLSNetStream:play(" + _playStart + ")");
             }
             seek(_playStart);
             _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
@@ -394,7 +443,7 @@ package org.mangui.hls.stream {
 
         override public function play2(param : NetStreamPlayOptions) : void {
             CONFIG::LOGGING {
-            Log.info("HLSNetStream:play2(" + param.start + ")");
+                Log.info("HLSNetStream:play2(" + param.start + ")");
             }
             seek(param.start);
             _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
@@ -403,7 +452,7 @@ package org.mangui.hls.stream {
         /** Pause playback. **/
         override public function pause() : void {
             CONFIG::LOGGING {
-            Log.info("HLSNetStream:pause");
+                Log.info("HLSNetStream:pause");
             }
             if (_playbackState == HLSPlayStates.PLAYING) {
                 super.pause();
@@ -417,7 +466,7 @@ package org.mangui.hls.stream {
         /** Resume playback. **/
         override public function resume() : void {
             CONFIG::LOGGING {
-            Log.info("HLSNetStream:resume");
+                Log.info("HLSNetStream:resume");
             }
             if (_playbackState == HLSPlayStates.PAUSED) {
                 super.resume();
@@ -441,7 +490,7 @@ package org.mangui.hls.stream {
         /** Start playing data in the buffer. **/
         override public function seek(position : Number) : void {
             CONFIG::LOGGING {
-            Log.info("HLSNetStream:seek(" + position + ")");
+                Log.info("HLSNetStream:seek(" + position + ")");
             }
             _fragmentLoader.stop();
             _fragmentLoader.seek(position, _loaderCallback);
@@ -451,6 +500,7 @@ package org.mangui.hls.stream {
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;
             _reached_vod_end = false;
+            _cur_level = _cur_sn = NaN;
             if (HLSSettings.minBufferLength == -1) {
                 _buffer_threshold = _autoBufferManager.minBufferLength;
             } else {
@@ -483,7 +533,7 @@ package org.mangui.hls.stream {
         /** Stop playback. **/
         override public function close() : void {
             CONFIG::LOGGING {
-            Log.info("HLSNetStream:close");
+                Log.info("HLSNetStream:close");
             }
             super.close();
             _timer.stop();

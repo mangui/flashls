@@ -3,7 +3,7 @@ package org.mangui.osmf.plugins {
     import flash.net.NetStream;
     
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSEvent;
+    import org.mangui.hls.event.HLSEvent;
     import org.mangui.osmf.plugins.loader.HLSNetLoader;
     import org.mangui.osmf.plugins.traits.*;
     import org.mangui.osmf.plugins.utils.ErrorManager;

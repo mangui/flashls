@@ -1,4 +1,4 @@
-package org.mangui.hls {
+package org.mangui.hls.constant {
     /** Identifiers for the different seeking states. **/
     public class HLSSeekStates {
         /** idle state. **/

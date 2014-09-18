@@ -1,5 +1,4 @@
-package org.mangui.hls {
-    import org.mangui.hls.playlist.AltAudioTrack;
+package org.mangui.hls.event {
     import org.mangui.hls.model.Level;
 
     import flash.events.Event;
@@ -22,11 +21,16 @@ package org.mangui.hls {
         public static const LEVEL_LOADED : String = "hlsEventLevelLoaded";
         /** Identifier for a level switch event. **/
         public static const LEVEL_SWITCH : String = "hlsEventLevelSwitch";
+        /** Identifier for a level ENDLIST event. **/
+        public static const LEVEL_ENDLIST : String = "hlsEventLevelEndList";
+
 
         /** Identifier for a fragment loading event. **/
         public static const FRAGMENT_LOADING : String = "hlsEventFragmentLoading";
         /** Identifier for a fragment loaded event. **/
         public static const FRAGMENT_LOADED : String = "hlsEventFragmentLoaded";
+        /** Identifier for a fragment playing event. **/
+        public static const FRAGMENT_PLAYING : String = "hlsEventFragmentPlaying";
 
         /** Identifier for a audio only fragment **/
         public static const AUDIO_ONLY : String = "audioOnly";
@@ -34,9 +38,6 @@ package org.mangui.hls {
         public static const AUDIO_TRACKS_LIST_CHANGE : String = "audioTracksListChange";
         /** Identifier for a audio track change **/
         public static const AUDIO_TRACK_CHANGE : String = "audioTrackChange";
-        /** Identifier for alt audio tracks list change **/
-        public static const ALT_AUDIO_TRACKS_LIST_CHANGE : String = "AltAudioTracksListChange";
-
 
         /** Identifier for audio/video TAGS loaded event. **/
         public static const TAGS_LOADED : String = "hlsEventTagsLoaded";
@@ -65,12 +66,12 @@ package org.mangui.hls {
         public var duration : Number;
         /** The list with quality levels. **/
         public var levels : Vector.<Level>;
-        /** The list with alternate audio Tracks. **/
-        public var altAudioTracks : Vector.<AltAudioTrack>;
         /** The error message. **/
         public var error : HLSError;
-        /** The current QOS metrics. **/
-        public var metrics : HLSMetrics;
+        /** Load Metrics. **/
+        public var loadMetrics : HLSLoadMetrics;
+        /** Play Metrics. **/
+        public var playMetrics : HLSPlayMetrics;
         /** The time position. **/
         public var mediatime : HLSMediatime;
         /** The new playback state. **/
@@ -90,7 +91,7 @@ package org.mangui.hls {
                     break;
                 case HLSEvent.TAGS_LOADED:
                 case HLSEvent.FRAGMENT_LOADED:
-                    metrics = parameter as HLSMetrics;
+                    loadMetrics = parameter as HLSLoadMetrics;
                     break;
                 case HLSEvent.MANIFEST_PARSED:
                 case HLSEvent.MANIFEST_LOADED:
@@ -111,8 +112,8 @@ package org.mangui.hls {
                 case HLSEvent.PLAYLIST_DURATION_UPDATED:
                     duration = parameter as Number;
                     break;
-                case HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE:
-                    altAudioTracks = parameter as Vector.<AltAudioTrack>;
+                case HLSEvent.FRAGMENT_PLAYING:
+                    playMetrics = parameter as HLSPlayMetrics;
                     break;
             }
             super(type, false, false);

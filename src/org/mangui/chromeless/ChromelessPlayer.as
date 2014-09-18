@@ -1,9 +1,14 @@
 package org.mangui.chromeless {
+    import org.mangui.hls.utils.ScaleVideo;
+    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.HLS;
+
     import flash.net.URLStream;
 
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.*;
-    import org.mangui.hls.utils.*;
 
     import flash.display.*;
     import flash.events.*;
@@ -31,7 +36,7 @@ package org.mangui.chromeless {
         /** current media position */
         protected var _media_position : Number;
         protected var _duration : Number;
-    /** URL autoload feature */
+        /** URL autoload feature */
         protected var _autoLoad : Boolean = false;
 
         /** Initialization. **/
@@ -44,8 +49,9 @@ package org.mangui.chromeless {
             setTimeout(_pingJavascript, 50);
         };
 
-        protected function _setupExternalGetters():void {
+        protected function _setupExternalGetters() : void {
             ExternalInterface.addCallback("getLevel", _getLevel);
+            ExternalInterface.addCallback("getPlaybackLevel", _getPlaybackLevel);
             ExternalInterface.addCallback("getLevels", _getLevels);
             ExternalInterface.addCallback("getAutoLevel", _getAutoLevel);
             ExternalInterface.addCallback("getDuration", _getDuration);
@@ -69,7 +75,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getAudioTrackId", _getAudioTrackId);
         };
 
-        protected function _setupExternalCallers():void {
+        protected function _setupExternalCallers() : void {
             ExternalInterface.addCallback("playerLoad", _load);
             ExternalInterface.addCallback("playerPlay", _play);
             ExternalInterface.addCallback("playerPause", _pause);
@@ -92,7 +98,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetJSURLStream", _setJSURLStream);
         };
 
-        protected function _setupStage():void {
+        protected function _setupStage() : void {
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;
             stage.fullScreenSourceRect = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
@@ -100,7 +106,7 @@ package org.mangui.chromeless {
             stage.addEventListener(Event.RESIZE, _onStageResize);
         }
 
-        protected function _setupSheet():void {
+        protected function _setupSheet() : void {
             // Draw sheet for catching clicks
             _sheet = new Sprite();
             _sheet.graphics.beginFill(0x000000, 0);
@@ -129,9 +135,15 @@ package org.mangui.chromeless {
             }
         };
 
-        protected function _fragmentHandler(event : HLSEvent) : void {
+        protected function _fragmentLoadedHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("onFragment", event.metrics.bandwidth, event.metrics.level, stage.stageWidth);
+                ExternalInterface.call("onFragmentLoaded", event.loadMetrics.bandwidth, event.loadMetrics.level, stage.stageWidth);
+            }
+        };
+
+        protected function _fragmentPlayingHandler(event : HLSEvent) : void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call("onFragmentPlaying", event.playMetrics);
             }
         };
 
@@ -139,7 +151,7 @@ package org.mangui.chromeless {
             _duration = event.levels[_hls.startlevel].duration;
 
             if (_autoLoad) {
-                _play();
+                _play(-1);
             }
 
             if (ExternalInterface.available) {
@@ -151,7 +163,7 @@ package org.mangui.chromeless {
             _duration = event.mediatime.duration;
             _media_position = event.mediatime.position;
             if (ExternalInterface.available) {
-                ExternalInterface.call("onPosition", event.mediatime.position, event.mediatime.duration, event.mediatime.live_sliding,event.mediatime.buffer, event.mediatime.program_date);
+                ExternalInterface.call("onPosition", event.mediatime.position, event.mediatime.duration, event.mediatime.live_sliding, event.mediatime.buffer, event.mediatime.program_date);
             }
 
             var videoWidth : int = _video ? _video.videoWidth : _stageVideo.videoWidth;
@@ -197,6 +209,10 @@ package org.mangui.chromeless {
         /** Javascript getters. **/
         protected function _getLevel() : int {
             return _hls.level;
+        };
+
+        protected function _getPlaybackLevel() : int {
+            return _hls.playbacklevel;
         };
 
         protected function _getLevels() : Vector.<Level> {
@@ -277,7 +293,7 @@ package org.mangui.chromeless {
 
         protected function _getAudioTrackList() : Array {
             var list : Array = [];
-            var vec : Vector.<HLSAudioTrack> = _hls.audioTracks;
+            var vec : Vector.<AudioTrack> = _hls.audioTracks;
             for (var i : Object in vec) {
                 list.push(vec[i]);
             }
@@ -293,8 +309,8 @@ package org.mangui.chromeless {
             _hls.load(url);
         };
 
-        protected function _play() : void {
-            _hls.stream.play();
+        protected function _play(position : Number=-1) : void {
+            _hls.stream.play(null, position);
         };
 
         protected function _pause() : void {
@@ -398,7 +414,8 @@ package org.mangui.chromeless {
             _hls.stage = stage;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);

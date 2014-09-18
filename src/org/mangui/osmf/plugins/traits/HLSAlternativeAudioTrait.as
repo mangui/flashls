@@ -1,7 +1,7 @@
 package org.mangui.osmf.plugins.traits {
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSAudioTrack;
-    import org.mangui.hls.HLSEvent;
+    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.event.HLSEvent;
     import org.osmf.events.AlternativeAudioEvent;
     import org.osmf.media.MediaElement;
     import org.osmf.net.StreamingItem;
@@ -15,7 +15,7 @@ package org.mangui.osmf.plugins.traits {
     public class HLSAlternativeAudioTrait extends AlternativeAudioTrait {
         private var _hls : HLS;
         private var _media : MediaElement;
-        private var _audioTrackList : Vector.<HLSAudioTrack>;
+        private var _audioTrackList : Vector.<AudioTrack>;
         private var _numAlternativeAudioStreams : int;
         private var _transitionInProgress : Boolean = false;
         private var _activeTransitionIndex : int = DEFAULT_TRANSITION_INDEX;

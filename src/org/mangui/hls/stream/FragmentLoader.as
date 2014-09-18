@@ -1,20 +1,27 @@
 package org.mangui.hls.stream {
-    import flash.events.*;
-    import flash.net.*;
-    import flash.utils.ByteArray;
-    import flash.utils.Timer;
-
-    import org.mangui.hls.*;
-    import org.mangui.hls.demux.*;
-    import org.mangui.hls.flv.*;
-    import org.mangui.hls.playlist.*;
-    import org.mangui.hls.stream.*;
+    import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.constant.HLSTypes;
+    import org.mangui.hls.demux.TSDemuxer;
+    import org.mangui.hls.demux.MP3Demuxer;
+    import org.mangui.hls.demux.AACDemuxer;
+    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.demux.Demuxer;
+    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.HLS;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
     import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.AES;
     import org.mangui.hls.utils.PTS;
+
+    import flash.events.*;
+    import flash.net.*;
+    import flash.utils.ByteArray;
+    import flash.utils.Timer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -26,14 +33,14 @@ package org.mangui.hls.stream {
         private var _hls : HLS;
         /** reference to auto level manager */
         private var _autoLevelManager : AutoLevelManager;
+        /** reference to audio track controller */
+        private var _audioTrackController : AudioTrackController;
         /** has manifest just being reloaded **/
         private var _manifest_just_loaded : Boolean = false;
-        /** last updated level. **/
-        private var _last_updated_level : int = 0;
+        /** last loaded level. **/
+        private var _last_loaded_level : int = 0;
         /** Callback for passing forward the fragment tags. **/
-        private var _callback : Function;
-        /** sequence number that's currently loading. **/
-        private var _seqnum : int;
+        private var _tags_callback : Function;
         /** Quality level of the last fragment load. **/
         private var _level : int;
         /* overrided quality_manual_level level */
@@ -59,18 +66,6 @@ package org.mangui.hls.stream {
         private var _pts_loading_in_progress : Boolean = false;
         /** boolean to indicate that PTS of new playlist has just been loaded */
         private var _pts_just_loaded : Boolean = false;
-        /** boolean to indicate whether Buffer could request new fragment load **/
-        private var _need_reload : Boolean = true;
-        /** Reference to the alternate audio track list. **/
-        private var _altAudioTrackLists : Vector.<AltAudioTrack>;
-        /** list of audio tracks from demuxed fragments **/
-        private var _audioTracksfromDemux : Vector.<HLSAudioTrack>;
-        /** list of audio tracks from Manifest, matching with current level **/
-        private var _audioTracksfromManifest : Vector.<HLSAudioTrack>;
-        /** merged audio tracks list **/
-        private var _audioTracks : Vector.<HLSAudioTrack>;
-        /** current audio track id **/
-        private var _audioTrackId : int;
         /** Timer used to monitor/schedule fragment download. **/
         private var _timer : Timer;
         /** requested seek position **/
@@ -92,12 +87,12 @@ package org.mangui.hls.stream {
         private var _metrics_previous : FragmentMetrics;
 
         /** Create the loader. **/
-        public function FragmentLoader(hls : HLS) : void {
+        public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController) : void {
             _hls = hls;
             _autoLevelManager = new AutoLevelManager(hls);
+            _audioTrackController = audioTrackController;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            _hls.addEventListener(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE, _altAudioTracksListChangedHandler);
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
         };
@@ -107,7 +102,6 @@ package org.mangui.hls.stream {
             _autoLevelManager.dispose();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            _hls.removeEventListener(HLSEvent.ALT_AUDIO_TRACKS_LIST_CHANGE, _altAudioTracksListChangedHandler);
         }
 
         /**  fragment loading Timer **/
@@ -117,7 +111,7 @@ package org.mangui.hls.stream {
                 return;
             }
             // check fragment loading status, try to load a new fragment if needed
-            if (_frag_loading == false || _need_reload == true) {
+            if (_frag_loading == false) {
                 var loadstatus : int;
                 // if previous fragment loading failed
                 if (_bIOError) {
@@ -127,13 +121,77 @@ package org.mangui.hls.stream {
                         return;
                     }
                 }
-
+                var level : int;
+                // check if first fragment after seek has been already loaded
                 if (_fragment_first_loaded == false) {
-                    // just after seek, load first fragment
-                    loadstatus = _loadfirstfragment(_seek_pos);
-                    // check if we need to load next fragment, check if buffer is full
+                    // select level for first fragment load
+                    if (_manifest_just_loaded) {
+                        level = _hls.startlevel;
+                    } else {
+                        level = _hls.seeklevel;
+                    }
+                    if (level != _level || _manifest_just_loaded) {
+                        _level = level;
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
+                    }
+                    _switchlevel = true;
+
+                    // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
+                    if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                        // playlist not yet received
+                        CONFIG::LOGGING {
+                            Log.debug("_checkLoading : playlist not received for level:" + level);
+                        }
+                        loadstatus = 1;
+                    } else {
+                        // just after seek, load first fragment
+                        loadstatus = _loadfirstfragment(_seek_pos, level);
+                    }
+
+                    /* first fragment already loaded
+                     * check if we need to load next fragment, do it only if buffer is NOT full
+                     */
                 } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
-                    loadstatus = _loadnextfragment();
+                    // select level for next fragment load
+                    if (_bIOError == true) {
+                        /* in case IO Error has been raised, stick to same level */
+                        level = _level;
+                        /* in case last fragment was loaded for PTS analysis, stick to same level */
+                    } else if (_pts_just_loaded == true) {
+                        _pts_just_loaded = false;
+                        level = _level;
+                        /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
+                    } else if (_switchlevel == true) {
+                        level = _level;
+                    } else if (_manual_level == -1 && _levels.length > 1 ) {
+                        // select level from heuristics (current level / last fragment duration / buffer length)
+                        if (_metrics_previous) {
+                            var last_segment_duration : Number = (_frag_previous ? 1000 * _frag_previous.duration : 0);
+                            level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength, last_segment_duration, _metrics_previous.processing_duration, _metrics_previous.bandwidth);
+                        } else {
+                            level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength, 0, 0, 0);
+                        }
+                    } else if (_manual_level == -1 && _levels.length == 1 ) {
+                        level = 0;
+                    } else {
+                        level = _manual_level;
+                    }
+                    // notify in case level switch occurs
+                    if (level != _level) {
+                        _level = level;
+                        _switchlevel = true;
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
+                    }
+                    // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
+                    if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                        // playlist not yet received
+                        CONFIG::LOGGING {
+                            Log.debug("loadnextfragment : playlist not received for level:" + level);
+                        }
+                        loadstatus = 1;
+                    } else {
+                        loadstatus = _loadnextfragment(_level, _frag_previous);
+                    }
                 } else {
                     // no need to load any new fragment, buffer is full already
                     return;
@@ -151,7 +209,7 @@ package org.mangui.hls.stream {
                         Log.warn("long pause on live stream or bad network quality");
                     }
                     _timer.stop();
-                    seek(-1, _callback);
+                    seek(-1, _tags_callback);
                     return;
                 } else if (loadstatus > 0) {
                     // seqnum not available in playlist
@@ -166,35 +224,11 @@ package org.mangui.hls.stream {
             _retry_count = 0;
             _retry_timeout = 1000;
             _frag_loading = false;
-            _callback = callback;
+            _tags_callback = callback;
             _seek_pos = position;
             _fragment_first_loaded = false;
             _frag_previous = null;
             _timer.start();
-        }
-
-        public function set audioTrack(num : int) : void {
-            if (_audioTrackId != num) {
-                _audioTrackId = num;
-                var ev : HLSEvent = new HLSEvent(HLSEvent.AUDIO_TRACK_CHANGE);
-                ev.audioTrack = _audioTrackId;
-                _hls.dispatchEvent(ev);
-                CONFIG::LOGGING {
-                    Log.info('Setting audio track to ' + num);
-                }
-            }
-        }
-
-        public function get audioTrack() : int {
-            return _audioTrackId;
-        }
-
-        public function get audioTracks() : Vector.<HLSAudioTrack> {
-            return _audioTracks;
-        }
-
-        public function get altAudioTracks() : Vector.<AltAudioTrack> {
-            return _altAudioTrackLists;
         }
 
         /** key load completed. **/
@@ -251,13 +285,11 @@ package org.mangui.hls.stream {
                 /* exponential increase of retry timeout, capped to fragmentLoadMaxRetryTimeout */
                 _retry_count++;
                 _retry_timeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _retry_timeout);
-                // in case IO Error reload same fragment
-                _seqnum--;
             } else {
                 var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
-            _need_reload = true;
+            _frag_loading = false;
         }
 
         private function _fragLoadHTTPStatusHandler(event : HTTPStatusEvent) : void {
@@ -312,8 +344,8 @@ package org.mangui.hls.stream {
                 CONFIG::LOGGING {
                     Log.warn("fragment size is null, invalid it and load next one");
                 }
-                _levels[_level].updateFragment(_seqnum, false);
-                _need_reload = true;
+                _levels[_level].updateFragment(_frag_current.seqnum, false);
+                _frag_loading = false;
                 return;
             }
             CONFIG::LOGGING {
@@ -508,59 +540,10 @@ package org.mangui.hls.stream {
             }
         };
 
-        private function _updateLevel(buffer : Number) : int {
-            var level : int;
-            if (_manifest_just_loaded) {
-                level = _hls.startlevel;
-            } else if (_fragment_first_loaded == false) {
-                level = _hls.seeklevel;
-            } else if (_bIOError == true) {
-                /* in case IO Error has been raised, stick to same level */
-                level = _level;
-                /* in case fragment was loaded for PTS analysis, stick to same level */
-            } else if (_pts_just_loaded == true) {
-                _pts_just_loaded = false;
-                level = _level;
-                /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
-            } else if (_switchlevel == true) {
-                level = _level;
-            } else if (_manual_level == -1 && _levels.length > 1 ) {
-                if (_metrics_previous) {
-                    var last_segment_duration : Number = (_frag_previous ? 1000 * _frag_previous.duration : 0);
-                    level = _autoLevelManager.getnextlevel(_level, buffer, last_segment_duration, _metrics_previous.processing_duration, _metrics_previous.bandwidth);
-                } else {
-                    level = _autoLevelManager.getnextlevel(_level, buffer, 0, 0, 0);
-                }
-            } else if (_manual_level == -1 && _levels.length == 1 ) {
-                level = 0;
-            } else {
-                level = _manual_level;
-            }
-            if (level != _level || _manifest_just_loaded) {
-                _level = level;
-                _switchlevel = true;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
-            }
-            return level;
-        }
-
-        private function _loadfirstfragment(position : Number) : int {
+        private function _loadfirstfragment(position : Number, level : int) : int {
             CONFIG::LOGGING {
                 Log.debug("loadfirstfragment(" + position + ")");
             }
-            _need_reload = false;
-            _switchlevel = true;
-            _updateLevel(0);
-
-            // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
-            if ((_levels[_level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != _level)) {
-                // playlist not yet received
-                CONFIG::LOGGING {
-                    Log.debug("loadfirstfragment : playlist not received for level:" + _level);
-                }
-                return 1;
-            }
-
             var seek_position : Number;
             if (_hls.type == HLSTypes.LIVE) {
                 /* follow HLS spec :
@@ -569,7 +552,7 @@ package org.mangui.hls.stream {
                 order at the nominal playback rate), the client SHOULD NOT
                 choose a segment which starts less than three target durations from
                 the end of the Playlist file */
-                var maxLivePosition : Number = Math.max(0, _levels[_level].duration - 3 * _levels[_level].averageduration);
+                var maxLivePosition : Number = Math.max(0, _levels[level].duration - 3 * _levels[level].averageduration);
                 if (position == -1) {
                     // seek 3 fragments from end
                     seek_position = maxLivePosition;
@@ -584,55 +567,41 @@ package org.mangui.hls.stream {
             }
             position = seek_position;
 
-            var seqnum : int = _levels[_level].getSeqNumBeforePosition(position);
-            var frag : Fragment = _levels[_level].getFragmentfromSeqNum(seqnum);
-            _seqnum = seqnum;
+            var frag : Fragment = _levels[level].getFragmentBeforePosition(position);
             _hasDiscontinuity = true;
             CONFIG::LOGGING {
-                Log.debug("Loading       " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
+                Log.debug("Loading       " + frag.seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
             }
             _loadfragment(frag);
             return 0;
         }
 
         /** Load a fragment **/
-        private function _loadnextfragment() : int {
+        private function _loadnextfragment(level : int, frag_previous : Fragment) : int {
             CONFIG::LOGGING {
                 Log.debug("loadnextfragment()");
             }
-            _need_reload = false;
-
-            _updateLevel(_hls.stream.bufferLength);
-            // check if we received playlist for new level. if live playlist, ensure that new playlist has been refreshed
-            if ((_levels[_level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_updated_level != _level)) {
-                // playlist not yet received
-                CONFIG::LOGGING {
-                    Log.debug("loadnextfragment : playlist not received for level:" + _level);
-                }
-                return 1;
-            }
-
             var new_seqnum : Number;
             var last_seqnum : Number = -1;
             var log_prefix : String;
             var frag : Fragment;
 
-            if (_switchlevel == false || _frag_previous.continuity == -1) {
-                last_seqnum = _seqnum;
+            if (_switchlevel == false || frag_previous.continuity == -1) {
+                last_seqnum = frag_previous.seqnum;
             } else {
                 // level switch
                 // trust program-time : if program-time defined in previous loaded fragment, try to find seqnum matching program-time in new level.
-                if (_frag_previous.program_date) {
-                    last_seqnum = _levels[_level].getSeqNumFromProgramDate(_frag_previous.program_date);
+                if (frag_previous.program_date) {
+                    last_seqnum = _levels[level].getSeqNumFromProgramDate(frag_previous.program_date);
                     CONFIG::LOGGING {
-                        Log.debug("loadnextfragment : getSeqNumFromProgramDate(level,date,cc:" + _level + "," + _frag_previous.program_date + ")=" + last_seqnum);
+                        Log.debug("loadnextfragment : getSeqNumFromProgramDate(level,date,cc:" + level + "," + frag_previous.program_date + ")=" + last_seqnum);
                     }
                 }
                 if (last_seqnum == -1) {
                     // if we are here, it means that no program date info is available in the playlist. try to get last seqnum position from PTS + continuity counter
-                    last_seqnum = _levels[_level].getSeqNumNearestPTS(_frag_previous.data.pts_start, _frag_previous.continuity);
+                    last_seqnum = _levels[level].getSeqNumNearestPTS(frag_previous.data.pts_start, frag_previous.continuity);
                     CONFIG::LOGGING {
-                        Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + _level + "," + _frag_previous.data.pts_start + "," + _frag_previous.continuity + ")=" + last_seqnum);
+                        Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + level + "," + frag_previous.data.pts_start + "," + frag_previous.continuity + ")=" + last_seqnum);
                     }
                     if (last_seqnum == Number.POSITIVE_INFINITY) {
                         /* requested PTS above max PTS of this level:
@@ -645,17 +614,17 @@ package org.mangui.hls.stream {
                         // if we are here, it means that we have no PTS info for this continuity index, we need to do some PTS probing to find the right seqnum
                         /* we need to perform PTS analysis on fragments from same continuity range
                         get first fragment from playlist matching with criteria and load pts */
-                        last_seqnum = _levels[_level].getFirstSeqNumfromContinuity(_frag_previous.continuity);
+                        last_seqnum = _levels[level].getFirstSeqNumfromContinuity(frag_previous.continuity);
                         CONFIG::LOGGING {
-                            Log.debug("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:" + _level + "," + _frag_previous.continuity + ")=" + last_seqnum);
+                            Log.debug("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:" + level + "," + frag_previous.continuity + ")=" + last_seqnum);
                         }
                         if (last_seqnum == Number.NEGATIVE_INFINITY) {
                             // playlist not yet received
                             return 1;
                         }
                         /* when probing PTS, take previous sequence number as reference if possible */
-                        new_seqnum = Math.min(_seqnum + 1, _levels[_level].getLastSeqNumfromContinuity(_frag_previous.continuity));
-                        new_seqnum = Math.max(new_seqnum, _levels[_level].getFirstSeqNumfromContinuity(_frag_previous.continuity));
+                        new_seqnum = Math.min(frag_previous.seqnum + 1, _levels[level].getLastSeqNumfromContinuity(frag_previous.continuity));
+                        new_seqnum = Math.max(new_seqnum, _levels[level].getFirstSeqNumfromContinuity(frag_previous.continuity));
                         _pts_loading_in_progress = true;
                         log_prefix = "analyzing PTS ";
                     }
@@ -663,7 +632,7 @@ package org.mangui.hls.stream {
             }
 
             if (_pts_loading_in_progress == false) {
-                if (last_seqnum == _levels[_level].end_seqnum) {
+                if (last_seqnum == _levels[level].end_seqnum) {
                     // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
                     if (_hls.type == HLSTypes.VOD) {
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
@@ -674,27 +643,26 @@ package org.mangui.hls.stream {
                 } else {
                     // if previous segment is not the last one, increment it to get new seqnum
                     new_seqnum = last_seqnum + 1;
-                    if (new_seqnum < _levels[_level].start_seqnum) {
+                    if (new_seqnum < _levels[level].start_seqnum) {
                         // we are late ! report to caller
                         return -1;
                     }
-                    frag = _levels[_level].getFragmentfromSeqNum(new_seqnum);
+                    frag = _levels[level].getFragmentfromSeqNum(new_seqnum);
                     if (frag == null) {
                         CONFIG::LOGGING {
-                            Log.warn("error trying to load " + new_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
+                            Log.warn("error trying to load " + new_seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
                         }
                         return 1;
                     }
                     // check whether there is a discontinuity between last segment and new segment
-                    _hasDiscontinuity = (frag.continuity != _frag_previous.continuity);
+                    _hasDiscontinuity = (frag.continuity != frag_previous.continuity);
                     ;
                     log_prefix = "Loading       ";
                 }
             }
-            _seqnum = new_seqnum;
-            frag = _levels[_level].getFragmentfromSeqNum(_seqnum);
+            frag = _levels[level].getFragmentfromSeqNum(new_seqnum);
             CONFIG::LOGGING {
-                Log.debug(log_prefix + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level);
+                Log.debug(log_prefix + new_seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
             }
             _loadfragment(frag);
             return 0;
@@ -743,177 +711,21 @@ package org.mangui.hls.stream {
             }
         }
 
-        /** Store the alternate audio track lists. **/
-        private function _altAudioTracksListChangedHandler(event : HLSEvent) : void {
-            _altAudioTrackLists = event.altAudioTracks;
-            CONFIG::LOGGING {
-                Log.info(_altAudioTrackLists.length + " alternate audio tracks found");
-            }
-        }
-
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _levels = event.levels;
             _level = 0;
             _manifest_just_loaded = true;
-            // reset audio tracks
-            _audioTrackId = -1;
-            _audioTracksfromDemux = new Vector.<HLSAudioTrack>();
-            _audioTracksfromManifest = new Vector.<HLSAudioTrack>();
-            _audioTracksMerge();
         };
 
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
-            _last_updated_level = event.level;
-            if (_last_updated_level == _level) {
-                var altAudioTrack : AltAudioTrack;
-                var audioTrackList : Vector.<HLSAudioTrack> = new Vector.<HLSAudioTrack>();
-                var stream_id : String = _levels[_level].audio_stream_id;
-                // check if audio stream id is set, and alternate audio tracks available
-                if (stream_id && _altAudioTrackLists) {
-                    // try to find alternate audio streams matching with this ID
-                    for (var idx : int = 0; idx < _altAudioTrackLists.length; idx++) {
-                        altAudioTrack = _altAudioTrackLists[idx];
-                        if (altAudioTrack.group_id == stream_id) {
-                            var isDefault : Boolean = (altAudioTrack.default_track == true || altAudioTrack.autoselect == true);
-                            CONFIG::LOGGING {
-                                Log.debug(" audio track[" + audioTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
-                            }
-                            audioTrackList.push(new HLSAudioTrack(altAudioTrack.name, HLSAudioTrack.FROM_PLAYLIST, idx, isDefault));
-                        }
-                    }
-                }
-                // check if audio tracks matching with current level have changed since last time
-                var audio_track_changed : Boolean = false;
-                if (_audioTracksfromManifest.length != audioTrackList.length) {
-                    audio_track_changed = true;
-                } else {
-                    for (idx = 0; idx < _audioTracksfromManifest.length; ++idx) {
-                        if (_audioTracksfromManifest[idx].id != audioTrackList[idx].id) {
-                            audio_track_changed = true;
-                        }
-                    }
-                }
-                // update audio list
-                if (audio_track_changed) {
-                    _audioTracksfromManifest = audioTrackList;
-                    _audioTracksMerge();
-                }
-            }
+            _last_loaded_level = event.level;
         };
 
-        // merge audio track info from demux and from manifest into a unified list that will be exposed to upper layer
-        private function _audioTracksMerge() : void {
-            var i : int;
-            var default_demux : int = -1;
-            var default_manifest : int = -1;
-            var default_found : Boolean = false;
-            var default_track_title : String;
-            var audioTrack_ : HLSAudioTrack;
-            _audioTracks = new Vector.<HLSAudioTrack>();
-
-            // first look for default audio track.
-            for (i = 0; i < _audioTracksfromManifest.length; i++) {
-                if (_audioTracksfromManifest[i].isDefault) {
-                    default_manifest = i;
-                    break;
-                }
-            }
-            for (i = 0; i < _audioTracksfromDemux.length; i++) {
-                if (_audioTracksfromDemux[i].isDefault) {
-                    default_demux = i;
-                    break;
-                }
-            }
-            /* default audio track from manifest should take precedence */
-            if (default_manifest != -1) {
-                audioTrack_ = _audioTracksfromManifest[default_manifest];
-                // if URL set, default audio track is not embedded into MPEG2-TS
-                if (_altAudioTrackLists[audioTrack_.id].url || default_demux == -1) {
-                    CONFIG::LOGGING {
-                        Log.debug("default audio track found in Manifest");
-                    }
-                    default_found = true;
-                    _audioTracks.push(audioTrack_);
-                } else {
-                    // empty URL, default audio track is embedded into MPEG2-TS. retrieve track title from manifest and override demux title
-                    default_track_title = audioTrack_.title;
-                    if (default_demux != -1) {
-                        CONFIG::LOGGING {
-                            Log.debug("default audio track signaled in Manifest, will be retrieved from MPEG2-TS");
-                        }
-                        audioTrack_ = _audioTracksfromDemux[default_demux];
-                        audioTrack_.title = default_track_title;
-                        default_found = true;
-                        _audioTracks.push(audioTrack_);
-                    }
-                }
-            } else if (default_demux != -1 ) {
-                audioTrack_ = _audioTracksfromDemux[default_demux];
-                default_found = true;
-                _audioTracks.push(audioTrack_);
-            }
-            // then append other audio tracks, start from manifest list, then continue with demux list
-            for (i = 0; i < _audioTracksfromManifest.length; i++) {
-                if (i != default_manifest) {
-                    CONFIG::LOGGING {
-                        Log.debug("alternate audio track found in Manifest");
-                    }
-                    audioTrack_ = _audioTracksfromManifest[i];
-                    _audioTracks.push(audioTrack_);
-                }
-            }
-
-            for (i = 0; i < _audioTracksfromDemux.length; i++) {
-                if (i != default_demux) {
-                    CONFIG::LOGGING {
-                        Log.debug("alternate audio track retrieved from demux");
-                    }
-                    audioTrack_ = _audioTracksfromDemux[i];
-                    _audioTracks.push(audioTrack_);
-                }
-            }
-            // notify audio track list update
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_TRACKS_LIST_CHANGE));
-
-            // switch track id to default audio track, if found
-            if (default_found == true && _audioTrackId == -1) {
-                audioTrack = 0;
-            }
-        }
-
         /** triggered by demux, it should return the audio track to be parsed */
-        private function _fragParsingAudioSelectionHandler(audioTrackList : Vector.<HLSAudioTrack>) : HLSAudioTrack {
-            var audio_track_changed : Boolean = false;
-            audioTrackList = audioTrackList.sort(function(a : HLSAudioTrack, b : HLSAudioTrack) : int {
-                return a.id - b.id;
-            });
-            if (_audioTracksfromDemux.length != audioTrackList.length) {
-                audio_track_changed = true;
-            } else {
-                for (var idx : int = 0; idx < _audioTracksfromDemux.length; ++idx) {
-                    if (_audioTracksfromDemux[idx].id != audioTrackList[idx].id) {
-                        audio_track_changed = true;
-                    }
-                }
-            }
-            // update audio list if changed
-            if (audio_track_changed) {
-                _audioTracksfromDemux = audioTrackList;
-                _audioTracksMerge();
-            }
-
-            /* if audio track not defined, or audio from external source (playlist) 
-            return null (demux audio not selected) */
-            if (_audioTrackId == -1 || _audioTracks[_audioTrackId].source == HLSAudioTrack.FROM_PLAYLIST) {
-                _frag_current.data.audio_expected = false;
-                return null;
-            } else {
-                // source is demux,return selected audio track
-                _frag_current.data.audio_expected = true;
-                return _audioTracks[_audioTrackId];
-            }
+        private function _fragParsingAudioSelectionHandler(audioTrackList : Vector.<AudioTrack>) : AudioTrack {
+            return _audioTrackController.audioTrackSelectionHandler(_frag_current, audioTrackList);
         }
 
         /** triggered when demux has retrieved some tags from fragment **/
@@ -973,10 +785,10 @@ package org.mangui.hls.stream {
 
                     if (_pts_loading_in_progress == true) {
                         _pts_loading_in_progress = false;
-                        _levels[_level].updateFragment(_seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);
+                        _levels[_level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);
                         /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
                         CONFIG::LOGGING {
-                            Log.debug("analyzed  PTS " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + fragData.pts_min);
+                            Log.debug("analyzed  PTS " + _frag_current.seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m PTS:" + fragData.pts_min);
                         }
                         /* check if fragment loaded for PTS analysis is the next one
                         if this is the expected one, then continue
@@ -986,23 +798,25 @@ package org.mangui.hls.stream {
                         // CONFIG::LOGGING {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
                         // }
-                        if (next_seqnum != _seqnum) {
+                        if (next_seqnum != _frag_current.seqnum) {
                             _pts_just_loaded = true;
                             CONFIG::LOGGING {
-                                Log.debug("PTS analysis done on " + _seqnum + ", matching seqnum is " + next_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],cancel loading and get new one");
+                                Log.debug("PTS analysis done on " + _frag_current.seqnum + ", matching seqnum is " + next_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],cancel loading and get new one");
                             }
                             // cancel loading
                             _stop_load();
+                            // clean-up tags
+                            fragData.tags = new Vector.<FLVTag>();
                             // tell that new fragment could be loaded
-                            _need_reload = true;
+                            _frag_loading = false;
                             return;
                         }
                     }
                     // provide tags to HLSNetStream
-                    _callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _tags_callback(_level, _frag_current.continuity, _frag_current.seqnum, _frag_current.tag_list, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
                     var processing_duration : Number = (new Date().valueOf() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
-                    var tagsMetrics : HLSMetrics = new HLSMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
+                    var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     _hasDiscontinuity = false;
                     fragData.tags = new Vector.<FLVTag>();
@@ -1067,7 +881,7 @@ package org.mangui.hls.stream {
                         }
                         // let's directly jump to the accurate level to improve quality at player start
                         _level = bestlevel;
-                        _need_reload = true;
+                        _frag_loading = false;
                         _switchlevel = true;
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
                         return;
@@ -1078,16 +892,16 @@ package org.mangui.hls.stream {
             try {
                 _switchlevel = false;
                 CONFIG::LOGGING {
-                    Log.debug("Loaded        " + _seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
+                    Log.debug("Loaded        " + _frag_current.seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
-                var start_offset : Number = _levels[_level].updateFragment(_seqnum, true, fragData.pts_min, fragData.pts_max);
+                var start_offset : Number = _levels[_level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
                 _frag_loading = false;
 
-                var tagsMetrics : HLSMetrics = new HLSMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
+                var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
 
                 if (fragData.tags.length) {
-                    _callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _tags_callback(_level, _frag_current.continuity, _frag_current.seqnum, _frag_current.tag_list, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
                     fragData.tags_pts_min_video = fragData.tags_pts_max_video;

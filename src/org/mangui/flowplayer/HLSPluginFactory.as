@@ -8,7 +8,7 @@ package org.mangui.flowplayer {
         }
 
         public function newPlugin() : Object {
-            return new HLSProvider();
+            return new HLSStreamProvider();
         }
     }
 }

@@ -1,7 +1,6 @@
 package org.mangui.hls.utils {
     import flash.display.DisplayObject;
     import flash.utils.ByteArray;
-    import flash.utils.Timer;
     import flash.events.Event;
 
     /**
@@ -55,7 +54,7 @@ package org.mangui.hls.utils {
             _data.position = _write_position;
             _data.writeBytes(data);
             if (_write_position == 0) {
-                _displayObject.addEventListener(Event.ENTER_FRAME, _decryptTimer)
+                _displayObject.addEventListener(Event.ENTER_FRAME, _decryptTimer);
             }
             _write_position += data.length;
         }

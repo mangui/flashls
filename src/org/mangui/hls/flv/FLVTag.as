@@ -17,11 +17,13 @@ package org.mangui.hls.flv
 		public static const MP3_RAW:int = 4;
 		/** Discontinuity Data Type ID. **/
 		public static const DISCONTINUITY:int = 5;
+		/** metadata Type ID. **/
+		public static const METADATA :int = 6;
 
         /* FLV TAG TYPE */
 		private static var TAG_TYPE_AUDIO : int = 8;
         private static var TAG_TYPE_VIDEO : int= 9;
-        //private static var TAG_TYPE_SCRIPT : int= 18;
+        private static var TAG_TYPE_SCRIPT : int= 18; 
 
 		
 		/** Is this a keyframe. **/
@@ -120,9 +122,9 @@ package org.mangui.hls.flv
 				array.writeByte(compositionTime >> 16);
 				array.writeByte(compositionTime >> 8);
 				array.writeByte(compositionTime);
-			}
-			else
-			{
+            } else if (type == DISCONTINUITY || type == METADATA) {
+                array = getTagHeader(FLVTag.TAG_TYPE_SCRIPT, length, pts);
+            } else {
 				array = getTagHeader(TAG_TYPE_AUDIO, length + 2, pts);
 				// SoundFormat, -Rate, -Size, Type and Header/Raw switch.
 				array.writeByte(0xAF);

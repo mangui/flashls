@@ -1,14 +1,14 @@
 package org.mangui.hls.playlist {
     import org.mangui.hls.utils.Hex;
-    
+
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
-    
-    import org.mangui.hls.HLSTypes;
+
+    import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.model.Level;
     import org.mangui.hls.model.Fragment;
-    
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
@@ -19,6 +19,8 @@ package org.mangui.hls.playlist {
         public static const FRAGMENT : String = '#EXTINF:';
         /** Header tag that must be at the first line. **/
         public static const HEADER : String = '#EXTM3U';
+        /** Version of the playlist file. **/
+        public static const VERSION : String = '#EXT-X-VERSION';
         /** Starttag for a level. **/
         public static const LEVEL : String = '#EXT-X-STREAM-INF:';
         /** Tag that delimits the end of a playlist. **/
@@ -73,7 +75,7 @@ package org.mangui.hls.playlist {
                 } else {
                     url += "&" + extra;
                 }
-            } 
+            }
             if (DataUri.isDataUri(url)) {
                 CONFIG::LOGGING {
                 Log.debug("Identified playlist <" + url + "> as a data URI.");
@@ -132,6 +134,7 @@ package org.mangui.hls.playlist {
             var extinf_found : Boolean = false;
             var byterange_start_offset : int = -1;
             var byterange_end_offset : int = -1;
+            var tag_list : Vector.<String> = new Vector.<String>();
 
             while (i < lines.length) {
                 var line : String = lines[i++];
@@ -139,6 +142,12 @@ package org.mangui.hls.playlist {
                 if (line.length <= 1) {
                     continue;
                 }
+
+                // discard tags pertaining to a playlist and not a fragment, that require no further processing
+                if (line.indexOf(HEADER) == 0 || line.indexOf(TARGETDURATION) == 0 || line.indexOf(VERSION) == 0) {
+                    continue;
+                }
+
                 if (line.indexOf(SEQNUM) == 0) {
                     seqnum = parseInt(line.substr(SEQNUM.length));
                 } else if (line.indexOf(DISCONTINUITY_SEQ) == 0) {
@@ -151,6 +160,7 @@ package org.mangui.hls.playlist {
                         byterange_start_offset = parseInt(params[1]);
                     }
                     byterange_end_offset = parseInt(params[0]) + byterange_start_offset;
+                    tag_list.push(line);
                 } else if (line.indexOf(KEY) == 0) {
                     // #EXT-X-KEY:METHOD=AES-128,URI="https://priv.example.com/key.php?r=52",IV=.....
                     var keyLine : String = line.substr(KEY.length);
@@ -209,6 +219,7 @@ package org.mangui.hls.playlist {
                                 break;
                         }
                     }
+                    tag_list.push(line);
                 } else if (line.indexOf(PROGRAMDATETIME) == 0) {
                     // CONFIG::LOGGING {
                     // Log.info(line);
@@ -222,19 +233,23 @@ package org.mangui.hls.playlist {
                     // month should be from 0 (January) to 11 (December).
                     program_date = new Date(year, (month - 1), day, hour, minutes, seconds).getTime();
                     program_date_defined = true;
+                    tag_list.push(line);
                 } else if (line.indexOf(DISCONTINUITY) == 0) {
                     continuity_index++;
+                    tag_list.push(line);
                 } else if (line.indexOf(FRAGMENT) == 0) {
                     var comma_position : int = line.indexOf(',');
                     var duration : Number = (comma_position == -1) ? parseFloat(line.substr(FRAGMENT.length)) : parseFloat(line.substr(FRAGMENT.length, comma_position - FRAGMENT.length));
                     extinf_found = true;
+                    tag_list.push(line);
                 } else if (line.indexOf('#') == 0) {
-                    // unsupported tag, skip line
+                    // unsupported/custom tags, store them
+                    tag_list.push(line);
                 } else if (extinf_found == true) {
                     var url : String = _extractURL(line, base);
                     var fragment_decrypt_iv : ByteArray;
                     if (decrypt_url != null) {
-                        /* as per HLS spec :  
+                        /* as per HLS spec :
                          if IV not defined, then use seqnum as IV :
                          http://tools.ietf.org/html/draft-pantos-http-live-streaming-11#section-5.2
                          */
@@ -243,19 +258,20 @@ package org.mangui.hls.playlist {
                         } else {
                             fragment_decrypt_iv = Hex.toArray(zeropad(seqnum.toString(16), 32));
                         }
-                        
+
                         CONFIG::LOGGING {
                         Log.debug("sn/key/iv:" + seqnum + "/" + decrypt_url + "/" + Hex.fromArray(fragment_decrypt_iv));
                         }
                     } else {
                         fragment_decrypt_iv = null;
                     }
-                    fragments.push(new Fragment(url, duration, seqnum++, start_time, continuity_index, program_date, decrypt_url, fragment_decrypt_iv, byterange_start_offset, byterange_end_offset));
+                    fragments.push(new Fragment(url, duration, seqnum++, start_time, continuity_index, program_date, decrypt_url, fragment_decrypt_iv, byterange_start_offset, byterange_end_offset, tag_list));
                     start_time += duration;
                     if (program_date_defined) {
                         program_date += 1000 * duration;
                     }
                     extinf_found = false;
+                    tag_list = new Vector.<String>();
                     byterange_start_offset = -1;
                 }
             }
@@ -297,7 +313,7 @@ package org.mangui.hls.playlist {
                         }
                     }
                     /* discard blank line, which length could be 0 or 1 if DOS terminated line (CR/LF)
-                     * next non-blank line will be URL 
+                     * next non-blank line will be URL
                      */
                     do {
                         line = lines[i++];

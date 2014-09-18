@@ -1,27 +1,29 @@
 package org.mangui.hls {
+    import org.mangui.hls.model.AudioTrack;
+
     import flash.display.Stage;
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.URLStream;
     import flash.events.EventDispatcher;
     import flash.events.Event;
-    
-    import org.mangui.hls.playlist.AltAudioTrack;
+
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.ManifestLoader;
+    import org.mangui.hls.stream.AudioTrackController;
     import org.mangui.hls.stream.FragmentLoader;
     import org.mangui.hls.stream.HLSNetStream;
 
     CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
+        import org.mangui.hls.utils.Log;
     }
-    
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
-        /** The quality monitor. **/
         private var _fragmentLoader : FragmentLoader;
-        /** The manifest parser. **/
         private var _manifestLoader : ManifestLoader;
+        private var _audioTrackController : AudioTrackController;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
         /** HLS URLStream **/
@@ -34,9 +36,10 @@ package org.mangui.hls {
             var connection : NetConnection = new NetConnection();
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
+            _audioTrackController = new AudioTrackController(this);
             _hlsURLStream = URLStream as Class;
             // default loader
-            _fragmentLoader = new FragmentLoader(this);
+            _fragmentLoader = new FragmentLoader(this, _audioTrackController);
             _hlsNetStream = new HLSNetStream(connection, this, _fragmentLoader);
         };
 
@@ -44,7 +47,7 @@ package org.mangui.hls {
         override public function dispatchEvent(event : Event) : Boolean {
             if (event.type == HLSEvent.ERROR) {
                 CONFIG::LOGGING {
-                Log.error((event as HLSEvent).error);
+                    Log.error((event as HLSEvent).error);
                 }
                 _hlsNetStream.close();
             }
@@ -54,41 +57,48 @@ package org.mangui.hls {
         public function dispose() : void {
             _fragmentLoader.dispose();
             _manifestLoader.dispose();
+            _audioTrackController.dispose();
             _hlsNetStream.dispose_();
             _fragmentLoader = null;
             _manifestLoader = null;
+            _audioTrackController = null;
             _hlsNetStream = null;
             _client = null;
             _stage = null;
             _hlsNetStream = null;
         }
 
-        /** Return the playback quality start level **/
+        /** Return the quality level used when starting a fresh playback **/
         public function get startlevel() : int {
             return _manifestLoader.startlevel;
         };
 
-        /** Return the playback quality seek level **/
+        /** Return the quality level used after a seek operation **/
         public function get seeklevel() : int {
             return _manifestLoader.seeklevel;
         };
 
-        /** Return the playback quality level of last loaded fragment **/
+        /** Return the quality level of the currently played fragment **/
+        public function get playbacklevel() : int {
+            return _hlsNetStream.playbackLevel;
+        };
+
+        /** Return the quality level of last loaded fragment **/
         public function get level() : int {
             return _fragmentLoader.level;
         };
 
-        /*  set playback quality level (-1 for automatic level selection) */
+        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set level(level : int) : void {
             _fragmentLoader.level = level;
         };
 
-        /* check if we are in autolevel mode */
+        /* check if we are in automatic level selection mode */
         public function get autolevel() : Boolean {
             return _fragmentLoader.autolevel;
         };
 
-        /** Return bitrate level lists. **/
+        /** Return a Vector of quality level **/
         public function get levels() : Vector.<Level> {
             return _manifestLoader.levels;
         };
@@ -138,23 +148,23 @@ package org.mangui.hls {
         };
 
         /** get audio tracks list**/
-        public function get audioTracks() : Vector.<HLSAudioTrack> {
-            return _fragmentLoader.audioTracks;
+        public function get audioTracks() : Vector.<AudioTrack> {
+            return _audioTrackController.audioTracks;
         };
 
         /** get alternate audio tracks list from playlist **/
         public function get altAudioTracks() : Vector.<AltAudioTrack> {
-            return _fragmentLoader.altAudioTracks;
+            return _manifestLoader.altAudioTracks;
         };
 
         /** get index of the selected audio track (index in audio track lists) **/
         public function get audioTrack() : int {
-            return _fragmentLoader.audioTrack;
+            return _audioTrackController.audioTrack;
         };
 
         /** select an audio track, based on its index in audio track lists**/
         public function set audioTrack(val : int) : void {
-            _fragmentLoader.audioTrack = val;
+            _audioTrackController.audioTrack = val;
         }
 
         /* set stage */
