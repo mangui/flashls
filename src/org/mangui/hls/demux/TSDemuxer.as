@@ -6,6 +6,7 @@ package org.mangui.hls.demux {
     import flash.events.Event;
     import flash.events.EventDispatcher;
     import flash.utils.ByteArray;
+    import flash.net.ObjectEncoding;
     
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
@@ -38,6 +39,8 @@ package org.mangui.hls.demux {
         /** audio PID **/
         private var _audioId : int;
         private var _audioIsAAC : Boolean;
+        /** ID3 PID **/
+        private var _id3Id : int;
         /** Vector of audio/video tags **/
         private var _tags : Vector.<FLVTag>;
         /** Display Object used to schedule parsing **/
@@ -52,6 +55,8 @@ package org.mangui.hls.demux {
         private var _curAudioPES : ByteArray;
         /* current video PES */
         private var _curVideoPES : ByteArray;
+        /* current id3 PES */
+        private var _curId3PES : ByteArray;
         /* ADTS frame overflow */
         private var _adtsFrameOverflow : ByteArray;
         /* current AVC Tag */
@@ -61,6 +66,53 @@ package org.mangui.hls.demux {
         /* AVCC tag inserted ? */
         private var _avccTagInserted : Boolean = false;
 
+
+	public function hexdump(bytes:ByteArray, start:uint = 1, length:uint = 0 ):String {
+		var output:String = "";
+		var charbuf:String = "";
+		
+		if(start==0) start = 1;
+		if(length > bytes.length || length == 0) length = bytes.length;
+		
+		bytes.position = start - 1; //0 based
+		
+		for (var i:int = start; i < length+1; i++)
+		{
+				var byte:int = bytes.readByte();
+				//if( byte>20 && byte < 123 )charbuf+= String.fromCharCode(byte); else charbuf += ".";
+				output += byte2hex(byte); 
+				//if(i%16==0){
+				//	output += "\t" + charbuf + "\n";
+				//	charbuf = "";
+				//}
+		}
+		//if(i%16 != 0){
+		//	while(i%16!=0){output+="   ";i++;}
+		//	output+="   "
+		//	output += "\t" + charbuf + "\n";
+		//}
+		
+		//xx(output);
+		return output;
+        }
+
+        public function byte2hex(byte:uint):String {
+	    //http://www.actionscript.org/forums/showthread.php3?t=189952
+	    var hex:String = '';
+	    var arr:String = 'FEDCBA';
+	
+	    for(var i:uint = 0; i < 2; i++) {
+		if(((byte & (0xF0 >> (i * 4))) >> (4 - (i * 4))) > 9){
+			hex += arr.charAt(15 - ((byte & (0xF0 >> (i * 4))) >> (4 - (i * 4))));
+		}
+		else{
+			hex += String((byte & (0xF0 >> (i * 4))) >> (4 - (i * 4)));
+		}
+	    }    
+	
+	    return hex;
+        }
+	
         public static function probe(data : ByteArray) : Boolean {
             var pos : uint = data.position;
             var len : uint = Math.min(data.bytesAvailable, 188 * 2);
@@ -86,6 +138,7 @@ package org.mangui.hls.demux {
         public function TSDemuxer(displayObject : DisplayObject, callback_audioselect : Function, callback_progress : Function, callback_complete : Function) {
             _curAudioPES = null;
             _curVideoPES = null;
+            _curId3PES = null;
             _curVideoTag = null;
             _adtsFrameOverflow = null;
             _callback_audioselect = callback_audioselect;
@@ -93,7 +146,7 @@ package org.mangui.hls.demux {
             _callback_complete = callback_complete;
             _pmtParsed = false;
             _packetsBeforePMT = false;
-            _pmtId = _avcId = _audioId = -1;
+            _pmtId = _avcId = _audioId = _id3Id = -1;
             _audioIsAAC = false;
             _tags = new Vector.<FLVTag>();
             _displayObject = displayObject;
@@ -119,6 +172,7 @@ package org.mangui.hls.demux {
             _data = null;
             _curAudioPES = null;
             _curVideoPES = null;
+            _curId3PES = null;
             _curVideoTag = null;
             _adtsFrameOverflow = null;
             _tags = new Vector.<FLVTag>();
@@ -206,6 +260,23 @@ package org.mangui.hls.demux {
                     Log.debug("TS: partial AVC PES at end of segment");
                     }
                     _curVideoPES.position = _curVideoPES.length;
+                }
+            }
+            // check whether last parsed ID3 PES is complete
+            if (_curId3PES && _curId3PES.length > 14) {
+                var pes3:PES = new PES(_curId3PES, false);
+                if (pes3.len && (pes3.data.length - pes3.payload - pes3.payload_len) >= 0) {
+                    CONFIG::LOGGING {
+                    Log.debug2("TS: complete ID3 PES found at end of segment, parse it");
+                    }
+                    // complete PES, parse and push into the queue
+                    _parseID3PES(pes3);
+                    _curId3PES = null;
+                } else {
+                    CONFIG::LOGGING {
+                    Log.debug("TS: partial ID3 PES at end of segment");
+                    }
+                    _curId3PES.position = _curId3PES.length;
                 }
             }
             // push remaining tags and notify complete
@@ -336,7 +407,27 @@ package org.mangui.hls.demux {
                     if (frame.type == 5) {
                         _curVideoTag.keyframe = true;
                     }
+                } else if (frame.type == 6) {
+                    //var SEI_All: ByteArray = new ByteArray;
+                    //SEI_All.writeBytes(pes.data, frame.start, frame.length);
+                    //var SEI_content: ByteArray = Nalu.getRBSP( pes.data, frame );
+                    //var dumpall : String = hexdump(SEI_All);
+                    //var dump : String = hexdump(SEI_content);
+                    //Log.info("SEI:" + dump + " All:" + dumpall);
+                    //trace("SEI:" + dump + " All:" + dumpall);
+
+                    // SEI NAL - could contain time(code) info or closed captions or other private data
+                    // some of which we can't decode without sps.
+                    // p.s. why would we choose not to push NAL >= 6 to output?
                 } else if (frame.type == 7) {
+                    //var sps_All: ByteArray = new ByteArray;
+                    //sps_All.writeBytes(pes.data, frame.start, frame.length);
+                    //var sps_content: ByteArray = Nalu.getRBSP( pes.data, frame );
+                    //var dumpall1 : String = hexdump(sps_All);
+                    //var dump1 : String = hexdump(sps_content);
+                    //Log.info("sps:" + dump + " All:" + dumpall);
+                    //trace("sps:" + dump1 + " All:" + dumpall1);
+                    // we could only get sps once per second
                     sps_found = true;
                     sps = new ByteArray();
                     pes.data.position = frame.start;
@@ -365,6 +456,47 @@ package org.mangui.hls.demux {
             }
         }
 
+
+        /** parse ID3 PES packet **/
+        private function _parseID3PES(pes : PES) : void {
+            // note: apple spec does not include having PTS in ID3!!!!
+            // so we should really spoof the PTS by knowing the PCR at this point
+            if (isNaN(pes.pts)) {
+                CONFIG::LOGGING {
+                Log.warn("TS: no PTS info in this ID3 PES packet,discarding it");
+                }
+                return;
+            }
+
+            var dump2 : String = "unset";
+            if (pes.data.length >= pes.payload + pes.payload_len) {
+                pes.data.position = pes.payload;
+                
+                // this is the actual hexdump passed	
+                dump2 = hexdump(pes.data, pes.payload + 1, pes.payload_len+pes.payload);
+                //Log.info("ID3 PES payload <" + pes.payload + "-" + pes.payload_len + ">: " + dump2);
+                //trace( "ID3 PES payload <" + pes.payload + "-" + pes.payload_len + ">: " + dump2);
+            }
+            pes.data.position = 0;
+            //var dump : String = hexdump(pes.data);
+            //Log.info("ID3 PES complete (" + pes.data.length + "): " + dump);
+            //trace( "ID3 PES complete (" + pes.data.length + "): " + dump );
+			
+            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+            var data : ByteArray = new ByteArray();
+            data.objectEncoding = ObjectEncoding.AMF0;
+			
+            //  one or more SCRIPTDATASTRING + SCRIPTDATAVALUE
+            data.writeObject("onID3Data"); // SCRIPTDATASTRING - name of object
+	    // yes, i know, really crass.... a hexdump 
+            // maybe someone can tell us how to pass binary data well in flv SCRIPT?		
+            data.writeObject( dump2 ); // strict array type
+            tag.push(data, 0, data.length);
+            //var dump4:String = hexdump( tag.data );
+            _tags.push(tag);
+        }
+
+	
         /** Parse TS packet. **/
         private function _parseTSPacket() : void {
             // Each packet is 188 bytes.
@@ -468,6 +600,41 @@ package org.mangui.hls.demux {
                         }
                     }
                     break;
+                case _id3Id:
+                    if (_pmtParsed == false) {
+                        break;
+                    }
+                    if (stt) {
+                        if (_curId3PES) {
+                            _parseID3PES(new PES(_curId3PES, false));
+                        }
+                        _curId3PES = new ByteArray();
+                    }
+                    if (_curId3PES) {
+                        // store data.  will normally be in a single TS
+                        _curId3PES.writeBytes(_data, _data.position, todo);
+                        var pes : PES = new PES(_curId3PES, false);
+                        if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
+                            CONFIG::LOGGING {
+                            Log.debug2("TS: complete ID3 PES found, parse it");
+                            }
+                            // complete PES, parse and push into the queue
+                            _parseID3PES(pes);
+                            _curId3PES = null;
+                        } else {
+                            CONFIG::LOGGING {
+                            Log.debug("TS: partial ID3 PES");
+                            }
+                            _curId3PES.position = _curId3PES.length;
+                        }
+						
+                    } else {
+                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
+                        CONFIG::LOGGING {
+                        Log.warn("TS: Discarding ID3 packet with id " + pid + " bad TS segmentation ?");
+                        }
+                    }
+                    break;
                 case _avcId:
                     if (_pmtParsed == false) {
                         break;
@@ -560,6 +727,9 @@ package org.mangui.hls.demux {
                     // ISO/IEC 11172-3 (MPEG-1 audio)
                     // or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)
                     audioList.push(new AudioTrack('TS/MP3 ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0)));
+                } else if (typ == 0x15) {
+                    // ID3 pid
+                    _id3Id = sid;
                 }
                 // es_info_length
                 var sel : uint = _data.readUnsignedShort() & 0xFFF;
