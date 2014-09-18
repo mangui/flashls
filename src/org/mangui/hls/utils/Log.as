@@ -37,9 +37,15 @@ package org.mangui.hls.utils {
 
         /** Log a message to the console. **/
         private static function outputlog(level : String, message : String) : void {
-            if (ExternalInterface.available)
-                ExternalInterface.call('console.log', level + message);
-            else trace(level + message);
+            // allow for a logger inside an swf (e.g. Adobe Air)
+            if (HLSSettings.logger != null)
+                HLSSettings.logger( level, message );
+            else
+            {
+                if (ExternalInterface.available)
+                    ExternalInterface.call('console.log', level + message);
+                else trace(level + message);
+            }
         }
     };
 }

@@ -132,5 +132,10 @@ package org.mangui.hls {
          * Default is true.
          */
         public static var logError : Boolean = true;
+        /**
+         * Defines a logging function which takes (level:String, msg:String)
+         * Default is null.
+         */
+        public static var logger: Function = null;
     }
 }
