@@ -87,5 +87,37 @@ package org.mangui.hls.demux {
             nalu.position = position;
             return units;
         };
+		
+        // read the rbsp data from a marked NAL unit
+        public static function getRBSP( nalu:ByteArray, UnitMarkers:VideoFrame ): ByteArray {
+            var Output: ByteArray = new ByteArray();
+            for (nalu.position = UnitMarkers.start + 1; nalu.position < UnitMarkers.start + UnitMarkers.length; ) {
+                if (nalu.position + 3 < UnitMarkers.start + UnitMarkers.length) {
+                    // read a long
+                    var window: uint = nalu.readUnsignedInt();
+                    // does the first 3 bytes contain 00 00 03?
+                    if ((window & 0xffffff00) == 0x300) {
+                        Output.writeByte( 0 );
+                        Output.writeByte( 0 );
+                        nalu.position -= 1;
+                    } else { // if not, then does the last 3 bytes contain 00 00 03?
+                        if ((window & 0x00ffffff) == 0x3) {
+                            nalu.position -= 4;
+                            Output.writeByte( nalu.readByte() );
+                            Output.writeByte( 0 );
+                            Output.writeByte( 0 );
+                            nalu.position += 3;
+                        } else { // else move on one byte
+                            nalu.position -= 4;
+                            Output.writeByte( nalu.readByte() );
+                        }
+                    }
+                } else { // we have less than 4 bytes left; must have either aleary been eaten,
+                    // or not enough rrom for 00 00 03
+                    Output.writeByte( nalu.readByte() );
+                }
+            }			
+            return Output;
+        }
     }
 }
