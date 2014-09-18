@@ -85,7 +85,9 @@ package org.mangui.hls.playlist {
                 return;
             }
 
-            _urlloader.load(new URLRequest(url));
+            var urlreq:URLRequest = new URLRequest(url);
+            //urlreq.cacheResponse = false;
+            _urlloader.load(urlreq);
         };
 
         /* cancel loading in progress */

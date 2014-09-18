@@ -249,7 +249,10 @@ package org.mangui.hls.stream {
                     }
                     _frag_current.data.bytes = null;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, _frag_current.url));
-                    _fragstreamloader.load(new URLRequest(_frag_current.url));
+					
+                    var fragreq:URLRequest = new URLRequest(_frag_current.url);
+                    //fragreq.cacheResponse = false;
+                    _fragstreamloader.load(fragreq);
                 } catch (error : Error) {
                     hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, error.message);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
@@ -578,9 +581,10 @@ package org.mangui.hls.stream {
 
         /** Load a fragment **/
         private function _loadnextfragment(level : int, frag_previous : Fragment) : int {
-            CONFIG::LOGGING {
-                Log.debug("loadnextfragment()");
-            }
+            // log later so we don't blast the logging
+            //CONFIG::LOGGING {
+            //    Log.debug("loadnextfragment()");
+            //}
             var new_seqnum : Number;
             var last_seqnum : Number = -1;
             var log_prefix : String;
@@ -643,6 +647,9 @@ package org.mangui.hls.stream {
                 } else {
                     // if previous segment is not the last one, increment it to get new seqnum
                     new_seqnum = last_seqnum + 1;
+                    CONFIG::LOGGING {
+                        Log.debug("loadnextfragment() - next is available");
+                    }
                     if (new_seqnum < _levels[level].start_seqnum) {
                         // we are late ! report to caller
                         return -1;
@@ -694,7 +701,9 @@ package org.mangui.hls.stream {
                     CONFIG::LOGGING {
                         Log.debug("loading key:" + frag.decrypt_url);
                     }
-                    _keystreamloader.load(new URLRequest(frag.decrypt_url));
+                    var keyreq:URLRequest = new URLRequest(frag.decrypt_url);
+                    //keyreq.cacheResponse = false;
+                    _keystreamloader.load(keyreq);
                     return;
                 }
             }
@@ -704,7 +713,10 @@ package org.mangui.hls.stream {
                     Log.debug("loading fragment:" + frag.url);
                 }
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, frag.url));
-                _fragstreamloader.load(new URLRequest(frag.url));
+				
+                var fragreq:URLRequest = new URLRequest(frag.url);
+                //fragreq.cacheResponse = false;
+                _fragstreamloader.load(fragreq);
             } catch (error : Error) {
                 var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
@@ -841,6 +853,7 @@ package org.mangui.hls.stream {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
             if (fragData.audio_found) {
+                null; // just to stop the compiler warning
                 CONFIG::LOGGING {
                     Log.debug("m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
                 }

@@ -124,7 +124,9 @@ package org.mangui.hls.playlist {
                 var data : String = new DataUri(url).extractData();
                 _parseManifest(data || "");
             } else {
-                _urlloader.load(new URLRequest(url));
+                var urlreq:URLRequest = new URLRequest(url);
+                //urlreq.cacheResponse = false;
+                _urlloader.load(urlreq);
             }
         };
 
