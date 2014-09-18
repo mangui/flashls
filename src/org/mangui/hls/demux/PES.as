@@ -39,33 +39,36 @@ package org.mangui.hls.demux {
             }
             // read len
             len = data.readUnsignedShort();
-            // Ignore marker bits.
-            data.position += 1;
-            // Check for PTS
-            var flags : uint = (data.readUnsignedByte() & 192) >> 6;
-            // Check PES header length
-            var length : uint = data.readUnsignedByte();
+			
+            // if the PES packet will FIT in the data
+            if (len <= data.length - 6) {	
+                // Ignore marker bits.
+                data.position += 1;
+                // Check for PTS
+                var flags : uint = (data.readUnsignedByte() & 192) >> 6;
+                // Check PES header length
+                var length : uint = data.readUnsignedByte();
 
-            if (flags == 2 || flags == 3) {
+                if (flags == 2 || flags == 3) {
                 // Grab the timestamp from PTS data (spread out over 5 bytes):
                 // XXXX---X -------- -------X -------- -------X
 
                 var _pts : Number = Number((data.readUnsignedByte() & 0x0e)) * Number(1 << 29) + Number((data.readUnsignedShort() >> 1) << 15) + Number((data.readUnsignedShort() >> 1));
                 // check if greater than 2^32 -1
-                if (_pts > 4294967295) {
-                    // decrement 2^33
-                    _pts -= 8589934592;
-                }
+                //if (_pts > 4294967295) {
+                // decrement 2^33
+                //_pts -= 8589934592;
+                //}
                 length -= 5;
                 var _dts : Number = _pts;
                 if (flags == 3) {
                     // Grab the DTS (like PTS)
                     _dts = Number((data.readUnsignedByte() & 0x0e)) * Number(1 << 29) + Number((data.readUnsignedShort() >> 1) << 15) + Number((data.readUnsignedShort() >> 1));
                     // check if greater than 2^32 -1
-                    if (_dts > 4294967295) {
-                        // decrement 2^33
-                        _dts -= 8589934592;
-                    }
+                    //if (_dts > 4294967295) {
+                    // decrement 2^33
+                    //_dts -= 8589934592;
+                    //}
                     length -= 5;
                 }
                 pts = Math.round(_pts / 90);
@@ -73,13 +76,16 @@ package org.mangui.hls.demux {
                 // CONFIG::LOGGING {
                 // Log.info("pts/dts: " + pts + "/"+ dts);
                 // }
-            }
-            // Skip other header data and parse payload.
-            data.position += length;
-            payload = data.position;
-            if(len) {
-                payload_len = len - data.position + 6;
-            } else {
+                }
+                // Skip other header data and parse payload.
+                data.position += length;
+                payload = data.position;
+                if(len) {
+                    payload_len = len - data.position + 6;
+                } else {
+                    payload_len = 0;
+                }
+            } else { // pes length was invalid.
                 payload_len = 0;
             }
         };
