@@ -58,8 +58,8 @@ package org.mangui.hls.demux {
         private var _curVideoTag : FLVTag;
         /* ADIF tag inserted ? */
         private var _adifTagInserted : Boolean = false;
-        /* AVCC tag inserted ? */
-        private var _avccTagInserted : Boolean = false;
+        /* last AVCC byte Array */
+        private var _avcc : ByteArray;
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : uint = data.position;
@@ -105,6 +105,7 @@ package org.mangui.hls.demux {
                 _data = new ByteArray();
                 _data_complete = false;
                 _read_position = 0;
+                _avcc = null;
                 _displayObject.addEventListener(Event.ENTER_FRAME, _parseTimer);
             }
             _data.position = _data.length;
@@ -121,6 +122,7 @@ package org.mangui.hls.demux {
             _curVideoPES = null;
             _curVideoTag = null;
             _adtsFrameOverflow = null;
+            _avcc = null;
             _tags = new Vector.<FLVTag>();
             _displayObject.removeEventListener(Event.ENTER_FRAME, _parseTimer);
         }
@@ -335,6 +337,32 @@ package org.mangui.hls.demux {
                     // Unit type 5 indicates a keyframe.
                     if (frame.type == 5) {
                         _curVideoTag.keyframe = true;
+                    } else if (frame.type == 1 || frame.type == 2) {
+                        // retrieve slice type by parsing beginning of NAL unit (follow H264 spec, slice_header definition)
+                        var ba : ByteArray = pes.data;
+                        // +1 to skip NAL unit type
+                        ba.position = frame.start + 1;
+                        var eg : ExpGolomb = new ExpGolomb(ba);
+                        /* add a try/catch, 
+                         * as NALu might be partial here (in case NALu/slice header is splitted accross several PES packet ... we might end up 
+                         * with buffer overflow. prevent this and in case of overflow assume it is not a keyframe. should be fixed later on 
+                         */
+                        try {
+                            // discard first_mb_in_slice
+                            eg.readUE();
+                            var type : uint = eg.readUE();
+                            CONFIG::LOGGING {
+                                Log.debug("TS: frame_type:" + frame.type + ",slice_type:" + type);
+                            }
+                            if (type == 2 || type == 4 || type == 7 || type == 9) {
+                                _curVideoTag.keyframe = true;
+                            }
+                        } catch(e : Error) {
+                            CONFIG::LOGGING {
+                                Log.warn("TS: frame_type:" + frame.type + ": slice header splitted accross several PES packets, assuming not a keyframe");
+                            }
+                          _curVideoTag.keyframe = false;
+                        }
                     }
                 } else if (frame.type == 7) {
                     sps_found = true;
@@ -352,17 +380,36 @@ package org.mangui.hls.demux {
                     ppsvect.push(pps);
                 }
             }
-            if (sps_found && pps_found && _avccTagInserted == false)  {
+            if (sps_found && pps_found) {
                 var avcc : ByteArray = AVCC.getAVCC(sps, ppsvect);
-                var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
-                avccTag.push(avcc, 0, avcc.length);
-                _tags.push(avccTag);
-                /* in case SPS/PPS NAL unit have been found, force video tag has being keyframe.
-                 * this will fix playback issues with some streams for which there is no IDR NAL unit in same PES packet
-                 */
-                _curVideoTag.keyframe = true;
-                _avccTagInserted = true;
+                // only push AVCC tag if never pushed or avcc different from previous one
+                if (_avcc == null || !compareByteArray(_avcc, avcc)) {
+                    _avcc = avcc;
+                    var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
+                    avccTag.push(avcc, 0, avcc.length);
+                    _tags.push(avccTag);
+                }
             }
+        }
+
+        // return true if same Byte Array
+        private function compareByteArray(ba1 : ByteArray, ba2 : ByteArray) : Boolean {
+            // compare the lengths
+            var size : uint = ba1.length;
+            if (ba1.length == ba2.length) {
+                ba1.position = 0;
+                ba2.position = 0;
+
+                // then the bytes
+                while (ba1.position < size) {
+                    var v1 : int = ba1.readByte();
+                    if (v1 != ba2.readByte()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
         }
 
         /** Parse TS packet. **/
