@@ -1,16 +1,18 @@
 package org.mangui.hls.demux {
+    import flash.utils.getTimer;
     import flash.display.DisplayObject;
+
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
 
     import flash.events.Event;
     import flash.events.EventDispatcher;
     import flash.utils.ByteArray;
-    
+
     CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.utils.Hex;
+        import org.mangui.hls.utils.Log;
+        import org.mangui.hls.HLSSettings;
+        import org.mangui.hls.utils.Hex;
     }
 
     /** Representation of an MPEG transport stream. **/
@@ -133,9 +135,9 @@ package org.mangui.hls.demux {
 
         /** Parse a limited amount of packets each time to avoid blocking **/
         private function _parseTimer(e : Event) : void {
-            var start_time : Number = new Date().getTime();
+            var start_time : int = getTimer();
             _data.position = _read_position;
-            while ((_data.bytesAvailable >= 188) && ((new Date().getTime() - start_time) < 20)) {
+            while ((_data.bytesAvailable >= 188) && ((getTimer() - start_time) < 20)) {
                 _parseTSPacket();
             }
             if (_tags.length) {
@@ -351,10 +353,10 @@ package org.mangui.hls.demux {
                             // discard first_mb_in_slice
                             eg.readUE();
                             var type : uint = eg.readUE();
-                            CONFIG::LOGGING {
-                                Log.debug("TS: frame_type:" + frame.type + ",slice_type:" + type);
-                            }
                             if (type == 2 || type == 4 || type == 7 || type == 9) {
+                                CONFIG::LOGGING {
+                                    Log.debug("TS: frame_type:" + frame.type + ",keyframe slice_type:" + type);
+                                }
                                 _curVideoTag.keyframe = true;
                             }
                         } catch(e : Error) {

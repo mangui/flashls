@@ -1,4 +1,5 @@
 package org.mangui.hls.utils {
+    import flash.utils.getTimer;
     import flash.display.DisplayObject;
     import flash.utils.ByteArray;
     import flash.events.Event;
@@ -71,12 +72,12 @@ package org.mangui.hls.utils {
         }
 
         private function _decryptTimer(e : Event) : void {
-            var start_time : Number = new Date().getTime();
+            var start_time : int = getTimer();
             var decrypted : Boolean;
             do {
                 decrypted = _decryptChunk();
                 // dont spend more than 20 ms in the decrypt timer to avoid blocking/freezing video
-            } while (decrypted && new Date().getTime() - start_time < 20);
+            } while (decrypted && (getTimer() - start_time) < 20);
         }
 
         /** decrypt a small chunk of packets each time to avoid blocking **/
