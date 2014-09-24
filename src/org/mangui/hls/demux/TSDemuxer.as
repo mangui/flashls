@@ -14,7 +14,6 @@ package org.mangui.hls.demux {
         import org.mangui.hls.HLSSettings;
         import org.mangui.hls.utils.Hex;
     }
-
     /** Representation of an MPEG transport stream. **/
     public class TSDemuxer extends EventDispatcher implements Demuxer {
         /** read position **/
@@ -50,6 +49,7 @@ package org.mangui.hls.demux {
         private var _callback_audioselect : Function;
         private var _callback_progress : Function;
         private var _callback_complete : Function;
+        private var _callback_videometadata : Function;
         /* current audio PES */
         private var _curAudioPES : ByteArray;
         /* current video PES */
@@ -85,7 +85,7 @@ package org.mangui.hls.demux {
         }
 
         /** Transmux the M2TS file into an FLV file. **/
-        public function TSDemuxer(displayObject : DisplayObject, callback_audioselect : Function, callback_progress : Function, callback_complete : Function) {
+        public function TSDemuxer(displayObject : DisplayObject, callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function) {
             _curAudioPES = null;
             _curVideoPES = null;
             _curVideoTag = null;
@@ -93,6 +93,7 @@ package org.mangui.hls.demux {
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
+            _callback_videometadata = callback_videometadata;
             _pmtParsed = false;
             _packetsBeforePMT = false;
             _pmtId = _avcId = _audioId = -1;
@@ -118,7 +119,7 @@ package org.mangui.hls.demux {
         public function cancel() : void {
             CONFIG::LOGGING {
                 Log.debug("TS: cancel demux");
-            } 
+            }
             _data = null;
             _curAudioPES = null;
             _curVideoPES = null;
@@ -154,7 +155,7 @@ package org.mangui.hls.demux {
                     if (_pmtParsed == false) {
                         null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
                         CONFIG::LOGGING {
-                        Log.error("TS: no PMT found, report parsing complete");
+                            Log.error("TS: no PMT found, report parsing complete");
                         }
                     }
                     _displayObject.removeEventListener(Event.ENTER_FRAME, _parseTimer);
@@ -168,13 +169,13 @@ package org.mangui.hls.demux {
         private function _flush() : void {
             CONFIG::LOGGING {
                 Log.debug("TS: flushing demux");
-            }            
+            }
             // check whether last parsed audio PES is complete
             if (_curAudioPES && _curAudioPES.length > 14) {
                 var pes : PES = new PES(_curAudioPES, true);
                 if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
-                    Log.debug2("TS: complete Audio PES found at end of segment, parse it");
+                        Log.debug2("TS: complete Audio PES found at end of segment, parse it");
                     }
                     // complete PES, parse and push into the queue
                     if (_audioIsAAC) {
@@ -185,7 +186,7 @@ package org.mangui.hls.demux {
                     _curAudioPES = null;
                 } else {
                     CONFIG::LOGGING {
-                    Log.debug("TS: partial audio PES at end of segment");
+                        Log.debug("TS: partial audio PES at end of segment");
                     }
                     _curAudioPES.position = _curAudioPES.length;
                 }
@@ -195,7 +196,7 @@ package org.mangui.hls.demux {
                 pes = new PES(_curVideoPES, false);
                 if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
-                    Log.debug2("TS: complete AVC PES found at end of segment, parse it");
+                        Log.debug2("TS: complete AVC PES found at end of segment, parse it");
                     }
                     // complete PES, parse and push into the queue
                     _parseAVCPES(pes);
@@ -207,7 +208,7 @@ package org.mangui.hls.demux {
                     }
                 } else {
                     CONFIG::LOGGING {
-                    Log.debug("TS: partial AVC PES at end of segment");
+                        Log.debug("TS: partial AVC PES at end of segment");
                     }
                     _curVideoPES.position = _curVideoPES.length;
                 }
@@ -232,7 +233,7 @@ package org.mangui.hls.demux {
             if (_adtsFrameOverflow && _adtsFrameOverflow.length) {
                 // if overflowing, append remaining data from previous frame at the beginning of PES packet
                 CONFIG::LOGGING {
-                Log.debug("TS/AAC: append overflowing " + _adtsFrameOverflow.length + " bytes to beginning of new PES packet");
+                    Log.debug("TS/AAC: append overflowing " + _adtsFrameOverflow.length + " bytes to beginning of new PES packet");
                 }
                 var ba : ByteArray = new ByteArray();
                 ba.writeBytes(_adtsFrameOverflow);
@@ -243,7 +244,7 @@ package org.mangui.hls.demux {
             }
             if (isNaN(pes.pts)) {
                 CONFIG::LOGGING {
-                Log.warn("TS/AAC: no PTS info in this PES packet,discarding it");
+                    Log.warn("TS/AAC: no PTS info in this PES packet,discarding it");
                 }
                 return;
             }
@@ -252,7 +253,7 @@ package org.mangui.hls.demux {
                 var adifTag : FLVTag = new FLVTag(FLVTag.AAC_HEADER, pes.pts, pes.dts, true);
                 var adif : ByteArray = AACDemuxer.getADIF(pes.data, pes.payload);
                 CONFIG::LOGGING {
-                Log.debug("TS/AAC: insert ADIF TAG");
+                    Log.debug("TS/AAC: insert ADIF TAG");
                 }
                 adifTag.push(adif, 0, adif.length);
                 _tags.push(adifTag);
@@ -276,7 +277,7 @@ package org.mangui.hls.demux {
                     _adtsFrameOverflow = new ByteArray();
                     _adtsFrameOverflow.writeBytes(pes.data, frame.start + frame.length);
                     CONFIG::LOGGING {
-                    Log.debug("TS/AAC:ADTS frame overflow:" + adts_overflow);
+                        Log.debug("TS/AAC:ADTS frame overflow:" + adts_overflow);
                     }
                 }
             }
@@ -286,7 +287,7 @@ package org.mangui.hls.demux {
         private function _parseMPEGPES(pes : PES) : void {
             if (isNaN(pes.pts)) {
                 CONFIG::LOGGING {
-                Log.warn("TS/MP3: no PTS info in this MP3 PES packet,discarding it");
+                    Log.warn("TS/MP3: no PTS info in this MP3 PES packet,discarding it");
                 }
                 return;
             }
@@ -309,7 +310,7 @@ package org.mangui.hls.demux {
                 } else {
                     null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
                     CONFIG::LOGGING {
-                    Log.warn("TS: no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
+                        Log.warn("TS: no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
                     }
                 }
                 return;
@@ -321,7 +322,7 @@ package org.mangui.hls.demux {
             }
             if (isNaN(pes.pts)) {
                 CONFIG::LOGGING {
-                Log.warn("TS: no PTS info in this AVC PES packet,discarding it");
+                    Log.warn("TS: no PTS info in this AVC PES packet,discarding it");
                 }
                 return;
             }
@@ -363,7 +364,7 @@ package org.mangui.hls.demux {
                             CONFIG::LOGGING {
                                 Log.warn("TS: frame_type:" + frame.type + ": slice header splitted accross several PES packets, assuming not a keyframe");
                             }
-                          _curVideoTag.keyframe = false;
+                            _curVideoTag.keyframe = false;
                         }
                     }
                 } else if (frame.type == 7) {
@@ -371,8 +372,13 @@ package org.mangui.hls.demux {
                     sps = new ByteArray();
                     pes.data.position = frame.start;
                     pes.data.readBytes(sps, 0, frame.length);
-                    //var spsInfo : SPSInfo = new SPSInfo(sps);
-                    //sps.position = 0;
+                    // try to retrieve video width and height from SPS
+                    var spsInfo : SPSInfo = new SPSInfo(sps);
+                    sps.position = 0;
+                    if (spsInfo.width && spsInfo.height) {
+                        // notify upper layer
+                        _callback_videometadata(spsInfo.width, spsInfo.height);
+                    }
                 } else if (frame.type == 8) {
                     if (!pps_found) {
                         pps_found = true;
@@ -426,13 +432,13 @@ package org.mangui.hls.demux {
                 if (probe(_data) == true) {
                     var pos_end : uint = _data.position;
                     CONFIG::LOGGING {
-                    Log.warn("TS: lost sync between offsets:" + pos_start + "/" + pos_end);
-                    if (HLSSettings.logDebug2) {
-                        var ba : ByteArray = new ByteArray();
-                        _data.position = pos_start;
-                        _data.readBytes(ba, 0, pos_end - pos_start);
-                        Log.debug2("TS: lost sync dump:" + Hex.fromArray(ba));
-                    }
+                        Log.warn("TS: lost sync between offsets:" + pos_start + "/" + pos_end);
+                        if (HLSSettings.logDebug2) {
+                            var ba : ByteArray = new ByteArray();
+                            _data.position = pos_start;
+                            _data.readBytes(ba, 0, pos_end - pos_start);
+                            Log.debug2("TS: lost sync dump:" + Hex.fromArray(ba));
+                        }
                     }
                     _data.position = pos_end + 1;
                 } else {
@@ -473,14 +479,14 @@ package org.mangui.hls.demux {
                     if (_pmtParsed == false) {
                         null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
                         CONFIG::LOGGING {
-                        Log.debug("TS: PAT found.PMT PID:" + _pmtId);
+                            Log.debug("TS: PAT found.PMT PID:" + _pmtId);
                         }
                     }
                     break;
                 case _pmtId:
                     if (_pmtParsed == false) {
                         CONFIG::LOGGING {
-                        Log.debug("TS: PMT found");
+                            Log.debug("TS: PMT found");
                         }
                         todo -= _parsePMT(stt);
                         _pmtParsed = true;
@@ -489,7 +495,7 @@ package org.mangui.hls.demux {
                         // in theory there should be no A/V packets before PAT/PMT)
                         if (_packetsBeforePMT) {
                             CONFIG::LOGGING {
-                            Log.warn("TS: late PMT found, rewinding at beginning of TS");
+                                Log.warn("TS: late PMT found, rewinding at beginning of TS");
                             }
                             _data.position = 0;
                             return;
@@ -515,7 +521,7 @@ package org.mangui.hls.demux {
                     } else {
                         null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
                         CONFIG::LOGGING {
-                        Log.warn("TS: Discarding audio packet with id " + pid);
+                            Log.warn("TS: Discarding audio packet with id " + pid);
                         }
                     }
                     break;
@@ -534,7 +540,7 @@ package org.mangui.hls.demux {
                     } else {
                         null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
                         CONFIG::LOGGING {
-                        Log.warn("TS: Discarding video packet with id " + pid + " bad TS segmentation ?");
+                            Log.warn("TS: Discarding video packet with id " + pid + " bad TS segmentation ?");
                         }
                     }
                     break;
@@ -605,7 +611,7 @@ package org.mangui.hls.demux {
                     // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
                     _avcId = sid;
                     CONFIG::LOGGING {
-                    Log.debug("TS: Selected video PID: " + _avcId);
+                        Log.debug("TS: Selected video PID: " + _avcId);
                     }
                 } else if (typ == 0x03 || typ == 0x04) {
                     // ISO/IEC 11172-3 (MPEG-1 audio)
@@ -622,7 +628,7 @@ package org.mangui.hls.demux {
             if (audioList.length) {
                 null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
                 CONFIG::LOGGING {
-                Log.debug("TS: Found " + audioList.length + " audio tracks");
+                    Log.debug("TS: Found " + audioList.length + " audio tracks");
                 }
             }
             // provide audio track List to audio select callback. this callback will return the selected audio track
@@ -632,12 +638,12 @@ package org.mangui.hls.demux {
                 audioPID = audioTrack.id;
                 _audioIsAAC = (audioTrack.title.indexOf("AAC") > -1);
                 CONFIG::LOGGING {
-                Log.debug("TS: selected " + (_audioIsAAC ? "AAC" : "MP3") + " PID: " + audioPID);
+                    Log.debug("TS: selected " + (_audioIsAAC ? "AAC" : "MP3") + " PID: " + audioPID);
                 }
             } else {
                 audioPID = -1;
                 CONFIG::LOGGING {
-                Log.debug("TS: no audio selected");
+                    Log.debug("TS: no audio selected");
                 }
             }
             // in case audio PID change, flush any partially parsed audio PES packet

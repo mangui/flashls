@@ -86,7 +86,7 @@ package org.mangui.hls.stream {
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
         };
 
-        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, ... tags) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, audio_only : Boolean, width : int, height : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
@@ -98,7 +98,7 @@ package org.mangui.hls.stream {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, tag_list)));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, audio_only, width, height, tag_list)));
         }
 
         /** Check the bufferlength. **/
@@ -253,7 +253,7 @@ package org.mangui.hls.stream {
         };
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(level : int, cc : int, sn : int, tag_list : Vector.<String>, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
+        private function _loaderCallback(level : int, cc : int, sn : int, audio_only : Boolean, width : int, height : int, tag_list : Vector.<String>, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -343,6 +343,9 @@ package org.mangui.hls.stream {
                 data.writeObject(level);
                 data.writeObject(sn);
                 data.writeObject(cc);
+                data.writeObject(audio_only);
+                data.writeObject(width);
+                data.writeObject(height);
                 for each (var custom_tag : String in tag_list) {
                     data.writeObject(custom_tag);
                 }

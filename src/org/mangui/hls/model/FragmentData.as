@@ -35,12 +35,17 @@ package org.mangui.hls.model {
         public var tags_pts_min_video : Number;
         public var tags_pts_max_video : Number;
         public var tags : Vector.<FLVTag>;
+        /* video dimension */
+        public var video_width : int;
+        public var video_height : int;
 
         /** Fragment metrics **/
         public function FragmentData() {
             this.pts_start = NaN;
             this.pts_start_computed = NaN;
             this.valid = true;
+            video_width = 0;
+            video_height = 0;
         };
 
         public function get pts_min() : Number {
