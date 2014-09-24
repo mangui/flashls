@@ -730,12 +730,14 @@ package org.mangui.hls.stream {
 
         /** triggered by demux, it should return video width/height */
         private function _fragParsingVideoMetadataHandler(width : uint, height : uint) : void {
-            CONFIG::LOGGING {
-                Log.debug("frag width/height retrieved from demux:" + width + "/" + height);
-            }
             var fragData : FragmentData = _frag_current.data;
-            fragData.video_width = width;
-            fragData.video_height = height;
+            if (fragData.video_width == 0) {
+                CONFIG::LOGGING {
+                    Log.debug("AVC: width/height:" + width + "/" + height);
+                }
+                fragData.video_width = width;
+                fragData.video_height = height;
+            }
         }
 
         /** triggered when demux has retrieved some tags from fragment **/
@@ -911,7 +913,7 @@ package org.mangui.hls.stream {
                 var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
 
                 if (fragData.tags.length) {
-                    _tags_callback(_level, _frag_current.continuity, _frag_current.seqnum, !fragData.video_found, fragData.video_width, fragData.video_height,_frag_current.tag_list, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _tags_callback(_level, _frag_current.continuity, _frag_current.seqnum, !fragData.video_found, fragData.video_width, fragData.video_height, _frag_current.tag_list, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
                     fragData.tags_pts_min_video = fragData.tags_pts_max_video;
