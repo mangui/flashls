@@ -1,43 +1,38 @@
-package org.mangui.hls.flv
-{
-	import flash.utils.ByteArray;
-	
-	/** Metadata needed to build an FLV tag. **/
-	public class FLVTag
-	{
-		/** AAC Header Type ID. **/
-		public static const AAC_HEADER:int = 0;
-		/** AAC Data Type ID. **/
-		public static const AAC_RAW:int = 1;
-		/** AVC Header Type ID. **/
-		public static const AVC_HEADER:int = 2;
-		/** AVC Data Type ID. **/
-		public static const AVC_NALU:int = 3;
-		/** MP3 Data Type ID. **/
-		public static const MP3_RAW:int = 4;
-		/** Discontinuity Data Type ID. **/
-		public static const DISCONTINUITY:int = 5;
-		/** metadata Type ID. **/
-		public static const METADATA :int = 6;
+package org.mangui.hls.flv {
+    import flash.utils.ByteArray;
 
+    /** Metadata needed to build an FLV tag. **/
+    public class FLVTag {
+        /** AAC Header Type ID. **/
+        public static const AAC_HEADER : int = 0;
+        /** AAC Data Type ID. **/
+        public static const AAC_RAW : int = 1;
+        /** AVC Header Type ID. **/
+        public static const AVC_HEADER : int = 2;
+        /** AVC Data Type ID. **/
+        public static const AVC_NALU : int = 3;
+        /** MP3 Data Type ID. **/
+        public static const MP3_RAW : int = 4;
+        /** Discontinuity Data Type ID. **/
+        public static const DISCONTINUITY : int = 5;
+        /** metadata Type ID. **/
+        public static const METADATA : int = 6;
         /* FLV TAG TYPE */
-		private static var TAG_TYPE_AUDIO : int = 8;
-        private static var TAG_TYPE_VIDEO : int= 9;
-        private static var TAG_TYPE_SCRIPT : int= 18; 
+        private static var TAG_TYPE_AUDIO : int = 8;
+        private static var TAG_TYPE_VIDEO : int = 9;
+        private static var TAG_TYPE_SCRIPT : int = 18;
+        /** Is this a keyframe. **/
+        public var keyframe : Boolean;
+        /** Array with data pointers. **/
+        private var pointers : Vector.<TagData> = new Vector.<TagData>();
+        /** PTS of this frame. **/
+        public var pts : Number;
+        /** DTS of this frame. **/
+        public var dts : Number;
+        /** Type of FLV tag.**/
+        public var type : int;
 
-		
-		/** Is this a keyframe. **/
-		public var keyframe:Boolean;
-		/** Array with data pointers. **/
-		private var pointers:Vector.<TagData> = new Vector.<TagData>();
-		/** PTS of this frame. **/
-		public var pts:Number;
-		/** DTS of this frame. **/
-		public var dts:Number;
-		/** Type of FLV tag.**/
-		public var type:int;
-
-		        /** Get the FLV file header. **/
+        /** Get the FLV file header. **/
         public static function getHeader() : ByteArray {
             var flv : ByteArray = new ByteArray();
             flv.length = 13;
@@ -79,118 +74,102 @@ package org.mangui.hls.flv
             return tag;
         };
 
-		
-		/** Save the frame data and parameters. **/
-		public function FLVTag(typ:int, stp_p:Number, stp_d:Number, key:Boolean)
-		{
-			type = typ;
-			pts = stp_p;
-			dts = stp_d;
-			keyframe = key;
-		}
-		;
-		
-		/** Returns the tag data. **/
-		public function get data():ByteArray
-		{
-			var array:ByteArray;
-			/* following specification http://download.macromedia.com/f4v/video_file_format_spec_v10_1.pdf */
-			
-			// Render header data
-			if (type == FLVTag.MP3_RAW)
-			{
-				array = getTagHeader(TAG_TYPE_AUDIO, length + 1, pts);
-				// Presume MP3 is 44.1 stereo.
-				array.writeByte(0x2F);
-			}
-			else if (type == AVC_HEADER || type == AVC_NALU)
-			{
-				array = getTagHeader(TAG_TYPE_VIDEO, length + 5, dts);
-				// keyframe/interframe switch (0x10 / 0x20) + AVC (0x07)
-				keyframe ? array.writeByte(0x17) : array.writeByte(0x27);
-				/* AVC Packet Type :
-				   0 = AVC sequence header
-				   1 = AVC NALU
-				   2 = AVC end of sequence (lower level NALU sequence ender is
-				 not required or supported) */
-				type == AVC_HEADER ? array.writeByte(0x00) : array.writeByte(0x01);
-				// CompositionTime (in ms)
-				// CONFIG::LOGGING {
-				// Log.info("pts:"+pts+",dts:"+dts+",delta:"+compositionTime);
-				// }
-				var compositionTime:Number = (pts - dts);
-				array.writeByte(compositionTime >> 16);
-				array.writeByte(compositionTime >> 8);
-				array.writeByte(compositionTime);
+        /** Save the frame data and parameters. **/
+        public function FLVTag(typ : int, stp_p : Number, stp_d : Number, key : Boolean) {
+            type = typ;
+            pts = stp_p;
+            dts = stp_d;
+            keyframe = key;
+        }
+        ;
+
+        /** Returns the tag data. **/
+        public function get data() : ByteArray {
+            var array : ByteArray;
+            /* following specification http://download.macromedia.com/f4v/video_file_format_spec_v10_1.pdf */
+
+            // Render header data
+            if (type == FLVTag.MP3_RAW) {
+                array = getTagHeader(TAG_TYPE_AUDIO, length + 1, pts);
+                // Presume MP3 is 44.1 stereo.
+                array.writeByte(0x2F);
+            } else if (type == AVC_HEADER || type == AVC_NALU) {
+                array = getTagHeader(TAG_TYPE_VIDEO, length + 5, dts);
+                // keyframe/interframe switch (0x10 / 0x20) + AVC (0x07)
+                keyframe ? array.writeByte(0x17) : array.writeByte(0x27);
+                /* AVC Packet Type :
+                0 = AVC sequence header
+                1 = AVC NALU
+                2 = AVC end of sequence (lower level NALU sequence ender is
+                not required or supported) */
+                type == AVC_HEADER ? array.writeByte(0x00) : array.writeByte(0x01);
+                // CompositionTime (in ms)
+                // CONFIG::LOGGING {
+                // Log.info("pts:"+pts+",dts:"+dts+",delta:"+compositionTime);
+                // }
+                var compositionTime : Number = (pts - dts);
+                array.writeByte(compositionTime >> 16);
+                array.writeByte(compositionTime >> 8);
+                array.writeByte(compositionTime);
+                // Write tag data, accounting for NAL startcodes
+                if (type == AVC_NALU) {
+                    array.writeUnsignedInt(length - 4);
+                }
             } else if (type == DISCONTINUITY || type == METADATA) {
                 array = getTagHeader(FLVTag.TAG_TYPE_SCRIPT, length, pts);
             } else {
-				array = getTagHeader(TAG_TYPE_AUDIO, length + 2, pts);
-				// SoundFormat, -Rate, -Size, Type and Header/Raw switch.
-				array.writeByte(0xAF);
-				type == AAC_HEADER ? array.writeByte(0x00) : array.writeByte(0x01);
-			}
-			
-			// Write tag data, accounting for NAL startcodes
-			if (type == AVC_NALU)
-			{
-				array.writeUnsignedInt(length - 4);
-			}
-			for (var i:int = 0; i < pointers.length; i++)
-			{
-				array.writeBytes(pointers[i].array, pointers[i].start, pointers[i].length);
-			}
-			
-			// Write previousTagSize and return data.
-			array.writeUnsignedInt(array.length);
-			return array;
-		}
-		
-		/** Returns the bytesize of the frame. **/
-		private function get length():int
-		{
-			var length:int = 0;
-			for (var i:int = 0; i < pointers.length; i++)
-			{
-				length += pointers[i].length;
-			}
-			// Account for NAL startcode length.
-			if (type == AVC_NALU)
-			{
-				length += 4;
-			}
-			return length;
-		}
-		;
-		
-		/** push a data pointer into the frame. **/
-		public function push(array:ByteArray, start:int, length:int):void
-		{
-			pointers.push(new TagData(array, start, length));
-		}
-		;
-		
-		/** Trace the contents of this tag. **/
-		public function toString():String
-		{
-			return "TAG (type: " + type + ", pts:" + pts + ", dts:" + dts + ", length:" + length + ")";
-		}
-		;
-	}
+                array = getTagHeader(TAG_TYPE_AUDIO, length + 2, pts);
+                // SoundFormat, -Rate, -Size, Type and Header/Raw switch.
+                array.writeByte(0xAF);
+                type == AAC_HEADER ? array.writeByte(0x00) : array.writeByte(0x01);
+            }
+            for (var i : int = 0; i < pointers.length; i++) {
+                array.writeBytes(pointers[i].array, pointers[i].start, pointers[i].length);
+            }
+            // Write previousTagSize and return data.
+            array.writeUnsignedInt(array.length);
+            return array;
+        }
+
+        /** Returns the bytesize of the frame. **/
+        private function get length() : int {
+            var length : int = 0;
+            for (var i : int = 0; i < pointers.length; i++) {
+                length += pointers[i].length;
+            }
+            // Account for NAL startcode length.
+            if (type == AVC_NALU) {
+                length += 4;
+            }
+            return length;
+        }
+        ;
+
+        /** push a data pointer into the frame. **/
+        public function push(array : ByteArray, start : int, length : int) : void {
+            pointers.push(new TagData(array, start, length));
+        }
+        ;
+
+        /** Trace the contents of this tag. **/
+        public function toString() : String {
+            return "TAG (type: " + type + ", pts:" + pts + ", dts:" + dts + ", length:" + length + ")";
+        }
+        ;
+    }
 }
 
 /** Tag Content **/
-class TagData
-{
-	import flash.utils.ByteArray;
-	public var array:ByteArray;
-	public var start:int;
-	public var length:int;
-	
-	public function TagData(array:ByteArray, start:int, length:int)
-	{
-		this.array = array;
-		this.start = start;
-		this.length = length;
-	}
+class TagData {
+    import flash.utils.ByteArray;
+
+    public var array : ByteArray;
+    public var start : int;
+    public var length : int;
+
+    public function TagData(array : ByteArray, start : int, length : int) {
+        this.array = array;
+        this.start = start;
+        this.length = length;
+    }
 }
