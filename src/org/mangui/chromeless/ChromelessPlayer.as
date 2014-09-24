@@ -431,6 +431,7 @@ package org.mangui.chromeless {
                 _stageVideo.attachNetStream(_hls.stream);
             } else {
                 _video = new Video(stage.stageWidth, stage.stageHeight);
+                _video.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange);
                 addChild(_video);
                 _video.smoothing = true;
                 _video.attachNetStream(_hls.stream);
