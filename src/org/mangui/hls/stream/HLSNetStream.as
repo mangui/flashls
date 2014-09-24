@@ -329,7 +329,6 @@ package org.mangui.hls.stream {
                 // same continuity than previously, update its max PTS
                 _buffer_cur_max_pts = max_pts;
             }
-
             /* detect if we are switching to a new fragment. in that case inject a metadata tag
              * Netstream will notify the metadata back when starting playback of this fragment  
              */
@@ -503,7 +502,7 @@ package org.mangui.hls.stream {
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;
             _reached_vod_end = false;
-            _cur_level = _cur_sn = NaN;
+            _cur_level = _cur_sn = -1;
             if (HLSSettings.minBufferLength == -1) {
                 _buffer_threshold = _autoBufferManager.minBufferLength;
             } else {
