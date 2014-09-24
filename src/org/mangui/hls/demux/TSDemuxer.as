@@ -371,6 +371,8 @@ package org.mangui.hls.demux {
                     sps = new ByteArray();
                     pes.data.position = frame.start;
                     pes.data.readBytes(sps, 0, frame.length);
+                    //var spsInfo : SPSInfo = new SPSInfo(sps);
+                    //sps.position = 0;
                 } else if (frame.type == 8) {
                     if (!pps_found) {
                         pps_found = true;
