@@ -431,7 +431,7 @@ package org.mangui.chromeless {
                 _stageVideo.attachNetStream(_hls.stream);
             } else {
                 _video = new Video(stage.stageWidth, stage.stageHeight);
-                _video.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange);
+                _video.addEventListener(VideoEvent.RENDER_STATE, _onVideoStateChange);
                 addChild(_video);
                 _video.smoothing = true;
                 _video.attachNetStream(_hls.stream);
@@ -447,6 +447,10 @@ package org.mangui.chromeless {
         
         
         private function _onStageVideoStateChange(event : StageVideoEvent) : void {
+            Log.info("Video decoding:" + event.status);
+        }
+
+        private function _onVideoStateChange(event : VideoEvent) : void {
             Log.info("Video decoding:" + event.status);
         }
 
