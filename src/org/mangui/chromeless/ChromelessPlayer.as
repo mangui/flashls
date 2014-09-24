@@ -138,7 +138,7 @@ package org.mangui.chromeless {
 
         protected function _fragmentLoadedHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("onFragmentLoaded", event.loadMetrics.bandwidth, event.loadMetrics.level, stage.stageWidth);
+                ExternalInterface.call("onFragmentLoaded", event.loadMetrics);
             }
         };
 

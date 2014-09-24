@@ -470,11 +470,11 @@ function onError(code,url,message) {
   appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
 }
 
-function onFragmentLoaded(bandwidth,level,width) {
-  appendLog("onFragmentLoaded(): bandwidth:" + bandwidth + " level:" + level + " width:" + width);
+function onFragmentLoaded(loadmetrics) {
+  appendLog("onFragmentLoaded(): bandwidth:" + loadmetrics.bandwidth + " level:" + loadmetrics.level);
 }
 function onFragmentPlaying(playmetrics) {
-  appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " tags:" + playmetrics.tag_list);
+  appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " video_width:" + playmetrics.video_width + " video_height:" + playmetrics.video_height + " tags:" + playmetrics.tag_list);
 }
 
 function onManifest(duration) {
