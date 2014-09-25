@@ -146,6 +146,20 @@ package org.mangui.chromeless {
             if (ExternalInterface.available) {
                 ExternalInterface.call("onFragmentPlaying", event.playMetrics);
             }
+            var videoWidth : int = event.playMetrics.video_width;
+            var videoHeight : int = event.playMetrics.video_height;
+
+            if (videoWidth && videoHeight) {
+                var changed : Boolean = _videoWidth != videoWidth || _videoHeight != videoHeight;
+                if (changed) {
+                    _videoHeight = videoHeight;
+                    _videoWidth = videoWidth;
+                    _resize();
+                    if (ExternalInterface.available) {
+                        ExternalInterface.call("onVideoSize", _videoWidth, _videoHeight);
+                    }
+                }
+            }
         };
 
         protected function _manifestHandler(event : HLSEvent) : void {
@@ -165,21 +179,6 @@ package org.mangui.chromeless {
             _media_position = event.mediatime.position;
             if (ExternalInterface.available) {
                 ExternalInterface.call("onPosition", event.mediatime.position, event.mediatime.duration, event.mediatime.live_sliding, event.mediatime.buffer, event.mediatime.program_date);
-            }
-
-            var videoWidth : int = _video ? _video.videoWidth : _stageVideo.videoWidth;
-            var videoHeight : int = _video ? _video.videoHeight : _stageVideo.videoHeight;
-
-            if (videoWidth && videoHeight) {
-                var changed : Boolean = _videoWidth != videoWidth || _videoHeight != videoHeight;
-                if (changed) {
-                    _videoHeight = videoHeight;
-                    _videoWidth = videoWidth;
-                    _resize();
-                    if (ExternalInterface.available) {
-                        ExternalInterface.call("onVideoSize", _videoWidth, _videoHeight);
-                    }
-                }
             }
         };
 
@@ -310,7 +309,7 @@ package org.mangui.chromeless {
             _hls.load(url);
         };
 
-        protected function _play(position : Number=-1) : void {
+        protected function _play(position : Number = -1) : void {
             _hls.stream.play(null, position);
         };
 
@@ -444,8 +443,7 @@ package org.mangui.chromeless {
                 _load(autoLoadUrl);
             }
         };
-        
-        
+
         private function _onStageVideoStateChange(event : StageVideoEvent) : void {
             Log.info("Video decoding:" + event.status);
         }
