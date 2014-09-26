@@ -138,6 +138,7 @@ package org.mangui.hls.demux {
         private function _parseTimer(e : Event) : void {
             var start_time : int = getTimer();
             _data.position = _read_position;
+            // dont spend more than 20ms demuxing TS packets to avoid loosing frames
             while ((_data.bytesAvailable >= 188) && ((getTimer() - start_time) < 20)) {
                 _parseTSPacket();
             }
