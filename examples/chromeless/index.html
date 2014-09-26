@@ -328,6 +328,7 @@ function setlowBufferLength(new_len) {
   if(obj != null) {
     obj.playerSetlowBufferLength(new_len);
     appendLog("force low buffer len to :" + new_len);
+    document.getElementById('mediaInfo').rows[2].cells[3].innerHTML = getLowBufferLength().toFixed(2);
   }
 }
 
@@ -343,6 +344,7 @@ function setminBufferLength(new_len) {
   if(obj != null) {
     obj.playerSetminBufferLength(new_len);
     appendLog("force min buffer len to :" + new_len);
+    document.getElementById('mediaInfo').rows[2].cells[4].innerHTML = getMinBufferLength().toFixed(2);    
   }
 }
 
@@ -358,6 +360,7 @@ function setmaxBufferLength(new_len) {
   if(obj != null) {
     obj.playerSetmaxBufferLength(new_len);
     appendLog("force max buffer len to :" + new_len);
+    document.getElementById('mediaInfo').rows[2].cells[6].innerHTML = getMaxBufferLength().toFixed(2);    
   }
 }
 
@@ -442,6 +445,9 @@ function onHLSReady(message) {
       if (!obj.getPlayerVersion || obj.getPlayerVersion() < 2) {
         alert('You are using an old swf player file, or perhaps your browser is using a cached version of the swf file.');
       }
+      document.getElementById('mediaInfo').rows[2].cells[3].innerHTML = getLowBufferLength().toFixed(2);
+      document.getElementById('mediaInfo').rows[2].cells[4].innerHTML = getMinBufferLength().toFixed(2);
+      document.getElementById('mediaInfo').rows[2].cells[6].innerHTML = getMaxBufferLength().toFixed(2);
     }
 }
 
@@ -482,15 +488,12 @@ function onManifest(duration) {
   document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
 }
 
-function onPosition(position,duration,live_sliding,buffer,program_date) {
-  document.getElementById('mediaInfo').rows[2].cells[1].innerHTML =  position.toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  duration.toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[3].innerHTML = getLowBufferLength().toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[4].innerHTML = getMinBufferLength().toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  buffer.toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[6].innerHTML =  getMaxBufferLength().toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[16].innerHTML =  live_sliding.toFixed(2);
-  document.getElementById('mediaInfo').rows[2].cells[17].innerHTML =  new Date(program_date).toUTCString();
+function onPosition(timemetrics) {  
+  document.getElementById('mediaInfo').rows[2].cells[1].innerHTML =  timemetrics.position.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[2].innerHTML =  timemetrics.duration.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[5].innerHTML =  timemetrics.buffer.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[16].innerHTML =  timemetrics.live_sliding.toFixed(2);
+  document.getElementById('mediaInfo').rows[2].cells[17].innerHTML =  new Date(timemetrics.program_date).toUTCString();
 }
 
 function onState(newState) {

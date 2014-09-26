@@ -178,7 +178,7 @@ package org.mangui.chromeless {
             _duration = event.mediatime.duration;
             _media_position = event.mediatime.position;
             if (ExternalInterface.available) {
-                ExternalInterface.call("onPosition", event.mediatime.position, event.mediatime.duration, event.mediatime.live_sliding, event.mediatime.buffer, event.mediatime.program_date);
+                ExternalInterface.call("onPosition", event.mediatime);
             }
         };
 
