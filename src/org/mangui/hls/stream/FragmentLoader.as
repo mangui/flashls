@@ -769,11 +769,14 @@ package org.mangui.hls.stream {
                 fragData.tags.push(tag);
             }
 
-            /* do progressive buffering here. 
+            /* try to do progressive buffering here. 
              * only do it in case :
-             *      it is not a cold start use case. in case of cold start, accept progressive buffering if we start playback from lowest level
+             * 		first fragment is already loaded 
+             *      if first fragment is not loaded, we can do it if startlevel is already defined (if startFromLevel is set to -1
+             *      we first need to download one fragment to check the dl bw, in order to assess start level ...)
+             *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
              */
-            if (( _fragment_first_loaded || (_manifest_just_loaded && HLSSettings.startFromLevel != -1) )) {
+            if (( _fragment_first_loaded || (_manifest_just_loaded && (HLSSettings.startFromLevel != -1 || _levels.length == 1) ) )) {
                 if (fragData.audio_expected && !fragData.audio_found) {
                     /* if no audio tags found, it means that only video tags have been retrieved here
                      * we cannot do progressive buffering in that case.
@@ -884,7 +887,7 @@ package org.mangui.hls.stream {
 
             if (_manifest_just_loaded) {
                 _manifest_just_loaded = false;
-                if (HLSSettings.startFromLevel == -1) {
+                if (HLSSettings.startFromLevel == -1 && _levels.length > 1) {
                     // check if we can directly switch to a better bitrate, in case download bandwidth is enough
                     var bestlevel : int = _autoLevelManager.getbestlevel(fragMetrics.bandwidth);
                     if (bestlevel > _level) {
