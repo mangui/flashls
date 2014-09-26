@@ -37,7 +37,9 @@ package org.mangui.hls.utils {
             if (param) {
                 // try to assign value with proper object type
                 try {
-                    var c : Class = getDefinitionByName(getQualifiedClassName(HLSSettings[param])) as Class;
+                    var cName:String = getQualifiedClassName(HLSSettings[param]);
+					// AS3 bug: "getDefinitionByName" considers var value, not type, and wrongly (e.g. 3.0 >> "int"; 3.1 >> "Number").
+                    var c : Class = cName === "int" ? Number : getDefinitionByName(cName) as Class;
                     // get HLSSetting type
                     HLSSettings[param] = c(value);
                     CONFIG::LOGGING {
