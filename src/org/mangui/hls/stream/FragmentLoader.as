@@ -715,6 +715,10 @@ package org.mangui.hls.stream {
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _levels = event.levels;
             _level = 0;
+            
+            if (HLSSettings.startFromLevel > -1)
+				_manual_level = _level = Math.round(HLSSettings.startFromLevel*(_levels.length - 1));
+			
             _manifest_just_loaded = true;
         };
 
