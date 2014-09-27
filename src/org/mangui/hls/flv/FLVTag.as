@@ -122,9 +122,9 @@ package org.mangui.hls.flv
 				array.writeByte(compositionTime >> 16);
 				array.writeByte(compositionTime >> 8);
 				array.writeByte(compositionTime);
-            } else if (type == DISCONTINUITY || type == METADATA) {
-                array = getTagHeader(FLVTag.TAG_TYPE_SCRIPT, length, pts);
-            } else {
+				} else if ((type == DISCONTINUITY) || (type == METADATA)) {
+				    array = getTagHeader(FLVTag.TAG_TYPE_SCRIPT, length, pts);
+				} else {
 				array = getTagHeader(TAG_TYPE_AUDIO, length + 2, pts);
 				// SoundFormat, -Rate, -Size, Type and Header/Raw switch.
 				array.writeByte(0xAF);

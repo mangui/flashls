@@ -9,6 +9,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.utils.Hex;
 
     import flash.events.Event;
     import flash.events.NetStatusEvent;
@@ -102,12 +103,20 @@ package org.mangui.hls.stream {
         }
 
         // function is called by SCRIPT in FLV
-        public function onID3Data( data:String ) : void {
-            Log.info("NS onID3Data:" + data);
+        public function onID3Data( data:ByteArray ) : void {
+            var dump2 : String = "unset";
+			
+            // we dump the content as hex to get it to the Javascript in the browser.
+            // from lots of searching, we could use base64, but even then, the decode would 
+            // not be native, so hex actually seems more efficient
+            dump2 = Hex.fromArray(data);
+            Log.info("NS onID3Data:" + dump2);
+			
             CONFIG::LOGGING {
                 Log.debug("id3");
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, data));
+			
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump2));
         }
 		
         /** Check the bufferlength. **/

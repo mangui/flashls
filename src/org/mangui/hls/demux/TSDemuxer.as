@@ -67,52 +67,6 @@ package org.mangui.hls.demux {
         private var _avccTagInserted : Boolean = false;
 
 
-	public function hexdump(bytes:ByteArray, start:uint = 1, length:uint = 0 ):String {
-		var output:String = "";
-		var charbuf:String = "";
-		
-		if(start==0) start = 1;
-		if(length > bytes.length || length == 0) length = bytes.length;
-		
-		bytes.position = start - 1; //0 based
-		
-		for (var i:int = start; i < length+1; i++)
-		{
-				var byte:int = bytes.readByte();
-				//if( byte>20 && byte < 123 )charbuf+= String.fromCharCode(byte); else charbuf += ".";
-				output += byte2hex(byte); 
-				//if(i%16==0){
-				//	output += "\t" + charbuf + "\n";
-				//	charbuf = "";
-				//}
-		}
-		//if(i%16 != 0){
-		//	while(i%16!=0){output+="   ";i++;}
-		//	output+="   "
-		//	output += "\t" + charbuf + "\n";
-		//}
-		
-		//xx(output);
-		return output;
-        }
-
-        public function byte2hex(byte:uint):String {
-	    //http://www.actionscript.org/forums/showthread.php3?t=189952
-	    var hex:String = '';
-	    var arr:String = 'FEDCBA';
-	
-	    for(var i:uint = 0; i < 2; i++) {
-		if(((byte & (0xF0 >> (i * 4))) >> (4 - (i * 4))) > 9){
-			hex += arr.charAt(15 - ((byte & (0xF0 >> (i * 4))) >> (4 - (i * 4))));
-		}
-		else{
-			hex += String((byte & (0xF0 >> (i * 4))) >> (4 - (i * 4)));
-		}
-	    }    
-	
-	    return hex;
-        }
-	
         public static function probe(data : ByteArray) : Boolean {
             var pos : uint = data.position;
             var len : uint = Math.min(data.bytesAvailable, 188 * 2);
@@ -468,19 +422,13 @@ package org.mangui.hls.demux {
                 return;
             }
 
-            var dump2 : String = "unset";
+            var pespayload:ByteArray = new ByteArray();
             if (pes.data.length >= pes.payload + pes.payload_len) {
                 pes.data.position = pes.payload;
-                
-                // this is the actual hexdump passed	
-                dump2 = hexdump(pes.data, pes.payload + 1, pes.payload_len+pes.payload);
-                //Log.info("ID3 PES payload <" + pes.payload + "-" + pes.payload_len + ">: " + dump2);
-                //trace( "ID3 PES payload <" + pes.payload + "-" + pes.payload_len + ">: " + dump2);
+                pespayload.writeBytes(pes.data, pes.payload, pes.payload_len);
+                pespayload.position = 0;
             }
             pes.data.position = 0;
-            //var dump : String = hexdump(pes.data);
-            //Log.info("ID3 PES complete (" + pes.data.length + "): " + dump);
-            //trace( "ID3 PES complete (" + pes.data.length + "): " + dump );
 			
             var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
             var data : ByteArray = new ByteArray();
@@ -488,11 +436,12 @@ package org.mangui.hls.demux {
 			
             //  one or more SCRIPTDATASTRING + SCRIPTDATAVALUE
             data.writeObject("onID3Data"); // SCRIPTDATASTRING - name of object
-	    // yes, i know, really crass.... a hexdump 
-            // maybe someone can tell us how to pass binary data well in flv SCRIPT?		
-            data.writeObject( dump2 ); // strict array type
+            // to pass ByteArray, change to AMF3
+            data.objectEncoding = ObjectEncoding.AMF3;
+            data.writeByte(0x11); // AMF3 escape
+            // then write the ByteArray
+            data.writeObject(pespayload);
             tag.push(data, 0, data.length);
-            //var dump4:String = hexdump( tag.data );
             _tags.push(tag);
         }
 
