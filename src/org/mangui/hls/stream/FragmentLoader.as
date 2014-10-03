@@ -125,10 +125,14 @@ package org.mangui.hls.stream {
                 // check if first fragment after seek has been already loaded
                 if (_fragment_first_loaded == false) {
                     // select level for first fragment load
-                    if (_manifest_just_loaded) {
-                        level = _hls.startlevel;
+                    if (_manual_level == -1) {
+                        if (_manifest_just_loaded) {
+                            level = _hls.startlevel;
+                        } else {
+                            level = _hls.seeklevel;
+                        }
                     } else {
-                        level = _hls.seeklevel;
+                        level = _manual_level;
                     }
                     if (level != _level || _manifest_just_loaded) {
                         _level = level;
@@ -714,7 +718,11 @@ package org.mangui.hls.stream {
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _levels = event.levels;
-            _level = 0;
+            if (_manual_level == -1) {
+                _level = _hls.startlevel;
+            } else {
+                _level = _manual_level = Math.min(_manual_level, _levels.length - 1);
+            }
             _manifest_just_loaded = true;
         };
 
