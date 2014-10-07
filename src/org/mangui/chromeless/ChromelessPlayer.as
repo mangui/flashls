@@ -146,20 +146,6 @@ package org.mangui.chromeless {
             if (ExternalInterface.available) {
                 ExternalInterface.call("onFragmentPlaying", event.playMetrics);
             }
-            var videoWidth : int = event.playMetrics.video_width;
-            var videoHeight : int = event.playMetrics.video_height;
-
-            if (videoWidth && videoHeight) {
-                var changed : Boolean = _videoWidth != videoWidth || _videoHeight != videoHeight;
-                if (changed) {
-                    _videoHeight = videoHeight;
-                    _videoWidth = videoWidth;
-                    _resize();
-                    if (ExternalInterface.available) {
-                        ExternalInterface.call("onVideoSize", _videoWidth, _videoHeight);
-                    }
-                }
-            }
         };
 
         protected function _manifestHandler(event : HLSEvent) : void {
@@ -179,6 +165,21 @@ package org.mangui.chromeless {
             _media_position = event.mediatime.position;
             if (ExternalInterface.available) {
                 ExternalInterface.call("onPosition", event.mediatime);
+            }
+
+            var videoWidth : int = _video ? _video.videoWidth : _stageVideo.videoWidth;
+            var videoHeight : int = _video ? _video.videoHeight : _stageVideo.videoHeight;
+
+            if (videoWidth && videoHeight) {
+                var changed : Boolean = _videoWidth != videoWidth || _videoHeight != videoHeight;
+                if (changed) {
+                    _videoHeight = videoHeight;
+                    _videoWidth = videoWidth;
+                    _resize();
+                    if (ExternalInterface.available) {
+                        ExternalInterface.call("onVideoSize", _videoWidth, _videoHeight);
+                    }
+                }
             }
         };
 
