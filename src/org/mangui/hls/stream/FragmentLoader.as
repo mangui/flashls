@@ -763,12 +763,14 @@ package org.mangui.hls.stream {
                 tag.dts = PTS.normalize(ref_pts, tag.dts);
                 if (tag.type == FLVTag.AAC_HEADER || tag.type == FLVTag.AAC_RAW || tag.type == FLVTag.MP3_RAW) {
                     fragData.audio_found = true;
+                    fragData.tags_audio_found = true;
                     fragData.tags_pts_min_audio = Math.min(fragData.tags_pts_min_audio, tag.pts);
                     fragData.tags_pts_max_audio = Math.max(fragData.tags_pts_max_audio, tag.pts);
                     fragData.pts_min_audio = Math.min(fragData.pts_min_audio, tag.pts);
                     fragData.pts_max_audio = Math.max(fragData.pts_max_audio, tag.pts);
                 } else {
                     fragData.video_found = true;
+                    fragData.tags_video_found = true;
                     fragData.tags_pts_min_video = Math.min(fragData.tags_pts_min_video, tag.pts);
                     fragData.tags_pts_max_video = Math.max(fragData.tags_pts_max_video, tag.pts);
                     fragData.pts_min_video = Math.min(fragData.pts_min_video, tag.pts);
@@ -830,6 +832,7 @@ package org.mangui.hls.stream {
                             _stop_load();
                             // clean-up tags
                             fragData.tags = new Vector.<FLVTag>();
+                            fragData.tags_audio_found = fragData.tags_video_found = false;
                             // tell that new fragment could be loaded
                             _frag_loading = false;
                             return;
@@ -843,8 +846,14 @@ package org.mangui.hls.stream {
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     _hasDiscontinuity = false;
                     fragData.tags = new Vector.<FLVTag>();
-                    fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
-                    fragData.tags_pts_min_video = fragData.tags_pts_max_video;
+                    if (fragData.tags_audio_found) {
+                        fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
+                        fragData.tags_audio_found = false;
+                    }
+                    if (fragData.tags_video_found) {
+                        fragData.tags_pts_min_video = fragData.tags_pts_max_video;
+                        fragData.tags_video_found = false;
+                    }
                 }
             }
         }
@@ -926,8 +935,14 @@ package org.mangui.hls.stream {
                 if (fragData.tags.length) {
                     _tags_callback(_level, _frag_current.continuity, _frag_current.seqnum, !fragData.video_found, fragData.video_width, fragData.video_height, _frag_current.tag_list, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
-                    fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
-                    fragData.tags_pts_min_video = fragData.tags_pts_max_video;
+                    if (fragData.tags_audio_found) {
+                        fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
+                        fragData.tags_audio_found = false;
+                    }
+                    if (fragData.tags_video_found) {
+                        fragData.tags_pts_min_video = fragData.tags_pts_max_video;
+                        fragData.tags_video_found = false;
+                    }
                     _hasDiscontinuity = false;
                     fragData.tags = new Vector.<FLVTag>();
                 }
