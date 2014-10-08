@@ -300,6 +300,9 @@ package org.mangui.hls.model {
                 duration = start_time_offset;
                 return frag.start_time;
             } else {
+                CONFIG::LOGGING {
+                    Log.error("updateFragment:seqnum " + seqnum + "not found!");
+                }
                 return 0;
             }
         }
