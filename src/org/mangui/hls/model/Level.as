@@ -182,9 +182,16 @@ package org.mangui.hls.model {
             end_seqnum = _fragments[len - 1].seqnum;
 
             if (idx_with_metrics != -1) {
+                frag = fragments[idx_with_metrics];
                 // if at least one fragment contains PTS info, recompute PTS information for all fragments
-                updateFragment(fragments[idx_with_metrics].seqnum, true, fragments[idx_with_metrics].data.pts_start, fragments[idx_with_metrics].data.pts_start + 1000 * fragments[idx_with_metrics].duration);
+                CONFIG::LOGGING {
+                    Log.debug("updateFragments: found PTS info from previous playlist,seqnum/PTS:" + frag.seqnum + "/" + frag.data.pts_start);
+                }
+                updateFragment(frag.seqnum, true, frag.data.pts_start, frag.data.pts_start + 1000 * frag.duration);
             } else {
+                CONFIG::LOGGING {
+                    Log.debug("updateFragments: unknown PTS info for this level");
+                }
                 duration = _fragments[len - 1].start_time + _fragments[len - 1].duration;
             }
             averageduration = duration / len;
@@ -301,7 +308,7 @@ package org.mangui.hls.model {
                 return frag.start_time;
             } else {
                 CONFIG::LOGGING {
-                    Log.error("updateFragment:seqnum " + seqnum + "not found!");
+                    Log.error("updateFragment:seqnum " + seqnum + " not found!");
                 }
                 return 0;
             }
