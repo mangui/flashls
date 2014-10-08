@@ -820,6 +820,9 @@ package org.mangui.hls.stream {
                         if not, then cancel current fragment loading, next call to loadnextfragment() will load the right seqnum
                          */
                         var next_seqnum : Number = _levels[_level].getSeqNumNearestPTS(_frag_previous.data.pts_start, _frag_current.continuity) + 1;
+                        CONFIG::LOGGING {
+                            Log.debug("analyzed PTS : getSeqNumNearestPTS(level,pts,cc:" + _level + "," + _frag_previous.data.pts_start + "," + _frag_current.continuity + ")=" + next_seqnum);
+                        }
                         // CONFIG::LOGGING {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
                         // }
