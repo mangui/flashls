@@ -62,10 +62,10 @@ package org.mangui.hls.stream {
         /* variable to deal with IO Error retry */
         private var _bIOError : Boolean;
         private var _nIOErrorDate : Number = 0;
-        /** boolean to track playlist PTS in loading */
-        private var _pts_loading_in_progress : Boolean = false;
-        /** boolean to indicate that PTS of new playlist has just been loaded */
-        private var _pts_just_loaded : Boolean = false;
+        /** boolean to track whether PTS analysis is ongoing or not */
+        private var _pts_analyzing : Boolean = false;
+        /** boolean to indicate that PTS has just been analyzed */
+        private var _pts_just_analyzed : Boolean = false;
         /** Timer used to monitor/schedule fragment download. **/
         private var _timer : Timer;
         /** requested seek position **/
@@ -161,8 +161,8 @@ package org.mangui.hls.stream {
                         /* in case IO Error has been raised, stick to same level */
                         level = _level;
                         /* in case last fragment was loaded for PTS analysis, stick to same level */
-                    } else if (_pts_just_loaded == true) {
-                        _pts_just_loaded = false;
+                    } else if (_pts_just_analyzed == true) {
+                        _pts_just_analyzed = false;
                         level = _level;
                         /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
                     } else if (_switchlevel == true) {
@@ -629,13 +629,13 @@ package org.mangui.hls.stream {
                         /* when probing PTS, take previous sequence number as reference if possible */
                         new_seqnum = Math.min(frag_previous.seqnum + 1, _levels[level].getLastSeqNumfromContinuity(frag_previous.continuity));
                         new_seqnum = Math.max(new_seqnum, _levels[level].getFirstSeqNumfromContinuity(frag_previous.continuity));
-                        _pts_loading_in_progress = true;
+                        _pts_analyzing = true;
                         log_prefix = "analyzing PTS ";
                     }
                 }
             }
 
-            if (_pts_loading_in_progress == false) {
+            if (_pts_analyzing == false) {
                 if (last_seqnum == _levels[level].end_seqnum) {
                     // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
                     if (_hls.type == HLSTypes.VOD) {
@@ -808,8 +808,8 @@ package org.mangui.hls.stream {
                         }
                     }
 
-                    if (_pts_loading_in_progress == true) {
-                        _pts_loading_in_progress = false;
+                    if (_pts_analyzing == true) {
+                        _pts_analyzing = false;
                         _levels[_level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);
                         /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
                         CONFIG::LOGGING {
@@ -827,7 +827,7 @@ package org.mangui.hls.stream {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
                         // }
                         if (next_seqnum != _frag_current.seqnum) {
-                            _pts_just_loaded = true;
+                            _pts_just_analyzed = true;
                             CONFIG::LOGGING {
                                 Log.debug("PTS analysis done on " + _frag_current.seqnum + ", matching seqnum is " + next_seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],cancel loading and get new one");
                             }
@@ -951,7 +951,7 @@ package org.mangui.hls.stream {
                     _hasDiscontinuity = false;
                     fragData.tags = new Vector.<FLVTag>();
                 }
-                _pts_loading_in_progress = false;
+                _pts_analyzing = false;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, tagsMetrics));
                 _fragment_first_loaded = true;
                 _frag_previous = _frag_current;
