@@ -83,8 +83,6 @@ package org.mangui.hls.stream {
         /** reference to previous/current fragment */
         private var _frag_previous : Fragment;
         private var _frag_current : Fragment;
-        /** reference to previous metrics */
-        private var _metrics_previous : FragmentMetrics;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController) : void {
@@ -169,12 +167,7 @@ package org.mangui.hls.stream {
                         level = _level;
                     } else if (_manual_level == -1 && _levels.length > 1 ) {
                         // select level from heuristics (current level / last fragment duration / buffer length)
-                        if (_metrics_previous) {
-                            var last_segment_duration : Number = (_frag_previous ? 1000 * _frag_previous.duration : 0);
-                            level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength, last_segment_duration, _metrics_previous.processing_duration, _metrics_previous.bandwidth);
-                        } else {
-                            level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength, 0, 0, 0);
-                        }
+                        level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength);
                     } else if (_manual_level == -1 && _levels.length == 1 ) {
                         level = 0;
                     } else {
@@ -957,7 +950,6 @@ package org.mangui.hls.stream {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, tagsMetrics));
                 _fragment_first_loaded = true;
                 _frag_previous = _frag_current;
-                _metrics_previous = _frag_previous.metrics;
             } catch (error : Error) {
                 hlsError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, error.message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
