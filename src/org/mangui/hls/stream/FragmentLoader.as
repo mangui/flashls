@@ -888,9 +888,6 @@ package org.mangui.hls.stream {
                         Log.debug("Delta audio/video m/M PTS:" + (fragData.pts_min_video - fragData.pts_min_audio) + "/" + (fragData.pts_max_video - fragData.pts_max_audio));
                     }
                 }
-            } else {
-                // report audio-only segment
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_ONLY));
             }
 
             // Calculate bandwidth

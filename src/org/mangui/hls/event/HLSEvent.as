@@ -32,8 +32,6 @@ package org.mangui.hls.event {
         /** Identifier for a fragment playing event. **/
         public static const FRAGMENT_PLAYING : String = "hlsEventFragmentPlaying";
 
-        /** Identifier for a audio only fragment **/
-        public static const AUDIO_ONLY : String = "audioOnly";
         /** Identifier for a audio tracks list change **/
         public static const AUDIO_TRACKS_LIST_CHANGE : String = "audioTracksListChange";
         /** Identifier for a audio track change **/
