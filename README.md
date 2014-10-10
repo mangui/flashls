@@ -6,7 +6,7 @@ The plugin is compatible with the following players:
 
   - [Flowplayer](#flowplayer) 3.2.12
   - [OSMF 2.0](#strobe-media-playback-smp-and-other-osmf-based-players) based players (such as SMP and GrindPlayer)
-  - [Video.js][1] 4.6.2 (adaptation done here [https://github.com/mangui/video-js-swf][2])
+  - [Video.js][1] 4.6, 4.7, 4.8 (adaptation done here [https://github.com/mangui/video-js-swf][2])
   - [MediaElement.js][3] (adaptation done here [https://github.com/mangui/mediaelement][4], now integrated in official MediaElement.js release since 2.15.0)
 
 ## Features
@@ -164,6 +164,15 @@ swfobject.embedSWF('StrobeMediaPlayback.swf', 'player', 640, 360, '10.2', null, 
   name: 'player'
 });
 ```
+
+### Building
+---
+
+Run `FLEXPATH=/path/to/flex/sdk sh ./build.sh` inside the `build` directory
+
+`FLEXPATH` should point to your Flex SDK location (i.e. /opt/local/flex/4.6)
+
+After a successful build you will find fresh binaries in the `bin/debug` and `bin/release` directories
 
 ## License
 
