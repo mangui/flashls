@@ -83,6 +83,10 @@ package org.mangui.hls.stream {
         /** reference to previous/current fragment */
         private var _frag_previous : Fragment;
         private var _frag_current : Fragment;
+        /* loading state variable */
+        private static const LOADING_IN_PROGRESS : int = 0;
+        private static const LOADING_WAITING : int = 1;
+        private static const LOADING_OUTDATED : int = -1;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController) : void {
@@ -144,7 +148,7 @@ package org.mangui.hls.stream {
                         CONFIG::LOGGING {
                             Log.debug("_checkLoading : playlist not received for level:" + level);
                         }
-                        loadstatus = 1;
+                        loadstatus = LOADING_WAITING;
                     } else {
                         // just after seek, load first fragment
                         loadstatus = _loadfirstfragment(_seek_pos, level);
@@ -185,7 +189,7 @@ package org.mangui.hls.stream {
                         CONFIG::LOGGING {
                             Log.debug("loadnextfragment : playlist not received for level:" + level);
                         }
-                        loadstatus = 1;
+                        loadstatus = LOADING_WAITING;
                     } else {
                         loadstatus = _loadnextfragment(_level, _frag_previous);
                     }
@@ -193,10 +197,10 @@ package org.mangui.hls.stream {
                     // no need to load any new fragment, buffer is full already
                     return;
                 }
-                if (loadstatus == 0) {
+                if (loadstatus == LOADING_IN_PROGRESS) {
                     // good, new fragment being loaded
                     _frag_loading = true;
-                } else if (loadstatus < 0) {
+                } else if (loadstatus == LOADING_OUTDATED) {
                     /* it means PTS requested is smaller than playlist start PTS.
                     it could happen on live playlist :
                     - if bandwidth available is lower than lowest quality needed bandwidth
@@ -208,7 +212,7 @@ package org.mangui.hls.stream {
                     _timer.stop();
                     seek(-1, _tags_callback);
                     return;
-                } else if (loadstatus > 0) {
+                } else if (loadstatus == LOADING_WAITING) {
                     // seqnum not available in playlist
                     _frag_loading = false;
                 }
@@ -570,7 +574,7 @@ package org.mangui.hls.stream {
                 Log.debug("Loading       " + frag.seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
             }
             _loadfragment(frag);
-            return 0;
+            return LOADING_IN_PROGRESS;
         }
 
         /** Load a fragment **/
@@ -608,7 +612,7 @@ package org.mangui.hls.stream {
                          * in case playlist of new level is outdated
                          * return 1 to retry loading later.
                          */
-                        return 1;
+                        return LOADING_WAITING;
                     } else if (last_seqnum == -1) {
                         // if we are here, it means that we have no PTS info for this continuity index, we need to do some PTS probing to find the right seqnum
                         /* we need to perform PTS analysis on fragments from same continuity range
@@ -619,7 +623,7 @@ package org.mangui.hls.stream {
                         }
                         if (last_seqnum == Number.NEGATIVE_INFINITY) {
                             // playlist not yet received
-                            return 1;
+                            return LOADING_WAITING;
                         }
                         /* when probing PTS, take previous sequence number as reference if possible */
                         new_seqnum = Math.min(frag_previous.seqnum + 1, _levels[level].getLastSeqNumfromContinuity(frag_previous.continuity));
@@ -638,20 +642,20 @@ package org.mangui.hls.stream {
                         // stop loading timer as well, as no other fragments can be loaded
                         _timer.stop();
                     }
-                    return 1;
+                    return LOADING_WAITING;
                 } else {
                     // if previous segment is not the last one, increment it to get new seqnum
                     new_seqnum = last_seqnum + 1;
                     if (new_seqnum < _levels[level].start_seqnum) {
                         // we are late ! report to caller
-                        return -1;
+                        return LOADING_OUTDATED;
                     }
                     frag = _levels[level].getFragmentfromSeqNum(new_seqnum);
                     if (frag == null) {
                         CONFIG::LOGGING {
                             Log.warn("error trying to load " + new_seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
                         }
-                        return 1;
+                        return LOADING_WAITING;
                     }
                     // check whether there is a discontinuity between last segment and new segment
                     _hasDiscontinuity = (frag.continuity != frag_previous.continuity);
@@ -664,7 +668,7 @@ package org.mangui.hls.stream {
                 Log.debug(log_prefix + new_seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
             }
             _loadfragment(frag);
-            return 0;
+            return LOADING_IN_PROGRESS;
         };
 
         private function _loadfragment(frag : Fragment) : void {
