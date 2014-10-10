@@ -82,7 +82,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as \
     -o ../bin/release/flashlsOSMF.swf \
     $OPT_RELEASE \
     -library-path+=../lib/osmf \
-    -externs org.osmf.net.httpstreaming.HTTPNetStream \
+    -load-externs ../lib/osmf/exclude-sources.xml \
     -target-player="10.1" #-compiler.verbose-stacktraces=true -link-report=../test/osmf/link-report.xml
 ./add-opt-in.py ../bin/release/flashlsOSMF.swf
 
@@ -92,7 +92,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as \
     -o ../bin/debug/flashlsOSMF.swf \
     $OPT_DEBUG \
     -library-path+=../lib/osmf \
-    -externs org.osmf.net.httpstreaming.HTTPNetStream \
+    -load-externs ../lib/osmf/exclude-sources.xml \
     -target-player="10.1" #-compiler.verbose-stacktraces=true -link-report=../test/osmf/link-report.xml
 ./add-opt-in.py ../bin/debug/flashlsOSMF.swf
 

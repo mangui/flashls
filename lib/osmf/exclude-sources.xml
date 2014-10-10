@@ -1,0 +1,62 @@
+<report>
+<external-defs>
+<ext id="org.osmf.elements.f4mClasses:BestEffortFetchInfo" />
+<ext id="org.osmf.elements.f4mClasses:BootstrapInfo" />
+<ext id="org.osmf.events:DVRStreamInfoEvent" />
+<ext id="org.osmf.events:HTTPStreamingEvent" />
+<ext id="org.osmf.events:HTTPStreamingEventReason" />
+<ext id="org.osmf.events:HTTPStreamingFileHandlerEvent" />
+<ext id="org.osmf.events:HTTPStreamingIndexHandlerEvent" />
+<ext id="org.osmf.events:QoSInfoEvent" />
+<ext id="org.osmf.net.httpstreaming.dvr:DVRInfo" />
+<ext id="org.osmf.net.httpstreaming.f4f:AdobeBootstrapBox" />
+<ext id="org.osmf.net.httpstreaming.f4f:AdobeFragmentRunTable" />
+<ext id="org.osmf.net.httpstreaming.f4f:AdobeSegmentRunTable" />
+<ext id="org.osmf.net.httpstreaming.f4f:Box" />
+<ext id="org.osmf.net.httpstreaming.f4f:FragmentAccessInformation" />
+<ext id="org.osmf.net.httpstreaming.f4f:FragmentDurationPair" />
+<ext id="org.osmf.net.httpstreaming.f4f:FullBox" />
+<ext id="org.osmf.net.httpstreaming.f4f:HTTPStreamingF4FIndexInfo" />
+<ext id="org.osmf.net.httpstreaming.f4f:HTTPStreamingF4FStreamInfo" />
+<ext id="org.osmf.net.httpstreaming.f4f:SegmentFragmentPair" />
+<ext id="org.osmf.net.httpstreaming.flv:FLVHeader" />
+<ext id="org.osmf.net.httpstreaming.flv:FLVParser" />
+<ext id="org.osmf.net.httpstreaming.flv:FLVParserState" />
+<ext id="org.osmf.net.httpstreaming.flv:FLVTag" />
+<ext id="org.osmf.net.httpstreaming.flv:FLVTagAudio" />
+<ext id="org.osmf.net.httpstreaming.flv:FLVTagScriptDataMode" />
+<ext id="org.osmf.net.httpstreaming.flv:FLVTagScriptDataObject" />
+<ext id="org.osmf.net.httpstreaming.flv:FLVTagVideo" />
+<ext id="org.osmf.net.httpstreaming:HTTPNetStream" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamDownloader" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamDownloader" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamHandlerQoSInfo" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamMixer" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamMixer" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamRequest" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamRequestKind" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamSource" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamingFactory" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamingFactory" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamingFileHandlerBase" /> 
+<ext id="org.osmf.net.httpstreaming:HTTPStreamingIndexHandlerBase" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamingIndexInfoBase" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamingState" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamingUtils" />
+<ext id="org.osmf.net.httpstreaming:HTTPStreamingUtils" />
+<ext id="org.osmf.net.httpstreaming:IHTTPStreamHandler" />
+<ext id="org.osmf.net.httpstreaming:IHTTPStreamSource" />
+<ext id="org.osmf.net.qos:FragmentDetails" />
+<ext id="org.osmf.net.qos:PlaybackDetails" />
+<ext id="org.osmf.net.qos:QoSInfo" />
+<ext id="org.osmf.net.qos:QualityLevel" />
+<ext id="org.osmf.net:NetStreamPlaybackDetailsRecorder" />
+<ext id="org.osmf.net:FMSHost" />
+<ext id="org.osmf.net:FMSURL" />
+<ext id="org.osmf.net:MulticastResource" />
+</external-defs>
+</report>
+
+
+
+
