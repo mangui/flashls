@@ -1,7 +1,8 @@
 #!/bin/bash
-#FLEXPATH=../../flex_sdk_4.6
-#FLEXPATH=../../apache_flex_sdk
-FLEXPATH=../../AIR_SDK
+if [ -z "$FLEXPATH" ]; then
+  echo "Usage FLEXPATH=/path/to/flex/sdk sh ./build.sh"
+  exit
+fi
 
 OPT_DEBUG="-use-network=false \
     -optimize=true \
@@ -25,7 +26,6 @@ $FLEXPATH/bin/compc \
     -output ../bin/release/flashls.swc \
     -target-player="10.1"
 
-
 echo "Compiling bin/release/flashlsChromeless.swf"
 $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
     -source-path ../src \
@@ -47,7 +47,6 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
     -default-size 480 270 \
     -default-background-color=0x000000
 ./add-opt-in.py ../bin/debug/flashlsChromeless.swf
-
 
 #echo "Compiling flashlsBasic.swf"
 #$FLEXPATH/bin/mxmlc ../src/org/mangui/basic/Player.as \
@@ -96,7 +95,6 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as \
     -target-player="10.1" #-compiler.verbose-stacktraces=true -link-report=../test/osmf/link-report.xml
 ./add-opt-in.py ../bin/debug/flashlsOSMF.swf
 
-
 echo "Compiling bin/release/flashlsOSMF.swc"
 $FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf \
     -output ../bin/release/flashlsOSMF.swc \
@@ -116,5 +114,4 @@ $FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf \
     -target-player="10.1" \
     -debug=false \
     -external-library-path+=../lib/osmf
-
 
