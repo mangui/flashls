@@ -32,7 +32,7 @@ package org.mangui.osmf.plugins.traits {
             if (index > numDynamicStreams - 1 || index < 0) {
                 throw new RangeError(OSMFStrings.getString(OSMFStrings.STREAMSWITCH_INVALID_INDEX));
             }
-            var bitrate : Number = _hls.levels[index].bitrate / 1024;
+            var bitrate : Number = _hls.levels[index].bitrate / 1000;
             CONFIG::LOGGING {
             Log.debug("HLSDynamicStreamTrait:getBitrateForIndex(" + index + ")=" + bitrate);
             }
