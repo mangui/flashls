@@ -84,7 +84,8 @@ package org.mangui.flowplayer {
         }
 
         private function _completeHandler(event : HLSEvent) : void {
-            _clip.dispatch(ClipEventType.FINISH);
+            // dispatch a before event because the finish has default behavior that can be prevented by listeners
+            _clip.dispatchBeforeEvent(new ClipEvent(ClipEventType.FINISH));
         };
 
         private function _errorHandler(event : HLSEvent) : void {
