@@ -102,9 +102,10 @@ package org.mangui.flowplayer {
             // } else {
             // _seekable = true;
             // }
-            if (_pauseAfterStart == false) {
-                _hls.stream.play();
-                _clip.dispatch(ClipEventType.SEEK);
+            _hls.stream.play();
+            _clip.dispatch(ClipEventType.SEEK);
+            if (_pauseAfterStart) {
+                _hls.stream.pause();
             }
         };
 
@@ -155,7 +156,7 @@ package org.mangui.flowplayer {
         };
 
         /**
-         * Starts loading the specivied clip. Once video data is available the provider
+         * Starts loading the specified clip. Once video data is available the provider
          * must set it to the clip using <code>clip.setContent()</code>. Typically the video
          * object passed to the clip is an instance of <a href="http://livedocs.adobe.com/flash/9.0/ActionScriptLangRefV3/flash/media/Video.html">flash.media.Video</a>.
          *
