@@ -178,23 +178,29 @@ package org.mangui.hls.model {
             updateFragmentsProgramDate(_fragments);
 
             fragments = _fragments;
-            start_seqnum = _fragments[0].seqnum;
-            end_seqnum = _fragments[len - 1].seqnum;
 
-            if (idx_with_metrics != -1) {
-                frag = fragments[idx_with_metrics];
-                // if at least one fragment contains PTS info, recompute PTS information for all fragments
-                CONFIG::LOGGING {
-                    Log.debug("updateFragments: found PTS info from previous playlist,seqnum/PTS:" + frag.seqnum + "/" + frag.data.pts_start);
+            if (len > 0) {
+                start_seqnum = _fragments[0].seqnum;
+                end_seqnum = _fragments[len - 1].seqnum;
+
+                if (idx_with_metrics != -1) {
+                    frag = fragments[idx_with_metrics];
+                    // if at least one fragment contains PTS info, recompute PTS information for all fragments
+                    CONFIG::LOGGING {
+                        Log.debug("updateFragments: found PTS info from previous playlist,seqnum/PTS:" + frag.seqnum + "/" + frag.data.pts_start);
+                    }
+                    updateFragment(frag.seqnum, true, frag.data.pts_start, frag.data.pts_start + 1000 * frag.duration);
+                } else {
+                    CONFIG::LOGGING {
+                        Log.debug("updateFragments: unknown PTS info for this level");
+                    }
+                    duration = _fragments[len - 1].start_time + _fragments[len - 1].duration;
                 }
-                updateFragment(frag.seqnum, true, frag.data.pts_start, frag.data.pts_start + 1000 * frag.duration);
+                averageduration = duration / len;
             } else {
-                CONFIG::LOGGING {
-                    Log.debug("updateFragments: unknown PTS info for this level");
-                }
-                duration = _fragments[len - 1].start_time + _fragments[len - 1].duration;
+                duration = 0;
+                averageduration = 0;
             }
-            averageduration = duration / len;
         }
 
         private function updateFragmentsProgramDate(_fragments : Vector.<Fragment>) : void {
