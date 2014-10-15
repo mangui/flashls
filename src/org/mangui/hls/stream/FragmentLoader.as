@@ -1,27 +1,34 @@
 package org.mangui.hls.stream {
-    import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.demux.TSDemuxer;
-    import org.mangui.hls.demux.MP3Demuxer;
-    import org.mangui.hls.demux.AACDemuxer;
-    import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.demux.Demuxer;
-    import org.mangui.hls.model.AudioTrack;
+    import flash.events.ErrorEvent;
+    import flash.events.Event;
+    import flash.events.HTTPStatusEvent;
+    import flash.events.IOErrorEvent;
+    import flash.events.ProgressEvent;
+    import flash.events.SecurityErrorEvent;
+    import flash.events.TimerEvent;
+    import flash.net.URLRequest;
+    import flash.net.URLStream;
+    import flash.utils.ByteArray;
+    import flash.utils.Timer;
+    
     import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSTypes;
+    import org.mangui.hls.demux.AACDemuxer;
+    import org.mangui.hls.demux.Demuxer;
+    import org.mangui.hls.demux.MP3Demuxer;
+    import org.mangui.hls.demux.TSDemuxer;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
     import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.AES;
     import org.mangui.hls.utils.PTS;
-
-    import flash.events.*;
-    import flash.net.*;
-    import flash.utils.ByteArray;
-    import flash.utils.Timer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -586,6 +593,7 @@ package org.mangui.hls.stream {
             var last_seqnum : Number = -1;
             var log_prefix : String;
             var frag : Fragment;
+			var updateSeqnum : Boolean = false;
 
             if (_switchlevel == false || frag_previous.continuity == -1) {
                 last_seqnum = frag_previous.seqnum;
@@ -629,10 +637,12 @@ package org.mangui.hls.stream {
                         _pts_analyzing = true;
                         log_prefix = "analyzing PTS ";
                     }
+					else updateSeqnum = true;
                 }
             }
 
-            if (_pts_analyzing == false) {
+            if (_pts_analyzing == false || updateSeqnum) {
+				updateSeqnum = false;
                 if (last_seqnum == _levels[level].end_seqnum) {
                     // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
                     if (_hls.type == HLSTypes.VOD) {

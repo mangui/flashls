@@ -204,14 +204,18 @@ package org.mangui.hls.stream {
 
             /* if audio track not defined, or audio from external source (playlist) 
             return null (demux audio not selected) */
-            if (_audioTrackId == -1 || _audioTracks[_audioTrackId].source == AudioTrack.FROM_PLAYLIST) {
-                frag.data.audio_expected = false;
-                return null;
-            } else {
-                // source is demux,return selected audio track
-                frag.data.audio_expected = true;
-                return _audioTracks[_audioTrackId];
-            }
+			if (_audioTrackId < _audioTracks.length) {
+	            if (_audioTrackId == -1 || _audioTracks[_audioTrackId].source == AudioTrack.FROM_PLAYLIST) {
+	                frag.data.audio_expected = false;
+	                return null;
+	            } else {
+	                // source is demux,return selected audio track
+	                frag.data.audio_expected = true;
+	                return _audioTracks[_audioTrackId];
+	            }
+			}
+			
+			return null;
         }
     }
 }
