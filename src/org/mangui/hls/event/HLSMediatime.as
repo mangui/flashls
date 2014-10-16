@@ -15,13 +15,14 @@ package org.mangui.hls.event {
         public var buffer : Number;
         /** current date : meaningful is playlist contains date information */
         public var program_date : Number;
-
-        public function HLSMediatime(position : Number, duration : Number, buffer : Number, live_sliding : Number, program_date : Number) {
+        public var playback_absolute_position : Number;
+        public function HLSMediatime(position : Number, duration : Number, buffer : Number, live_sliding : Number, program_date : Number, playback_absolute_position : Number) {
             this.position = position;
             this.duration = duration;
             this.buffer = buffer;
             this.live_sliding = live_sliding;
             this.program_date = program_date;
+            this.playback_absolute_position = playback_absolute_position;
         }
     }
 }

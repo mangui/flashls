@@ -125,7 +125,7 @@ package org.mangui.hls.stream {
                 _playback_current_position = playback_relative_position;
                 _last_buffer = buffer;
                 var playback_date : Number = _seek_date_real ? 1000 * super.time + _seek_date_real : 0;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer, _playlist_sliding_duration, playback_date)));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer, _playlist_sliding_duration, playback_date,playback_absolute_position)));
             }
 
             // Set playback state. no need to check buffer status if first fragment not yet received
