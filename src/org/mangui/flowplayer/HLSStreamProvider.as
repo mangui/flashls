@@ -95,6 +95,7 @@ package org.mangui.flowplayer {
             _duration = event.levels[_hls.startlevel].duration;
             _isManifestLoaded = true;
             _clip.duration = _duration;
+            _clip.stopLiveOnPause = false;
             _clip.dispatch(ClipEventType.METADATA);
             _seekable = true;
             // if (_hls.type == HLSTypes.LIVE) {
