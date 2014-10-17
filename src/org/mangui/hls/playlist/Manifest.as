@@ -418,6 +418,8 @@ package org.mangui.hls.playlist {
         private static function _extractURL(path : String, base : String) : String {
             var _prefix : String = null;
             var _suffix : String = null;
+            //trim white space if any
+            path.replace(replacespace,"");
             if (path.substr(0, 7) == 'http://' || path.substr(0, 8) == 'https://') {
                 return path;
             } else {
