@@ -94,13 +94,18 @@ package org.mangui.hls {
          */
         public static var manifestLoadMaxRetryTimeout : Number = 64000;
 
+        /**
+         * If greater than 0, specifies the preferred bitrate.
+         * If -1, and startFromLevel is not specified, automatic start level selection will be used.
+         * This parameter, if set, will take priority over startFromLevel.
+         */
+        public static var startFromBitrate : Number = -1;
 
         /** start level :
          *  from 0 to 1 : indicates the "normalized" preferred bitrate. As such, if it is 0.5, the closest to the middle bitrate will be selected and used first.
          * -1 : automatic start level selection, playback will start from level matching download bandwidth (determined from download of first segment)
          */
         public static var startFromLevel : Number = -1;
-
 
         /** seek level :
          *  from 0 to 1 : indicates the "normalized" preferred bitrate. As such, if it is 0.5, the closest to the middle bitrate will be selected and used first.

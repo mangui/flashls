@@ -1,5 +1,6 @@
 package org.mangui.hls.stream {
-    import org.mangui.hls.event.HLSLoadMetrics;
+import org.mangui.hls.HLSSettings;
+import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.demux.TSDemuxer;
     import org.mangui.hls.demux.MP3Demuxer;
@@ -783,7 +784,7 @@ package org.mangui.hls.stream {
              *      we first need to download one fragment to check the dl bw, in order to assess start level ...)
              *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
              */
-            if (( _fragment_first_loaded || (_manifest_just_loaded && (HLSSettings.startFromLevel != -1 || _levels.length == 1) ) )) {
+            if (( _fragment_first_loaded || (_manifest_just_loaded && ((HLSSettings.startFromLevel !== -1 && HLSSettings.startFromBitrate !== -1) || _levels.length == 1) ) )) {
                 if (fragData.audio_expected && !fragData.audio_found) {
                     /* if no audio tags found, it means that only video tags have been retrieved here
                      * we cannot do progressive buffering in that case.
@@ -901,7 +902,7 @@ package org.mangui.hls.stream {
 
             if (_manifest_just_loaded) {
                 _manifest_just_loaded = false;
-                if (HLSSettings.startFromLevel == -1 && _levels.length > 1) {
+                if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1 && _levels.length > 1) {
                     // check if we can directly switch to a better bitrate, in case download bandwidth is enough
                     var bestlevel : int = _autoLevelManager.getbestlevel(fragMetrics.bandwidth);
                     if (bestlevel > _level) {
