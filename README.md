@@ -50,7 +50,11 @@ The plugin accepts several **optional** configuration options, such as:
     - If set to `-1` some heuristics based on past metrics are used to define an accurate value that should prevent buffer to stall
   - `hls_lowbufferlength` (default 3) - Low buffer threshold in _seconds_. When crossing down this threshold, HLS will switch to buffering state, usually the player will report this buffering state through a rotating icon. Playback will still continue.
   - `hls_maxbufferlength` (default 60) - Maximum buffer length in _seconds_ (0 means infinite buffering)
-  - `hls_startfromlevel` (default -1) 
+  - `hls_startfrombitrate (default -1)
+   - If greater than 0, specifies the preferred bitrate to start with.
+   - If -1, and hls_startfromlevel is not specified, automatic start level selection will be used.
+   - This parameter, if set, will take priority over hls_startfromlevel.
+  - `hls_startfromlevel` (default -1)
    - from 0 to 1 : indicates the "normalized" preferred bitrate. As such,
      - if 0, lowest non-audio bitrate is used,
      - if 1, highest bitrate is used,
