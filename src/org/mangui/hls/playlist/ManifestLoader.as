@@ -275,7 +275,7 @@ package org.mangui.hls.playlist {
         public function get startlevel() : int {
             var start_level : int = -1;
             if (levels) {
-                if (HLSSettings.startFromLevel == -1) {
+                if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1) {
                     /* if startFromLevel is set to -1, it means that effective startup level
                      * will be determined from first segment download bandwidth
                      * let's use lowest bitrate for this download bandwidth assessment
@@ -298,7 +298,9 @@ package org.mangui.hls.playlist {
                     }
                     start_level = 0;
                 } else {
-                    if (HLSSettings.startFromLevel > 0) {
+                    if (HLSSettings.startFromBitrate > 0) {
+                        start_level = findIndexOfClosestLevel(HLSSettings.startFromBitrate);
+                    } else if (HLSSettings.startFromLevel > 0) {
                         // adjust start level using a rule by 3
                         start_level += Math.round(HLSSettings.startFromLevel * (_levels.length - start_level - 1));
                     }
@@ -308,6 +310,27 @@ package org.mangui.hls.playlist {
                 Log.debug("start level :" + start_level);
             }
             return start_level;
+        }
+
+        /**
+         * @param desiredBitrate
+         * @return The index of the level that has a bitrate closest to the desired bitrate.
+         */
+        private function findIndexOfClosestLevel(desiredBitrate:Number) : int {
+            var levelIndex : int = -1;
+            var minDistance : Number = Number.MAX_VALUE;
+
+            for (var index : int = 0; index < _levels.length; index++) {
+                var level : Level = _levels[index];
+
+                var distance : Number = Math.abs(desiredBitrate - level.bitrate);
+
+                if (distance < minDistance) {
+                    levelIndex = index;
+                    minDistance = distance;
+                }
+            }
+            return levelIndex;
         }
 
         public function get seeklevel() : int {
