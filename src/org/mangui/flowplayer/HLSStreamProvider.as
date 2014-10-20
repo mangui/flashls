@@ -71,6 +71,7 @@ package org.mangui.flowplayer {
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
+            _hls.addEventListener(HLSEvent.ID3_UPDATED, _ID3Handler);
 
             var cfg : Object = _model.config;
             for (var object : String in cfg) {
@@ -89,6 +90,10 @@ package org.mangui.flowplayer {
         };
 
         private function _errorHandler(event : HLSEvent) : void {
+        };
+
+        private function _ID3Handler(event : HLSEvent) : void {
+            _clip.dispatch(ClipEventType.NETSTREAM_EVENT, "onID3", event.ID3Data);
         };
 
         private function _manifestHandler(event : HLSEvent) : void {

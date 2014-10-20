@@ -55,6 +55,8 @@ package org.mangui.hls.event {
         public static const PLAYBACK_COMPLETE : String = "hlsEventPlayBackComplete";
         /** Identifier for a Playlist Duration updated event **/
         public static const PLAYLIST_DURATION_UPDATED : String = "hlsPlayListDurationUpdated";
+        /** Identifier for a ID3 updated event **/
+        public static const ID3_UPDATED : String = "hlsID3Updated";
 
         /** The current url **/
         public var url : String;
@@ -76,6 +78,8 @@ package org.mangui.hls.event {
         public var state : String;
         /** The current audio track **/
         public var audioTrack : int;
+        /** a complete ID3 payload from PES, as a hex dump **/
+        public var ID3Data:String;
 
         /** Assign event parameter and dispatch. **/
         public function HLSEvent(type : String, parameter : *=null) {
@@ -109,6 +113,9 @@ package org.mangui.hls.event {
                     break;
                 case HLSEvent.PLAYLIST_DURATION_UPDATED:
                     duration = parameter as Number;
+                    break;
+                case HLSEvent.ID3_UPDATED:
+                    ID3Data = parameter as String;
                     break;
                 case HLSEvent.FRAGMENT_PLAYING:
                     playMetrics = parameter as HLSPlayMetrics;

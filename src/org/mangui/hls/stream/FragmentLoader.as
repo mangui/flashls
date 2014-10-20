@@ -759,20 +759,33 @@ import org.mangui.hls.event.HLSLoadMetrics;
             for each (tag in tags) {
                 tag.pts = PTS.normalize(ref_pts, tag.pts);
                 tag.dts = PTS.normalize(ref_pts, tag.dts);
-                if (tag.type == FLVTag.AAC_HEADER || tag.type == FLVTag.AAC_RAW || tag.type == FLVTag.MP3_RAW) {
+                switch( tag.type )
+                {
+                case FLVTag.AAC_HEADER:
+                case FLVTag.AAC_RAW:
+                case FLVTag.MP3_RAW: 
                     fragData.audio_found = true;
                     fragData.tags_audio_found = true;
                     fragData.tags_pts_min_audio = Math.min(fragData.tags_pts_min_audio, tag.pts);
                     fragData.tags_pts_max_audio = Math.max(fragData.tags_pts_max_audio, tag.pts);
                     fragData.pts_min_audio = Math.min(fragData.pts_min_audio, tag.pts);
                     fragData.pts_max_audio = Math.max(fragData.pts_max_audio, tag.pts);
-                } else {
+                    break;
+					
+                case FLVTag.AVC_HEADER:
+                case FLVTag.AVC_NALU:
+                case FLVTag.DISCONTINUITY:
                     fragData.video_found = true;
                     fragData.tags_video_found = true;
                     fragData.tags_pts_min_video = Math.min(fragData.tags_pts_min_video, tag.pts);
                     fragData.tags_pts_max_video = Math.max(fragData.tags_pts_max_video, tag.pts);
                     fragData.pts_min_video = Math.min(fragData.pts_min_video, tag.pts);
                     fragData.pts_max_video = Math.max(fragData.pts_max_video, tag.pts);
+                    break;
+
+                case FLVTag.METADATA:
+                default:
+                    break;
                 }
                 fragData.tags.push(tag);
             }
@@ -874,6 +887,7 @@ import org.mangui.hls.event.HLSLoadMetrics;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
             if (fragData.audio_found) {
+                null; // just to stop the compiler warning
                 CONFIG::LOGGING {
                     Log.debug("m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
                 }

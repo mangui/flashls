@@ -9,6 +9,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.utils.Hex;
 
     import flash.events.Event;
     import flash.events.NetStatusEvent;
@@ -86,8 +87,9 @@ package org.mangui.hls.stream {
             _seekState = HLSSeekStates.IDLE;
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
-	    _client = new HLSNetStreamClient();
+            _client = new HLSNetStreamClient();
             _client.registerCallback("onHLSFragmentChange", onHLSFragmentChange);
+            _client.registerCallback("onID3Data", onID3Data);
             super.client = _client;
         };
 
@@ -106,6 +108,21 @@ package org.mangui.hls.stream {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, audio_only, width, height, tag_list)));
         }
 
+        // function is called by SCRIPT in FLV
+        public function onID3Data( data:ByteArray ) : void {
+            var dump : String = "unset";
+			
+            // we dump the content as hex to get it to the Javascript in the browser.
+            // from lots of searching, we could use base64, but even then, the decode would 
+            // not be native, so hex actually seems more efficient
+            dump = Hex.fromArray(data);
+			
+            CONFIG::LOGGING {
+                Log.debug("id3:"+dump);
+            }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
+        }
+		
         /** Check the bufferlength. **/
         private function _checkBuffer(e : Event) : void {
             var playback_absolute_position : Number;
