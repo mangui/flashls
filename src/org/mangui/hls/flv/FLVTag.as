@@ -111,10 +111,6 @@ package org.mangui.hls.flv {
                 array.writeByte(compositionTime >> 16);
                 array.writeByte(compositionTime >> 8);
                 array.writeByte(compositionTime);
-                // Write tag data, accounting for NAL startcodes
-                if (type == AVC_NALU) {
-                    array.writeUnsignedInt(length - 4);
-                }
             } else if (type == DISCONTINUITY || type == METADATA) {
                 array = getTagHeader(FLVTag.TAG_TYPE_SCRIPT, length, pts);
             } else {
@@ -124,6 +120,9 @@ package org.mangui.hls.flv {
                 type == AAC_HEADER ? array.writeByte(0x00) : array.writeByte(0x01);
             }
             for (var i : int = 0; i < pointers.length; i++) {
+                if (type == AVC_NALU) {
+                    array.writeUnsignedInt(pointers[i].length);
+                }
                 array.writeBytes(pointers[i].array, pointers[i].start, pointers[i].length);
             }
             // Write previousTagSize and return data.
@@ -136,10 +135,10 @@ package org.mangui.hls.flv {
             var length : int = 0;
             for (var i : int = 0; i < pointers.length; i++) {
                 length += pointers[i].length;
-            }
-            // Account for NAL startcode length.
-            if (type == AVC_NALU) {
-                length += 4;
+                // Account for NAL startcode length.
+                if (type == AVC_NALU) {
+                    length += 4;
+                }
             }
             return length;
         }

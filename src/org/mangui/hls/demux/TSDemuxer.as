@@ -56,6 +56,8 @@ package org.mangui.hls.demux {
         private var _curVideoPES : ByteArray;
         /* ADTS frame overflow */
         private var _adtsFrameOverflow : ByteArray;
+        /* current NAL unit */
+        private var _curNalUnit : ByteArray;
         /* current AVC Tag */
         private var _curVideoTag : FLVTag;
         /* ADIF tag inserted ? */
@@ -89,6 +91,7 @@ package org.mangui.hls.demux {
             _curAudioPES = null;
             _curVideoPES = null;
             _curVideoTag = null;
+            _curNalUnit = null;
             _adtsFrameOverflow = null;
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
@@ -124,6 +127,7 @@ package org.mangui.hls.demux {
             _curAudioPES = null;
             _curVideoPES = null;
             _curVideoTag = null;
+            _curNalUnit = null;
             _adtsFrameOverflow = null;
             _avcc = null;
             _tags = new Vector.<FLVTag>();
@@ -204,8 +208,12 @@ package org.mangui.hls.demux {
                     _curVideoPES = null;
                     // push last video tag if any
                     if (_curVideoTag) {
+                        if (_curNalUnit && _curNalUnit.length) {
+                            _curVideoTag.push(_curNalUnit, 0, _curNalUnit.length);
+                        }
                         _tags.push(_curVideoTag);
                         _curVideoTag = null;
+                        _curNalUnit = null;
                     }
                 } else {
                     CONFIG::LOGGING {
@@ -306,8 +314,8 @@ package org.mangui.hls.demux {
             var frames : Vector.<VideoFrame> = Nalu.getNALU(pes.data, pes.payload);
             // If there's no NAL unit, push all data in the previous tag, if any exists
             if (!frames.length) {
-                if (_curVideoTag) {
-                    _curVideoTag.push(pes.data, pes.payload, pes.data.length - pes.payload);
+                if (_curNalUnit) {
+                    _curNalUnit.writeBytes(pes.data, pes.payload, pes.data.length - pes.payload);
                 } else {
                     null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
                     CONFIG::LOGGING {
@@ -316,10 +324,10 @@ package org.mangui.hls.demux {
                 }
                 return;
             }
-            // If NAL units are not starting right at the beginning of the PES packet, push preceding data into the previous tag.
+            // If NAL units are not starting right at the beginning of the PES packet, push preceding data into previous NAL unit.
             var overflow : int = frames[0].start - frames[0].header - pes.payload;
-            if (overflow && _curVideoTag) {
-                _curVideoTag.push(pes.data, pes.payload, overflow);
+            if (overflow && _curNalUnit) {
+                _curNalUnit.writeBytes(pes.data, pes.payload, overflow);
             }
             if (isNaN(pes.pts)) {
                 CONFIG::LOGGING {
@@ -327,17 +335,74 @@ package org.mangui.hls.demux {
                 }
                 return;
             }
-            /* if we are here, it means that we have new NALu frames available
-             * we can push current video tags and create a new one
+
+            /* first loop : look for AUD/SPS/PPS NAL unit :
+             * AUD (Access Unit Delimiter) are used to detect switch to new video tag 
+             * SPS/PPS are used to generate AVC HEADER
              */
-            if (_curVideoTag) {
-                _tags.push(_curVideoTag);
-            }
-            _curVideoTag = new FLVTag(FLVTag.AVC_NALU, pes.pts, pes.dts, false);
-            // Only push NAL units 1 to 5 into tag.
+
             for each (var frame : VideoFrame in frames) {
-                if (frame.type < 6) {
+                if (frame.type == 9) {
+                    if (_curVideoTag) {
+                        /* AUD (Access Unit Delimiter) NAL unit:
+                         * we need to push current video tag and start a new one
+                         */
+                        if (_curNalUnit && _curNalUnit.length) {
+                            /* push current data into video tag, if any */
+                            _curVideoTag.push(_curNalUnit, 0, _curNalUnit.length);
+                        }
+                        _tags.push(_curVideoTag);
+                    }
+                    _curNalUnit = new ByteArray();
+                    _curVideoTag = new FLVTag(FLVTag.AVC_NALU, pes.pts, pes.dts, false);
+                    // push NAL unit 9 into TAG
                     _curVideoTag.push(pes.data, frame.start, frame.length);
+                } else if (frame.type == 7) {
+                    sps_found = true;
+                    sps = new ByteArray();
+                    pes.data.position = frame.start;
+                    pes.data.readBytes(sps, 0, frame.length);
+                    // try to retrieve video width and height from SPS
+                    var spsInfo : SPSInfo = new SPSInfo(sps);
+                    sps.position = 0;
+                    if (spsInfo.width && spsInfo.height) {
+                        // notify upper layer
+                        _callback_videometadata(spsInfo.width, spsInfo.height);
+                    }
+                } else if (frame.type == 8) {
+                    if (!pps_found) {
+                        pps_found = true;
+                        ppsvect = new Vector.<ByteArray>();
+                    }
+                    var pps : ByteArray = new ByteArray();
+                    pes.data.position = frame.start;
+                    pes.data.readBytes(pps, 0, frame.length);
+                    ppsvect.push(pps);
+                }
+            }
+            // if both SPS and PPS have been found, build AVCC and push tag if needed
+            if (sps_found && pps_found) {
+                var avcc : ByteArray = AVCC.getAVCC(sps, ppsvect);
+                // only push AVCC tag if never pushed or avcc different from previous one
+                if (_avcc == null || !compareByteArray(_avcc, avcc)) {
+                    _avcc = avcc;
+                    var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
+                    avccTag.push(avcc, 0, avcc.length);
+                    // Log.debug("TS:AVC:push AVC HEADER");
+                    _tags.push(avccTag);
+                }
+            }
+
+            /* 
+             * second loop, handle other NAL units and push them in tags accordingly
+             */
+            for each (frame in frames) {
+                if (frame.type <= 6) {
+                    if (_curNalUnit && _curNalUnit.length) {
+                        _curVideoTag.push(_curNalUnit, 0, _curNalUnit.length);
+                    }
+                    _curNalUnit = new ByteArray();
+                    _curNalUnit.writeBytes(pes.data, frame.start, frame.length);
                     // Unit type 5 indicates a keyframe.
                     if (frame.type == 5) {
                         _curVideoTag.keyframe = true;
@@ -368,37 +433,6 @@ package org.mangui.hls.demux {
                             _curVideoTag.keyframe = false;
                         }
                     }
-                } else if (frame.type == 7) {
-                    sps_found = true;
-                    sps = new ByteArray();
-                    pes.data.position = frame.start;
-                    pes.data.readBytes(sps, 0, frame.length);
-                    // try to retrieve video width and height from SPS
-                    var spsInfo : SPSInfo = new SPSInfo(sps);
-                    sps.position = 0;
-                    if (spsInfo.width && spsInfo.height) {
-                        // notify upper layer
-                        _callback_videometadata(spsInfo.width, spsInfo.height);
-                    }
-                } else if (frame.type == 8) {
-                    if (!pps_found) {
-                        pps_found = true;
-                        ppsvect = new Vector.<ByteArray>();
-                    }
-                    var pps : ByteArray = new ByteArray();
-                    pes.data.position = frame.start;
-                    pes.data.readBytes(pps, 0, frame.length);
-                    ppsvect.push(pps);
-                }
-            }
-            if (sps_found && pps_found) {
-                var avcc : ByteArray = AVCC.getAVCC(sps, ppsvect);
-                // only push AVCC tag if never pushed or avcc different from previous one
-                if (_avcc == null || !compareByteArray(_avcc, avcc)) {
-                    _avcc = avcc;
-                    var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
-                    avccTag.push(avcc, 0, avcc.length);
-                    _tags.push(avccTag);
                 }
             }
         }
