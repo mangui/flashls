@@ -57,8 +57,6 @@ package org.mangui.hls.stream {
         private var _switchlevel : Boolean;
         /** Did a discontinuity occurs in the stream **/
         private var _hasDiscontinuity : Boolean;
-        /* flag handling load cancelled (if new seek occurs for example) */
-        private var _cancel_load : Boolean;
         /** boolean to track whether PTS analysis is ongoing or not */
         private var _pts_analyzing : Boolean = false;
         /** boolean to indicate that PTS has just been analyzed */
@@ -72,26 +70,26 @@ package org.mangui.hls.stream {
         /* demux instance */
         private var _demux : Demuxer;
         /* key error/reload */
-        private var _key_load_error : Boolean;
         private var _key_load_error_date : Number = 0;
         private var _key_retry_timeout : Number;
         private var _key_retry_count : int;
         private var _key_load_status : int;
         /* fragment error/reload */
-        private var _frag_load_error : Boolean;
         private var _frag_load_error_date : Number = 0;
         private var _frag_retry_timeout : Number;
         private var _frag_retry_count : int;
         private var _frag_load_status : int;
-        /** Store that a fragment load is in progress. **/
-        private var _frag_loading : Boolean;
         /** reference to previous/current fragment */
         private var _frag_previous : Fragment;
         private var _frag_current : Fragment;
         /* loading state variable */
-        private static const LOADING_IN_PROGRESS : int = 0;
-        private static const LOADING_WAITING : int = 1;
-        private static const LOADING_OUTDATED : int = -1;
+        private var _loading_state : int;
+        private static const LOADING_IDLE : int = 0;
+        private static const LOADING_IN_PROGRESS : int = 1;
+        private static const LOADING_WAITING_LEVEL_UPDATE : int = 2;
+        private static const LOADING_STALLED : int = 3;
+        private static const LOADING_FRAGMENT_IO_ERROR : int = 4;
+        private static const LOADING_KEY_IO_ERROR : int = 5;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController) : void {
@@ -102,6 +100,7 @@ package org.mangui.hls.stream {
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
+            _loading_state = LOADING_IDLE;
         };
 
         public function dispose() : void {
@@ -119,36 +118,32 @@ package org.mangui.hls.stream {
             }
 
             // if previous key loading failed
-            if (_key_load_error) {
+            if (_loading_state == LOADING_KEY_IO_ERROR ) {
                 // compare current date and next retry date.
                 if (new Date().valueOf() >= _key_load_error_date) {
                     /* try to reload the key ...
                     calling _loadfragment will also reload key */
                     _loadfragment(_frag_current);
-                    _key_load_error = false;
-                    _frag_loading = true;
+                    _loading_state = LOADING_IN_PROGRESS;
                 }
                 // in any case, exit from the loop
                 return;
             }
 
             // if previous fragment loading failed
-            if (_frag_load_error) {
+            if (_loading_state == LOADING_FRAGMENT_IO_ERROR) {
                 // compare current date and next retry date.
                 if (new Date().valueOf() >= _frag_load_error_date) {
                     /* try to reload the fragment ... */
                     _loadfragment(_frag_current);
-                    _frag_load_error = false;
-                    _frag_loading = true;
+                    _loading_state = LOADING_IN_PROGRESS;
                 }
                 // in any case, exit from the loop
                 return;
             }
 
             // check fragment loading status, try to load a new fragment if needed
-            if (_frag_loading == false) {
-                var loadstatus : int;
-
+            if (_loading_state == LOADING_IDLE || _loading_state == LOADING_WAITING_LEVEL_UPDATE) {
                 var level : int;
                 // check if first fragment after seek has been already loaded
                 if (_fragment_first_loaded == false) {
@@ -174,10 +169,10 @@ package org.mangui.hls.stream {
                         CONFIG::LOGGING {
                             Log.debug("_checkLoading : playlist not received for level:" + level);
                         }
-                        loadstatus = LOADING_WAITING;
+                        _loading_state = LOADING_WAITING_LEVEL_UPDATE;
                     } else {
                         // just after seek, load first fragment
-                        loadstatus = _loadfirstfragment(_seek_pos, level);
+                        _loading_state = _loadfirstfragment(_seek_pos, level);
                     }
 
                     /* first fragment already loaded
@@ -210,20 +205,17 @@ package org.mangui.hls.stream {
                     if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
                         // playlist not yet received
                         CONFIG::LOGGING {
-                            Log.debug("loadnextfragment : playlist not received for level:" + level);
+                            Log.debug("_checkLoading : playlist not received for level:" + level);
                         }
-                        loadstatus = LOADING_WAITING;
+                        _loading_state = LOADING_WAITING_LEVEL_UPDATE;
                     } else {
-                        loadstatus = _loadnextfragment(_level, _frag_previous);
+                        _loading_state = _loadnextfragment(_level, _frag_previous);
                     }
                 } else {
                     // no need to load any new fragment, buffer is full already
                     return;
                 }
-                if (loadstatus == LOADING_IN_PROGRESS) {
-                    // good, new fragment being loaded
-                    _frag_loading = true;
-                } else if (loadstatus == LOADING_OUTDATED) {
+                if (_loading_state == LOADING_STALLED) {
                     /* it means PTS requested is smaller than playlist start PTS.
                     it could happen on live playlist :
                     - if bandwidth available is lower than lowest quality needed bandwidth
@@ -235,19 +227,15 @@ package org.mangui.hls.stream {
                     _timer.stop();
                     seek(-1, _tags_callback);
                     return;
-                } else if (loadstatus == LOADING_WAITING) {
-                    // seqnum not available in playlist
-                    _frag_loading = false;
                 }
             }
         }
 
         public function seek(position : Number, callback : Function) : void {
             // reset IO Error when seeking
-            _frag_load_error = _key_load_error = false;
             _frag_retry_count = _key_retry_count = 0;
             _frag_retry_timeout = _key_retry_timeout = 1000;
-            _frag_loading = false;
+            _loading_state = LOADING_IDLE;
             _tags_callback = callback;
             _seek_pos = position;
             _fragment_first_loaded = false;
@@ -257,6 +245,8 @@ package org.mangui.hls.stream {
 
         /** key load completed. **/
         private function _keyLoadCompleteHandler(event : Event) : void {
+            if (_loading_state == LOADING_IDLE)
+                return;
             CONFIG::LOGGING {
                 Log.debug("key loading completed");
             }
@@ -266,7 +256,6 @@ package org.mangui.hls.stream {
                 // load complete, reset retry counter
                 _key_retry_count = 0;
                 _key_retry_timeout = 1000;
-                _key_load_error = false;
                 var keyData : ByteArray = new ByteArray();
                 _keystreamloader.readBytes(keyData, 0, 0);
                 _keymap[_frag_current.decrypt_url] = keyData;
@@ -297,7 +286,7 @@ package org.mangui.hls.stream {
                 Log.error("I/O Error while loading key:" + message);
             }
             if (HLSSettings.keyLoadMaxRetry == -1 || _key_retry_count < HLSSettings.keyLoadMaxRetry) {
-                _key_load_error = true;
+                _loading_state = LOADING_KEY_IO_ERROR;
                 _key_load_error_date = new Date().valueOf() + _key_retry_timeout;
                 CONFIG::LOGGING {
                     Log.warn("retry key load in " + _key_retry_timeout + " ms, count=" + _key_retry_count);
@@ -328,7 +317,7 @@ package org.mangui.hls.stream {
                 Log.error("I/O Error while loading fragment:" + message);
             }
             if (HLSSettings.fragmentLoadMaxRetry == -1 || _frag_retry_count < HLSSettings.fragmentLoadMaxRetry) {
-                _frag_load_error = true;
+                _loading_state = LOADING_FRAGMENT_IO_ERROR;
                 _frag_load_error_date = new Date().valueOf() + _frag_retry_timeout;
                 CONFIG::LOGGING {
                     Log.warn("retry fragment load in " + _frag_retry_timeout + " ms, count=" + _frag_retry_count);
@@ -340,7 +329,6 @@ package org.mangui.hls.stream {
                 var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
-            _frag_loading = false;
         }
 
         private function _fragLoadHTTPStatusHandler(event : HTTPStatusEvent) : void {
@@ -396,7 +384,7 @@ package org.mangui.hls.stream {
                     Log.warn("fragment size is null, invalid it and load next one");
                 }
                 _levels[_level].updateFragment(_frag_current.seqnum, false);
-                _frag_loading = false;
+                _loading_state = LOADING_IDLE;
                 return;
             }
             CONFIG::LOGGING {
@@ -410,7 +398,6 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug("Loading       duration/RTT/length/speed:" + _loading_duration + "/" + (fragMetrics.loading_begin_time - fragMetrics.loading_request_time) + "/" + fragMetrics.size + "/" + ((8000 * fragMetrics.size / _loading_duration) / 1024).toFixed(0) + " kb/s");
             }
-            _cancel_load = false;
             if (fragData.decryptAES) {
                 fragData.decryptAES.notifycomplete();
             } else {
@@ -485,7 +472,7 @@ package org.mangui.hls.stream {
         }
 
         private function _fragDecryptCompleteHandler() : void {
-            if (_cancel_load == true)
+            if (_loading_state == LOADING_IDLE)
                 return;
             var fragData : FragmentData = _frag_current.data;
 
@@ -538,6 +525,7 @@ package org.mangui.hls.stream {
         public function stop() : void {
             _stop_load();
             _timer.stop();
+            _loading_state = LOADING_IDLE;
         }
 
         private function _stop_load() : void {
@@ -561,8 +549,6 @@ package org.mangui.hls.stream {
                 }
                 fragData.bytes = null;
             }
-            _cancel_load = true;
-            _frag_load_error = false;
         }
 
         /** Catch IO and security errors. **/
@@ -657,7 +643,7 @@ package org.mangui.hls.stream {
                          * in case playlist of new level is outdated
                          * return 1 to retry loading later.
                          */
-                        return LOADING_WAITING;
+                        return LOADING_WAITING_LEVEL_UPDATE;
                     } else if (last_seqnum == -1) {
                         // if we are here, it means that we have no PTS info for this continuity index, we need to do some PTS probing to find the right seqnum
                         /* we need to perform PTS analysis on fragments from same continuity range
@@ -668,7 +654,7 @@ package org.mangui.hls.stream {
                         }
                         if (last_seqnum == Number.NEGATIVE_INFINITY) {
                             // playlist not yet received
-                            return LOADING_WAITING;
+                            return LOADING_WAITING_LEVEL_UPDATE;
                         }
                         /* when probing PTS, take previous sequence number as reference if possible */
                         new_seqnum = Math.min(frag_previous.seqnum + 1, _levels[level].getLastSeqNumfromContinuity(frag_previous.continuity));
@@ -687,20 +673,20 @@ package org.mangui.hls.stream {
                         // stop loading timer as well, as no other fragments can be loaded
                         _timer.stop();
                     }
-                    return LOADING_WAITING;
+                    return LOADING_WAITING_LEVEL_UPDATE;
                 } else {
                     // if previous segment is not the last one, increment it to get new seqnum
                     new_seqnum = last_seqnum + 1;
                     if (new_seqnum < _levels[level].start_seqnum) {
-                        // we are late ! report to caller
-                        return LOADING_OUTDATED;
+                        // loading stalled ! report to caller
+                        return LOADING_STALLED;
                     }
                     frag = _levels[level].getFragmentfromSeqNum(new_seqnum);
                     if (frag == null) {
                         CONFIG::LOGGING {
                             Log.warn("error trying to load " + new_seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
                         }
-                        return LOADING_WAITING;
+                        return LOADING_WAITING_LEVEL_UPDATE;
                     }
                     // check whether there is a discontinuity between last segment and new segment
                     _hasDiscontinuity = (frag.continuity != frag_previous.continuity);
@@ -774,6 +760,11 @@ package org.mangui.hls.stream {
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
             _last_loaded_level = event.level;
+            if(_loading_state == LOADING_WAITING_LEVEL_UPDATE && _last_loaded_level == _level) {
+                _loading_state = LOADING_IDLE;
+               // speed up loading of new fragment
+                _timer.start();
+            }
         };
 
         /** triggered by demux, it should return the audio track to be parsed */
@@ -895,7 +886,7 @@ package org.mangui.hls.stream {
                             fragData.tags = new Vector.<FLVTag>();
                             fragData.tags_audio_found = fragData.tags_video_found = false;
                             // tell that new fragment could be loaded
-                            _frag_loading = false;
+                            _loading_state = LOADING_IDLE;
                             return;
                         }
                     }
@@ -921,13 +912,9 @@ package org.mangui.hls.stream {
 
         /** triggered when demux has completed fragment parsing **/
         private function _fragParsingCompleteHandler() : void {
-            if (_cancel_load == true)
+            if (_loading_state == LOADING_IDLE)
                 return;
             var hlsError : HLSError;
-
-            // reset IO error, as if we reach this point, it means fragment has been successfully retrieved and demuxed
-            _frag_load_error = false;
-
             var fragData : FragmentData = _frag_current.data;
             if (!fragData.audio_found && !fragData.video_found) {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
@@ -972,7 +959,7 @@ package org.mangui.hls.stream {
                         }
                         // let's directly jump to the accurate level to improve quality at player start
                         _level = bestlevel;
-                        _frag_loading = false;
+                        _loading_state = LOADING_IDLE;
                         _switchlevel = true;
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
                         return;
@@ -989,7 +976,7 @@ package org.mangui.hls.stream {
                 // set pts_start here, it might not be updated directly in updateFragment() if this loaded fragment has been removed from a live playlist
                 fragData.pts_start = fragData.pts_min;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
-                _frag_loading = false;
+                _loading_state = LOADING_IDLE;
 
                 var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
 
