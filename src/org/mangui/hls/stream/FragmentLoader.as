@@ -1,13 +1,12 @@
 package org.mangui.hls.stream {
-import org.mangui.hls.HLSSettings;
-import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.demux.TSDemuxer;
     import org.mangui.hls.demux.MP3Demuxer;
     import org.mangui.hls.demux.AACDemuxer;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.model.AudioTrack;
@@ -60,9 +59,6 @@ import org.mangui.hls.event.HLSLoadMetrics;
         private var _hasDiscontinuity : Boolean;
         /* flag handling load cancelled (if new seek occurs for example) */
         private var _cancel_load : Boolean;
-        /* variable to deal with IO Error retry */
-        private var _bIOError : Boolean;
-        private var _nIOErrorDate : Number = 0;
         /** boolean to track whether PTS analysis is ongoing or not */
         private var _pts_analyzing : Boolean = false;
         /** boolean to indicate that PTS has just been analyzed */
@@ -75,9 +71,17 @@ import org.mangui.hls.event.HLSLoadMetrics;
         private var _fragment_first_loaded : Boolean;
         /* demux instance */
         private var _demux : Demuxer;
-        /* fragment retry timeout */
-        private var _retry_timeout : Number;
-        private var _retry_count : int;
+        /* key error/reload */
+        private var _key_load_error : Boolean;
+        private var _key_load_error_date : Number = 0;
+        private var _key_retry_timeout : Number;
+        private var _key_retry_count : int;
+        private var _key_load_status : int;
+        /* fragment error/reload */
+        private var _frag_load_error : Boolean;
+        private var _frag_load_error_date : Number = 0;
+        private var _frag_retry_timeout : Number;
+        private var _frag_retry_count : int;
         private var _frag_load_status : int;
         /** Store that a fragment load is in progress. **/
         private var _frag_loading : Boolean;
@@ -113,17 +117,38 @@ import org.mangui.hls.event.HLSLoadMetrics;
             if (isNaN(_level)) {
                 return;
             }
+
+            // if previous key loading failed
+            if (_key_load_error) {
+                // compare current date and next retry date.
+                if (new Date().valueOf() >= _key_load_error_date) {
+                    /* try to reload the key ...
+                    calling _loadfragment will also reload key */
+                    _loadfragment(_frag_current);
+                    _key_load_error = false;
+                    _frag_loading = true;
+                }
+                // in any case, exit from the loop
+                return;
+            }
+
+            // if previous fragment loading failed
+            if (_frag_load_error) {
+                // compare current date and next retry date.
+                if (new Date().valueOf() >= _frag_load_error_date) {
+                    /* try to reload the fragment ... */
+                    _loadfragment(_frag_current);
+                    _frag_load_error = false;
+                    _frag_loading = true;
+                }
+                // in any case, exit from the loop
+                return;
+            }
+
             // check fragment loading status, try to load a new fragment if needed
             if (_frag_loading == false) {
                 var loadstatus : int;
-                // if previous fragment loading failed
-                if (_bIOError) {
-                    // compare current date and next retry date.
-                    if (new Date().valueOf() < _nIOErrorDate) {
-                        // too early to reload it, return...
-                        return;
-                    }
-                }
+
                 var level : int;
                 // check if first fragment after seek has been already loaded
                 if (_fragment_first_loaded == false) {
@@ -160,11 +185,8 @@ import org.mangui.hls.event.HLSLoadMetrics;
                      */
                 } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
                     // select level for next fragment load
-                    if (_bIOError == true) {
-                        /* in case IO Error has been raised, stick to same level */
-                        level = _level;
-                        /* in case last fragment was loaded for PTS analysis, stick to same level */
-                    } else if (_pts_just_analyzed == true) {
+                    // dont switch level after PTS analysis
+                    if (_pts_just_analyzed == true) {
                         _pts_just_analyzed = false;
                         level = _level;
                         /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
@@ -222,9 +244,9 @@ import org.mangui.hls.event.HLSLoadMetrics;
 
         public function seek(position : Number, callback : Function) : void {
             // reset IO Error when seeking
-            _bIOError = false;
-            _retry_count = 0;
-            _retry_timeout = 1000;
+            _frag_load_error = _key_load_error = false;
+            _frag_retry_count = _key_retry_count = 0;
+            _frag_retry_timeout = _key_retry_timeout = 1000;
             _frag_loading = false;
             _tags_callback = callback;
             _seek_pos = position;
@@ -241,6 +263,10 @@ import org.mangui.hls.event.HLSLoadMetrics;
             var hlsError : HLSError;
             // Collect key data
             if ( _keystreamloader.bytesAvailable == 16 ) {
+                // load complete, reset retry counter
+                _key_retry_count = 0;
+                _key_retry_timeout = 1000;
+                _key_load_error = false;
                 var keyData : ByteArray = new ByteArray();
                 _keystreamloader.readBytes(keyData, 0, 0);
                 _keymap[_frag_current.decrypt_url] = keyData;
@@ -262,6 +288,29 @@ import org.mangui.hls.event.HLSLoadMetrics;
             }
         };
 
+        private function _keyLoadHTTPStatusHandler(event : HTTPStatusEvent) : void {
+            _key_load_status = event.status;
+        }
+
+        private function _keyhandleIOError(message : String) : void {
+            CONFIG::LOGGING {
+                Log.error("I/O Error while loading key:" + message);
+            }
+            if (HLSSettings.keyLoadMaxRetry == -1 || _key_retry_count < HLSSettings.keyLoadMaxRetry) {
+                _key_load_error = true;
+                _key_load_error_date = new Date().valueOf() + _key_retry_timeout;
+                CONFIG::LOGGING {
+                    Log.warn("retry key load in " + _key_retry_timeout + " ms, count=" + _key_retry_count);
+                }
+                /* exponential increase of retry timeout, capped to keyLoadMaxRetryTimeout */
+                _key_retry_count++;
+                _key_retry_timeout = Math.min(HLSSettings.keyLoadMaxRetryTimeout, 2 * _key_retry_timeout);
+            } else {
+                var hlsError : HLSError = new HLSError(HLSError.KEY_LOADING_ERROR, _frag_current.decrypt_url, "I/O Error :" + message);
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+            }
+        }
+
         private function _fraghandleIOError(message : String) : void {
             /* usually, errors happen in two situations :
             - bad networks  : in that case, the second or third reload of URL should fix the issue
@@ -278,15 +327,15 @@ import org.mangui.hls.event.HLSLoadMetrics;
             CONFIG::LOGGING {
                 Log.error("I/O Error while loading fragment:" + message);
             }
-            if (HLSSettings.fragmentLoadMaxRetry == -1 || _retry_count < HLSSettings.fragmentLoadMaxRetry) {
-                _bIOError = true;
-                _nIOErrorDate = new Date().valueOf() + _retry_timeout;
+            if (HLSSettings.fragmentLoadMaxRetry == -1 || _frag_retry_count < HLSSettings.fragmentLoadMaxRetry) {
+                _frag_load_error = true;
+                _frag_load_error_date = new Date().valueOf() + _frag_retry_timeout;
                 CONFIG::LOGGING {
-                    Log.warn("retry fragment load in " + _retry_timeout + " ms, count=" + _retry_count);
+                    Log.warn("retry fragment load in " + _frag_retry_timeout + " ms, count=" + _frag_retry_count);
                 }
                 /* exponential increase of retry timeout, capped to fragmentLoadMaxRetryTimeout */
-                _retry_count++;
-                _retry_timeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _retry_timeout);
+                _frag_retry_count++;
+                _frag_retry_timeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _frag_retry_timeout);
             } else {
                 var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
@@ -339,8 +388,8 @@ import org.mangui.hls.event.HLSLoadMetrics;
         /** frag load completed. **/
         private function _fragLoadCompleteHandler(event : Event) : void {
             // load complete, reset retry counter
-            _retry_count = 0;
-            _retry_timeout = 1000;
+            _frag_retry_count = 0;
+            _frag_retry_timeout = 1000;
             var fragData : FragmentData = _frag_current.data;
             if (fragData.bytes == null) {
                 CONFIG::LOGGING {
@@ -513,7 +562,7 @@ import org.mangui.hls.event.HLSLoadMetrics;
                 fragData.bytes = null;
             }
             _cancel_load = true;
-            _bIOError = false;
+            _frag_load_error = false;
         }
 
         /** Catch IO and security errors. **/
@@ -524,11 +573,8 @@ import org.mangui.hls.event.HLSLoadMetrics;
                 txt = "Cannot load key: crossdomain access denied:" + event.text;
                 code = HLSError.KEY_LOADING_CROSSDOMAIN_ERROR;
             } else {
-                txt = "Cannot load key: IO Error:" + event.text;
-                code = HLSError.KEY_LOADING_ERROR;
+                _keyhandleIOError("HTTP status:" + _key_load_status + ",msg:" + event.text);
             }
-            var hlsError : HLSError = new HLSError(code, _frag_current.decrypt_url, txt);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
         };
 
         /** Catch IO and security errors. **/
@@ -683,6 +729,7 @@ import org.mangui.hls.event.HLSLoadMetrics;
                 _keystreamloader = (new urlStreamClass()) as URLStream;
                 _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyLoadErrorHandler);
                 _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyLoadErrorHandler);
+                _keystreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _keyLoadHTTPStatusHandler);
                 _keystreamloader.addEventListener(Event.COMPLETE, _keyLoadCompleteHandler);
             }
             if (_hasDiscontinuity || _switchlevel) {
@@ -879,7 +926,7 @@ import org.mangui.hls.event.HLSLoadMetrics;
             var hlsError : HLSError;
 
             // reset IO error, as if we reach this point, it means fragment has been successfully retrieved and demuxed
-            _bIOError = false;
+            _frag_load_error = false;
 
             var fragData : FragmentData = _frag_current.data;
             if (!fragData.audio_found && !fragData.video_found) {

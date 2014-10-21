@@ -57,6 +57,21 @@ package org.mangui.hls {
          * Default is HLSSeekMode.ACCURATE_SEEK.
          */
         public static var seekMode : String = HLSSeekMode.ACCURATE_SEEK;
+        /** max nb of retries for Key Loading in case I/O errors are met,
+         *      0, means no retry, error will be triggered automatically
+         *     -1 means infinite retry
+         */
+        public static var keyLoadMaxRetry : int = -1;
+
+        /** keyLoadMaxRetryTimeout
+
+         * Maximum key retry timeout (in milliseconds) in case I/O errors are met.
+         * Every fail on key request, player will exponentially increase the timeout to try again.
+         * It starts waiting 1 second (1000ms), than 2, 4, 8, 16, until keyLoadMaxRetryTimeout is reached.
+         *
+         * Default is 64000.
+         */
+        public static var keyLoadMaxRetryTimeout : Number = 64000;
         /** max nb of retries for Fragment Loading in case I/O errors are met,
          *      0, means no retry, error will be triggered automatically
          *     -1 means infinite retry
