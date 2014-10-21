@@ -111,7 +111,7 @@ package org.mangui.flowplayer {
             _hls.stream.play();
             _clip.dispatch(ClipEventType.SEEK);
             if (_pauseAfterStart) {
-                _hls.stream.pause();
+                pause(new ClipEvent(ClipEventType.PAUSE));
             }
         };
 
