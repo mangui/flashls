@@ -145,18 +145,14 @@ package org.mangui.flowplayer {
             switch(event.state) {
                 case HLSPlayStates.IDLE:
                 case HLSPlayStates.PLAYING:
+                case HLSPlayStates.PAUSED:
                     _clip.dispatch(ClipEventType.BUFFER_FULL);
                     break;
                 case HLSPlayStates.PLAYING_BUFFERING:
-                    _clip.dispatch(ClipEventType.BUFFER_EMPTY);
-                    break;
                 case HLSPlayStates.PAUSED_BUFFERING:
                     _clip.dispatch(ClipEventType.BUFFER_EMPTY);
-                    _clip.dispatch(ClipEventType.PAUSE);
                     break;
-                case HLSPlayStates.PAUSED:
-                    _clip.dispatch(ClipEventType.BUFFER_FULL);
-                    _clip.dispatch(ClipEventType.PAUSE);
+                default:
                     break;
             }
         };
@@ -233,6 +229,9 @@ package org.mangui.flowplayer {
             Log.info("pause()");
             }
             _hls.stream.pause();
+            if (event) {
+                _clip.dispatch(ClipEventType.PAUSE);
+            }
             return;
         }
 
