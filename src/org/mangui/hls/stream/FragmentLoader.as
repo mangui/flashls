@@ -35,10 +35,12 @@ package org.mangui.hls.stream {
         private var _autoLevelManager : AutoLevelManager;
         /** reference to audio track controller */
         private var _audioTrackController : AudioTrackController;
+        /** has manifest been loaded **/
+        private var _manifest_loaded : Boolean;
         /** has manifest just being reloaded **/
-        private var _manifest_just_loaded : Boolean = false;
+        private var _manifest_just_loaded : Boolean;
         /** last loaded level. **/
-        private var _last_loaded_level : int = 0;
+        private var _last_loaded_level : int;
         /** Callback for passing forward the fragment tags. **/
         private var _tags_callback : Function;
         /** Quality level of the last fragment load. **/
@@ -52,7 +54,7 @@ package org.mangui.hls.stream {
         /** Util for loading the key. **/
         private var _keystreamloader : URLStream;
         /** key map **/
-        private var _keymap : Object = new Object();
+        private var _keymap : Object;
         /** Did the stream switch quality levels. **/
         private var _switchlevel : Boolean;
         /** Did a discontinuity occurs in the stream **/
@@ -70,12 +72,12 @@ package org.mangui.hls.stream {
         /* demux instance */
         private var _demux : Demuxer;
         /* key error/reload */
-        private var _key_load_error_date : Number = 0;
+        private var _key_load_error_date : Number;
         private var _key_retry_timeout : Number;
         private var _key_retry_count : int;
         private var _key_load_status : int;
         /* fragment error/reload */
-        private var _frag_load_error_date : Number = 0;
+        private var _frag_load_error_date : Number;
         private var _frag_retry_timeout : Number;
         private var _frag_retry_count : int;
         private var _frag_load_status : int;
@@ -101,6 +103,9 @@ package org.mangui.hls.stream {
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
             _loading_state = LOADING_IDLE;
+            _manifest_loaded = false;
+            _manifest_just_loaded = false;
+            _keymap = new Object();
         };
 
         public function dispose() : void {
@@ -108,126 +113,125 @@ package org.mangui.hls.stream {
             _autoLevelManager.dispose();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _manifest_loaded = false;
+            _keymap = new Object();
         }
 
         /**  fragment loading Timer **/
         private function _checkLoading(e : Event) : void {
-            // dont try to load any fragment if _level is not defined (should be the case if manifest not yet loaded for example
-            if (isNaN(_level)) {
+            // cannot load fragment until manifest is loaded
+            if (_manifest_loaded == false) {
                 return;
             }
-
-            // if previous key loading failed
-            if (_loading_state == LOADING_KEY_IO_ERROR ) {
-                // compare current date and next retry date.
-                if (new Date().valueOf() >= _key_load_error_date) {
-                    /* try to reload the key ...
-                    calling _loadfragment will also reload key */
-                    _loadfragment(_frag_current);
-                    _loading_state = LOADING_IN_PROGRESS;
-                }
-                // in any case, exit from the loop
-                return;
-            }
-
-            // if previous fragment loading failed
-            if (_loading_state == LOADING_FRAGMENT_IO_ERROR) {
-                // compare current date and next retry date.
-                if (new Date().valueOf() >= _frag_load_error_date) {
-                    /* try to reload the fragment ... */
-                    _loadfragment(_frag_current);
-                    _loading_state = LOADING_IN_PROGRESS;
-                }
-                // in any case, exit from the loop
-                return;
-            }
-
-            // check fragment loading status, try to load a new fragment if needed
-            if (_loading_state == LOADING_IDLE || _loading_state == LOADING_WAITING_LEVEL_UPDATE) {
-                var level : int;
-                // check if first fragment after seek has been already loaded
-                if (_fragment_first_loaded == false) {
-                    // select level for first fragment load
-                    if (_manual_level == -1) {
-                        if (_manifest_just_loaded) {
-                            level = _hls.startlevel;
+            switch(_loading_state) {
+                // nothing to load until level is retrieved
+                case LOADING_WAITING_LEVEL_UPDATE:
+                // loading already in progress
+                case LOADING_IN_PROGRESS:
+                    break;
+                // no loading in progress, try to load first/next fragment
+                case LOADING_IDLE:
+                    var level : int;
+                    // check if first fragment after seek has been already loaded
+                    if (_fragment_first_loaded == false) {
+                        // select level for first fragment load
+                        if (_manual_level == -1) {
+                            if (_manifest_just_loaded) {
+                                level = _hls.startlevel;
+                            } else {
+                                level = _hls.seeklevel;
+                            }
                         } else {
-                            level = _hls.seeklevel;
+                            level = _manual_level;
                         }
-                    } else {
-                        level = _manual_level;
-                    }
-                    if (level != _level || _manifest_just_loaded) {
-                        _level = level;
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
-                    }
-                    _switchlevel = true;
-
-                    // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
-                    if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
-                        // playlist not yet received
-                        CONFIG::LOGGING {
-                            Log.debug("_checkLoading : playlist not received for level:" + level);
+                        if (level != _level || _manifest_just_loaded) {
+                            _level = level;
+                            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
                         }
-                        _loading_state = LOADING_WAITING_LEVEL_UPDATE;
-                    } else {
-                        // just after seek, load first fragment
-                        _loading_state = _loadfirstfragment(_seek_pos, level);
-                    }
-
-                    /* first fragment already loaded
-                     * check if we need to load next fragment, do it only if buffer is NOT full
-                     */
-                } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
-                    // select level for next fragment load
-                    // dont switch level after PTS analysis
-                    if (_pts_just_analyzed == true) {
-                        _pts_just_analyzed = false;
-                        level = _level;
-                        /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
-                    } else if (_switchlevel == true) {
-                        level = _level;
-                    } else if (_manual_level == -1 && _levels.length > 1 ) {
-                        // select level from heuristics (current level / last fragment duration / buffer length)
-                        level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength);
-                    } else if (_manual_level == -1 && _levels.length == 1 ) {
-                        level = 0;
-                    } else {
-                        level = _manual_level;
-                    }
-                    // notify in case level switch occurs
-                    if (level != _level) {
-                        _level = level;
                         _switchlevel = true;
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
-                    }
-                    // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
-                    if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
-                        // playlist not yet received
-                        CONFIG::LOGGING {
-                            Log.debug("_checkLoading : playlist not received for level:" + level);
+
+                        // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
+                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                            // playlist not yet received
+                            CONFIG::LOGGING {
+                                Log.debug("_checkLoading : playlist not received for level:" + level);
+                            }
+                            _loading_state = LOADING_WAITING_LEVEL_UPDATE;
+                        } else {
+                            // just after seek, load first fragment
+                            _loading_state = _loadfirstfragment(_seek_pos, level);
                         }
-                        _loading_state = LOADING_WAITING_LEVEL_UPDATE;
-                    } else {
-                        _loading_state = _loadnextfragment(_level, _frag_previous);
+
+                        /* first fragment already loaded
+                         * check if we need to load next fragment, do it only if buffer is NOT full
+                         */
+                    } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
+                        // select level for next fragment load
+                        // dont switch level after PTS analysis
+                        if (_pts_just_analyzed == true) {
+                            _pts_just_analyzed = false;
+                            level = _level;
+                            /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
+                        } else if (_switchlevel == true) {
+                            level = _level;
+                        } else if (_manual_level == -1 && _levels.length > 1 ) {
+                            // select level from heuristics (current level / last fragment duration / buffer length)
+                            level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength);
+                        } else if (_manual_level == -1 && _levels.length == 1 ) {
+                            level = 0;
+                        } else {
+                            level = _manual_level;
+                        }
+                        // notify in case level switch occurs
+                        if (level != _level) {
+                            _level = level;
+                            _switchlevel = true;
+                            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _level));
+                        }
+                        // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
+                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                            // playlist not yet received
+                            CONFIG::LOGGING {
+                                Log.debug("_checkLoading : playlist not received for level:" + level);
+                            }
+                            _loading_state = LOADING_WAITING_LEVEL_UPDATE;
+                        } else {
+                            _loading_state = _loadnextfragment(_level, _frag_previous);
+                        }
                     }
-                } else {
-                    // no need to load any new fragment, buffer is full already
-                    return;
-                }
-                if (_loading_state == LOADING_STALLED) {
-                    /* it means PTS requested is smaller than playlist start PTS.
-                    it could happen on live playlist :
-                    - if bandwidth available is lower than lowest quality needed bandwidth
-                    - after long pause
-                    seek to offset 0 to force a restart of the playback session  */
-                    CONFIG::LOGGING {
-                        Log.warn("long pause on live stream or bad network quality");
+                    if (_loading_state == LOADING_STALLED) {
+                        /* next consecutive fragment not found:
+                        it could happen on live playlist :
+                        - if bandwidth available is lower than lowest quality needed bandwidth 
+                        - after long pause */
+                        CONFIG::LOGGING {
+                            Log.warn("loading stalled: restart playback");
+                        }
+                        /* seek to force a restart of the playback session  */
+                        seek(-1, _tags_callback);
+                        return;
                     }
-                    _timer.stop();
-                    seek(-1, _tags_callback);
-                    return;
-                }
+                    break;
+                // if key loading failed
+                case  LOADING_KEY_IO_ERROR:
+                    // compare current date and next retry date.
+                    if (new Date().valueOf() >= _key_load_error_date) {
+                        /* try to reload the key ...
+                        calling _loadfragment will also reload key */
+                        _loadfragment(_frag_current);
+                        _loading_state = LOADING_IN_PROGRESS;
+                    }
+                    break;
+                // if fragment loading failed
+                case LOADING_FRAGMENT_IO_ERROR:
+                    // compare current date and next retry date.
+                    if (new Date().valueOf() >= _key_load_error_date) {
+                        /* try to reload the key ...
+                        calling _loadfragment will also reload key */
+                        _loadfragment(_frag_current);
+                        _loading_state = LOADING_IN_PROGRESS;
+                    }
+                    break;
             }
         }
 
@@ -754,6 +758,7 @@ package org.mangui.hls.stream {
             } else {
                 _level = _manual_level = Math.min(_manual_level, _levels.length - 1);
             }
+            _manifest_loaded = true;
             _manifest_just_loaded = true;
         };
 
