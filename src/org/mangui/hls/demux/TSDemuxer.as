@@ -185,7 +185,8 @@ package org.mangui.hls.demux {
             // check whether last parsed audio PES is complete
             if (_curAudioPES && _curAudioPES.length > 14) {
                 var pes : PES = new PES(_curAudioPES, true);
-                if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
+                // consider that PES with unknown size (length=0 found in header) is complete
+                if (pes.len == 0 || (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
                         Log.debug2("TS: complete Audio PES found at end of segment, parse it");
                     }
@@ -206,7 +207,8 @@ package org.mangui.hls.demux {
             // check whether last parsed video PES is complete
             if (_curVideoPES && _curVideoPES.length > 14) {
                 pes = new PES(_curVideoPES, false);
-                if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
+                // consider that PES with unknown size (length=0 found in header) is complete
+                if (pes.len == 0 || (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
                         Log.debug2("TS: complete AVC PES found at end of segment, parse it");
                     }
