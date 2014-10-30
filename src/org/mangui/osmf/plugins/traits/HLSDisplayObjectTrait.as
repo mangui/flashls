@@ -45,7 +45,7 @@ package org.mangui.osmf.plugins.traits {
         private function onFrame(event : Event) : void {
             var newWidth : int = videoSurface.videoWidth;
             var newHeight : int = videoSurface.videoHeight;
-            if (newWidth != 0 && newHeight != 0 && newWidth != mediaWidth && newHeight != mediaHeight) {
+            if (newWidth != 0 && newHeight != 0 && (newWidth != mediaWidth || newHeight != mediaHeight)) {
                 // If there is no layout, set as no scale.
                 if (videoSurface.width == 0 && videoSurface.height == 0) {
                     videoSurface.width = newWidth;
