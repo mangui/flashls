@@ -466,7 +466,17 @@ package org.mangui.hls.stream {
                     Log.debug("MPEG2-TS found");
                 }
                 fragData.video_expected = true;
-                return new TSDemuxer(_hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
+                if (_hls.stage) {
+                    return new TSDemuxer(_hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
+                } else {
+                    var err : String = "hls.stage not set, cannot parse TS data !!!";
+                    CONFIG::LOGGING {
+                        Log.error(err);
+                    }
+                    var hlsError : HLSError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, err);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                    return null;
+                }
             } else {
                 CONFIG::LOGGING {
                     Log.debug("probe fails");
