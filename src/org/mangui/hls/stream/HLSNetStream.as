@@ -109,20 +109,20 @@ package org.mangui.hls.stream {
         }
 
         // function is called by SCRIPT in FLV
-        public function onID3Data( data:ByteArray ) : void {
+        public function onID3Data(data : ByteArray) : void {
             var dump : String = "unset";
-			
+
             // we dump the content as hex to get it to the Javascript in the browser.
-            // from lots of searching, we could use base64, but even then, the decode would 
+            // from lots of searching, we could use base64, but even then, the decode would
             // not be native, so hex actually seems more efficient
             dump = Hex.fromArray(data);
-			
+
             CONFIG::LOGGING {
-                Log.debug("id3:"+dump);
+                Log.debug("id3:" + dump);
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
         }
-		
+
         /** Check the bufferlength. **/
         private function _checkBuffer(e : Event) : void {
             var playback_absolute_position : Number;
@@ -149,26 +149,24 @@ package org.mangui.hls.stream {
             if (!_seek_in_progress) {
                 // check low buffer condition
                 if (buffer < HLSSettings.lowBufferLength) {
-                    if (buffer <= 0.1) {
-                        if (_reached_vod_end) {
-                            // reach end of playlist + playback complete (as buffer is empty).
-                            // stop timer, report event and switch to IDLE mode.
-                            _timer.stop();
-                            CONFIG::LOGGING {
-                                Log.debug("reached end of VOD playlist, notify playback complete");
-                            }
-                            _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
-                            _setPlaybackState(HLSPlayStates.IDLE);
-                            _setSeekState(HLSSeekStates.IDLE);
-                            return;
+                    if (buffer <= 0.01 && _reached_vod_end) {
+                        /* reach end of playlist + empty buffer :
+                        playback complete : stop timer, report event and switch to IDLE mode. */
+                        _timer.stop();
+                        CONFIG::LOGGING {
+                            Log.debug("reached end of VOD playlist, notify playback complete");
+                        }
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
+                        _setPlaybackState(HLSPlayStates.IDLE);
+                        _setSeekState(HLSSeekStates.IDLE);
+                        return;
+                    } else if (buffer <= 0.1 && !_reached_vod_end) {
+                        // pause Netstream in really low buffer condition
+                        super.pause();
+                        if (HLSSettings.minBufferLength == -1) {
+                            _buffer_threshold = _autoBufferManager.minBufferLength;
                         } else {
-                            // pause Netstream in really low buffer condition
-                            super.pause();
-                            if (HLSSettings.minBufferLength == -1) {
-                                _buffer_threshold = _autoBufferManager.minBufferLength;
-                            } else {
-                                _buffer_threshold = HLSSettings.minBufferLength;
-                            }
+                            _buffer_threshold = HLSSettings.minBufferLength;
                         }
                     }
                     // dont switch to buffering state in case we reached end of a VOD playlist
