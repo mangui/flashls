@@ -226,7 +226,7 @@ package org.mangui.hls.demux {
                     }
                 } else {
                     CONFIG::LOGGING {
-                        Log.debug("TS: partial AVC PES at end of segment");
+                        Log.debug("TS: partial AVC PES at end of segment expected/current len:" + pes.payload_len + "/" + ( pes.data.length - pes.payload));
                     }
                     _curVideoPES.position = _curVideoPES.length;
                 }
@@ -752,6 +752,9 @@ package org.mangui.hls.demux {
                 } else if (typ == 0x15) {
                     // ID3 pid
                     _id3Id = sid;
+                    CONFIG::LOGGING {
+                        Log.debug("TS: Selected ID3 PID: " + _id3Id);
+                    }
                 }
                 // es_info_length
                 var sel : uint = _data.readUnsignedShort() & 0xFFF;
