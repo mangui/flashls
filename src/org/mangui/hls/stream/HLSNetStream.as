@@ -338,16 +338,19 @@ package org.mangui.hls.stream {
                 => live playlist sliding is the difference between the new start position  and this previous value */
                 _playlist_sliding_duration = (_seek_position_real + getTotalBufferedDuration()) - start_position;
             }
-            /* if first fragment loaded, or if discontinuity, record discontinuity start PTS, and insert discontinuity TAG */
+            /* if discontinuity, record discontinuity start PTS */
             if (hasDiscontinuity) {
                 _buffered_before_last_continuity += (_buffer_cur_max_pts - _buffer_cur_min_pts);
                 _buffer_cur_min_pts = first_pts;
                 _buffer_cur_max_pts = max_pts;
-                tag = new FLVTag(FLVTag.DISCONTINUITY, first_pts, first_pts, false);
-                _flvTagBuffer.push(tag);
             } else {
                 // same continuity than previously, update its max PTS
                 _buffer_cur_max_pts = max_pts;
+            }
+            // inject discontinuity TAG in case of discontinuity or level switch
+            if (hasDiscontinuity || _cur_level != level) {
+                tag = new FLVTag(FLVTag.DISCONTINUITY, first_pts, first_pts, false);
+                _flvTagBuffer.push(tag);
             }
             /* detect if we are switching to a new fragment. in that case inject a metadata tag
              * Netstream will notify the metadata back when starting playback of this fragment  
