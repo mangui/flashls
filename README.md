@@ -117,6 +117,10 @@ The plugin accepts several **optional** configuration options, such as:
 
 #### Flowplayer
 
+FlowPlayer/flashls setup is described here : http://flash.flowplayer.org/plugins/streaming/flashls.html
+please also refer to example below if you want to use specific configuration options:  
+
+
 ```javascript
 flowplayer("player", 'http://releases.flowplayer.org/swf/flowplayer-3.2.12.swf', {
   // Flowplayer configuration options
