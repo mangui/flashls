@@ -315,6 +315,13 @@ package org.mangui.hls.demux {
                         Log.debug("TS/AAC:ADTS frame overflow:" + adts_overflow);
                     }
                 }
+            } else {
+                // no frame found, add data to overflow buffer
+                _adtsFrameOverflow = new ByteArray();
+                _adtsFrameOverflow.writeBytes(pes.data, pes.data.position);
+                CONFIG::LOGGING {
+                    Log.debug("TS/AAC:ADTS frame overflow:" + _adtsFrameOverflow.length);
+                }
             }
         };
 
