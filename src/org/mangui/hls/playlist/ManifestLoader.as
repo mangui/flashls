@@ -196,7 +196,7 @@ package org.mangui.hls.playlist {
                         Log.debug("adaptive playlist:\n" + string);
                     }
                     // adaptative playlist, extract levels from playlist, get them and parse them
-                    _levels = Manifest.extractLevels(string, _url);
+                    _levels = Manifest.extractLevels(_hls, string, _url);
                     // retrieve start level from helper function
                     _current_level = startlevel;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
