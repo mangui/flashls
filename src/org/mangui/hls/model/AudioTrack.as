@@ -7,16 +7,18 @@ package org.mangui.hls.model {
         public var id : int;
         public var source : int;
         public var isDefault : Boolean;
+        public var isAAC : Boolean;
 
-        public function AudioTrack(title : String, source : int, id : int, isDefault : Boolean) {
+        public function AudioTrack(title : String, source : int, id : int, isDefault : Boolean, isAAC: Boolean) {
             this.title = title;
             this.source = source;
             this.id = id;
             this.isDefault = isDefault;
+            this.isAAC = isAAC;
         }
 
         public function toString() : String {
-            return "AudioTrack ID: " + id + " Title: " + title + " Source: " + source + " Default: " + isDefault;
+            return "AudioTrack ID: " + id + " Title: " + title + " Source: " + source + " Default: " + isDefault + " AAC: " + isAAC;
         }
     }
 }

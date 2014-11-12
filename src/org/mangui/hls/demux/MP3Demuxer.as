@@ -59,7 +59,7 @@ package org.mangui.hls.demux {
                 i++;
             }
             var audiotracks : Vector.<AudioTrack> = new Vector.<AudioTrack>();
-            audiotracks.push(new AudioTrack('MP3 ES', AudioTrack.FROM_DEMUX, 0, true));
+            audiotracks.push(new AudioTrack('MP3 ES', AudioTrack.FROM_DEMUX, 0, true,false));
             // report unique audio track. dont check return value as obviously the track will be selected
             _callback_audioselect(audiotracks);
             CONFIG::LOGGING {

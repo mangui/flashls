@@ -78,7 +78,7 @@ package org.mangui.hls.stream {
                             CONFIG::LOGGING {
                                 Log.debug(" audio track[" + audioTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
                             }
-                            audioTrackList.push(new AudioTrack(altAudioTrack.name, AudioTrack.FROM_PLAYLIST, idx, isDefault));
+                            audioTrackList.push(new AudioTrack(altAudioTrack.name, AudioTrack.FROM_PLAYLIST, idx, isDefault,true));
                         }
                     }
                 }
