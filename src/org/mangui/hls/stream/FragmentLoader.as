@@ -225,7 +225,7 @@ package org.mangui.hls.stream {
                 // if fragment loading failed
                 case LOADING_FRAGMENT_IO_ERROR:
                     // compare current date and next retry date.
-                    if (new Date().valueOf() >= _key_load_error_date) {
+                    if (new Date().valueOf() >= _frag_load_error_date) {
                         /* try to reload the key ...
                         calling _loadfragment will also reload key */
                         _loadfragment(_frag_current);
