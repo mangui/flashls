@@ -214,6 +214,7 @@ package org.mangui.hls.stream {
                     let's flush netstream now
                     this is to avoid black screen during seek command */
                     super.close();
+                    super.useHardwareDecoder = HLSSettings.useHardwareVideoDecoder;
                     super.play(null);
                     super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                     // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream

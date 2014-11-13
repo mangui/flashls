@@ -27,6 +27,7 @@ package org.mangui.hls.utils {
         _paramMap["fragmentloadmaxretrytimeout"] = "fragmentLoadMaxRetryTimeout";
         _paramMap["capleveltostage"] = "capLevelToStage";
         _paramMap["maxlevelcappingmode"] = "maxLevelCappingMode";
+        _paramMap["usehardwarevideodecoder"] = "useHardwareVideoDecoder";
         _paramMap["info"] = "logInfo";
         _paramMap["debug"] = "logDebug";
         _paramMap["debug2"] = "logDebug2";
