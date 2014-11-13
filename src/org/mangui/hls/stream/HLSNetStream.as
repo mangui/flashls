@@ -149,24 +149,26 @@ package org.mangui.hls.stream {
             if (!_seek_in_progress) {
                 // check low buffer condition
                 if (buffer < HLSSettings.lowBufferLength) {
-                    if (buffer <= 0.01 && _reached_vod_end) {
-                        /* reach end of playlist + empty buffer :
-                        playback complete : stop timer, report event and switch to IDLE mode. */
-                        _timer.stop();
-                        CONFIG::LOGGING {
-                            Log.debug("reached end of VOD playlist, notify playback complete");
-                        }
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
-                        _setPlaybackState(HLSPlayStates.IDLE);
-                        _setSeekState(HLSSeekStates.IDLE);
-                        return;
-                    } else if (buffer <= 0.1 && !_reached_vod_end) {
-                        // pause Netstream in really low buffer condition
-                        super.pause();
-                        if (HLSSettings.minBufferLength == -1) {
-                            _buffer_threshold = _autoBufferManager.minBufferLength;
+                    if (buffer <= 0.1) {
+                        if (_reached_vod_end) {
+                            // reach end of playlist + playback complete (as buffer is empty).
+                            // stop timer, report event and switch to IDLE mode.
+                            _timer.stop();
+                            CONFIG::LOGGING {
+                                Log.debug("reached end of VOD playlist, notify playback complete");
+                            }
+                            _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
+                            _setPlaybackState(HLSPlayStates.IDLE);
+                            _setSeekState(HLSSeekStates.IDLE);
+                            return;
                         } else {
-                            _buffer_threshold = HLSSettings.minBufferLength;
+                            // pause Netstream in really low buffer condition
+                            super.pause();
+                            if (HLSSettings.minBufferLength == -1) {
+                                _buffer_threshold = _autoBufferManager.minBufferLength;
+                            } else {
+                                _buffer_threshold = HLSSettings.minBufferLength;
+                            }
                         }
                     }
                     // dont switch to buffering state in case we reached end of a VOD playlist
