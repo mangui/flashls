@@ -93,8 +93,7 @@ package org.mangui.hls.demux {
                     // Check for MP3 header
                     var short : uint = data.readUnsignedShort();
                     if (short == SYNCWORD) {
-                        // rewind to sync word
-                        data.position -= 2;
+                        data.position = pos;
                         return true;
                     } else {
                         data.position--;

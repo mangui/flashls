@@ -434,7 +434,7 @@ package org.mangui.hls.stream {
                 bytes.position = bytes.length;
                 bytes.writeBytes(data);
                 data = bytes;
-                _demux = DemuxHelper.probe(data, _hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
+                _demux = DemuxHelper.probe(data, _levels[level], _hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
             }
             if (_demux) {
                 _demux.append(data);
@@ -464,7 +464,7 @@ package org.mangui.hls.stream {
                 var bytes : ByteArray = new ByteArray();
                 fragData.bytes.position = _frag_current.byterange_start_offset;
                 fragData.bytes.readBytes(bytes, 0, _frag_current.byterange_end_offset - _frag_current.byterange_start_offset);
-                _demux = DemuxHelper.probe(bytes, _hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
+                _demux = DemuxHelper.probe(bytes, _levels[level], _hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
                 if (_demux) {
                     bytes.position = 0;
                     _demux.append(bytes);

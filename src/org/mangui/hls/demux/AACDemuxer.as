@@ -106,8 +106,7 @@ package org.mangui.hls.demux {
                     // Check for ADTS header
                     var short : uint = data.readUnsignedShort();
                     if (short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
-                        // rewind to sync word
-                        data.position -= 2;
+                        data.position = pos;
                         return true;
                     } else {
                         data.position--;
