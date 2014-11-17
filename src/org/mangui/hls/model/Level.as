@@ -8,6 +8,12 @@ package org.mangui.hls.model {
     public class Level {
         /** audio only Level ? **/
         public var audio : Boolean;
+        /** AAC codec signaled ? **/
+        public var codec_aac : Boolean;
+        /** MP3 codec signaled ? **/
+        public var codec_mp3 : Boolean;
+        /** H264 codec signaled ? **/
+        public var codec_h264 : Boolean;
         /** Level Bitrate. **/
         public var bitrate : Number;
         /** Level Name. **/

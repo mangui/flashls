@@ -314,8 +314,17 @@ package org.mangui.hls.playlist {
                             var dim : Array = res.split('x');
                             level.width = parseInt(dim[0]);
                             level.height = parseInt(dim[1]);
-                        } else if (param.indexOf('CODECS') > -1 && line.indexOf('avc1') == -1) {
-                            level.audio = true;
+                        } else if (param.indexOf('CODECS') > -1) {
+                            if (line.indexOf('avc1') > -1) {
+                                level.codec_h264 = true;
+                            } else {
+                                level.audio = true;
+                            }
+                            if (line.indexOf('mp4a.40.2') > -1 || line.indexOf('mp4a.40.5') > -1) {
+                                level.codec_aac = true;
+                            } else if (line.indexOf('mp4a.40.34') > -1) {
+                                level.codec_mp3 = true;
+                            }
                         } else if (param.indexOf('AUDIO') > -1) {
                             level.audio_stream_id = (param.split('=')[1] as String).replace(replacedoublequote, "");
                         } else if (param.indexOf('NAME') > -1) {

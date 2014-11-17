@@ -41,6 +41,14 @@ package org.mangui.hls.demux {
             _data = null;
         }
 
+        public function audio_expected() : Boolean {
+            return true;
+        }
+
+        public function video_expected() : Boolean {
+            return false;
+        }
+
         public function notifycomplete() : void {
             CONFIG::LOGGING {
                 Log.debug("AAC: extracting AAC tags");
@@ -72,7 +80,7 @@ package org.mangui.hls.demux {
                 i++;
             }
             var audiotracks : Vector.<AudioTrack> = new Vector.<AudioTrack>();
-            audiotracks.push(new AudioTrack('AAC ES', AudioTrack.FROM_DEMUX, 0, true,true));
+            audiotracks.push(new AudioTrack('AAC ES', AudioTrack.FROM_DEMUX, 0, true, true));
             // report unique audio track. dont check return value as obviously the track will be selected
             _callback_audioselect(audiotracks);
             CONFIG::LOGGING {

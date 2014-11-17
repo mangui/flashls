@@ -33,6 +33,14 @@ package org.mangui.hls.demux {
             _data = null;
         }
 
+        public function audio_expected() : Boolean {
+            return true;
+        }
+
+        public function video_expected() : Boolean {
+            return false;
+        }
+
         public function notifycomplete() : void {
             CONFIG::LOGGING {
                 Log.debug("MP3: extracting MP3 tags");

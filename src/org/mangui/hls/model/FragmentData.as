@@ -23,9 +23,6 @@ package org.mangui.hls.model {
         public var pts_max_audio : Number;
         public var pts_min_video : Number;
         public var pts_max_video : Number;
-        /** audio/video expected ? */
-        public var audio_expected : Boolean;
-        public var video_expected : Boolean;
         /** audio/video found ? */
         public var audio_found : Boolean;
         public var video_found : Boolean;

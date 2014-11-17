@@ -145,6 +145,14 @@ package org.mangui.hls.demux {
             _data_complete = true;
         }
 
+        public function audio_expected() : Boolean {
+            return (_audioId != -1);
+        }
+
+        public function video_expected() : Boolean {
+            return (_avcId != -1);
+        }
+
         /** Parse a limited amount of packets each time to avoid blocking **/
         private function _parseTimer(e : Event) : void {
             var start_time : int = getTimer();
@@ -745,7 +753,7 @@ package org.mangui.hls.demux {
                 var sid : uint = _data.readUnsignedShort() & 0x1fff;
                 if (typ == 0x0F) {
                     // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
-                    audioList.push(new AudioTrack('TS/AAC ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0),true));
+                    audioList.push(new AudioTrack('TS/AAC ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0), true));
                 } else if (typ == 0x1B) {
                     // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
                     _avcId = sid;
@@ -755,7 +763,7 @@ package org.mangui.hls.demux {
                 } else if (typ == 0x03 || typ == 0x04) {
                     // ISO/IEC 11172-3 (MPEG-1 audio)
                     // or ISO/IEC 13818-3 (MPEG-2 halved sample rate audio)
-                    audioList.push(new AudioTrack('TS/MP3 ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0),false));
+                    audioList.push(new AudioTrack('TS/MP3 ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0), false));
                 } else if (typ == 0x15) {
                     // ID3 pid
                     _id3Id = sid;
