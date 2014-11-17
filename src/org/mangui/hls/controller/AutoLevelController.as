@@ -1,4 +1,7 @@
-package org.mangui.hls.controller {
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ package org.mangui.hls.controller {
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.HLS;
