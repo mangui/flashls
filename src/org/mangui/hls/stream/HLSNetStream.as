@@ -1,5 +1,5 @@
 package org.mangui.hls.stream {
-    import org.mangui.hls.loader.AutoBufferManager;
+    import org.mangui.hls.controller.AutoBufferController;
     import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.event.HLSError;
@@ -27,7 +27,7 @@ package org.mangui.hls.stream {
         /** Reference to the framework controller. **/
         private var _hls : HLS;
         /** reference to auto buffer manager */
-        private var _autoBufferManager : AutoBufferManager;
+        private var _autoBufferController : AutoBufferController;
         /** FLV tags buffer vector **/
         private var _flvTagBuffer : Vector.<FLVTag>;
         /** FLV tags buffer duration **/
@@ -81,7 +81,7 @@ package org.mangui.hls.stream {
             super(connection);
             super.bufferTime = 0.1;
             _hls = hls;
-            _autoBufferManager = new AutoBufferManager(hls);
+            _autoBufferController = new AutoBufferController(hls);
             _fragmentLoader = fragmentLoader;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
@@ -167,7 +167,7 @@ package org.mangui.hls.stream {
                             // pause Netstream in really low buffer condition
                             super.pause();
                             if (HLSSettings.minBufferLength == -1) {
-                                _buffer_threshold = _autoBufferManager.minBufferLength;
+                                _buffer_threshold = _autoBufferController.minBufferLength;
                             } else {
                                 _buffer_threshold = HLSSettings.minBufferLength;
                             }
@@ -192,7 +192,7 @@ package org.mangui.hls.stream {
                      */
                     if (HLSSettings.minBufferLength == -1) {
                         // in automode, low buffer threshold should be less than min auto buffer
-                        _buffer_threshold = Math.min(_autoBufferManager.minBufferLength / 2, HLSSettings.lowBufferLength);
+                        _buffer_threshold = Math.min(_autoBufferController.minBufferLength / 2, HLSSettings.lowBufferLength);
                     } else {
                         _buffer_threshold = HLSSettings.lowBufferLength;
                     }
@@ -258,7 +258,7 @@ package org.mangui.hls.stream {
             }
             // update buffer threshold here if needed
             if (HLSSettings.minBufferLength == -1) {
-                _buffer_threshold = _autoBufferManager.minBufferLength;
+                _buffer_threshold = _autoBufferController.minBufferLength;
             }
         };
 
@@ -534,7 +534,7 @@ package org.mangui.hls.stream {
             _reached_vod_end = false;
             _cur_level = _cur_sn = -1;
             if (HLSSettings.minBufferLength == -1) {
-                _buffer_threshold = _autoBufferManager.minBufferLength;
+                _buffer_threshold = _autoBufferController.minBufferLength;
             } else {
                 _buffer_threshold = HLSSettings.minBufferLength;
             }
@@ -584,7 +584,7 @@ package org.mangui.hls.stream {
 
         public function dispose_() : void {
             close();
-            _autoBufferManager.dispose();
+            _autoBufferController.dispose();
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
         }

@@ -1,4 +1,6 @@
 package org.mangui.hls.loader {
+    import org.mangui.hls.controller.AudioTrackController;
+    import org.mangui.hls.controller.AutoLevelController;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.constant.HLSTypes;
@@ -30,7 +32,7 @@ package org.mangui.hls.loader {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
         /** reference to auto level manager */
-        private var _autoLevelManager : AutoLevelManager;
+        private var _autoLevelManager : AutoLevelController;
         /** reference to audio track controller */
         private var _audioTrackController : AudioTrackController;
         /** has manifest been loaded **/
@@ -94,7 +96,7 @@ package org.mangui.hls.loader {
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController) : void {
             _hls = hls;
-            _autoLevelManager = new AutoLevelManager(hls);
+            _autoLevelManager = new AutoLevelController(hls);
             _audioTrackController = audioTrackController;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);

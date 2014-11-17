@@ -1,4 +1,4 @@
-package org.mangui.hls.loader {
+package org.mangui.hls.controller {
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.event.HLSEvent;
@@ -8,7 +8,7 @@ package org.mangui.hls.loader {
     }
 
     /** Class that manages automatic min/low buffer len **/
-    public class AutoBufferManager {
+    public class AutoBufferController {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
         // max nb of samples used for bw checking. the bigger it is, the more conservative it is.
@@ -19,7 +19,7 @@ package org.mangui.hls.loader {
         private var _minBufferLength : Number;
 
         /** Create the loader. **/
-        public function AutoBufferManager(hls : HLS) : void {
+        public function AutoBufferController(hls : HLS) : void {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);

@@ -1,4 +1,4 @@
-package org.mangui.hls.loader {
+package org.mangui.hls.controller {
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.HLS;
@@ -13,7 +13,7 @@ package org.mangui.hls.loader {
      * this is an implementation based on Serial segment fetching method from 
      * http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
      */
-    public class AutoLevelManager {
+    public class AutoLevelController {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
         /** switch up threshold **/
@@ -31,7 +31,7 @@ package org.mangui.hls.loader {
         private var  last_bandwidth : Number;
 
         /** Create the loader. **/
-        public function AutoLevelManager(hls : HLS) : void {
+        public function AutoLevelController(hls : HLS) : void {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
