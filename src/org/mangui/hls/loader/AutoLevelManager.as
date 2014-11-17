@@ -1,4 +1,4 @@
-package org.mangui.hls.stream {
+package org.mangui.hls.loader {
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.HLS;

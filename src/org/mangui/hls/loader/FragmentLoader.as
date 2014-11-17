@@ -1,4 +1,4 @@
-package org.mangui.hls.stream {
+package org.mangui.hls.loader {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.constant.HLSTypes;

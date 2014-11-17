@@ -1,17 +1,19 @@
-package org.mangui.hls.playlist {
+package org.mangui.hls.loader {
+    import org.mangui.hls.playlist.DataUri;
+    import org.mangui.hls.playlist.AltAudioTrack;
+    import org.mangui.hls.playlist.Manifest;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.HLS;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.model.Level;
+    import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
 
     import flash.events.*;
     import flash.net.*;
     import flash.utils.*;
-
-    import org.mangui.hls.model.Level;
-    import org.mangui.hls.model.Fragment;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;

@@ -1,4 +1,4 @@
-package org.mangui.hls.stream {
+package org.mangui.hls.loader {
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.model.AudioTrack;

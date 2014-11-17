@@ -332,7 +332,7 @@ package org.mangui.hls.playlist {
                         }
                     }
                 } else if (level_found == true) {
-                    level.url = Manifest._extractURL(line, base);
+                    level.url = _extractURL(line, base);
                     levels.push(level);
                     level_found = false;
                 }

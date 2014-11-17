@@ -11,9 +11,9 @@ package org.mangui.hls {
     import org.mangui.hls.model.Level;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.playlist.AltAudioTrack;
-    import org.mangui.hls.playlist.ManifestLoader;
-    import org.mangui.hls.stream.AudioTrackController;
-    import org.mangui.hls.stream.FragmentLoader;
+    import org.mangui.hls.loader.ManifestLoader;
+    import org.mangui.hls.loader.AudioTrackController;
+    import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.stream.HLSNetStream;
 
     CONFIG::LOGGING {
