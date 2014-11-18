@@ -112,7 +112,7 @@
             // _seekable = true;
             // }
             _hls.stream.play();
-            _clip.dispatch(ClipEventType.SEEK);
+            _clip.dispatch(ClipEventType.SEEK,0);
             if (_pauseAfterStart) {
                 pause(new ClipEvent(ClipEventType.PAUSE));
             }
