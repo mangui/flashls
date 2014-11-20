@@ -104,6 +104,23 @@
             _isManifestLoaded = true;
             _clip.duration = _duration;
             _clip.stopLiveOnPause = false;
+            /*
+            var nbLevel = event.levels.length;
+            if (nbLevel > 1) {
+            var bitrates : Array = new Array();
+            for (var i : int = 0; i < nbLevel; i++) {
+            var info : Object = new Object();
+            var level : Level = event.levels[i];
+            info.bitrate = level.bitrate;
+            info.url = level.url;
+            info.width = level.width;
+            info.height = level.height;
+            info.isDefault = (i == _hls.startlevel);
+            bitrates.push(info);
+            }
+            _clip.setCustomProperty("bitrates", bitrates);
+            }
+             */
             _clip.dispatch(ClipEventType.METADATA);
             _seekable = true;
             // if (_hls.type == HLSTypes.LIVE) {
