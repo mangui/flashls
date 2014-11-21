@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.flowplayer {
+package org.mangui.flowplayer {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.utils.Params2Settings;
 
@@ -13,7 +13,6 @@
 
     import org.mangui.hls.HLS;
     import org.mangui.hls.constant.HLSPlayStates;
-
     import org.flowplayer.model.Plugin;
     import org.flowplayer.model.PluginModel;
     import org.flowplayer.view.Flowplayer;
@@ -26,11 +25,10 @@
     import org.flowplayer.model.ClipEventType;
     import org.flowplayer.model.Playlist;
     import org.flowplayer.view.StageVideoWrapper;
-    
-    CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    }
 
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+    }
     public class HLSStreamProvider  implements StreamProvider,Plugin {
         private var _volumecontroller : VolumeController;
         private var _playlist : Playlist;
@@ -57,14 +55,14 @@
 
         public function onConfig(model : PluginModel) : void {
             CONFIG::LOGGING {
-            Log.info("onConfig()");
+                Log.info("onConfig()");
             }
             _model = model;
         }
 
         public function onLoad(player : Flowplayer) : void {
             CONFIG::LOGGING {
-            Log.info("onLoad()");
+                Log.info("onLoad()");
             }
             _player = player;
             _hls = new HLS();
@@ -90,6 +88,7 @@
         private function _completeHandler(event : HLSEvent) : void {
             // dispatch a before event because the finish has default behavior that can be prevented by listeners
             _clip.dispatchBeforeEvent(new ClipEvent(ClipEventType.FINISH));
+            _clip.startDispatched = false;
         };
 
         private function _errorHandler(event : HLSEvent) : void {
@@ -129,7 +128,7 @@
             // _seekable = true;
             // }
             _hls.stream.play();
-            _clip.dispatch(ClipEventType.SEEK,0);
+            _clip.dispatch(ClipEventType.SEEK, 0);
             if (_pauseAfterStart) {
                 pause(new ClipEvent(ClipEventType.PAUSE));
             }
@@ -146,13 +145,16 @@
                 var changed : Boolean = _videoWidth != videoWidth || _videoHeight != videoHeight;
                 if (changed) {
                     CONFIG::LOGGING {
-                    Log.info("video size changed to " + videoWidth + "/" + videoHeight);
+                        Log.info("video size changed to " + videoWidth + "/" + videoHeight);
                     }
                     _videoWidth = videoWidth;
                     _videoHeight = videoHeight;
                     _clip.originalWidth = videoWidth;
                     _clip.originalHeight = videoHeight;
-                    _clip.dispatch(ClipEventType.START);
+                    if (!_clip.startDispatched) {
+                        _clip.dispatch(ClipEventType.START);
+                        _clip.startDispatched = true;
+                    }
                     _clip.dispatch(ClipEventType.METADATA_CHANGED);
                 }
             }
@@ -193,7 +195,7 @@
         public function load(event : ClipEvent, clip : Clip, pauseAfterStart : Boolean = true) : void {
             _clip = clip;
             CONFIG::LOGGING {
-            Log.info("load()" + clip.completeUrl);
+                Log.info("load()" + clip.completeUrl);
             }
             _hls.load(clip.completeUrl);
             _pauseAfterStart = pauseAfterStart;
@@ -211,12 +213,12 @@
          */
         public function getVideo(clip : Clip) : DisplayObject {
             CONFIG::LOGGING {
-            Log.debug("getVideo()");
+                Log.debug("getVideo()");
             }
             if (_video == null) {
                 if (clip.useStageVideo) {
                     CONFIG::LOGGING {
-                    Log.debug("useStageVideo");
+                        Log.debug("useStageVideo");
                     }
                     _video = new StageVideoWrapper(clip);
                 } else {
@@ -234,7 +236,7 @@
          */
         public function attachStream(video : DisplayObject) : void {
             CONFIG::LOGGING {
-            Log.debug("attachStream()");
+                Log.debug("attachStream()");
             }
             Video(video).attachNetStream(_hls.stream);
             return;
@@ -246,7 +248,7 @@
          */
         public function pause(event : ClipEvent) : void {
             CONFIG::LOGGING {
-            Log.info("pause()");
+                Log.info("pause()");
             }
             _hls.stream.pause();
             if (event) {
@@ -261,7 +263,7 @@
          */
         public function resume(event : ClipEvent) : void {
             CONFIG::LOGGING {
-            Log.info("resume()");
+                Log.info("resume()");
             }
             _hls.stream.resume();
             _clip.dispatch(ClipEventType.RESUME);
@@ -274,7 +276,7 @@
          */
         public function stop(event : ClipEvent, closeStream : Boolean = false) : void {
             CONFIG::LOGGING {
-            Log.info("stop()");
+                Log.info("stop()");
             }
             _hls.stream.close();
             return;
@@ -287,7 +289,7 @@
          */
         public function seek(event : ClipEvent, seconds : Number) : void {
             CONFIG::LOGGING {
-            Log.info("seek()");
+                Log.info("seek()");
             }
             _hls.stream.seek(seconds);
             _position = seconds;
@@ -350,7 +352,7 @@
          */
         public function get stopping() : Boolean {
             CONFIG::LOGGING {
-            Log.info("stopping()");
+                Log.info("stopping()");
             }
             return false;
         }
@@ -368,7 +370,7 @@
 
         public function get playlist() : Playlist {
             CONFIG::LOGGING {
-            Log.debug("get playlist()");
+                Log.debug("get playlist()");
             }
             return _playlist;
         }
@@ -383,7 +385,7 @@
          */
         public function addConnectionCallback(name : String, listener : Function) : void {
             CONFIG::LOGGING {
-            Log.debug("addConnectionCallback()");
+                Log.debug("addConnectionCallback()");
             }
             return;
         }
@@ -399,7 +401,7 @@
          */
         public function addStreamCallback(name : String, listener : Function) : void {
             CONFIG::LOGGING {
-            Log.debug("addStreamCallback()");
+                Log.debug("addStreamCallback()");
             }
             return;
         }
@@ -410,7 +412,7 @@
          */
         public function get streamCallbacks() : Dictionary {
             CONFIG::LOGGING {
-            Log.debug("get streamCallbacks()");
+                Log.debug("get streamCallbacks()");
             }
             return null;
         }
@@ -421,7 +423,7 @@
          */
         public function get netStream() : NetStream {
             CONFIG::LOGGING {
-            Log.debug("get netStream()");
+                Log.debug("get netStream()");
             }
             return _hls.stream;
         }
@@ -432,7 +434,7 @@
          */
         public function get netConnection() : NetConnection {
             CONFIG::LOGGING {
-            Log.debug("get netConnection()");
+                Log.debug("get netConnection()");
             }
             return null;
         }
@@ -445,7 +447,7 @@
          */
         public function set timeProvider(timeProvider : TimeProvider) : void {
             CONFIG::LOGGING {
-            Log.debug("set timeProvider()");
+                Log.debug("set timeProvider()");
             }
             _timeProvider = timeProvider;
             return;
@@ -467,7 +469,7 @@
          */
         public function switchStream(event : ClipEvent, clip : Clip, netStreamPlayOptions : Object = null) : void {
             CONFIG::LOGGING {
-            Log.info("switchStream()");
+                Log.info("switchStream()");
             }
             return;
         }
