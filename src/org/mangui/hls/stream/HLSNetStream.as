@@ -45,8 +45,6 @@ package org.mangui.hls.stream {
         private var _seek_position_requested : Number;
         /** real start position , retrieved from first fragment **/
         private var _seek_position_real : Number;
-        /** seek date in ms , since epoch **/
-        private var _seek_date_real : Number = 0;
         /** is a seek operation in progress ? **/
         private var _seek_in_progress : Boolean;
         /** Current play position (relative position from beginning of sliding window) **/
@@ -144,8 +142,7 @@ package org.mangui.hls.stream {
             if (playback_relative_position != _playback_current_position || buffer != _last_buffer) {
                 _playback_current_position = playback_relative_position;
                 _last_buffer = buffer;
-                var playback_date : Number = _seek_date_real ? 1000 * super.time + _seek_date_real : 0;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer, _playlist_sliding_duration, playback_date)));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer, _playlist_sliding_duration)));
             }
 
             // Set playback state. no need to check buffer status if first fragment not yet received
@@ -284,7 +281,7 @@ package org.mangui.hls.stream {
         };
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
+        private function _loaderCallback(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -308,13 +305,11 @@ package org.mangui.hls.stream {
                  */
                 if (_seek_position_requested < start_position || _seek_position_requested >= start_position + ((max_pts - min_pts) / 1000)) {
                     _seek_position_real = start_position;
-                    _seek_date_real = program_date;
                     first_pts = min_pts;
                 } else {
                     /* if requested position is within segment bounds, determine real seek position depending on seek mode setting */
                     if (HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
                         _seek_position_real = start_position;
-                        _seek_date_real = program_date;
                         first_pts = min_pts;
                     } else {
                         /* accurate or keyframe seeking */
@@ -330,12 +325,10 @@ package org.mangui.hls.stream {
                         }
                         if (HLSSettings.seekMode == HLSSeekMode.KEYFRAME_SEEK) {
                             _seek_position_real = start_position + (keyframe_pts - min_pts) / 1000;
-                            _seek_date_real = program_date ? program_date + (keyframe_pts - min_pts) : 0;
                             first_pts = keyframe_pts;
                         } else {
                             // accurate seek, to exact requested position
                             _seek_position_real = _seek_position_requested;
-                            _seek_date_real = program_date ? program_date + 1000 * (_seek_position_requested - start_position) : 0;
                             first_pts = seek_pts;
                         }
                     }

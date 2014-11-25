@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.model {
+package org.mangui.hls.model {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
@@ -272,7 +272,7 @@
             }
         }
 
-        public function updateFragment(seqnum : Number, valid : Boolean, min_pts : Number = 0, max_pts : Number = 0) : Number {
+        public function updateFragment(seqnum : Number, valid : Boolean, min_pts : Number = 0, max_pts : Number = 0) : void {
             // CONFIG::LOGGING {
             // Log.info("updatePTS : seqnum/min/max:" + seqnum + '/' + min_pts + '/' + max_pts);
             // }
@@ -320,12 +320,10 @@
                     // }
                 }
                 duration = start_time_offset;
-                return frag.start_time;
             } else {
                 CONFIG::LOGGING {
                     Log.error("updateFragment:seqnum " + seqnum + " not found!");
                 }
-                return 0;
             }
         }
     }

@@ -830,7 +830,6 @@ package org.mangui.hls.loader {
                 }
 
                 if (fragData.tag_pts_min != Number.POSITIVE_INFINITY && fragData.tag_pts_max != Number.NEGATIVE_INFINITY) {
-                    var min_offset : Number = _frag_current.start_time + fragData.tag_pts_start_offset / 1000;
                     var max_offset : Number = _frag_current.start_time + fragData.tag_pts_end_offset / 1000;
                     // in case of cold start/seek use case,
                     if (!_fragment_first_loaded ) {
@@ -880,7 +879,7 @@ package org.mangui.hls.loader {
                         fragData.metadata_tag_injected = true;
                     }
                     // provide tags to HLSNetStream
-                    _tags_callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    _tags_callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     var processing_duration : Number = (getTimer() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
@@ -962,7 +961,7 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("Loaded        " + _frag_current.seqnum + " of [" + (_levels[_level].start_seqnum) + "," + (_levels[_level].end_seqnum) + "],level " + _level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
-                var start_offset : Number = _levels[_level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max);
+                _levels[_level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max);
                 // set pts_start here, it might not be updated directly in updateFragment() if this loaded fragment has been removed from a live playlist
                 fragData.pts_start = fragData.pts_min;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_level].duration));
@@ -974,8 +973,8 @@ package org.mangui.hls.loader {
                     if (fragData.metadata_tag_injected == false) {
                         fragData.tags.push(_frag_current.metadataTag);
                         fragData.metadata_tag_injected = true;
-                    }                    
-                    _tags_callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, start_offset + fragData.tag_pts_start_offset / 1000, _frag_current.program_date + fragData.tag_pts_start_offset);
+                    }
+                    _tags_callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     if (fragData.tags_audio_found) {
                         fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;

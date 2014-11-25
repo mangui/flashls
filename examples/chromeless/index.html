@@ -538,6 +538,7 @@ function onFragmentLoaded(loadmetrics) {
 }
 function onFragmentPlaying(playmetrics) {
   appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " video_width:" + playmetrics.video_width + " video_height:" + playmetrics.video_height + " tags:" + playmetrics.tag_list);
+ document.getElementById('mediaInfo').rows[Y_UTC_DATE].cells[X_UTC_DATE].innerHTML =  new Date(playmetrics.program_date).toUTCString();  
 }
 
 function onManifest(duration) {
@@ -550,7 +551,6 @@ function onPosition(timemetrics) {
   document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
   document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
   document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_UTC_DATE].cells[X_UTC_DATE].innerHTML =  new Date(timemetrics.program_date).toUTCString();
 }
 
 function onState(newState) {
