@@ -51,12 +51,8 @@ package org.mangui.hls.stream {
         private var _playback_current_position : Number;
         /** playlist sliding (non null for live playlist) **/
         private var _playlist_sliding_duration : Number;
-        /** total duration of buffered data before last discontinuity */
-        private var _buffered_before_last_continuity : Number;
-        /** buffer min PTS since last discontinuity  */
-        private var _buffer_cur_min_pts : Number;
-        /** buffer max PTS since last discontinuity  */
-        private var _buffer_cur_max_pts : Number;
+        /** buffer PTS (indexed by continuity counter)  */
+        private var _buffer_pts : Dictionary;
         /** previous buffer time. **/
         private var _last_buffer : Number;
         /** Current playback state. **/
@@ -281,7 +277,7 @@ package org.mangui.hls.stream {
         };
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number) : void {
+        private function _loaderCallback(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -342,16 +338,12 @@ package org.mangui.hls.stream {
                 => live playlist sliding is the difference between the new start position  and this previous value */
                 _playlist_sliding_duration = (_seek_position_real + getTotalBufferedDuration()) - start_position;
             }
-            /* if first fragment loaded, or if discontinuity, record discontinuity start PTS, and insert discontinuity TAG */
-            if (hasDiscontinuity) {
-                _buffered_before_last_continuity += (_buffer_cur_max_pts - _buffer_cur_min_pts);
-                _buffer_cur_min_pts = first_pts;
-                _buffer_cur_max_pts = max_pts;
-                tag = new FLVTag(FLVTag.DISCONTINUITY, first_pts, first_pts, false);
-                _flvTagBuffer.push(tag);
+
+            // update buffer min/max table indexed with continuity counter
+            if (_buffer_pts[continuity] == undefined) {
+                _buffer_pts[continuity] = new BufferPTS(first_pts, max_pts);
             } else {
-                // same continuity than previously, update its max PTS
-                _buffer_cur_max_pts = max_pts;
+                (_buffer_pts[continuity] as BufferPTS).max = max_pts;
             }
             /* if no seek in progress or if in segment seeking mode : push all FLV tags */
             if (!_seek_in_progress || HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
@@ -368,6 +360,7 @@ package org.mangui.hls.stream {
                             case FLVTag.AAC_HEADER:
                             case FLVTag.AVC_HEADER:
                             case FLVTag.METADATA:
+                            case FLVTag.DISCONTINUITY:
                                 tag.pts = tag.dts = first_pts;
                                 _flvTagBuffer.push(tag);
                                 break;
@@ -389,13 +382,17 @@ package org.mangui.hls.stream {
             }
             _flvTagBufferDuration += (max_pts - first_pts) / 1000;
             CONFIG::LOGGING {
-                Log.debug("Loaded position/duration/sliding/discontinuity:" + start_position.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2) + "/" + hasDiscontinuity);
+                Log.debug("Loaded position/duration/sliding/cc:" + start_position.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2) + "/" + continuity);
             }
         };
 
         /** return total buffered duration since seek() call, needed to compute live playlist sliding  */
         private function getTotalBufferedDuration() : Number {
-            return (_buffered_before_last_continuity + _buffer_cur_max_pts - _buffer_cur_min_pts) / 1000;
+            var len : Number = 0;
+            for each (var entry : BufferPTS in _buffer_pts) {
+                len += (entry.max - entry.min);
+            }
+            return len / 1000;
         }
 
         private function _lastVODFragmentLoadedHandler(event : HLSEvent) : void {
@@ -499,7 +496,8 @@ package org.mangui.hls.stream {
             _fragmentLoader.stop();
             _fragmentLoader.seek(position, _loaderCallback);
             _flvTagBuffer = new Vector.<FLVTag>();
-            _flvTagBufferDuration = _buffered_before_last_continuity = _buffer_cur_min_pts = _buffer_cur_max_pts = _playlist_sliding_duration = 0;
+            _flvTagBufferDuration = _playlist_sliding_duration = 0;
+            _buffer_pts = new Dictionary();
             _seek_position_requested = Math.max(position, 0);
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;
@@ -559,5 +557,15 @@ package org.mangui.hls.stream {
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
         }
+    }
+}
+
+class BufferPTS {
+    public var min : Number;
+    public var max : Number;
+
+    public function BufferPTS(min : Number, max : Number) {
+        this.min = min;
+        this.max = max;
     }
 }
