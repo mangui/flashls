@@ -148,7 +148,7 @@
                 CONFIG::LOGGING {
                     Log.debug("level " + level + " playlist:\n" + string);
                 }
-                var frags : Vector.<Fragment> = Manifest.getFragments(string, url);
+                var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
                 // set fragment and update sequence number range
                 _levels[level].updateFragments(frags);
                 _levels[level].targetduration = Manifest.getTargetDuration(string);

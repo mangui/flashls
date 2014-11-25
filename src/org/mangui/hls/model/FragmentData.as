@@ -30,6 +30,7 @@
         public var audio_found : Boolean;
         public var video_found : Boolean;
         /** tag related stuff */
+        public var metadata_tag_injected : Boolean;
         public var tags_pts_min_audio : Number;
         public var tags_pts_max_audio : Number;
         public var tags_pts_min_video : Number;

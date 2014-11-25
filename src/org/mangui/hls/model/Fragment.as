@@ -1,8 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.model {
+package org.mangui.hls.model {
+    import org.mangui.hls.flv.FLVTag;
+
     import flash.utils.ByteArray;
+    import flash.net.ObjectEncoding;
 
     /** Fragment model **/
     public class Fragment {
@@ -14,6 +17,8 @@
         public var seqnum : int;
         /** URL to this chunk. **/
         public var url : String;
+        /** level of  this chunk. **/
+        public var level : int;
         /** continuity index of this chunk. **/
         public var continuity : int;
         /** program date of this chunk. **/
@@ -34,10 +39,11 @@
         public var tag_list : Vector.<String>;
 
         /** Create the fragment. **/
-        public function Fragment(url : String, duration : Number, seqnum : int, start_time : Number, continuity : int, program_date : Number, decrypt_url : String, decrypt_iv : ByteArray, byterange_start_offset : int, byterange_end_offset : int , tag_list : Vector.<String>) {
+        public function Fragment(url : String, duration : Number, level : int, seqnum : int, start_time : Number, continuity : int, program_date : Number, decrypt_url : String, decrypt_iv : ByteArray, byterange_start_offset : int, byterange_end_offset : int, tag_list : Vector.<String>) {
             this.url = url;
             this.duration = duration;
             this.seqnum = seqnum;
+            this.level = level;
             this.start_time = start_time;
             this.continuity = continuity;
             this.program_date = program_date;
@@ -53,9 +59,27 @@
             // }
         };
 
-         public function toString():String
-	{
-	    return "Fragment (seqnum: " + seqnum + ", start_time:" + start_time + ", duration:" + duration + ")";
-         }        
+        public function get metadataTag() : FLVTag {
+            var tag : FLVTag = new FLVTag(FLVTag.METADATA, this.data.pts_min, this.data.pts_min, false);
+            var data : ByteArray = new ByteArray();
+            data.objectEncoding = ObjectEncoding.AMF0;
+            data.writeObject("onHLSFragmentChange");
+            data.writeObject(this.level);
+            data.writeObject(this.seqnum);
+            data.writeObject(this.continuity);
+            data.writeObject(this.program_date);
+            data.writeObject(!this.data.video_found);
+            data.writeObject(this.data.video_width);
+            data.writeObject(this.data.video_height);
+            for each (var custom_tag : String in this.tag_list) {
+                data.writeObject(custom_tag);
+            }
+            tag.push(data, 0, data.length);
+            return tag;
+        }
+
+        public function toString() : String {
+            return "Fragment (seqnum: " + seqnum + ", start_time:" + start_time + ", duration:" + duration + ")";
+        }
     }
 }

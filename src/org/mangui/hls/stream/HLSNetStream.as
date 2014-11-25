@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.stream {
+package org.mangui.hls.stream {
     import org.mangui.hls.controller.AutoBufferController;
     import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.event.HLSPlayMetrics;
@@ -72,9 +72,7 @@
         private var _buffer_threshold : Number;
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
-        /** level/sn used to detect fragment change **/
-        private var _cur_level : int;
-        private var _cur_sn : int;
+        /** current playback level **/
         private var _playbackLevel : int;
         /** Netstream client proxy */
         private var _client : HLSNetStreamClient;
@@ -98,7 +96,7 @@
             super.client = _client;
         };
 
-        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, audio_only : Boolean, width : int, height : int, ... tags) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, audio_only : Boolean, program_date : Number, width : int, height : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
@@ -110,7 +108,7 @@
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, audio_only, width, height, tag_list)));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, audio_only, program_date, width, height, tag_list)));
         }
 
         // function is called by SCRIPT in FLV
@@ -286,7 +284,7 @@
         };
 
         /** Add a fragment to the buffer. **/
-        private function _loaderCallback(level : int, cc : int, sn : int, audio_only : Boolean, width : int, height : int, tag_list : Vector.<String>, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
+        private function _loaderCallback(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, hasDiscontinuity : Boolean, start_position : Number, program_date : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -362,29 +360,6 @@
                 // same continuity than previously, update its max PTS
                 _buffer_cur_max_pts = max_pts;
             }
-            /* detect if we are switching to a new fragment. in that case inject a metadata tag
-             * Netstream will notify the metadata back when starting playback of this fragment  
-             */
-            if (_cur_level != level || _cur_sn != sn) {
-                _cur_level = level;
-                _cur_sn = sn;
-                tag = new FLVTag(FLVTag.METADATA, first_pts, first_pts, false);
-                var data : ByteArray = new ByteArray();
-                data.objectEncoding = ObjectEncoding.AMF0;
-                data.writeObject("onHLSFragmentChange");
-                data.writeObject(level);
-                data.writeObject(sn);
-                data.writeObject(cc);
-                data.writeObject(audio_only);
-                data.writeObject(width);
-                data.writeObject(height);
-                for each (var custom_tag : String in tag_list) {
-                    data.writeObject(custom_tag);
-                }
-                tag.push(data, 0, data.length);
-                _flvTagBuffer.push(tag);
-            }
-
             /* if no seek in progress or if in segment seeking mode : push all FLV tags */
             if (!_seek_in_progress || HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
                 for each (tag in tags) {
@@ -399,6 +374,7 @@
                         switch(tag.type) {
                             case FLVTag.AAC_HEADER:
                             case FLVTag.AVC_HEADER:
+                            case FLVTag.METADATA:
                                 tag.pts = tag.dts = first_pts;
                                 _flvTagBuffer.push(tag);
                                 break;
@@ -535,7 +511,6 @@
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _seek_in_progress = true;
             _reached_vod_end = false;
-            _cur_level = _cur_sn = -1;
             if (HLSSettings.minBufferLength == -1) {
                 _buffer_threshold = _autoBufferController.minBufferLength;
             } else {
