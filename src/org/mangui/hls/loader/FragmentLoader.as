@@ -22,6 +22,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.AES;
     import org.mangui.hls.utils.PTS;
+    import org.mangui.hls.stream.TagBuffer;
 
     import flash.events.*;
     import flash.net.*;
@@ -46,8 +47,6 @@ package org.mangui.hls.loader {
         private var _manifest_just_loaded : Boolean;
         /** last loaded level. **/
         private var _last_loaded_level : int;
-        /** Callback for passing forward the fragment tags. **/
-        private var _tags_callback : Function;
         /** Quality level of the last fragment load. **/
         private var _level : int;
         /* overrided quality_manual_level level */
@@ -76,6 +75,8 @@ package org.mangui.hls.loader {
         private var _fragment_first_loaded : Boolean;
         /* demux instance */
         private var _demux : Demuxer;
+        /* tag buffer instance **/
+        private var _tagBuffer : TagBuffer;
         /* key error/reload */
         private var _key_load_error_date : Number;
         private var _key_retry_timeout : Number;
@@ -99,10 +100,11 @@ package org.mangui.hls.loader {
         private static const LOADING_KEY_IO_ERROR : int = 5;
 
         /** Create the loader. **/
-        public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController) : void {
+        public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController, tagBuffer : TagBuffer) : void {
             _hls = hls;
             _autoLevelManager = new AutoLevelController(hls);
             _audioTrackController = audioTrackController;
+            _tagBuffer = tagBuffer;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             _timer = new Timer(100, 0);
@@ -213,7 +215,7 @@ package org.mangui.hls.loader {
                             Log.warn("loading stalled: restart playback");
                         }
                         /* seek to force a restart of the playback session  */
-                        seek(-1, _tags_callback);
+                        seek(-1);
                         return;
                     }
                     break;
@@ -240,12 +242,11 @@ package org.mangui.hls.loader {
             }
         }
 
-        public function seek(position : Number, callback : Function) : void {
+        public function seek(position : Number) : void {
             // reset IO Error when seeking
             _frag_retry_count = _key_retry_count = 0;
             _frag_retry_timeout = _key_retry_timeout = 1000;
             _loading_state = LOADING_IDLE;
-            _tags_callback = callback;
             _seek_pos = position;
             _fragment_first_loaded = false;
             _frag_previous = null;
@@ -882,7 +883,7 @@ package org.mangui.hls.loader {
                         fragData.metadata_tag_injected = true;
                     }
                     // provide tags to HLSNetStream
-                    _tags_callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                    _tagBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     var processing_duration : Number = (getTimer() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
@@ -980,7 +981,7 @@ package org.mangui.hls.loader {
                         }
                         fragData.metadata_tag_injected = true;
                     }
-                    _tags_callback(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                    _tagBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     if (fragData.tags_audio_found) {
                         fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;

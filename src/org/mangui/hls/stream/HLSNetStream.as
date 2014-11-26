@@ -45,8 +45,6 @@ package org.mangui.hls.stream {
         private var _seek_position_requested : Number;
         /** real start position , retrieved from first fragment **/
         private var _seek_position_real : Number;
-        /** is a seek operation in progress ? **/
-        private var _seek_in_progress : Boolean;
         /** Current play position (relative position from beginning of sliding window) **/
         private var _playback_current_position : Number;
         /** playlist sliding (non null for live playlist) **/
@@ -126,7 +124,7 @@ package org.mangui.hls.stream {
             var playback_relative_position : Number;
             var buffer : Number = this.bufferLength;
             // Calculate the buffer and position.
-            if (_seek_in_progress) {
+            if (_seekState == HLSSeekStates.SEEKING) {
                 playback_relative_position = playback_absolute_position = _seek_position_requested;
             } else {
                 /** Absolute playback position (start position + play time) **/
@@ -141,8 +139,8 @@ package org.mangui.hls.stream {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer, _playlist_sliding_duration)));
             }
 
-            // Set playback state. no need to check buffer status if first fragment not yet received
-            if (!_seek_in_progress) {
+            // Set playback state. no need to check buffer status if seeking
+            if (_seekState != HLSSeekStates.SEEKING) {
                 // check low buffer condition
                 if (buffer < HLSSettings.lowBufferLength) {
                     if (buffer <= 0.1) {
@@ -205,7 +203,7 @@ package org.mangui.hls.stream {
             }
             // in case any data available in our FLV buffer, append into NetStream
             if (_flvTagBuffer.length) {
-                if (_seek_in_progress) {
+                if (_seekState == HLSSeekStates.SEEKING) {
                     /* this is our first injection after seek(),
                     let's flush netstream now
                     this is to avoid black screen during seek command */
@@ -220,7 +218,6 @@ package org.mangui.hls.stream {
                     super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                     // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
                     super.pause();
-                    _seek_in_progress = false;
                     // dispatch event to mimic NetStream behaviour
                     dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
                     _setSeekState(HLSSeekStates.SEEKED);
@@ -276,8 +273,8 @@ package org.mangui.hls.stream {
             return _playbackLevel;
         };
 
-        /** Add a fragment to the buffer. **/
-        private function _loaderCallback(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
+        /** append tags to NetStream **/
+        public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -330,7 +327,7 @@ package org.mangui.hls.stream {
                     }
                 }
             } else {
-                /* no seek in progress operation, whole fragment will be injected */
+                /* already found seek position, inject all tags */
                 first_pts = min_pts;
                 /* check live playlist sliding here :
                 _seek_position_real + getTotalBufferedDuration()  should be the start_position
@@ -345,8 +342,8 @@ package org.mangui.hls.stream {
             } else {
                 (_buffer_pts[continuity] as BufferPTS).max = max_pts;
             }
-            /* if no seek in progress or if in segment seeking mode : push all FLV tags */
-            if (!_seek_in_progress || HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
+            /* if already seeked and if in segment seeking mode : push all FLV tags */
+            if (_seekState == HLSSeekStates.SEEKED || HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
                 for each (tag in tags) {
                     _flvTagBuffer.push(tag);
                 }
@@ -481,7 +478,7 @@ package org.mangui.hls.stream {
         /** get Buffer Length  **/
         override public function get bufferLength() : Number {
             /* remaining buffer is total duration buffered since beginning minus playback time */
-            if (_seek_in_progress) {
+            if (_seekState == HLSSeekStates.SEEKING) {
                 return _flvTagBufferDuration;
             } else {
                 return super.bufferLength + _flvTagBufferDuration;
@@ -494,13 +491,12 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
             _fragmentLoader.stop();
-            _fragmentLoader.seek(position, _loaderCallback);
+            _fragmentLoader.seek(position);
             _flvTagBuffer = new Vector.<FLVTag>();
             _flvTagBufferDuration = _playlist_sliding_duration = 0;
             _buffer_pts = new Dictionary();
             _seek_position_requested = Math.max(position, 0);
             _seek_position_real = Number.NEGATIVE_INFINITY;
-            _seek_in_progress = true;
             _reached_vod_end = false;
             if (HLSSettings.minBufferLength == -1) {
                 _buffer_threshold = _autoBufferController.minBufferLength;

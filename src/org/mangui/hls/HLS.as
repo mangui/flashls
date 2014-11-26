@@ -1,7 +1,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls {
+package org.mangui.hls {
+    import org.mangui.hls.stream.TagBuffer;
     import org.mangui.hls.model.AudioTrack;
 
     import flash.display.Stage;
@@ -27,6 +28,7 @@
         private var _fragmentLoader : FragmentLoader;
         private var _manifestLoader : ManifestLoader;
         private var _audioTrackController : AudioTrackController;
+        private var _tagBuffer : TagBuffer;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
         /** HLS URLStream **/
@@ -40,9 +42,10 @@
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
             _audioTrackController = new AudioTrackController(this);
+            _tagBuffer = new TagBuffer(this);
             _hlsURLStream = URLStream as Class;
             // default loader
-            _fragmentLoader = new FragmentLoader(this, _audioTrackController);
+            _fragmentLoader = new FragmentLoader(this, _audioTrackController, _tagBuffer);
             _hlsNetStream = new HLSNetStream(connection, this, _fragmentLoader);
         };
 
@@ -61,6 +64,7 @@
             _fragmentLoader.dispose();
             _manifestLoader.dispose();
             _audioTrackController.dispose();
+            _tagBuffer.dispose();
             _hlsNetStream.dispose_();
             _fragmentLoader = null;
             _manifestLoader = null;
