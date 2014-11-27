@@ -250,7 +250,7 @@ package org.mangui.hls.loader {
             _seek_pos = position;
             _fragment_first_loaded = false;
             _frag_previous = null;
-            _tagBuffer.flushAll();
+            _tagBuffer.seek(position);
             _timer.start();
         }
 

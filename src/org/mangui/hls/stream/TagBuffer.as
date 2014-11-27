@@ -23,6 +23,8 @@ package org.mangui.hls.stream {
         private var _audioTags : Vector.<FLVData>;
         private var _videoTags : Vector.<FLVData>;
         private var _metaTags : Vector.<FLVData>;
+        private var _seek_pos : Number;
+        private var _seek_pos_reached : Boolean;
 
         public function TagBuffer(hls : HLS) {
             _hls = hls;
@@ -32,10 +34,16 @@ package org.mangui.hls.stream {
             _timer.start();
         }
 
+        public function seek(position : Number) : void {
+            _seek_pos = position;
+            flushAll();
+        }
+
         public function flushAll() : void {
             _audioTags = new Vector.<FLVData>();
             _videoTags = new Vector.<FLVData>();
             _metaTags = new Vector.<FLVData>();
+            _seek_pos_reached = false;
         }
 
         public function flushAudio() : void {
@@ -68,26 +76,31 @@ package org.mangui.hls.stream {
 
         /**  Timer **/
         private function _checkBuffer(e : Event) : void {
-            // check netstream buffer len
             var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
             var min_pts : Number;
             var max_pts : Number;
             var start_position : Number;
             var continuity : int;
 
-            var flvdata : FLVData;
-            while ((flvdata = shift()) != null) {
-                tags.push(flvdata.tag);
-                if (isNaN(start_position)) {
-                    start_position = flvdata.position;
-                    continuity = flvdata.continuity;
+            /* only append tags if seek position has been reached, otherwise wait for more tags to come
+             * this is to ensure that accurate seeking will work appropriately
+             */
+            if (_seek_pos_reached || max_pos >= _seek_pos) {
+                var flvdata : FLVData;
+                while ((flvdata = shift()) != null) {
+                    tags.push(flvdata.tag);
+                    if (isNaN(start_position)) {
+                        start_position = flvdata.position;
+                        continuity = flvdata.continuity;
+                    }
                 }
-            }
-            if (tags.length) {
-                min_pts = tags[0].pts;
-                max_pts = tags[tags.length - 1].pts;
-                (_hls.stream as HLSNetStream).appendTags(tags, min_pts, max_pts, continuity, start_position);
-                Log.debug("appending " + tags.length + " tags");
+                if (tags.length) {
+                    min_pts = tags[0].pts;
+                    max_pts = tags[tags.length - 1].pts;
+                    (_hls.stream as HLSNetStream).appendTags(tags, min_pts, max_pts, continuity, start_position);
+                    Log.debug("appending " + tags.length + " tags");
+                    _seek_pos_reached = true;
+                }
             }
         }
 
@@ -120,7 +133,25 @@ package org.mangui.hls.stream {
             else return _audioTags.shift();
         }
 
+        /*
+        private function get min_pos() : Number {
+        var min_pos_ : Number = Number.POSITIVE_INFINITY;
+        if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position);
+        if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position);
+        if (_audioTags.length) min_pos_ = Math.min(min_pos_, _audioTags[0].position);
+        return min_pos_;
+        }
+         */
+        private function get max_pos() : Number {
+            var max_pos_ : Number = Number.NEGATIVE_INFINITY;
+            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position);
+            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position);
+            if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position);
+            return max_pos_;
+        }
+
         public function dispose() : void {
+            flushAll();
             _hls = null;
             _timer.stop();
             _timer = null;
