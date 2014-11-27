@@ -250,6 +250,7 @@ package org.mangui.hls.loader {
             _seek_pos = position;
             _fragment_first_loaded = false;
             _frag_previous = null;
+            _tagBuffer.flushAll();
             _timer.start();
         }
 
@@ -799,7 +800,6 @@ package org.mangui.hls.loader {
                         break;
                     case FLVTag.AVC_HEADER:
                     case FLVTag.AVC_NALU:
-                    case FLVTag.DISCONTINUITY:
                         fragData.video_found = true;
                         fragData.tags_video_found = true;
                         fragData.tags_pts_min_video = Math.min(fragData.tags_pts_min_video, tag.pts);
@@ -807,6 +807,7 @@ package org.mangui.hls.loader {
                         fragData.pts_min_video = Math.min(fragData.pts_min_video, tag.pts);
                         fragData.pts_max_video = Math.max(fragData.pts_max_video, tag.pts);
                         break;
+                    case FLVTag.DISCONTINUITY:
                     case FLVTag.METADATA:
                     default:
                         break;
