@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.loader {
+    import flash.utils.getTimer;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.AutoLevelController;
     import org.mangui.hls.HLSSettings;
@@ -218,7 +219,7 @@
                 // if key loading failed
                 case  LOADING_KEY_IO_ERROR:
                     // compare current date and next retry date.
-                    if (new Date().valueOf() >= _key_load_error_date) {
+                    if (getTimer() >= _key_load_error_date) {
                         /* try to reload the key ...
                         calling _loadfragment will also reload key */
                         _loadfragment(_frag_current);
@@ -228,7 +229,7 @@
                 // if fragment loading failed
                 case LOADING_FRAGMENT_IO_ERROR:
                     // compare current date and next retry date.
-                    if (new Date().valueOf() >= _frag_load_error_date) {
+                    if (getTimer() >= _frag_load_error_date) {
                         /* try to reload the key ...
                         calling _loadfragment will also reload key */
                         _loadfragment(_frag_current);
@@ -294,7 +295,7 @@
             }
             if (HLSSettings.keyLoadMaxRetry == -1 || _key_retry_count < HLSSettings.keyLoadMaxRetry) {
                 _loading_state = LOADING_KEY_IO_ERROR;
-                _key_load_error_date = new Date().valueOf() + _key_retry_timeout;
+                _key_load_error_date = getTimer() + _key_retry_timeout;
                 CONFIG::LOGGING {
                     Log.warn("retry key load in " + _key_retry_timeout + " ms, count=" + _key_retry_count);
                 }
@@ -325,7 +326,7 @@
             }
             if (HLSSettings.fragmentLoadMaxRetry == -1 || _frag_retry_count < HLSSettings.fragmentLoadMaxRetry) {
                 _loading_state = LOADING_FRAGMENT_IO_ERROR;
-                _frag_load_error_date = new Date().valueOf() + _frag_retry_timeout;
+                _frag_load_error_date = getTimer() + _frag_retry_timeout;
                 CONFIG::LOGGING {
                     Log.warn("retry fragment load in " + _frag_retry_timeout + " ms, count=" + _frag_retry_count);
                 }
@@ -352,11 +353,11 @@
                 fragData.pts_min_audio = fragData.pts_min_video = fragData.tags_pts_min_audio = fragData.tags_pts_min_video = Number.POSITIVE_INFINITY;
                 fragData.pts_max_audio = fragData.pts_max_video = fragData.tags_pts_max_audio = fragData.tags_pts_max_video = Number.NEGATIVE_INFINITY;
                 var fragMetrics : FragmentMetrics = _frag_current.metrics;
-                fragMetrics.loading_begin_time = new Date().valueOf();
+                fragMetrics.loading_begin_time = getTimer();
 
                 // decrypt data if needed
                 if (_frag_current.decrypt_url != null) {
-                    fragMetrics.decryption_begin_time = new Date().valueOf();
+                    fragMetrics.decryption_begin_time = getTimer();
                     fragData.decryptAES = new AES(_hls.stage, _keymap[_frag_current.decrypt_url], _frag_current.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
                         Log.debug("init AES context:" + fragData.decryptAES);
@@ -398,7 +399,7 @@
                 Log.debug("loading completed");
             }
             var fragMetrics : FragmentMetrics = _frag_current.metrics;
-            fragMetrics.loading_end_time = new Date().valueOf();
+            fragMetrics.loading_end_time = getTimer();
             fragMetrics.size = fragData.bytesLoaded;
 
             var _loading_duration : uint = fragMetrics.loading_end_time - fragMetrics.loading_request_time;
@@ -417,7 +418,7 @@
             var fragData : FragmentData = _frag_current.data;
             var fragMetrics : FragmentMetrics = _frag_current.metrics;
             if (isNaN(fragMetrics.parsing_begin_time)) {
-                fragMetrics.parsing_begin_time = new Date().valueOf();
+                fragMetrics.parsing_begin_time = getTimer();
             }
             var bytes : ByteArray = fragData.bytes;
             if (_frag_current.byterange_start_offset != -1) {
@@ -453,7 +454,7 @@
 
             if (fragData.decryptAES) {
                 var fragMetrics : FragmentMetrics = _frag_current.metrics;
-                fragMetrics.decryption_end_time = new Date().valueOf();
+                fragMetrics.decryption_end_time = getTimer();
                 var decrypt_duration : Number = fragMetrics.decryption_end_time - fragMetrics.decryption_begin_time;
                 CONFIG::LOGGING {
                     Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + fragData.bytesLoaded + "/" + ((8000 * fragData.bytesLoaded / decrypt_duration) / 1024).toFixed(0) + " kb/s");
@@ -705,7 +706,7 @@
             if (_hasDiscontinuity || _switchlevel) {
                 _demux = null;
             }
-            frag.metrics.loading_request_time = new Date().valueOf();
+            frag.metrics.loading_request_time = getTimer();
             _frag_current = frag;
             if (frag.decrypt_url != null) {
                 if (_keymap[frag.decrypt_url] == undefined) {
@@ -874,7 +875,7 @@
                     }
                     // provide tags to HLSNetStream
                     _tags_callback(_level, _frag_current.continuity, _frag_current.seqnum, !fragData.video_found, fragData.video_width, fragData.video_height, _frag_current.tag_list, fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _hasDiscontinuity, min_offset, _frag_current.program_date + fragData.tag_pts_start_offset);
-                    var processing_duration : Number = (new Date().valueOf() - _frag_current.metrics.loading_request_time);
+                    var processing_duration : Number = (getTimer() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
@@ -926,7 +927,7 @@
 
             // Calculate bandwidth
             var fragMetrics : FragmentMetrics = _frag_current.metrics;
-            fragMetrics.parsing_end_time = new Date().valueOf();
+            fragMetrics.parsing_end_time = getTimer();
             CONFIG::LOGGING {
                 Log.debug("Total Process duration/length/bw:" + fragMetrics.processing_duration + "/" + fragMetrics.size + "/" + (fragMetrics.bandwidth / 1024).toFixed(0) + " kb/s");
             }
