@@ -504,6 +504,7 @@ package org.mangui.hls.loader {
         public function stop() : void {
             _stop_load();
             _timer.stop();
+            _tagBuffer.stop();
             _loading_state = LOADING_IDLE;
         }
 

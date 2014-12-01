@@ -112,7 +112,7 @@ package org.mangui.hls {
 
         /** Return the current playback position. **/
         public function get position() : Number {
-            return _hlsNetStream.position;
+            return _tagBuffer.position;
         };
 
         /** Return the current playback state. **/

@@ -45,14 +45,6 @@ package org.mangui.hls.stream {
         private var _seek_position_requested : Number;
         /** real start position , retrieved from first fragment **/
         private var _seek_position_real : Number;
-        /** Current play position (relative position from beginning of sliding window) **/
-        private var _playback_current_position : Number;
-        /** playlist sliding (non null for live playlist) **/
-        private var _playlist_sliding_duration : Number;
-        /** buffer PTS (indexed by continuity counter)  */
-        private var _buffer_pts : Dictionary;
-        /** previous buffer time. **/
-        private var _last_buffer : Number;
         /** Current playback state. **/
         private var _playbackState : String;
         /** Current seek state. **/
@@ -62,8 +54,6 @@ package org.mangui.hls.stream {
          * however if buffer gets empty, its value is moved to _buffer_min_len
          */
         private var _buffer_threshold : Number;
-        /** playlist duration **/
-        private var _playlist_duration : Number = 0;
         /** current playback level **/
         private var _playbackLevel : int;
         /** Netstream client proxy */
@@ -73,11 +63,11 @@ package org.mangui.hls.stream {
         public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader) : void {
             super(connection);
             super.bufferTime = 0.1;
+            _flvTagBufferDuration = 0;
             _hls = hls;
             _autoBufferController = new AutoBufferController(hls);
             _fragmentLoader = fragmentLoader;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _playbackState = HLSPlayStates.IDLE;
             _seekState = HLSSeekStates.IDLE;
             _timer = new Timer(100, 0);
@@ -120,25 +110,7 @@ package org.mangui.hls.stream {
 
         /** Check the bufferlength. **/
         private function _checkBuffer(e : Event) : void {
-            var playback_absolute_position : Number;
-            var playback_relative_position : Number;
             var buffer : Number = this.bufferLength;
-            // Calculate the buffer and position.
-            if (_seekState == HLSSeekStates.SEEKING) {
-                playback_relative_position = playback_absolute_position = _seek_position_requested;
-            } else {
-                /** Absolute playback position (start position + play time) **/
-                playback_absolute_position = super.time + _seek_position_real;
-                /** Relative playback position (Absolute Position - playlist sliding, non null for Live Playlist) **/
-                playback_relative_position = playback_absolute_position - _playlist_sliding_duration;
-            }
-            // only send media time event if data has changed
-            if (playback_relative_position != _playback_current_position || buffer != _last_buffer) {
-                _playback_current_position = playback_relative_position;
-                _last_buffer = buffer;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer, _playlist_sliding_duration)));
-            }
-
             // Set playback state. no need to check buffer status if seeking
             if (_seekState != HLSSeekStates.SEEKING) {
                 // check low buffer condition
@@ -254,11 +226,6 @@ package org.mangui.hls.stream {
         };
 
         /** Return the current playback state. **/
-        public function get position() : Number {
-            return _playback_current_position;
-        };
-
-        /** Return the current playback state. **/
         public function get playbackState() : String {
             return _playbackState;
         };
@@ -274,7 +241,7 @@ package org.mangui.hls.stream {
         };
 
         /** append tags to NetStream **/
-        public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
+        public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, start_position : Number) : void {
             var tag : FLVTag;
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -329,18 +296,6 @@ package org.mangui.hls.stream {
             } else {
                 /* already found seek position, inject all tags */
                 first_pts = min_pts;
-                /* check live playlist sliding here :
-                _seek_position_real + getTotalBufferedDuration()  should be the start_position
-                 * /of the new fragment if the playlist was not sliding
-                => live playlist sliding is the difference between the new start position  and this previous value */
-                _playlist_sliding_duration = (_seek_position_real + getTotalBufferedDuration()) - start_position;
-            }
-
-            // update buffer min/max table indexed with continuity counter
-            if (_buffer_pts[continuity] == undefined) {
-                _buffer_pts[continuity] = new BufferPTS(first_pts, max_pts);
-            } else {
-                (_buffer_pts[continuity] as BufferPTS).max = max_pts;
             }
             /* if already seeked and if in segment seeking mode : push all FLV tags */
             if (_seekState == HLSSeekStates.SEEKED || HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
@@ -379,28 +334,15 @@ package org.mangui.hls.stream {
             }
             _flvTagBufferDuration += (max_pts - first_pts) / 1000;
             CONFIG::LOGGING {
-                Log.debug("Loaded position/duration/sliding/cc:" + start_position.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + _playlist_sliding_duration.toFixed(2) + "/" + continuity);
+                // Log.debug("Loaded position/duration/cc:" + start_position.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + continuity);
             }
         };
-
-        /** return total buffered duration since seek() call, needed to compute live playlist sliding  */
-        private function getTotalBufferedDuration() : Number {
-            var len : Number = 0;
-            for each (var entry : BufferPTS in _buffer_pts) {
-                len += (entry.max - entry.min);
-            }
-            return len / 1000;
-        }
 
         private function _lastVODFragmentLoadedHandler(event : HLSEvent) : void {
             CONFIG::LOGGING {
                 Log.debug("last fragment loaded");
             }
             _reached_vod_end = true;
-        }
-
-        private function _playlistDurationUpdated(event : HLSEvent) : void {
-            _playlist_duration = event.duration;
         }
 
         /** Change playback state. **/
@@ -493,8 +435,7 @@ package org.mangui.hls.stream {
             _fragmentLoader.stop();
             _fragmentLoader.seek(position);
             _flvTagBuffer = new Vector.<FLVTag>();
-            _flvTagBufferDuration = _playlist_sliding_duration = 0;
-            _buffer_pts = new Dictionary();
+            _flvTagBufferDuration = 0;
             _seek_position_requested = Math.max(position, 0);
             _seek_position_real = Number.NEGATIVE_INFINITY;
             _reached_vod_end = false;
@@ -535,6 +476,10 @@ package org.mangui.hls.stream {
             return _client.delegate;
         }
 
+        public function get seekPosition() : Number {
+            return _seek_position_real;
+        }
+
         /** Stop playback. **/
         override public function close() : void {
             CONFIG::LOGGING {
@@ -551,17 +496,6 @@ package org.mangui.hls.stream {
             close();
             _autoBufferController.dispose();
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
-            _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
         }
-    }
-}
-
-class BufferPTS {
-    public var min : Number;
-    public var max : Number;
-
-    public function BufferPTS(min : Number, max : Number) {
-        this.min = min;
-        this.max = max;
     }
 }
