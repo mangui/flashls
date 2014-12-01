@@ -250,7 +250,6 @@ package org.mangui.hls.loader {
             _seek_pos = position;
             _fragment_first_loaded = false;
             _frag_previous = null;
-            _tagBuffer.seek(position);
             _timer.start();
         }
 
@@ -580,6 +579,7 @@ package org.mangui.hls.loader {
                 Log.debug("loadfirstfragment : requested position:" + position + ",seek position:" + seek_position);
             }
             position = seek_position;
+            _tagBuffer.seek(position);
 
             var frag : Fragment = _levels[level].getFragmentBeforePosition(position);
             _hasDiscontinuity = true;
