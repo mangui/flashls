@@ -76,7 +76,7 @@
                 _minBufferLength = Math.min(HLSSettings.maxBufferLength, _minBufferLength);
             }
             CONFIG::LOGGING {
-            Log.debug("AutoBufferManager:minBufferLength:" + _minBufferLength);
+            Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
             }
         };
     }
