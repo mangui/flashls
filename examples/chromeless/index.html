@@ -253,7 +253,7 @@ function listStreams(list, container) {
 function appendLog(txt)
 {
   var d = new Date();
-  var msg = '[' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() + '] ' + txt;
+  var msg = '[' + d.toString() + '] ' + txt;
   console.log(msg);
   document.getElementById("videoStatus").innerHTML += msg + "<br />";
 }
