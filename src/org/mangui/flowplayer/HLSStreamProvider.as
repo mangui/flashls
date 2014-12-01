@@ -42,6 +42,7 @@ package org.mangui.flowplayer {
         // event values
         private var _position : Number = 0;
         private var _duration : Number = 0;
+        private var _durationCapped : Number = 0;
         private var _bufferedTime : Number = 0;
         private var _videoWidth : int = -1;
         private var _videoHeight : int = -1;
@@ -101,7 +102,13 @@ package org.mangui.flowplayer {
         private function _manifestHandler(event : HLSEvent) : void {
             _duration = event.levels[_hls.startlevel].duration;
             _isManifestLoaded = true;
-            _clip.duration = _duration;
+            // only update duration if not capped
+            if (!_durationCapped) {
+                _clip.duration = _duration;
+            } else {
+                // ensure capped duration is lt real one
+                _durationCapped = Math.min(_durationCapped, _duration);
+            }
             _clip.stopLiveOnPause = false;
             /*
             var nbLevel = event.levels.length;
@@ -122,13 +129,8 @@ package org.mangui.flowplayer {
              */
             _clip.dispatch(ClipEventType.METADATA);
             _seekable = true;
-            // if (_hls.type == HLSTypes.LIVE) {
-            // _seekable = false;
-            // } else {
-            // _seekable = true;
-            // }
-            _hls.stream.play();
-            _clip.dispatch(ClipEventType.SEEK, 0);
+            _hls.stream.play(null, _clip.start);
+            _clip.dispatch(ClipEventType.SEEK, _clip.start);
             if (_pauseAfterStart) {
                 pause(new ClipEvent(ClipEventType.PAUSE));
             }
@@ -137,7 +139,19 @@ package org.mangui.flowplayer {
         private function _mediaTimeHandler(event : HLSEvent) : void {
             _position = Math.max(0, event.mediatime.position);
             _duration = event.mediatime.duration;
-            _clip.duration = _duration;
+            // only update duration if not capped
+            if (!_durationCapped) {
+                _clip.duration = _duration;
+            } else {
+                // ensure capped duration is lt real one
+                _durationCapped = Math.min(_durationCapped, _duration);
+                if (_durationCapped - _position <= 0.1) {
+                    // reach end of stream, stop playback and simulate complete event
+                    _hls.stream.close();
+                    _clip.dispatchBeforeEvent(new ClipEvent(ClipEventType.FINISH));
+                    _clip.startDispatched = false;
+                }
+            }
             _bufferedTime = event.mediatime.buffer + event.mediatime.position;
             var videoWidth : int = _video.videoWidth;
             var videoHeight : int = _video.videoHeight;
@@ -199,6 +213,7 @@ package org.mangui.flowplayer {
             }
             _hls.load(clip.completeUrl);
             _pauseAfterStart = pauseAfterStart;
+            _durationCapped = clip.duration;
             clip.type = ClipType.VIDEO;
             clip.dispatch(ClipEventType.BEGIN);
             clip.setNetStream(_hls.stream);
