@@ -1,17 +1,17 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.controller {
+package org.mangui.hls.controller {
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.event.HLSEvent;
-    
-    CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
-    }
 
-    /** Class that manages automatic min/low buffer len **/
-    public class AutoBufferController {
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+    }
+    /** Class that manages buffer threshold values (minBufferLength/lowBufferLength)
+     */
+    public class BufferThresholdController {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
         // max nb of samples used for bw checking. the bigger it is, the more conservative it is.
@@ -22,7 +22,7 @@
         private var _minBufferLength : Number;
 
         /** Create the loader. **/
-        public function AutoBufferController(hls : HLS) : void {
+        public function BufferThresholdController(hls : HLS) : void {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
@@ -36,7 +36,20 @@
         }
 
         public function get minBufferLength() : Number {
-            return _minBufferLength;
+            if (HLSSettings.minBufferLength == -1) {
+                return _minBufferLength;
+            } else {
+                return HLSSettings.minBufferLength;
+            }
+        }
+
+        public function get lowBufferLength() : Number {
+            if (HLSSettings.minBufferLength == -1) {
+                // in automode, low buffer threshold should be less than min auto buffer
+                return Math.min(minBufferLength / 2, HLSSettings.lowBufferLength);
+            } else {
+                return HLSSettings.lowBufferLength;
+            }
         }
 
         private function _manifestLoadedHandler(event : HLSEvent) : void {
@@ -76,7 +89,7 @@
                 _minBufferLength = Math.min(HLSSettings.maxBufferLength, _minBufferLength);
             }
             CONFIG::LOGGING {
-            Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
+                Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
             }
         };
     }

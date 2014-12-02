@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.stream {
-    import org.mangui.hls.controller.AutoBufferController;
+    import org.mangui.hls.controller.BufferThresholdController;
     import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.event.HLSError;
@@ -23,12 +23,21 @@ package org.mangui.hls.stream {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-    /** Class that keeps the buffer filled. **/
+    /** Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
+     * 
+     * play state transition :
+     * 				FROM								TO								condition 	
+     *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     play()/play2()/seek() called
+     *  HLSPlayStates.PLAYING_BUFFERING  	HLSPlayStates.PLAYING  				buflen > minBufferLength
+     *  HLSPlayStates.PAUSED_BUFFERING  	HLSPlayStates.PAUSED  				buflen > minBufferLength
+     *  HLSPlayStates.PLAYING  				HLSPlayStates.PLAYING_BUFFERING  	buflen < lowBufferLength
+     *  HLSPlayStates.PAUSED  				HLSPlayStates.PAUSED_BUFFERING  	buflen < lowBufferLength
+     */
     public class HLSNetStream extends NetStream {
         /** Reference to the framework controller. **/
         private var _hls : HLS;
-        /** reference to auto buffer manager */
-        private var _autoBufferController : AutoBufferController;
+        /** reference to buffer threshold controller */
+        private var _bufferThresholdController : BufferThresholdController;
         /** FLV tags buffer vector **/
         private var _flvTagBuffer : Vector.<FLVTag>;
         /** FLV tags buffer duration **/
@@ -39,17 +48,10 @@ package org.mangui.hls.stream {
         private var _reached_vod_end : Boolean;
         /** Timer used to check buffer and position. **/
         private var _timer : Timer;
-        /** requested start position **/
-        private var _seek_position_requested : Number;
         /** Current playback state. **/
         private var _playbackState : String;
         /** Current seek state. **/
         private var _seekState : String;
-        /** threshold to get out of buffering state
-         * by default it is set to _buffer_low_len
-         * however if buffer gets empty, its value is moved to _buffer_min_len
-         */
-        private var _buffer_threshold : Number;
         /** current playback level **/
         private var _playbackLevel : int;
         /** Netstream client proxy */
@@ -61,7 +63,7 @@ package org.mangui.hls.stream {
             super.bufferTime = 0.1;
             _flvTagBufferDuration = 0;
             _hls = hls;
-            _autoBufferController = new AutoBufferController(hls);
+            _bufferThresholdController = new BufferThresholdController(hls);
             _fragmentLoader = fragmentLoader;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _playbackState = HLSPlayStates.IDLE;
@@ -104,59 +106,45 @@ package org.mangui.hls.stream {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
         }
 
-        /** timer function, check NetStream state, and append tags if needed **/
+        /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
             var buffer : Number = this.bufferLength;
             // Set playback state. no need to check buffer status if seeking
             if (_seekState != HLSSeekStates.SEEKING) {
                 // check low buffer condition
-                if (buffer < HLSSettings.lowBufferLength) {
-                    if (buffer <= 0.1) {
-                        if (_reached_vod_end) {
-                            // reach end of playlist + playback complete (as buffer is empty).
-                            // stop timer, report event and switch to IDLE mode.
-                            _timer.stop();
-                            CONFIG::LOGGING {
-                                Log.debug("reached end of VOD playlist, notify playback complete");
-                            }
-                            _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
-                            _setPlaybackState(HLSPlayStates.IDLE);
-                            _setSeekState(HLSSeekStates.IDLE);
-                            return;
-                        } else {
-                            // pause Netstream in really low buffer condition
-                            super.pause();
-                            if (HLSSettings.minBufferLength == -1) {
-                                _buffer_threshold = _autoBufferController.minBufferLength;
-                            } else {
-                                _buffer_threshold = HLSSettings.minBufferLength;
-                            }
+                if (buffer <= 0.1) {
+                    if (_reached_vod_end) {
+                        // reach end of playlist + playback complete (as buffer is empty).
+                        // stop timer, report event and switch to IDLE mode.
+                        _timer.stop();
+                        CONFIG::LOGGING {
+                            Log.debug("reached end of VOD playlist, notify playback complete");
                         }
-                    }
-                    // dont switch to buffering state in case we reached end of a VOD playlist
-                    if (!_reached_vod_end) {
-                        if (_playbackState == HLSPlayStates.PLAYING) {
-                            // low buffer condition and play state. switch to play buffering state
-                            _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
-                        } else if (_playbackState == HLSPlayStates.PAUSED) {
-                            // low buffer condition and pause state. switch to paused buffering state
-                            _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
-                        }
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
+                        _setPlaybackState(HLSPlayStates.IDLE);
+                        _setSeekState(HLSSeekStates.IDLE);
+                        return;
+                    } else {
+                        // buffer <= 0.1 and not EOS, pause Netstream
+                        super.pause();
                     }
                 }
-                // in case buffer is full enough or if we have reached end of VOD playlist
-                if (buffer >= _buffer_threshold || _reached_vod_end) {
+                // if buffer len is below lowBufferLength, get into buffering state
+                if (!_reached_vod_end && buffer < _bufferThresholdController.lowBufferLength) {
+                    if (_playbackState == HLSPlayStates.PLAYING) {
+                        // low buffer condition and play state. switch to play buffering state
+                        _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
+                    } else if (_playbackState == HLSPlayStates.PAUSED) {
+                        // low buffer condition and pause state. switch to paused buffering state
+                        _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
+                    }
+                }
+                // if buffer len is above minBufferLength, get out of buffering state
+                if (buffer >= _bufferThresholdController.minBufferLength || _reached_vod_end) {
                     /* after we reach back threshold value, set it buffer low value to avoid
                      * reporting buffering state to often. using different values for low buffer / min buffer
                      * allow to fine tune this 
                      */
-                    if (HLSSettings.minBufferLength == -1) {
-                        // in automode, low buffer threshold should be less than min auto buffer
-                        _buffer_threshold = Math.min(_autoBufferController.minBufferLength / 2, HLSSettings.lowBufferLength);
-                    } else {
-                        _buffer_threshold = HLSSettings.lowBufferLength;
-                    }
-
                     // no more in low buffer state
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
@@ -214,10 +202,6 @@ package org.mangui.hls.stream {
                 }
                 // FLV tag buffer drained, reset its duration
                 _flvTagBufferDuration = 0;
-            }
-            // update buffer threshold here if needed
-            if (HLSSettings.minBufferLength == -1) {
-                _buffer_threshold = _autoBufferController.minBufferLength;
             }
         };
 
@@ -342,13 +326,9 @@ package org.mangui.hls.stream {
             _fragmentLoader.seek(position);
             _flvTagBuffer = new Vector.<FLVTag>();
             _flvTagBufferDuration = 0;
-            _seek_position_requested = Math.max(position, 0);
             _reached_vod_end = false;
-            if (HLSSettings.minBufferLength == -1) {
-                _buffer_threshold = _autoBufferController.minBufferLength;
-            } else {
-                _buffer_threshold = HLSSettings.minBufferLength;
-            }
+
+            _setSeekState(HLSSeekStates.SEEKING);
             /* if HLS was in paused state before seeking, 
              * switch to paused buffering state
              * otherwise, switch to playing buffering state
@@ -365,7 +345,6 @@ package org.mangui.hls.stream {
                 default:
                     break;
             }
-            _setSeekState(HLSSeekStates.SEEKING);
             /* always pause NetStream while seeking, even if we are in play state
              * in that case, NetStream will be resumed after first fragment loading
              */
@@ -395,7 +374,7 @@ package org.mangui.hls.stream {
 
         public function dispose_() : void {
             close();
-            _autoBufferController.dispose();
+            _bufferThresholdController.dispose();
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
         }
     }
