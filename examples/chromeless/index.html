@@ -534,7 +534,7 @@ function onError(code,url,message) {
 }
 
 function onFragmentLoaded(loadmetrics) {
-  appendLog("onFragmentLoaded(): bandwidth:" + loadmetrics.bandwidth + " level:" + loadmetrics.level);
+  appendLog("onFragmentLoaded(): bandwidth:" + (loadmetrics.bandwidth/1000).toFixed(0) + "kb/s level:" + loadmetrics.level);
 }
 function onFragmentPlaying(playmetrics) {
   appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " video_width:" + playmetrics.video_width + " video_height:" + playmetrics.video_height + " tags:" + playmetrics.tag_list);
@@ -554,7 +554,7 @@ function onPosition(timemetrics) {
 }
 
 function onState(newState) {
-  appendLog("switching state to "+ newState);
+  appendLog("switching state to "+ newState + ", bufferlen:" + getbufferLength());
   document.getElementById('mediaInfo').rows[Y_STATE].cells[X_STATE].innerHTML =  newState;
 }
 
