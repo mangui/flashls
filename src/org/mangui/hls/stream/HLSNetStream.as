@@ -125,7 +125,7 @@ package org.mangui.hls.stream {
                         _setSeekState(HLSSeekStates.IDLE);
                         return;
                     } else {
-                        // buffer <= 0.1 and not EOS, pause Netstream
+                        // buffer <= 0.1 and not EOS, pause playback
                         super.pause();
                     }
                 }
@@ -141,15 +141,11 @@ package org.mangui.hls.stream {
                 }
                 // if buffer len is above minBufferLength, get out of buffering state
                 if (buffer >= _bufferThresholdController.minBufferLength || _reached_vod_end) {
-                    /* after we reach back threshold value, set it buffer low value to avoid
-                     * reporting buffering state to often. using different values for low buffer / min buffer
-                     * allow to fine tune this 
-                     */
-                    // no more in low buffer state
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
                             Log.debug("resume playback");
                         }
+                        // resume playback in case it was paused, this can happen if buffer was in really low condition (less than 0.1s)
                         super.resume();
                         _setPlaybackState(HLSPlayStates.PLAYING);
                     } else if (_playbackState == HLSPlayStates.PAUSED_BUFFERING) {
