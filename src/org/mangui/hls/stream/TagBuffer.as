@@ -10,9 +10,11 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSMediatime;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.constant.HLSSeekStates;
+    import org.mangui.hls.constant.HLSSeekMode;
     import org.mangui.hls.utils.Log;
-    import org.mangui.hls.HLS;
     import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
 
     /*
      * intermediate FLV Tag Buffer
@@ -30,6 +32,8 @@ package org.mangui.hls.stream {
         private var _playlist_duration : Number = 0;
         /** requested start position **/
         private var _seek_position_requested : Number;
+        /** real start position , retrieved from first fragment **/
+        private var _seek_position_real : Number;
         /** start position of first injected tag **/
         private var _first_start_position : Number;
         private var _seek_pos_reached : Boolean;
@@ -138,22 +142,16 @@ package org.mangui.hls.stream {
 
         /**  Timer **/
         private function _checkBuffer(e : Event) : void {
-            var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
-            var min_pts : Number;
-            var max_pts : Number;
-            var start_position : Number;
-            var continuity : int;
-
             /* report buffer len */
             var playback_absolute_position : Number;
-            //Log.info("stream/audio/video bufferLength:" + _hls.stream.bufferLength + "/" + audioBufferLength + "/" + videoBufferLength);
+            // Log.info("stream/audio/video bufferLength:" + _hls.stream.bufferLength + "/" + audioBufferLength + "/" + videoBufferLength);
             var buffer : Number = _hls.stream.bufferLength + Math.max(audioBufferLength, videoBufferLength);
             // Calculate the buffer and position.
             if (_hls.seekState == HLSSeekStates.SEEKING) {
                 _playback_current_position = playback_absolute_position = _seek_position_requested;
             } else {
                 /** Absolute playback position (start position + play time) **/
-                playback_absolute_position = _hls.stream.time + (_hls.stream as HLSNetStream).seekPosition;
+                playback_absolute_position = _hls.stream.time + _seek_position_real;
                 /** Relative playback position (Absolute Position - playlist sliding, non null for Live Playlist) **/
                 _playback_current_position = playback_absolute_position - _playlist_sliding_duration;
             }
@@ -164,21 +162,117 @@ package org.mangui.hls.stream {
              */
             if (_seek_pos_reached || max_pos >= _seek_position_requested) {
                 var flvdata : FLVData;
+                var data : Vector.<FLVData> = new Vector.<FLVData>();
                 while ((flvdata = shift()) != null) {
-                    tags.push(flvdata.tag);
-                    if (isNaN(start_position)) {
-                        start_position = flvdata.position;
-                        continuity = flvdata.continuity;
-                    }
+                    data.push(flvdata);
                 }
-                if (tags.length) {
-                    min_pts = tags[0].pts;
-                    max_pts = tags[tags.length - 1].pts;
-                    (_hls.stream as HLSNetStream).appendTags(tags, min_pts, max_pts, start_position);
-                    Log.debug("appending " + tags.length + " tags");
+                if (!_seek_pos_reached) {
+                    data = seekFilterTags(data);
                     _seek_pos_reached = true;
                 }
+
+                var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
+                for each (flvdata in data) {
+                    tags.push(flvdata.tag);
+                }
+                if (tags.length) {
+                    (_hls.stream as HLSNetStream).appendTags(tags);
+                    Log.debug("appending " + tags.length + " tags");
+                }
             }
+        }
+
+        /* filter/tweak tags to seek accurately into the stream */
+        private function seekFilterTags(tags : Vector.<FLVData>) : Vector.<FLVData> {
+            var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
+            /* PTS of first tag that will be pushed into FLV tag buffer */
+            var first_pts : Number;
+            /* PTS of last video keyframe before requested seek position */
+            var keyframe_pts : Number;
+            /* */
+            var min_offset : Number = tags[0].position;
+            var min_pts : Number = tags[0].tag.pts;
+            /* 
+             * 
+             *    real seek       requested seek                 Frag 
+             *     position           position                    End
+             *        *------------------*-------------------------
+             *        <------------------>
+             *             seek_offset
+             *
+             * real seek position is the start offset of the first received fragment after seek command. (= fragment start offset).
+             * seek offset is the diff between the requested seek position and the real seek position
+             */
+
+            /* if requested seek position is out of this segment bounds
+             * all the segments will be pushed, first pts should be thus be min_pts
+             */
+            if (_seek_position_requested < min_offset) {
+                _seek_position_real = min_offset;
+                first_pts = min_pts;
+            } else {
+                /* if requested position is within segment bounds, determine real seek position depending on seek mode setting */
+                if (HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
+                    _seek_position_real = min_offset;
+                    first_pts = min_pts;
+                } else {
+                    /* accurate or keyframe seeking */
+                    /* seek_pts is the requested PTS seek position */
+                    var seek_pts : Number = min_pts + 1000 * (_seek_position_requested - min_offset);
+                    /* analyze fragment tags and look for PTS of last keyframe before seek position.*/
+                    keyframe_pts = min_pts;
+                    for each (var flvData : FLVData in tags) {
+                        var tag : FLVTag = flvData.tag;
+                        // look for last keyframe with pts <= seek_pts
+                        if (tag.keyframe == true && tag.pts <= seek_pts && (tag.type == FLVTag.AVC_HEADER || tag.type == FLVTag.AVC_NALU)) {
+                            keyframe_pts = tag.pts;
+                        }
+                    }
+                    if (HLSSettings.seekMode == HLSSeekMode.KEYFRAME_SEEK) {
+                        _seek_position_real = min_offset + (keyframe_pts - min_pts) / 1000;
+                        first_pts = keyframe_pts;
+                    } else {
+                        // accurate seek, to exact requested position
+                        _seek_position_real = _seek_position_requested;
+                        first_pts = seek_pts;
+                    }
+                }
+            }
+            /* if in segment seeking mode : push all FLV tags */
+            if (HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
+                filteredTags = tags;
+            } else {
+                /* keyframe / accurate seeking, we need to filter out some FLV tags */
+                for each (flvData in tags) {
+                    tag = flvData.tag;
+                    if (tag.pts >= first_pts) {
+                        filteredTags.push(flvData);
+                    } else {
+                        switch(tag.type) {
+                            case FLVTag.AAC_HEADER:
+                            case FLVTag.AVC_HEADER:
+                            case FLVTag.METADATA:
+                            case FLVTag.DISCONTINUITY:
+                                tag.pts = tag.dts = first_pts;
+                                filteredTags.push(flvData);
+                                break;
+                            case FLVTag.AVC_NALU:
+                                /* only append video tags starting from last keyframe before seek position to avoid playback artifacts
+                                 *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
+                                 *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
+                                 *  */
+                                if (tag.pts >= keyframe_pts) {
+                                    tag.pts = tag.dts = first_pts;
+                                    filteredTags.push(flvData);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+            return filteredTags;
         }
 
         private function _playlistDurationUpdated(event : HLSEvent) : void {

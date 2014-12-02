@@ -7,10 +7,8 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSMediatime;
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.constant.HLSPlayStates;
-    import org.mangui.hls.constant.HLSSeekMode;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
@@ -43,8 +41,6 @@ package org.mangui.hls.stream {
         private var _timer : Timer;
         /** requested start position **/
         private var _seek_position_requested : Number;
-        /** real start position , retrieved from first fragment **/
-        private var _seek_position_real : Number;
         /** Current playback state. **/
         private var _playbackState : String;
         /** Current seek state. **/
@@ -108,7 +104,7 @@ package org.mangui.hls.stream {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
         }
 
-        /** Check the bufferlength. **/
+        /** timer function, check NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
             var buffer : Number = this.bufferLength;
             // Set playback state. no need to check buffer status if seeking
@@ -241,100 +237,10 @@ package org.mangui.hls.stream {
         };
 
         /** append tags to NetStream **/
-        public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, start_position : Number) : void {
-            var tag : FLVTag;
-            /* PTS of first tag that will be pushed into FLV tag buffer */
-            var first_pts : Number;
-            /* PTS of last video keyframe before requested seek position */
-            var keyframe_pts : Number;
-            if (_seek_position_real == Number.NEGATIVE_INFINITY) {
-                /* 
-                 * 
-                 *    real seek       requested seek                 Frag 
-                 *     position           position                    End
-                 *        *------------------*-------------------------
-                 *        <------------------>
-                 *             seek_offset
-                 *
-                 * real seek position is the start offset of the first received fragment after seek command. (= fragment start offset).
-                 * seek offset is the diff between the requested seek position and the real seek position
-                 */
-
-                /* if requested seek position is out of this segment bounds
-                 * all the segments will be pushed, first pts should be thus be min_pts
-                 */
-                if (_seek_position_requested < start_position || _seek_position_requested >= start_position + ((max_pts - min_pts) / 1000)) {
-                    _seek_position_real = start_position;
-                    first_pts = min_pts;
-                } else {
-                    /* if requested position is within segment bounds, determine real seek position depending on seek mode setting */
-                    if (HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
-                        _seek_position_real = start_position;
-                        first_pts = min_pts;
-                    } else {
-                        /* accurate or keyframe seeking */
-                        /* seek_pts is the requested PTS seek position */
-                        var seek_pts : Number = min_pts + 1000 * (_seek_position_requested - start_position);
-                        /* analyze fragment tags and look for PTS of last keyframe before seek position.*/
-                        keyframe_pts = tags[0].pts;
-                        for each (tag in tags) {
-                            // look for last keyframe with pts <= seek_pts
-                            if (tag.keyframe == true && tag.pts <= seek_pts && (tag.type == FLVTag.AVC_HEADER || tag.type == FLVTag.AVC_NALU)) {
-                                keyframe_pts = tag.pts;
-                            }
-                        }
-                        if (HLSSettings.seekMode == HLSSeekMode.KEYFRAME_SEEK) {
-                            _seek_position_real = start_position + (keyframe_pts - min_pts) / 1000;
-                            first_pts = keyframe_pts;
-                        } else {
-                            // accurate seek, to exact requested position
-                            _seek_position_real = _seek_position_requested;
-                            first_pts = seek_pts;
-                        }
-                    }
-                }
-            } else {
-                /* already found seek position, inject all tags */
-                first_pts = min_pts;
-            }
-            /* if already seeked and if in segment seeking mode : push all FLV tags */
-            if (_seekState == HLSSeekStates.SEEKED || HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
-                for each (tag in tags) {
-                    _flvTagBuffer.push(tag);
-                }
-            } else {
-                /* keyframe / accurate seeking, we need to filter out some FLV tags */
-                for each (tag in tags) {
-                    if (tag.pts >= first_pts) {
-                        _flvTagBuffer.push(tag);
-                    } else {
-                        switch(tag.type) {
-                            case FLVTag.AAC_HEADER:
-                            case FLVTag.AVC_HEADER:
-                            case FLVTag.METADATA:
-                            case FLVTag.DISCONTINUITY:
-                                tag.pts = tag.dts = first_pts;
-                                _flvTagBuffer.push(tag);
-                                break;
-                            case FLVTag.AVC_NALU:
-                                /* only append video tags starting from last keyframe before seek position to avoid playback artifacts
-                                 *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
-                                 *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
-                                 *  */
-                                if (tag.pts >= keyframe_pts) {
-                                    tag.pts = tag.dts = first_pts;
-                                    _flvTagBuffer.push(tag);
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
-            }
-            _flvTagBufferDuration += (max_pts - first_pts) / 1000;
-            CONFIG::LOGGING {
-                // Log.debug("Loaded position/duration/cc:" + start_position.toFixed(2) + "/" + ((max_pts - min_pts) / 1000).toFixed(2) + "/" + continuity);
+        public function appendTags(tags : Vector.<FLVTag>) : void {
+            _flvTagBufferDuration += (tags[tags.length - 1].pts - tags[0].pts) / 1000;
+            for each (var tag : FLVTag in tags) {
+                _flvTagBuffer.push(tag);
             }
         };
 
@@ -437,7 +343,6 @@ package org.mangui.hls.stream {
             _flvTagBuffer = new Vector.<FLVTag>();
             _flvTagBufferDuration = 0;
             _seek_position_requested = Math.max(position, 0);
-            _seek_position_real = Number.NEGATIVE_INFINITY;
             _reached_vod_end = false;
             if (HLSSettings.minBufferLength == -1) {
                 _buffer_threshold = _autoBufferController.minBufferLength;
@@ -474,10 +379,6 @@ package org.mangui.hls.stream {
 
         public override function get client() : Object {
             return _client.delegate;
-        }
-
-        public function get seekPosition() : Number {
-            return _seek_position_real;
         }
 
         /** Stop playback. **/
