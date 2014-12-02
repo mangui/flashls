@@ -129,8 +129,8 @@ package org.mangui.flowplayer {
              */
             _clip.dispatch(ClipEventType.METADATA);
             _seekable = true;
-            // real seek position : add clip.start offset
-            _hls.stream.play(null, _clip.start);
+            // real seek position : add clip.start offset. if not defined, use -1 to fix seeking issue on live playlist
+            _hls.stream.play(null, (_clip.start == 0) ? -1 : _clip.start);
             _clip.dispatch(ClipEventType.SEEK, 0);
             if (_pauseAfterStart) {
                 pause(new ClipEvent(ClipEventType.PAUSE));
@@ -138,14 +138,16 @@ package org.mangui.flowplayer {
         };
 
         private function _mediaTimeHandler(event : HLSEvent) : void {
-            _position = Math.max(0, event.mediatime.position) - _clip.start;
+            _position = Math.max(0, event.mediatime.position - _clip.start) ;
             _duration = event.mediatime.duration - _clip.start;
             // only update duration if not capped
             if (!_durationCapped) {
                 _clip.duration = _duration;
+                _bufferedTime = Math.min(event.mediatime.buffer + _position, _duration);
             } else {
                 // ensure capped duration is lt real one
                 _durationCapped = Math.min(_durationCapped, _duration);
+                _bufferedTime = Math.min(event.mediatime.buffer + _position, _durationCapped);
                 if (_durationCapped - _position <= 0.1) {
                     // reach end of stream, stop playback and simulate complete event
                     _hls.stream.close();
@@ -153,7 +155,6 @@ package org.mangui.flowplayer {
                     _clip.startDispatched = false;
                 }
             }
-            _bufferedTime = Math.min(event.mediatime.buffer + _position, _clip.duration) ;
             var videoWidth : int = _video.videoWidth;
             var videoHeight : int = _video.videoHeight;
             if (videoWidth && videoHeight) {
@@ -211,6 +212,8 @@ package org.mangui.flowplayer {
             _clip = clip;
             CONFIG::LOGGING {
                 Log.info("load()" + clip.completeUrl);
+                Log.info("clip.start:" + clip.start);
+                Log.info("clip.duration:" + clip.duration);
             }
             _hls.load(clip.completeUrl);
             _pauseAfterStart = pauseAfterStart;
