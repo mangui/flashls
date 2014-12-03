@@ -37,8 +37,6 @@ package org.mangui.hls.stream {
         /** start position of first injected tag **/
         private var _first_start_position : Number;
         private var _seek_pos_reached : Boolean;
-        /** Current play position (relative position from beginning of sliding window) **/
-        private var _playback_current_position : Number;
         /** playlist sliding (non null for live playlist) **/
         private var _playlist_sliding_duration : Number;
         /** buffer PTS (indexed by continuity counter)  */
