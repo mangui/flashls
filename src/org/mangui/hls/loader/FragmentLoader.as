@@ -833,17 +833,6 @@ package org.mangui.hls.loader {
                 }
 
                 if (fragData.tag_pts_min != Number.POSITIVE_INFINITY && fragData.tag_pts_max != Number.NEGATIVE_INFINITY) {
-                    var max_offset : Number = _frag_current.start_time + fragData.tag_pts_end_offset / 1000;
-                    // in case of cold start/seek use case,
-                    if (!_fragment_first_loaded ) {
-                        /* ensure buffer max offset is greater than requested seek position. 
-                         * this will avoid issues with accurate seeking feature */
-                        if (_seek_pos > max_offset) {
-                            // cannot do progressive buffering until we have enough data to reach requested seek offset
-                            return;
-                        }
-                    }
-
                     if (_pts_analyzing == true) {
                         _pts_analyzing = false;
                         _levels[_level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);
