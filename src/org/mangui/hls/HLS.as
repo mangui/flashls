@@ -46,7 +46,7 @@ package org.mangui.hls {
             _hlsURLStream = URLStream as Class;
             // default loader
             _fragmentLoader = new FragmentLoader(this, _audioTrackController, _tagBuffer);
-            _hlsNetStream = new HLSNetStream(connection, this, _fragmentLoader);
+            _hlsNetStream = new HLSNetStream(connection, this, _fragmentLoader, _tagBuffer);
         };
 
         /** Forward internal errors. **/

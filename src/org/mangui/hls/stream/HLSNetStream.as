@@ -44,6 +44,8 @@ package org.mangui.hls.stream {
         private var _flvTagBufferDuration : Number;
         /** The fragment loader. **/
         private var _fragmentLoader : FragmentLoader;
+        /** FLV Tag Buffer . **/
+        private var _tagBuffer : TagBuffer;
         /** means that last fragment of a VOD playlist has been loaded */
         private var _reached_vod_end : Boolean;
         /** Timer used to check buffer and position. **/
@@ -58,13 +60,14 @@ package org.mangui.hls.stream {
         private var _client : HLSNetStreamClient;
 
         /** Create the buffer. **/
-        public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader) : void {
+        public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader, tagBuffer : TagBuffer) : void {
             super(connection);
             super.bufferTime = 0.1;
             _flvTagBufferDuration = 0;
             _hls = hls;
             _bufferThresholdController = new BufferThresholdController(hls);
             _fragmentLoader = fragmentLoader;
+            _tagBuffer = tagBuffer;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _playbackState = HLSPlayStates.IDLE;
             _seekState = HLSSeekStates.IDLE;
@@ -307,9 +310,9 @@ package org.mangui.hls.stream {
         override public function get bufferLength() : Number {
             /* remaining buffer is total duration buffered since beginning minus playback time */
             if (_seekState == HLSSeekStates.SEEKING) {
-                return _flvTagBufferDuration;
+                return _flvTagBufferDuration + _tagBuffer.bufferLength;
             } else {
-                return super.bufferLength + _flvTagBufferDuration;
+                return super.bufferLength + _flvTagBufferDuration + _tagBuffer.bufferLength;
             }
         };
 

@@ -127,9 +127,18 @@ package org.mangui.hls.stream {
             _timer.start();
         }
 
-        /** Return the current playback state. **/
+        /** Return current media position **/
         public function get position() : Number {
-            return _playback_current_position;
+            switch(_hls.seekState) {
+                case HLSSeekStates.SEEKING:
+                    return  _seek_position_requested;
+                case HLSSeekStates.SEEKED:
+                    /** Relative playback position = (Absolute Position(seek position + play time) - playlist sliding, non null for Live Playlist) **/
+                    return _seek_position_real + _hls.stream.time - _playlist_sliding_duration;
+                case HLSSeekStates.IDLE:
+                default:
+                    return 0;
+            }
         };
 
         public function get audioBufferLength() : Number {
@@ -140,22 +149,14 @@ package org.mangui.hls.stream {
             return getbuflen(_videoTags);
         }
 
+        public function get bufferLength() : Number {
+            return Math.max(audioBufferLength, videoBufferLength);
+        }
+
         /**  Timer **/
         private function _checkBuffer(e : Event) : void {
-            /* report buffer len */
-            var playback_absolute_position : Number;
-            // Log.info("stream/audio/video bufferLength:" + _hls.stream.bufferLength + "/" + audioBufferLength + "/" + videoBufferLength);
-            var buffer : Number = _hls.stream.bufferLength + Math.max(audioBufferLength, videoBufferLength);
-            // Calculate the buffer and position.
-            if (_hls.seekState == HLSSeekStates.SEEKING) {
-                _playback_current_position = playback_absolute_position = _seek_position_requested;
-            } else {
-                /** Absolute playback position (start position + play time) **/
-                playback_absolute_position = _hls.stream.time + _seek_position_real;
-                /** Relative playback position (Absolute Position - playlist sliding, non null for Live Playlist) **/
-                _playback_current_position = playback_absolute_position - _playlist_sliding_duration;
-            }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(_playback_current_position, _playlist_duration, buffer, _playlist_sliding_duration)));
+            // dispatch media time event
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(position, _playlist_duration, _hls.stream.bufferLength, _playlist_sliding_duration)));
 
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
