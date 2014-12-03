@@ -11,11 +11,13 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.constant.HLSSeekMode;
-    import org.mangui.hls.utils.Log;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
 
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+    }
     /*
      * intermediate FLV Tag Buffer
      *  input : FLV tags retrieved from different fragment loaders (video/alt-audio...)
@@ -176,7 +178,9 @@ package org.mangui.hls.stream {
                 }
                 if (tags.length) {
                     (_hls.stream as HLSNetStream).appendTags(tags);
-                    Log.debug("appending " + tags.length + " tags");
+                    CONFIG::LOGGING {
+                        Log.debug2("appending " + tags.length + " tags");
+                    }
                 }
             }
         }
