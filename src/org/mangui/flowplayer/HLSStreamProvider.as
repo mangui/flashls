@@ -40,9 +40,7 @@ package org.mangui.flowplayer {
         /** reference to the framework. **/
         private var _hls : HLS;
         // event values
-        private var _position : Number = 0;
         private var _duration : Number = 0;
-        private var _bufferedTime : Number = 0;
         private var _videoWidth : int = -1;
         private var _videoHeight : int = -1;
         private var _isManifestLoaded : Boolean = false;
@@ -135,10 +133,8 @@ package org.mangui.flowplayer {
         };
 
         private function _mediaTimeHandler(event : HLSEvent) : void {
-            _position = Math.max(0, event.mediatime.position);
             _duration = event.mediatime.duration;
             _clip.duration = _duration;
-            _bufferedTime = event.mediatime.buffer + event.mediatime.position;
             var videoWidth : int = _video.videoWidth;
             var videoHeight : int = _video.videoHeight;
             if (videoWidth && videoHeight) {
@@ -292,8 +288,6 @@ package org.mangui.flowplayer {
                 Log.info("seek()");
             }
             _hls.stream.seek(seconds);
-            _position = seconds;
-            _bufferedTime = seconds;
             _clip.dispatch(ClipEventType.SEEK, seconds);
             return;
         }
@@ -309,7 +303,7 @@ package org.mangui.flowplayer {
          * Current playhead time in seconds.
          */
         public function get time() : Number {
-            return _position;
+            return _hls.position;
         }
 
         /**
@@ -323,7 +317,7 @@ package org.mangui.flowplayer {
          * The point in timeline where the buffered data region ends, in seconds.
          */
         public function get bufferEnd() : Number {
-            return _bufferedTime;
+            return _hls.position + _hls.stream.bufferLength;
         }
 
         /**
