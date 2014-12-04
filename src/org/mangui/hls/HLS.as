@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
-    import org.mangui.hls.stream.TagBuffer;
+    import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.model.AudioTrack;
 
     import flash.display.Stage;
@@ -28,7 +28,7 @@ package org.mangui.hls {
         private var _fragmentLoader : FragmentLoader;
         private var _manifestLoader : ManifestLoader;
         private var _audioTrackController : AudioTrackController;
-        private var _tagBuffer : TagBuffer;
+        private var _streamBuffer : StreamBuffer;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
         /** HLS URLStream **/
@@ -42,11 +42,11 @@ package org.mangui.hls {
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
             _audioTrackController = new AudioTrackController(this);
-            _tagBuffer = new TagBuffer(this);
+            _streamBuffer = new StreamBuffer(this);
             _hlsURLStream = URLStream as Class;
             // default loader
-            _fragmentLoader = new FragmentLoader(this, _audioTrackController, _tagBuffer);
-            _hlsNetStream = new HLSNetStream(connection, this, _fragmentLoader, _tagBuffer);
+            _fragmentLoader = new FragmentLoader(this, _audioTrackController, _streamBuffer);
+            _hlsNetStream = new HLSNetStream(connection, this, _fragmentLoader, _streamBuffer);
         };
 
         /** Forward internal errors. **/
@@ -64,7 +64,7 @@ package org.mangui.hls {
             _fragmentLoader.dispose();
             _manifestLoader.dispose();
             _audioTrackController.dispose();
-            _tagBuffer.dispose();
+            _streamBuffer.dispose();
             _hlsNetStream.dispose_();
             _fragmentLoader = null;
             _manifestLoader = null;
@@ -112,7 +112,7 @@ package org.mangui.hls {
 
         /** Return the current playback position. **/
         public function get position() : Number {
-            return _tagBuffer.position;
+            return _streamBuffer.position;
         };
 
         /** Return the current playback state. **/

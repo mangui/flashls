@@ -22,7 +22,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.AES;
     import org.mangui.hls.utils.PTS;
-    import org.mangui.hls.stream.TagBuffer;
+    import org.mangui.hls.stream.StreamBuffer;
 
     import flash.events.*;
     import flash.net.*;
@@ -75,8 +75,8 @@ package org.mangui.hls.loader {
         private var _fragment_first_loaded : Boolean;
         /* demux instance */
         private var _demux : Demuxer;
-        /* tag buffer instance **/
-        private var _tagBuffer : TagBuffer;
+        /* stream buffer instance **/
+        private var _streamBuffer : StreamBuffer;
         /* key error/reload */
         private var _key_load_error_date : Number;
         private var _key_retry_timeout : Number;
@@ -100,11 +100,11 @@ package org.mangui.hls.loader {
         private static const LOADING_KEY_IO_ERROR : int = 5;
 
         /** Create the loader. **/
-        public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController, tagBuffer : TagBuffer) : void {
+        public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController, streamBuffer : StreamBuffer) : void {
             _hls = hls;
             _autoLevelManager = new AutoLevelController(hls);
             _audioTrackController = audioTrackController;
-            _tagBuffer = tagBuffer;
+            _streamBuffer = streamBuffer;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             _timer = new Timer(100, 0);
@@ -504,7 +504,7 @@ package org.mangui.hls.loader {
         public function stop() : void {
             _stop_load();
             _timer.stop();
-            _tagBuffer.stop();
+            _streamBuffer.stop();
             _loading_state = LOADING_IDLE;
         }
 
@@ -580,7 +580,7 @@ package org.mangui.hls.loader {
                 Log.debug("loadfirstfragment : requested position:" + position + ",seek position:" + seek_position);
             }
             position = seek_position;
-            _tagBuffer.seek(position);
+            _streamBuffer.seek(position);
 
             var frag : Fragment = _levels[level].getFragmentBeforePosition(position);
             _hasDiscontinuity = true;
@@ -874,7 +874,7 @@ package org.mangui.hls.loader {
                         fragData.metadata_tag_injected = true;
                     }
                     // provide tags to HLSNetStream
-                    _tagBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                    _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     var processing_duration : Number = (getTimer() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
@@ -972,7 +972,7 @@ package org.mangui.hls.loader {
                         }
                         fragData.metadata_tag_injected = true;
                     }
-                    _tagBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                    _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                     if (fragData.tags_audio_found) {
                         fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;

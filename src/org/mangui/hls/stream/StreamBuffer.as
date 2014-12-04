@@ -23,7 +23,7 @@ package org.mangui.hls.stream {
      *  input : FLV tags retrieved from different fragment loaders (video/alt-audio...)
      *  output : provide muxed FLV tags to HLSNetStream
      */
-    public class TagBuffer {
+    public class StreamBuffer {
         private var _hls : HLS;
         /** Timer used to process FLV tags. **/
         private var _timer : Timer;
@@ -46,7 +46,7 @@ package org.mangui.hls.stream {
         private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 1.0;
         private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 2.0;
 
-        public function TagBuffer(hls : HLS) {
+        public function StreamBuffer(hls : HLS) {
             _hls = hls;
             flushAll();
             _timer = new Timer(100, 0);
