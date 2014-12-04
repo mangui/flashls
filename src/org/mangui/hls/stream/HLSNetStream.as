@@ -112,6 +112,7 @@ package org.mangui.hls.stream {
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
             var buffer : Number = this.bufferLength;
+            //Log.info("netstream/total:" + super.bufferLength + "/" + this.bufferLength);
             // Set playback state. no need to check buffer status if seeking
             if (_seekState != HLSSeekStates.SEEKING) {
                 // check low buffer condition
@@ -308,11 +309,14 @@ package org.mangui.hls.stream {
 
         /** get Buffer Length  **/
         override public function get bufferLength() : Number {
-            /* remaining buffer is total duration buffered since beginning minus playback time */
+            return netStreamBufferLength + _tagBuffer.bufferLength;
+        };
+
+        public function get netStreamBufferLength() : Number {
             if (_seekState == HLSSeekStates.SEEKING) {
-                return _flvTagBufferDuration + _tagBuffer.bufferLength;
+                return _flvTagBufferDuration;
             } else {
-                return super.bufferLength + _flvTagBufferDuration + _tagBuffer.bufferLength;
+                return super.bufferLength + _flvTagBufferDuration;
             }
         };
 

@@ -43,6 +43,8 @@ package org.mangui.hls.stream {
         private var _playlist_sliding_duration : Number;
         /** buffer PTS (indexed by continuity counter)  */
         private var _buffer_pts : Dictionary;
+        private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 1.0;
+        private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 2.0;
 
         public function TagBuffer(hls : HLS) {
             _hls = hls;
@@ -161,25 +163,31 @@ package org.mangui.hls.stream {
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
              */
-            if (_seek_pos_reached || max_pos >= _seek_position_requested) {
-                var flvdata : FLVData;
-                var data : Vector.<FLVData> = new Vector.<FLVData>();
-                while ((flvdata = shift()) != null) {
-                    data.push(flvdata);
+
+            var duration : Number = 0;
+            if (_seek_pos_reached) {
+                var netStreamBuffer : Number = (_hls.stream as HLSNetStream).netStreamBufferLength;
+                if (netStreamBuffer < MAX_NETSTREAM_BUFFER_SIZE) {
+                    duration = MAX_NETSTREAM_BUFFER_SIZE - netStreamBuffer;
                 }
+            } else if (max_pos >= _seek_position_requested) {
+                duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - _first_start_position;
+            }
+            if (duration > 0) {
+                var data : Vector.<FLVData> = shiftmultipletags(duration);
                 if (!_seek_pos_reached) {
                     data = seekFilterTags(data);
                     _seek_pos_reached = true;
                 }
 
                 var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
-                for each (flvdata in data) {
+                for each (var flvdata : FLVData in data) {
                     tags.push(flvdata.tag);
                 }
                 if (tags.length) {
                     (_hls.stream as HLSNetStream).appendTags(tags);
                     CONFIG::LOGGING {
-                        Log.debug2("appending " + tags.length + " tags");
+                        Log.debug2("appending " + tags.length + " tags, max duration:" + duration);
                     }
                 }
             }
@@ -311,13 +319,12 @@ package org.mangui.hls.stream {
         }
 
         /*
-         * 
-         * return next tag from queue, using the following priority :
+         * retrieve queue containing next tag to be injected, using the following priority :
          * smallest continuity
          * then smallest pts
          * then metadata then video then audio tags
          */
-        private function shift() : FLVData {
+        private function getnextqueue() : Vector.<FLVData> {
             if (_videoTags.length == 0 && _audioTags.length == 0 && _metaTags.length == 0)
                 return null;
 
@@ -334,9 +341,22 @@ package org.mangui.hls.stream {
             if (_audioTags.length && _audioTags[0].continuity == continuity) pts = Math.min(pts, _audioTags[0].tag.pts);
 
             // for this continuity counter, this PTS, prioritize tags with the following order : metadata/video/audio
-            if (_metaTags.length && _metaTags[0].continuity == continuity && _metaTags[0].tag.pts == pts) return _metaTags.shift();
-            if (_videoTags.length && _videoTags[0].continuity == continuity && _videoTags[0].tag.pts == pts) return _videoTags.shift();
-            else return _audioTags.shift();
+            if (_metaTags.length && _metaTags[0].continuity == continuity && _metaTags[0].tag.pts == pts) return _metaTags;
+            if (_videoTags.length && _videoTags[0].continuity == continuity && _videoTags[0].tag.pts == pts) return _videoTags;
+            else return _audioTags;
+        }
+
+        private function shiftmultipletags(max_duration : Number) : Vector.<FLVData> {
+            var tags : Vector.<FLVData>=  new Vector.<FLVData>();
+            var queue : Vector.<FLVData> = getnextqueue();
+            if (queue) {
+                var continuity : int = queue[0].continuity;
+                var min_pts : Number = queue[0].tag.pts;
+                while ((queue = getnextqueue()) != null && queue[0].continuity == continuity && (queue[0].tag.pts - min_pts) / 1000 < max_duration ) {
+                    tags.push(queue.shift());
+                }
+            }
+            return tags;
         }
 
         /*
