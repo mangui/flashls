@@ -167,7 +167,7 @@ package org.mangui.hls.stream {
             var duration : Number = 0;
             if (_seek_pos_reached) {
                 var netStreamBuffer : Number = (_hls.stream as HLSNetStream).netStreamBufferLength;
-                if (netStreamBuffer < MAX_NETSTREAM_BUFFER_SIZE) {
+                if (netStreamBuffer < MIN_NETSTREAM_BUFFER_SIZE) {
                     duration = MAX_NETSTREAM_BUFFER_SIZE - netStreamBuffer;
                 }
             } else if (max_pos >= _seek_position_requested) {
