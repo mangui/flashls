@@ -38,10 +38,6 @@ package org.mangui.hls.stream {
         private var _hls : HLS;
         /** reference to buffer threshold controller */
         private var _bufferThresholdController : BufferThresholdController;
-        /** FLV tags buffer vector **/
-        private var _flvTagBuffer : Vector.<FLVTag>;
-        /** FLV tags buffer duration **/
-        private var _flvTagBufferDuration : Number;
         /** The fragment loader. **/
         private var _fragmentLoader : FragmentLoader;
         /** FLV Tag Buffer . **/
@@ -63,7 +59,6 @@ package org.mangui.hls.stream {
         public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader, streamBuffer : StreamBuffer) : void {
             super(connection);
             super.bufferTime = 0.1;
-            _flvTagBufferDuration = 0;
             _hls = hls;
             _bufferThresholdController = new BufferThresholdController(hls);
             _fragmentLoader = fragmentLoader;
@@ -112,12 +107,15 @@ package org.mangui.hls.stream {
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
             var buffer : Number = this.bufferLength;
-            //Log.info("netstream/total:" + super.bufferLength + "/" + this.bufferLength);
+            // Log.info("netstream/total:" + super.bufferLength + "/" + this.bufferLength);
             // Set playback state. no need to check buffer status if seeking
             if (_seekState != HLSSeekStates.SEEKING) {
                 // check low buffer condition
                 if (buffer <= 0.1) {
                     if (_reached_vod_end) {
+                        // Last tag done? Then append sequence end.
+                        super.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
+                        super.appendBytes(new ByteArray());
                         // reach end of playlist + playback complete (as buffer is empty).
                         // stop timer, report event and switch to IDLE mode.
                         _timer.stop();
@@ -157,52 +155,6 @@ package org.mangui.hls.stream {
                     }
                 }
             }
-            // in case any data available in our FLV buffer, append into NetStream
-            if (_flvTagBuffer.length) {
-                if (_seekState == HLSSeekStates.SEEKING) {
-                    /* this is our first injection after seek(),
-                    let's flush netstream now
-                    this is to avoid black screen during seek command */
-                    super.close();
-                    CONFIG::FLASH_11_1 {
-                        try {
-                            super.useHardwareDecoder = HLSSettings.useHardwareVideoDecoder;
-                        } catch(e : Error) {
-                        }
-                    }
-                    super.play(null);
-                    super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
-                    // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
-                    super.pause();
-                    // dispatch event to mimic NetStream behaviour
-                    dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
-                    _setSeekState(HLSSeekStates.SEEKED);
-                }
-                // CONFIG::LOGGING {
-                // Log.debug("appending data into NetStream");
-                // }
-                while (0 < _flvTagBuffer.length) {
-                    var tagBuffer : FLVTag = _flvTagBuffer.shift();
-                    // append data until we drain our _buffer
-                    try {
-                        if (tagBuffer.type == FLVTag.DISCONTINUITY) {
-                            super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
-                            super.appendBytes(FLVTag.getHeader());
-                        }
-                        super.appendBytes(tagBuffer.data);
-                    } catch (error : Error) {
-                        var hlsError : HLSError = new HLSError(HLSError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
-                    }
-                    // Last tag done? Then append sequence end.
-                    if (_reached_vod_end && _flvTagBuffer.length == 0) {
-                        super.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
-                        super.appendBytes(new ByteArray());
-                    }
-                }
-                // FLV tag buffer drained, reset its duration
-                _flvTagBufferDuration = 0;
-            }
         };
 
         /** Return the current playback state. **/
@@ -222,9 +174,39 @@ package org.mangui.hls.stream {
 
         /** append tags to NetStream **/
         public function appendTags(tags : Vector.<FLVTag>) : void {
-            _flvTagBufferDuration += (tags[tags.length - 1].pts - tags[0].pts) / 1000;
-            for each (var tag : FLVTag in tags) {
-                _flvTagBuffer.push(tag);
+            if (_seekState == HLSSeekStates.SEEKING) {
+                /* this is our first injection after seek(),
+                let's flush netstream now
+                this is to avoid black screen during seek command */
+                super.close();
+                CONFIG::FLASH_11_1 {
+                    try {
+                        super.useHardwareDecoder = HLSSettings.useHardwareVideoDecoder;
+                    } catch(e : Error) {
+                    }
+                }
+                super.play(null);
+                super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
+                // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
+                super.pause();
+            }
+            // append all tags
+            for each (var tagBuffer : FLVTag in tags) {
+                try {
+                    if (tagBuffer.type == FLVTag.DISCONTINUITY) {
+                        super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
+                        super.appendBytes(FLVTag.getHeader());
+                    }
+                    super.appendBytes(tagBuffer.data);
+                } catch (error : Error) {
+                    var hlsError : HLSError = new HLSError(HLSError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                }
+            }
+            if (_seekState == HLSSeekStates.SEEKING) {
+                // dispatch event to mimic NetStream behaviour
+                dispatchEvent(new NetStatusEvent(NetStatusEvent.NET_STATUS, false, false, {code:"NetStream.Seek.Notify", level:"status"}));
+                _setSeekState(HLSSeekStates.SEEKED);
             }
         };
 
@@ -314,9 +296,9 @@ package org.mangui.hls.stream {
 
         public function get netStreamBufferLength() : Number {
             if (_seekState == HLSSeekStates.SEEKING) {
-                return _flvTagBufferDuration;
+                return 0;
             } else {
-                return super.bufferLength + _flvTagBufferDuration;
+                return super.bufferLength;
             }
         };
 
@@ -327,8 +309,6 @@ package org.mangui.hls.stream {
             }
             _fragmentLoader.stop();
             _fragmentLoader.seek(position);
-            _flvTagBuffer = new Vector.<FLVTag>();
-            _flvTagBufferDuration = 0;
             _reached_vod_end = false;
 
             _setSeekState(HLSSeekStates.SEEKING);
