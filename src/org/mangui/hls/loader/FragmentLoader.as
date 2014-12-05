@@ -98,6 +98,7 @@ package org.mangui.hls.loader {
         private static const LOADING_STALLED : int = 3;
         private static const LOADING_FRAGMENT_IO_ERROR : int = 4;
         private static const LOADING_KEY_IO_ERROR : int = 5;
+        private static const LOADING_COMPLETED : int = 6;
 
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController, streamBuffer : StreamBuffer) : void {
@@ -206,18 +207,17 @@ package org.mangui.hls.loader {
                             _loading_state = _loadnextfragment(_level, _frag_previous);
                         }
                     }
-                    if (_loading_state == LOADING_STALLED) {
-                        /* next consecutive fragment not found:
-                        it could happen on live playlist :
-                        - if bandwidth available is lower than lowest quality needed bandwidth 
-                        - after long pause */
-                        CONFIG::LOGGING {
-                            Log.warn("loading stalled: restart playback");
-                        }
-                        /* seek to force a restart of the playback session  */
-                        seek(-1);
-                        return;
+                    break;
+                case LOADING_STALLED:
+                    /* next consecutive fragment not found:
+                    it could happen on live playlist :
+                    - if bandwidth available is lower than lowest quality needed bandwidth 
+                    - after long pause */
+                    CONFIG::LOGGING {
+                        Log.warn("loading stalled: restart playback");
                     }
+                    /* seek to force a restart of the playback session  */
+                    seek(-1);
                     break;
                 // if key loading failed
                 case  LOADING_KEY_IO_ERROR:
@@ -237,6 +237,16 @@ package org.mangui.hls.loader {
                         calling _loadfragment will also reload key */
                         _loadfragment(_frag_current);
                         _loading_state = LOADING_IN_PROGRESS;
+                    }
+                    break;
+                case LOADING_COMPLETED:
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
+                    // stop loading timer as well, as no other fragments can be loaded
+                    _timer.stop();
+                    break;
+                default:
+                    CONFIG::LOGGING {
+                        Log.error("invalid loading state:" + _loading_state);
                     }
                     break;
             }
@@ -648,13 +658,14 @@ package org.mangui.hls.loader {
 
             if (_pts_analyzing == false) {
                 if (last_seqnum == _levels[level].end_seqnum) {
-                    // if last segment was last fragment of VOD playlist, notify last fragment loaded event, and return
+                    // if last segment of level already loaded, return
                     if (_hls.type == HLSTypes.VOD) {
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
-                        // stop loading timer as well, as no other fragments can be loaded
-                        _timer.stop();
+                        // if VOD playlist, loading is completed
+                        return LOADING_COMPLETED;
+                    } else {
+                        // if live playlist, loading is pending on manifest update
+                        return LOADING_WAITING_LEVEL_UPDATE;
                     }
-                    return LOADING_WAITING_LEVEL_UPDATE;
                 } else {
                     // if previous segment is not the last one, increment it to get new seqnum
                     new_seqnum = last_seqnum + 1;
