@@ -119,6 +119,9 @@ package org.mangui.hls.stream {
                     // remember position of first tag injected after seek. it will be used for playlist sliding computation
                     _first_start_position = start_position;
                 }
+                /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms 
+                 */
+                _timer.start();
             }
             // update buffer min/max table indexed with continuity counter
             if (_buffer_pts[continuity] == undefined) {
@@ -126,7 +129,6 @@ package org.mangui.hls.stream {
             } else {
                 (_buffer_pts[continuity] as BufferPTS).max = max_pts;
             }
-            _timer.start();
         }
 
         /** Return current media position **/
@@ -185,10 +187,10 @@ package org.mangui.hls.stream {
                     tags.push(flvdata.tag);
                 }
                 if (tags.length) {
-                    (_hls.stream as HLSNetStream).appendTags(tags);
                     CONFIG::LOGGING {
                         Log.debug2("appending " + tags.length + " tags, max duration:" + duration);
                     }
+                    (_hls.stream as HLSNetStream).appendTags(tags);
                 }
             }
         }
