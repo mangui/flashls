@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.stream {
     import org.mangui.hls.controller.BufferThresholdController;
-    import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
@@ -38,8 +37,6 @@ package org.mangui.hls.stream {
         private var _hls : HLS;
         /** reference to buffer threshold controller */
         private var _bufferThresholdController : BufferThresholdController;
-        /** The fragment loader. **/
-        private var _fragmentLoader : FragmentLoader;
         /** FLV Tag Buffer . **/
         private var _streamBuffer : StreamBuffer;
         /** means that last fragment of a VOD playlist has been loaded */
@@ -56,12 +53,11 @@ package org.mangui.hls.stream {
         private var _client : HLSNetStreamClient;
 
         /** Create the buffer. **/
-        public function HLSNetStream(connection : NetConnection, hls : HLS, fragmentLoader : FragmentLoader, streamBuffer : StreamBuffer) : void {
+        public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
             super(connection);
             super.bufferTime = 0.1;
             _hls = hls;
             _bufferThresholdController = new BufferThresholdController(hls);
-            _fragmentLoader = fragmentLoader;
             _streamBuffer = streamBuffer;
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _playbackState = HLSPlayStates.IDLE;
@@ -307,8 +303,7 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
-            _fragmentLoader.stop();
-            _fragmentLoader.seek(position);
+            _streamBuffer.seek(position);
             _reached_vod_end = false;
 
             _setSeekState(HLSSeekStates.SEEKING);
@@ -349,8 +344,8 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:close");
             }
             super.close();
+            _streamBuffer.stop();
             _timer.stop();
-            _fragmentLoader.stop();
             _setPlaybackState(HLSPlayStates.IDLE);
             _setSeekState(HLSSeekStates.IDLE);
         };

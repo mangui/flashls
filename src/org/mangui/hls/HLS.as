@@ -17,7 +17,6 @@ package org.mangui.hls {
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.loader.ManifestLoader;
     import org.mangui.hls.controller.AudioTrackController;
-    import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.stream.HLSNetStream;
 
     CONFIG::LOGGING {
@@ -25,7 +24,6 @@ package org.mangui.hls {
     }
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
-        private var _fragmentLoader : FragmentLoader;
         private var _manifestLoader : ManifestLoader;
         private var _audioTrackController : AudioTrackController;
         private var _streamBuffer : StreamBuffer;
@@ -35,6 +33,10 @@ package org.mangui.hls {
         private var _hlsURLStream : Class;
         private var _client : Object = {};
         private var _stage : Stage;
+        /* level handling */
+        private var _level : int;
+        /* overrided quality_manual_level level */
+        private var _manual_level : int = -1;
 
         /** Create and connect all components. **/
         public function HLS() {
@@ -42,11 +44,11 @@ package org.mangui.hls {
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
             _audioTrackController = new AudioTrackController(this);
-            _streamBuffer = new StreamBuffer(this);
+            _streamBuffer = new StreamBuffer(this, _audioTrackController);
             _hlsURLStream = URLStream as Class;
             // default loader
-            _fragmentLoader = new FragmentLoader(this, _audioTrackController, _streamBuffer);
-            _hlsNetStream = new HLSNetStream(connection, this, _fragmentLoader, _streamBuffer);
+            _hlsNetStream = new HLSNetStream(connection, this, _streamBuffer);
+            this.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
         };
 
         /** Forward internal errors. **/
@@ -60,13 +62,16 @@ package org.mangui.hls {
             return super.dispatchEvent(event);
         };
 
+        private function _levelSwitchHandler(event : HLSEvent) : void {
+            _level = event.level;
+        };
+
         public function dispose() : void {
-            _fragmentLoader.dispose();
+            this.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _manifestLoader.dispose();
             _audioTrackController.dispose();
             _streamBuffer.dispose();
             _hlsNetStream.dispose_();
-            _fragmentLoader = null;
             _manifestLoader = null;
             _audioTrackController = null;
             _hlsNetStream = null;
@@ -92,17 +97,22 @@ package org.mangui.hls {
 
         /** Return the quality level of last loaded fragment **/
         public function get level() : int {
-            return _fragmentLoader.level;
+            return _level;
         };
 
         /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set level(level : int) : void {
-            _fragmentLoader.level = level;
+            _manual_level = level;
         };
 
         /* check if we are in automatic level selection mode */
         public function get autolevel() : Boolean {
-            return _fragmentLoader.autolevel;
+            return (_manual_level == -1);
+        };
+
+        /* return manual level */
+        public function get manuallevel() : int {
+            return _manual_level;
         };
 
         /** Return a Vector of quality level **/

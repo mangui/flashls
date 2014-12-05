@@ -14,6 +14,8 @@ package org.mangui.hls.stream {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.loader.FragmentLoader;
+    import org.mangui.hls.controller.AudioTrackController;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -25,6 +27,7 @@ package org.mangui.hls.stream {
      */
     public class StreamBuffer {
         private var _hls : HLS;
+        private var _fragmentLoader : FragmentLoader;
         /** Timer used to process FLV tags. **/
         private var _timer : Timer;
         private var _audioTags : Vector.<FLVData>;
@@ -46,8 +49,9 @@ package org.mangui.hls.stream {
         private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 1.0;
         private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 2.0;
 
-        public function StreamBuffer(hls : HLS) {
+        public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController) {
             _hls = hls;
+            _fragmentLoader = new FragmentLoader(hls, audioTrackController, this);
             flushAll();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
@@ -58,16 +62,21 @@ package org.mangui.hls.stream {
             flushAll();
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _timer.stop();
+            _fragmentLoader.dispose();
+            _fragmentLoader = null;
             _hls = null;
             _timer = null;
         }
 
         public function stop() : void {
+            _fragmentLoader.stop();
             flushAll();
         }
 
         public function seek(position : Number) : void {
             _seek_position_requested = position;
+            _fragmentLoader.stop();
+            _fragmentLoader.seek(position);
             flushAll();
             _timer.start();
         }
