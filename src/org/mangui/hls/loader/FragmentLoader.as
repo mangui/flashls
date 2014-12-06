@@ -561,28 +561,6 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug("loadfirstfragment(" + position + ")");
             }
-            var seek_position : Number;
-            if (_hls.type == HLSTypes.LIVE) {
-                /* follow HLS spec :
-                If the EXT-X-ENDLIST tag is not present
-                and the client intends to play the media regularly (i.e. in playlist
-                order at the nominal playback rate), the client SHOULD NOT
-                choose a segment which starts less than three target durations from
-                the end of the Playlist file */
-                var maxLivePosition : Number = Math.max(0, _levels[level].duration - 3 * _levels[level].averageduration);
-                if (position == -1) {
-                    // seek 3 fragments from end
-                    seek_position = maxLivePosition;
-                } else {
-                    seek_position = Math.min(position, maxLivePosition);
-                }
-            } else {
-                seek_position = Math.max(position, 0);
-            }
-            CONFIG::LOGGING {
-                Log.debug("loadfirstfragment : requested position:" + position + ",seek position:" + seek_position);
-            }
-            position = seek_position;
             var frag : Fragment = _levels[level].getFragmentBeforePosition(position);
             _hasDiscontinuity = true;
             CONFIG::LOGGING {

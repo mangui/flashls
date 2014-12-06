@@ -11,6 +11,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.constant.HLSSeekMode;
+    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
@@ -73,26 +74,44 @@ package org.mangui.hls.stream {
             flushAll();
         }
 
+        /* 
+         * if requested position is available in StreamBuffer, trim buffer 
+         * and inject from that point
+         * if seek position out of buffer, ask fragment loader to retrieve data 
+         */
         public function seek(position : Number) : void {
-            _seek_position_requested = position;
+            // compute _seek_position_requested based on position and playlist type
+            if (_hls.type == HLSTypes.LIVE) {
+                /* follow HLS spec :
+                If the EXT-X-ENDLIST tag is not present
+                and the client intends to play the media regularly (i.e. in playlist
+                order at the nominal playback rate), the client SHOULD NOT
+                choose a segment which starts less than three target durations from
+                the end of the Playlist file */
+                var maxLivePosition : Number = Math.max(0, _hls.levels[_hls.level].duration - 3 * _hls.levels[_hls.level].averageduration);
+                if (position == -1) {
+                    // seek 3 fragments from end
+                    _seek_position_requested = maxLivePosition;
+                } else {
+                    _seek_position_requested = Math.min(position, maxLivePosition);
+                }
+            } else {
+                _seek_position_requested = Math.max(position, 0);
+            }
+            CONFIG::LOGGING {
+                Log.debug("seek : requested position:" + position + ",seek position:" + _seek_position_requested);
+            }
+            // check if we can seek in buffer
+            // if (_seek_position_requested >= min_pos && _seek_position_requested <= max_pos) {
+            // _seek_pos_reached = false;
+            // _first_start_position = min_pos;
+            // } else {
+            // seek position is out of buffer : load from fragment
             _fragmentLoader.stop();
             _fragmentLoader.seek(position);
             flushAll();
+            // }
             _timer.start();
-        }
-
-        public function flushAll() : void {
-            _audioTags = new Vector.<FLVData>();
-            _videoTags = new Vector.<FLVData>();
-            _metaTags = new Vector.<FLVData>();
-            _buffer_pts = new Dictionary();
-            _seek_pos_reached = false;
-            _playlist_sliding_duration = 0;
-            _first_start_position = -1;
-        }
-
-        public function flushAudio() : void {
-            _audioTags = new Vector.<FLVData>();
         }
 
         public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
@@ -154,11 +173,26 @@ package org.mangui.hls.stream {
             }
         };
 
-        public function get audioBufferLength() : Number {
+        private function flushAll() : void {
+            _audioTags = new Vector.<FLVData>();
+            _videoTags = new Vector.<FLVData>();
+            _metaTags = new Vector.<FLVData>();
+            _buffer_pts = new Dictionary();
+            _seek_pos_reached = false;
+            _playlist_sliding_duration = 0;
+            _first_start_position = -1;
+        }
+
+        /*
+        private function flushAudio() : void {
+        _audioTags = new Vector.<FLVData>();
+        }
+         */
+        private function get audioBufferLength() : Number {
             return getbuflen(_audioTags);
         }
 
-        public function get videoBufferLength() : Number {
+        private function get videoBufferLength() : Number {
             return getbuflen(_videoTags);
         }
 
