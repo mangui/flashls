@@ -34,6 +34,8 @@ package org.mangui.hls.stream {
         private var _audioTags : Vector.<FLVData>;
         private var _videoTags : Vector.<FLVData>;
         private var _metaTags : Vector.<FLVData>;
+        private var _aacHeader : FLVData;
+        private var _avcHeader : FLVData;
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
         /** requested start position **/
@@ -102,15 +104,15 @@ package org.mangui.hls.stream {
                 Log.debug("seek : requested position:" + position + ",seek position:" + _seek_position_requested);
             }
             // check if we can seek in buffer
-            // if (_seek_position_requested >= min_pos && _seek_position_requested <= max_pos) {
-            // _seek_pos_reached = false;
-            // _first_start_position = min_pos;
-            // } else {
-            // seek position is out of buffer : load from fragment
-            _fragmentLoader.stop();
-            _fragmentLoader.seek(position);
-            flushAll();
-            // }
+            if (_seek_position_requested >= min_pos && _seek_position_requested <= max_pos) {
+                _seek_pos_reached = false;
+                _first_start_position = min_pos;
+            } else {
+                // seek position is out of buffer : load from fragment
+                _fragmentLoader.stop();
+                _fragmentLoader.seek(position);
+                flushAll();
+            }
             _timer.start();
         }
 
@@ -120,11 +122,13 @@ package org.mangui.hls.stream {
                 var tagData : FLVData = new FLVData(tag, position, continuity);
                 switch(tag.type) {
                     case FLVTag.AAC_HEADER:
+                        _aacHeader = tagData;
                     case FLVTag.AAC_RAW:
                     case FLVTag.MP3_RAW:
                         _audioTags.push(tagData);
                         break;
                     case FLVTag.AVC_HEADER:
+                        _avcHeader = tagData;
                     case FLVTag.AVC_NALU:
                         _videoTags.push(tagData);
                         break;
@@ -240,6 +244,8 @@ package org.mangui.hls.stream {
 
         /* filter/tweak tags to seek accurately into the stream */
         private function seekFilterTags(tags : Vector.<FLVData>) : Vector.<FLVData> {
+            var aacHeaderfound : Boolean = false;
+            var avcHeaderfound : Boolean = false;
             var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
             /* PTS of first tag that will be pushed into FLV tag buffer */
             var first_pts : Number;
@@ -301,19 +307,24 @@ package org.mangui.hls.stream {
                 /* keyframe / accurate seeking, we need to filter out some FLV tags */
                 for each (flvData in tags) {
                     tag = flvData.tag;
+                    if (tag.type == FLVTag.AAC_HEADER) {
+                        aacHeaderfound = true;
+                    } else if (tag.type == FLVTag.AVC_HEADER) {
+                        avcHeaderfound = true;
+                    }
                     if (tag.pts >= first_pts) {
                         filteredTags.push(flvData);
                     } else {
                         switch(tag.type) {
                             case FLVTag.AAC_HEADER:
                             case FLVTag.AVC_HEADER:
-                            case FLVTag.METADATA:
                             case FLVTag.DISCONTINUITY:
                                 tag.pts = tag.dts = first_pts;
                                 filteredTags.push(flvData);
                                 break;
                             case FLVTag.AVC_NALU:
-                                /* only append video tags starting from last keyframe before seek position to avoid playback artifacts
+                            case FLVTag.METADATA:
+                                /* only append video and metadata tags starting from last keyframe before seek position to avoid playback artifacts
                                  *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
                                  *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
                                  *  */
@@ -327,6 +338,14 @@ package org.mangui.hls.stream {
                         }
                     }
                 }
+            }
+            if (aacHeaderfound == false && _aacHeader != null) {
+                _aacHeader.tag.pts = first_pts;
+                filteredTags.unshift(_aacHeader);
+            }
+            if (avcHeaderfound == false && _avcHeader != null) {
+                _avcHeader.tag.pts = first_pts;
+                filteredTags.unshift(_avcHeader);
             }
             return filteredTags;
         }
@@ -404,15 +423,14 @@ package org.mangui.hls.stream {
             return tags;
         }
 
-        /*
         private function get min_pos() : Number {
-        var min_pos_ : Number = Number.POSITIVE_INFINITY;
-        if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position);
-        if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position);
-        if (_audioTags.length) min_pos_ = Math.min(min_pos_, _audioTags[0].position);
-        return min_pos_;
+            var min_pos_ : Number = Number.POSITIVE_INFINITY;
+            if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position);
+            if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position);
+            if (_audioTags.length) min_pos_ = Math.min(min_pos_, _audioTags[0].position);
+            return min_pos_;
         }
-         */
+
         private function get max_pos() : Number {
             var max_pos_ : Number = Number.NEGATIVE_INFINITY;
             if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position);
