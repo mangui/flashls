@@ -46,7 +46,7 @@ package org.mangui.hls.stream {
         private var _first_start_position : Number;
         private var _seek_pos_reached : Boolean;
         /** playlist sliding (non null for live playlist) **/
-        private var _playlist_sliding_duration : Number;
+        private var _time_sliding : Number;
         /** buffer PTS (indexed by continuity counter)  */
         private var _buffer_pts : Dictionary;
         private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 1.0;
@@ -118,7 +118,7 @@ package org.mangui.hls.stream {
         public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
             for each (var tag : FLVTag in tags) {
                 var position : Number = start_position + (tag.pts - min_pts) / 1000;
-                var tagData : FLVData = new FLVData(tag, position, continuity);
+                var tagData : FLVData = new FLVData(tag, position, _time_sliding, continuity);
                 switch(tag.type) {
                     case FLVTag.AAC_HEADER:
                         _aacHeader = tagData;
@@ -143,8 +143,8 @@ package org.mangui.hls.stream {
              * /of the new fragment if the playlist was not sliding
             => live playlist sliding is the difference between the new start position  and this previous value */
             if (_hls.seekState == HLSSeekStates.SEEKED) {
-                //Log.info("_playlist_sliding_duration/_first_start_position/getTotalBufferedDuration/start pos:" + _playlist_sliding_duration + "/" + _first_start_position + "/" + getTotalBufferedDuration() + "/" + start_position);
-                _playlist_sliding_duration = (_first_start_position + getTotalBufferedDuration()) - start_position;
+                // Log.info("_time_sliding/_first_start_position/getTotalBufferedDuration/start pos:" + _time_sliding + "/" + _first_start_position + "/" + getTotalBufferedDuration() + "/" + start_position);
+                _time_sliding = (_first_start_position + getTotalBufferedDuration()) - start_position;
             } else {
                 if (_first_start_position == -1) {
                     // remember position of first tag injected after seek. it will be used for playlist sliding computation
@@ -169,7 +169,7 @@ package org.mangui.hls.stream {
                     return  _seek_position_requested;
                 case HLSSeekStates.SEEKED:
                     /** Relative playback position = (Absolute Position(seek position + play time) - playlist sliding, non null for Live Playlist) **/
-                    return _seek_position_real + _hls.stream.time - _playlist_sliding_duration;
+                    return _seek_position_real + _hls.stream.time - _time_sliding;
                 case HLSSeekStates.IDLE:
                 default:
                     return 0;
@@ -182,7 +182,7 @@ package org.mangui.hls.stream {
             _metaTags = new Vector.<FLVData>();
             _buffer_pts = new Dictionary();
             _seek_pos_reached = false;
-            _playlist_sliding_duration = 0;
+            _time_sliding = 0;
             _first_start_position = -1;
         }
 
@@ -214,7 +214,7 @@ package org.mangui.hls.stream {
         /**  Timer **/
         private function _checkBuffer(e : Event) : void {
             // dispatch media time event
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(position, _playlist_duration, _hls.stream.bufferLength, _playlist_sliding_duration)));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(position, _playlist_duration, _hls.stream.bufferLength, _time_sliding)));
 
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
@@ -259,7 +259,7 @@ package org.mangui.hls.stream {
             /* PTS of last video keyframe before requested seek position */
             var keyframe_pts : Number;
             /* */
-            var min_offset : Number = tags[0].position;
+            var min_offset : Number = tags[0].position - (_time_sliding - tags[0].sliding );
             var min_pts : Number = tags[0].tag.pts;
             /* 
              * 
@@ -432,17 +432,17 @@ package org.mangui.hls.stream {
 
         private function get min_pos() : Number {
             var min_pos_ : Number = Number.POSITIVE_INFINITY;
-            if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position);
-            if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position);
-            if (_audioTags.length) min_pos_ = Math.min(min_pos_, _audioTags[0].position);
+            if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position - (_time_sliding - _metaTags[0].sliding ));
+            if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position - (_time_sliding - _videoTags[0].sliding ));
+            if (_audioTags.length) min_pos_ = Math.min(min_pos_, _audioTags[0].position - (_time_sliding - _audioTags[0].sliding ));
             return min_pos_;
         }
 
         private function get max_pos() : Number {
             var max_pos_ : Number = Number.NEGATIVE_INFINITY;
-            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position);
-            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position);
-            if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position);
+            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[0].sliding ));
+            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[0].sliding ));
+            if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[0].sliding ));
             return max_pos_;
         }
     }
@@ -454,11 +454,13 @@ import org.mangui.hls.flv.FLVTag;
 class FLVData {
     public var tag : FLVTag;
     public var position : Number;
+    public var sliding : Number;
     public var continuity : int;
 
-    public function FLVData(tag : FLVTag, position : Number, continuity : int) {
+    public function FLVData(tag : FLVTag, position : Number, sliding : Number, continuity : int) {
         this.tag = tag;
         this.position = position;
+        this.sliding = sliding;
         this.continuity = continuity;
     }
 }
