@@ -34,6 +34,9 @@ package org.mangui.hls.stream {
         private var _audioTags : Vector.<FLVData>;
         private var _videoTags : Vector.<FLVData>;
         private var _metaTags : Vector.<FLVData>;
+        private var _audioIdx : uint;
+        private var _videoIdx : uint;
+        private var _metaIdx : uint;
         private var _aacHeader : FLVData;
         private var _avcHeader : FLVData;
         /** playlist duration **/
@@ -43,7 +46,6 @@ package org.mangui.hls.stream {
         /** real start position , retrieved from first fragment **/
         private var _seek_position_real : Number;
         /** start position of first injected tag **/
-        private var _first_start_position : Number;
         private var _seek_pos_reached : Boolean;
         /** playlist sliding (non null for live playlist) **/
         private var _time_sliding : Number;
@@ -101,11 +103,12 @@ package org.mangui.hls.stream {
                 _seek_position_requested = Math.max(position, 0);
             }
             CONFIG::LOGGING {
-                Log.debug("seek : requested position:" + position + ",seek position:" + _seek_position_requested);
+                Log.debug("seek : requested position:" + position.toFixed(2) + ",seek position:" + _seek_position_requested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
             }
             // check if we can seek in buffer
             if (_seek_position_requested >= min_pos && _seek_position_requested <= max_pos) {
                 _seek_pos_reached = false;
+                _audioIdx = _videoIdx = _metaIdx = 0;
             } else {
                 // seek position is out of buffer : load from fragment
                 _fragmentLoader.stop();
@@ -143,15 +146,12 @@ package org.mangui.hls.stream {
              * /of the new fragment if the playlist was not sliding
             => live playlist sliding is the difference between the new start position  and this previous value */
             if (_hls.seekState == HLSSeekStates.SEEKED) {
-                // Log.info("_time_sliding/_first_start_position/getTotalBufferedDuration/start pos:" + _time_sliding + "/" + _first_start_position + "/" + getTotalBufferedDuration() + "/" + start_position);
-                _time_sliding = (_first_start_position + getTotalBufferedDuration()) - start_position;
-            } else {
-                if (_first_start_position == -1) {
-                    // remember position of first tag injected after seek. it will be used for playlist sliding computation
-                    _first_start_position = start_position;
+                if ( _hls.type == HLSTypes.LIVE) {
+                    // Log.info("_time_sliding/_first_start_position/getTotalBufferedDuration/start pos:" + _time_sliding + "/" + _first_start_position + "/" + getTotalBufferedDuration() + "/" + start_position);
+                    _time_sliding = (min_pos + getTotalBufferedDuration()) - start_position;
                 }
-                /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms 
-                 */
+            } else {
+                /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
                 _timer.start();
             }
             // update buffer min/max table indexed with continuity counter
@@ -180,10 +180,10 @@ package org.mangui.hls.stream {
             _audioTags = new Vector.<FLVData>();
             _videoTags = new Vector.<FLVData>();
             _metaTags = new Vector.<FLVData>();
+            _audioIdx = _videoIdx = _metaIdx = 0;
             _buffer_pts = new Dictionary();
             _seek_pos_reached = false;
             _time_sliding = 0;
-            _first_start_position = -1;
         }
 
         /*
@@ -192,11 +192,11 @@ package org.mangui.hls.stream {
         }
          */
         private function get audioBufferLength() : Number {
-            return getbuflen(_audioTags);
+            return getbuflen(_audioTags, _audioIdx);
         }
 
         private function get videoBufferLength() : Number {
-            return getbuflen(_videoTags);
+            return getbuflen(_videoTags, _videoIdx);
         }
 
         public function get bufferLength() : Number {
@@ -226,8 +226,15 @@ package org.mangui.hls.stream {
                 if (netStreamBuffer < MIN_NETSTREAM_BUFFER_SIZE) {
                     duration = MAX_NETSTREAM_BUFFER_SIZE - netStreamBuffer;
                 }
-            } else if (max_pos >= _seek_position_requested) {
-                duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - _first_start_position;
+            } else {
+                /* seek position not reached yet. 
+                 * check if buffer max position is greater than requested seek position
+                 * if it is the case, then we can start injecting tags in NetStream
+                 */
+                if (max_pos >= _seek_position_requested) {
+                    // inject enough tags to reach seek position
+                    duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - min_pos;
+                }
             }
             if (duration > 0) {
                 var data : Vector.<FLVData> = shiftmultipletags(duration);
@@ -242,7 +249,9 @@ package org.mangui.hls.stream {
                 }
                 if (tags.length) {
                     CONFIG::LOGGING {
-                        Log.debug2("appending " + tags.length + " tags, max duration:" + duration);
+                        var t0 : Number = data[0].position - (_time_sliding - data[0].sliding );
+                        var t1 : Number = data[data.length - 1].position - (_time_sliding - data[data.length - 1].sliding );
+                        Log.debug2("appending " + tags.length + " tags, start/end :" + t0.toFixed(2) + "/" + t1.toFixed(2));
                     }
                     (_hls.stream as HLSNetStream).appendTags(tags);
                 }
@@ -326,8 +335,11 @@ package org.mangui.hls.stream {
                             case FLVTag.AAC_HEADER:
                             case FLVTag.AVC_HEADER:
                             case FLVTag.DISCONTINUITY:
-                                tag.pts = tag.dts = first_pts;
-                                filteredTags.push(flvData);
+                                // as we need to adjust tag PTS, we need to clone the tag to keep the original tag untouched (this tag is kept in the main buffer
+                                var tagclone : FLVTag = tag.clone();
+                                tagclone.pts = tagclone.dts = first_pts;
+                                var dataclone : FLVData = new FLVData(tagclone, flvData.position, flvData.sliding, flvData.continuity);
+                                filteredTags.push(dataclone);
                                 break;
                             case FLVTag.AVC_NALU:
                             case FLVTag.METADATA:
@@ -336,8 +348,11 @@ package org.mangui.hls.stream {
                                  *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
                                  *  */
                                 if (tag.pts >= keyframe_pts) {
-                                    tag.pts = tag.dts = first_pts;
-                                    filteredTags.push(flvData);
+                                    // as we need to adjust tag PTS, we need to clone the tag to keep the original tag untouched (this tag is kept in the main buffer
+                                    tagclone = tag.clone();
+                                    tagclone.pts = tagclone.dts = first_pts;
+                                    dataclone = new FLVData(tagclone, flvData.position, flvData.sliding, flvData.continuity);
+                                    filteredTags.push(dataclone);
                                 }
                                 break;
                             default:
@@ -346,14 +361,16 @@ package org.mangui.hls.stream {
                     }
                 }
             }
+            /*
             if (aacHeaderfound == false && _aacHeader != null) {
-                _aacHeader.tag.pts = first_pts;
-                filteredTags.unshift(_aacHeader);
+            _aacHeader.tag.pts = first_pts;
+            filteredTags.unshift(_aacHeader);
             }
             if (avcHeaderfound == false && _avcHeader != null) {
-                _avcHeader.tag.pts = first_pts;
-                filteredTags.unshift(_avcHeader);
+            _avcHeader.tag.pts = first_pts;
+            filteredTags.unshift(_avcHeader);
             }
+             */
             return filteredTags;
         }
 
@@ -361,13 +378,14 @@ package org.mangui.hls.stream {
             _playlist_duration = event.duration;
         }
 
-        private function getbuflen(tags : Vector.<FLVData>) : Number {
+        private function getbuflen(tags : Vector.<FLVData>, startIdx : uint) : Number {
             var min_pts : Number = 0;
             var max_pts : Number = 0;
             var continuity : int = -1;
             var len : Number = 0;
 
-            for each (var data : FLVData in tags) {
+            for (var i : uint = startIdx; i < tags.length; i++) {
+                var data : FLVData = tags[i];
                 if (data.continuity != continuity) {
                     len += (max_pts - min_pts);
                     min_pts = data.tag.pts;
@@ -395,37 +413,40 @@ package org.mangui.hls.stream {
          * then smallest pts
          * then metadata then video then audio tags
          */
-        private function getnextqueue() : Vector.<FLVData> {
+        private function getnexttag() : FLVData {
             if (_videoTags.length == 0 && _audioTags.length == 0 && _metaTags.length == 0)
                 return null;
 
             var continuity : int = int.MAX_VALUE;
             // find smallest continuity counter
-            if (_metaTags.length) continuity = Math.min(continuity, _metaTags[0].continuity);
-            if (_videoTags.length) continuity = Math.min(continuity, _videoTags[0].continuity);
-            if (_audioTags.length) continuity = Math.min(continuity, _audioTags[0].continuity);
+            if (_metaTags.length > _metaIdx) continuity = Math.min(continuity, _metaTags[_metaIdx].continuity);
+            if (_videoTags.length > _videoIdx) continuity = Math.min(continuity, _videoTags[_videoIdx].continuity);
+            if (_audioTags.length > _audioIdx) continuity = Math.min(continuity, _audioTags[_audioIdx].continuity);
 
             var pts : Number = Number.MAX_VALUE;
             // for this continuity counter, find smallest PTS
-            if (_metaTags.length && _metaTags[0].continuity == continuity) pts = Math.min(pts, _metaTags[0].tag.pts);
-            if (_videoTags.length && _videoTags[0].continuity == continuity) pts = Math.min(pts, _videoTags[0].tag.pts);
-            if (_audioTags.length && _audioTags[0].continuity == continuity) pts = Math.min(pts, _audioTags[0].tag.pts);
+            if ((_metaTags.length > _metaIdx) && _metaTags[_metaIdx].continuity == continuity) pts = Math.min(pts, _metaTags[_metaIdx].tag.pts);
+            if ((_videoTags.length > _videoIdx) && _videoTags[_videoIdx].continuity == continuity) pts = Math.min(pts, _videoTags[_videoIdx].tag.pts);
+            if ((_audioTags.length > _audioIdx) && _audioTags[_audioIdx].continuity == continuity) pts = Math.min(pts, _audioTags[_audioIdx].tag.pts);
 
             // for this continuity counter, this PTS, prioritize tags with the following order : metadata/video/audio
-            if (_metaTags.length && _metaTags[0].continuity == continuity && _metaTags[0].tag.pts == pts) return _metaTags;
-            if (_videoTags.length && _videoTags[0].continuity == continuity && _videoTags[0].tag.pts == pts) return _videoTags;
-            else return _audioTags;
+            if ((_metaTags.length > _metaIdx) && _metaTags[_metaIdx].continuity == continuity && _metaTags[_metaIdx].tag.pts == pts) return _metaTags[_metaIdx++];
+            if ((_videoTags.length > _videoIdx) && _videoTags[_videoIdx].continuity == continuity && _videoTags[_videoIdx].tag.pts == pts) return _videoTags[_videoIdx++];
+            else return _audioTags[_audioIdx++];
         }
 
         private function shiftmultipletags(max_duration : Number) : Vector.<FLVData> {
             var tags : Vector.<FLVData>=  new Vector.<FLVData>();
-            var queue : Vector.<FLVData> = getnextqueue();
-            if (queue) {
-                var continuity : int = queue[0].continuity;
-                var min_pts : Number = queue[0].tag.pts;
-                while ((queue = getnextqueue()) != null && queue[0].continuity == continuity && (queue[0].tag.pts - min_pts) / 1000 < max_duration ) {
-                    tags.push(queue.shift());
-                }
+            var tag : FLVData = getnexttag();
+            if (tag) {
+                var min_offset : Number = tag.position + tag.sliding;
+                do {
+                    tags.push(tag);
+                    var tag_offset : Number = tag.position + tag.sliding;
+                    if (tag_offset - min_offset > max_duration) {
+                        break;
+                    }
+                } while ((tag = getnexttag()) != null);
             }
             return tags;
         }
@@ -440,9 +461,9 @@ package org.mangui.hls.stream {
 
         private function get max_pos() : Number {
             var max_pos_ : Number = Number.NEGATIVE_INFINITY;
-            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[0].sliding ));
-            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[0].sliding ));
-            if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[0].sliding ));
+            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[_metaIdx].sliding ));
+            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoIdx].sliding ));
+            if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[_audioIdx].sliding ));
             return max_pos_;
         }
     }
