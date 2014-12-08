@@ -324,7 +324,7 @@ package org.mangui.hls.stream {
                     break;
             }
             /* always pause NetStream while seeking, even if we are in play state
-             * in that case, NetStream will be resumed after first fragment loading
+             * in that case, NetStream will be resumed during next call to appendTags()
              */
             super.pause();
             _timer.start();
