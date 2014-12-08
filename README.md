@@ -20,6 +20,7 @@ The plugin is compatible with the following players:
     - Accurate seeking to exact requested position
     - Key frame based seeking (nearest key frame)
     - Segment based seeking (beginning of segment)
+    - ability to seek in buffer and back buffer without redownloading segments
   - Timed Metadata for HTTP Live Streaming (in ID3 format, carried in MPEG2-TS, as defined in https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/HTTP_Live_Streaming_Metadata_Spec/HTTP_Live_Streaming_Metadata_Spec.pdf)
   - AES-128 decryption
   - Buffer progress report
@@ -50,7 +51,8 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_minbufferlength` (default -1) - Minimum buffer length in _seconds_ that needs to be reached before playback can start (after seeking) or restart (in case of empty buffer)
     - If set to `-1` some heuristics based on past metrics are used to define an accurate value that should prevent buffer to stall
   - `hls_lowbufferlength` (default 3) - Low buffer threshold in _seconds_. When crossing down this threshold, HLS will switch to buffering state, usually the player will report this buffering state through a rotating icon. Playback will still continue.
-  - `hls_maxbufferlength` (default 60) - Maximum buffer length in _seconds_ (0 means infinite buffering)
+  - `hls_maxbufferlength` (default 300) - Maximum buffer length in _seconds_ (0 means infinite buffering)
+  - `hls_maxbackbufferlength` (default 30) - Maximum back buffer length in _seconds_ (0 means infinite back buffering). back buffer is seekable without redownloading segments.
   - `hls_startfrombitrate` (default -1)
    - If greater than 0, specifies the preferred bitrate to start with.
    - If -1, and hls_startfromlevel is not specified, automatic start level selection will be used.
