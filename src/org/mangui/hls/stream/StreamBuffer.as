@@ -50,7 +50,7 @@ package org.mangui.hls.stream {
         /** buffer PTS (indexed by continuity counter)  */
         private var _buffer_pts : Dictionary;
         private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 1.0;
-        private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 2.0;
+        private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 3.0;
 
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController) {
             _hls = hls;
@@ -106,7 +106,6 @@ package org.mangui.hls.stream {
             // check if we can seek in buffer
             if (_seek_position_requested >= min_pos && _seek_position_requested <= max_pos) {
                 _seek_pos_reached = false;
-                _first_start_position = min_pos;
             } else {
                 // seek position is out of buffer : load from fragment
                 _fragmentLoader.stop();
@@ -144,7 +143,7 @@ package org.mangui.hls.stream {
              * /of the new fragment if the playlist was not sliding
             => live playlist sliding is the difference between the new start position  and this previous value */
             if (_hls.seekState == HLSSeekStates.SEEKED) {
-                // Log.info("seek pos/getTotalBufferedDuration/start pos:" + _seek_position_requested + "/" + getTotalBufferedDuration() + "/" + start_position);
+                //Log.info("_playlist_sliding_duration/_first_start_position/getTotalBufferedDuration/start pos:" + _playlist_sliding_duration + "/" + _first_start_position + "/" + getTotalBufferedDuration() + "/" + start_position);
                 _playlist_sliding_duration = (_first_start_position + getTotalBufferedDuration()) - start_position;
             } else {
                 if (_first_start_position == -1) {
@@ -201,7 +200,15 @@ package org.mangui.hls.stream {
         }
 
         public function get bufferLength() : Number {
-            return Math.max(audioBufferLength, videoBufferLength);
+            switch(_hls.seekState) {
+                case HLSSeekStates.SEEKING:
+                    return  Math.max(0, max_pos - _seek_position_requested);
+                case HLSSeekStates.SEEKED:
+                    return Math.max(audioBufferLength, videoBufferLength);
+                case HLSSeekStates.IDLE:
+                default:
+                    return 0;
+            }
         }
 
         /**  Timer **/
