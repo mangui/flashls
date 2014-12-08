@@ -262,7 +262,9 @@ package org.mangui.flowplayer {
                 Log.info("resume()");
             }
             _hls.stream.resume();
-            _clip.dispatch(ClipEventType.RESUME);
+            if (event) {
+                _clip.dispatch(ClipEventType.RESUME);
+            }
             return;
         }
 
@@ -285,10 +287,18 @@ package org.mangui.flowplayer {
          */
         public function seek(event : ClipEvent, seconds : Number) : void {
             CONFIG::LOGGING {
-                Log.info("seek()");
+                Log.info("seek(" + seconds + ")");
             }
-            _hls.stream.seek(seconds);
-            _clip.dispatch(ClipEventType.SEEK, seconds);
+            if (Math.abs(time - seconds) > 0.2) {
+                _hls.stream.seek(seconds);
+            } else {
+                CONFIG::LOGGING {
+                    Log.warn("seek(" + seconds + ") to current position, discard");
+                }
+            }
+            if (event) {
+                _clip.dispatch(ClipEventType.SEEK, seconds);
+            }
             return;
         }
 
@@ -303,7 +313,8 @@ package org.mangui.flowplayer {
          * Current playhead time in seconds.
          */
         public function get time() : Number {
-            return _hls.position;
+            var _time : Number = Math.max(0, _hls.position);
+            return _time;
         }
 
         /**
@@ -317,7 +328,8 @@ package org.mangui.flowplayer {
          * The point in timeline where the buffered data region ends, in seconds.
          */
         public function get bufferEnd() : Number {
-            return _hls.position + _hls.stream.bufferLength;
+            var _buffer : Number = Math.max(0, _hls.position + _hls.stream.bufferLength);
+            return _buffer;
         }
 
         /**
