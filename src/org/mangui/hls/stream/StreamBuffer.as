@@ -461,9 +461,9 @@ package org.mangui.hls.stream {
 
         private function get max_pos() : Number {
             var max_pos_ : Number = Number.NEGATIVE_INFINITY;
-            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[_metaIdx].sliding ));
-            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoIdx].sliding ));
-            if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[_audioIdx].sliding ));
+            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[_metaTags.length - 1].sliding ));
+            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoTags.length - 1].sliding ));
+            if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[_audioTags.length - 1].sliding ));
             return max_pos_;
         }
     }
