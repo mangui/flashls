@@ -53,6 +53,8 @@ package org.mangui.hls.stream {
         private var _buffer_pts : Dictionary;
         private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 1.0;
         private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 3.0;
+        /** means that last fragment of a VOD playlist has been loaded */
+        private var _reached_vod_end : Boolean;
 
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController) {
             _hls = hls;
@@ -61,11 +63,13 @@ package org.mangui.hls.stream {
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
+            _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
         }
 
         public function dispose() : void {
             flushAll();
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
+            _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _timer.stop();
             _fragmentLoader.dispose();
             _fragmentLoader = null;
@@ -176,6 +180,10 @@ package org.mangui.hls.stream {
             }
         };
 
+        public function get reachedEnd() : Boolean {
+            return _reached_vod_end;
+        }
+
         private function flushAll() : void {
             _audioTags = new Vector.<FLVData>();
             _videoTags = new Vector.<FLVData>();
@@ -183,6 +191,7 @@ package org.mangui.hls.stream {
             _audioIdx = _videoIdx = _metaIdx = 0;
             _buffer_pts = new Dictionary();
             _seek_pos_reached = false;
+            _reached_vod_end = false;
             _time_sliding = 0;
         }
 
@@ -484,6 +493,13 @@ package org.mangui.hls.stream {
             if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoTags.length - 1].sliding ));
             if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[_audioTags.length - 1].sliding ));
             return max_pos_;
+        }
+
+        private function _lastVODFragmentLoadedHandler(event : HLSEvent) : void {
+            CONFIG::LOGGING {
+                Log.debug("last fragment loaded");
+            }
+            _reached_vod_end = true;
         }
     }
 }

@@ -39,8 +39,6 @@ package org.mangui.hls.stream {
         private var _bufferThresholdController : BufferThresholdController;
         /** FLV Tag Buffer . **/
         private var _streamBuffer : StreamBuffer;
-        /** means that last fragment of a VOD playlist has been loaded */
-        private var _reached_vod_end : Boolean;
         /** Timer used to check buffer and position. **/
         private var _timer : Timer;
         /** Current playback state. **/
@@ -59,7 +57,6 @@ package org.mangui.hls.stream {
             _hls = hls;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
-            _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _playbackState = HLSPlayStates.IDLE;
             _seekState = HLSSeekStates.IDLE;
             _timer = new Timer(100, 0);
@@ -108,7 +105,7 @@ package org.mangui.hls.stream {
             if (_seekState != HLSSeekStates.SEEKING) {
                 // check low buffer condition
                 if (buffer <= 0.1) {
-                    if (_reached_vod_end) {
+                    if (_streamBuffer.reachedEnd) {
                         // Last tag done? Then append sequence end.
                         super.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         super.appendBytes(new ByteArray());
@@ -128,7 +125,7 @@ package org.mangui.hls.stream {
                     }
                 }
                 // if buffer len is below lowBufferLength, get into buffering state
-                if (!_reached_vod_end && buffer < _bufferThresholdController.lowBufferLength) {
+                if (!_streamBuffer.reachedEnd && buffer < _bufferThresholdController.lowBufferLength) {
                     if (_playbackState == HLSPlayStates.PLAYING) {
                         // low buffer condition and play state. switch to play buffering state
                         _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
@@ -138,7 +135,7 @@ package org.mangui.hls.stream {
                     }
                 }
                 // if buffer len is above minBufferLength, get out of buffering state
-                if (buffer >= _bufferThresholdController.minBufferLength || _reached_vod_end) {
+                if (buffer >= _bufferThresholdController.minBufferLength || _streamBuffer.reachedEnd) {
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
                             Log.debug("resume playback");
@@ -205,13 +202,6 @@ package org.mangui.hls.stream {
                 _setSeekState(HLSSeekStates.SEEKED);
             }
         };
-
-        private function _lastVODFragmentLoadedHandler(event : HLSEvent) : void {
-            CONFIG::LOGGING {
-                Log.debug("last fragment loaded");
-            }
-            _reached_vod_end = true;
-        }
 
         /** Change playback state. **/
         private function _setPlaybackState(state : String) : void {
@@ -304,8 +294,6 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:seek(" + position + ")");
             }
             _streamBuffer.seek(position);
-            _reached_vod_end = false;
-
             _setSeekState(HLSSeekStates.SEEKING);
             /* if HLS was in paused state before seeking, 
              * switch to paused buffering state
@@ -353,7 +341,6 @@ package org.mangui.hls.stream {
         public function dispose_() : void {
             close();
             _bufferThresholdController.dispose();
-            _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
         }
     }
 }
