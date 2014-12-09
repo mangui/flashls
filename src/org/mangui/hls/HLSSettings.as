@@ -40,9 +40,9 @@ package org.mangui.hls {
          * Defines maximum buffer length in seconds.
          * (0 means infinite buffering)
          *
-         * Default is 300.
+         * Default is 120.
          */
-        public static var maxBufferLength : Number = 300;
+        public static var maxBufferLength : Number = 120;
         /**
          * Defines maximum back buffer length in seconds.
          * (0 means infinite back buffering)
