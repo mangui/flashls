@@ -414,25 +414,44 @@ package org.mangui.hls.stream {
          * then metadata then video then audio tags
          */
         private function getnexttag() : FLVData {
-            if (_videoTags.length == 0 && _audioTags.length == 0 && _metaTags.length == 0)
-                return null;
+            var mtag : FLVData ,vtag : FLVData,atag : FLVData;
 
             var continuity : int = int.MAX_VALUE;
             // find smallest continuity counter
-            if (_metaTags.length > _metaIdx) continuity = Math.min(continuity, _metaTags[_metaIdx].continuity);
-            if (_videoTags.length > _videoIdx) continuity = Math.min(continuity, _videoTags[_videoIdx].continuity);
-            if (_audioTags.length > _audioIdx) continuity = Math.min(continuity, _audioTags[_audioIdx].continuity);
+            if (_metaTags.length > _metaIdx) {
+                mtag = _metaTags[_metaIdx];
+                continuity = Math.min(continuity, mtag.continuity);
+            }
+            if (_videoTags.length > _videoIdx) {
+                vtag = _videoTags[_videoIdx];
+                continuity = Math.min(continuity, vtag.continuity);
+            }
+            if (_audioTags.length > _audioIdx) {
+                atag = _audioTags[_audioIdx];
+                continuity = Math.min(continuity, atag.continuity);
+            }
+
+            if (continuity == int.MAX_VALUE)
+                return null;
 
             var pts : Number = Number.MAX_VALUE;
             // for this continuity counter, find smallest PTS
-            if ((_metaTags.length > _metaIdx) && _metaTags[_metaIdx].continuity == continuity) pts = Math.min(pts, _metaTags[_metaIdx].tag.pts);
-            if ((_videoTags.length > _videoIdx) && _videoTags[_videoIdx].continuity == continuity) pts = Math.min(pts, _videoTags[_videoIdx].tag.pts);
-            if ((_audioTags.length > _audioIdx) && _audioTags[_audioIdx].continuity == continuity) pts = Math.min(pts, _audioTags[_audioIdx].tag.pts);
+            if (mtag && mtag.continuity == continuity) pts = Math.min(pts, mtag.tag.pts);
+            if (vtag && vtag.continuity == continuity) pts = Math.min(pts, vtag.tag.pts);
+            if (atag && atag.continuity == continuity) pts = Math.min(pts, atag.tag.pts);
 
             // for this continuity counter, this PTS, prioritize tags with the following order : metadata/video/audio
-            if ((_metaTags.length > _metaIdx) && _metaTags[_metaIdx].continuity == continuity && _metaTags[_metaIdx].tag.pts == pts) return _metaTags[_metaIdx++];
-            if ((_videoTags.length > _videoIdx) && _videoTags[_videoIdx].continuity == continuity && _videoTags[_videoIdx].tag.pts == pts) return _videoTags[_videoIdx++];
-            else return _audioTags[_audioIdx++];
+            if (mtag && mtag.continuity == continuity && mtag.tag.pts == pts) {
+                _metaIdx++;
+                return mtag;
+            }
+            if (vtag && vtag.continuity == continuity && vtag.tag.pts == pts) {
+                _videoIdx++;
+                return vtag;
+            } else {
+                _audioIdx++;
+                return atag;
+            }
         }
 
         private function shiftmultipletags(max_duration : Number) : Vector.<FLVData> {
@@ -495,4 +514,3 @@ class BufferPTS {
         this.max = max;
     }
 }
-
