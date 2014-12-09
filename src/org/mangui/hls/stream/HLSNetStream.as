@@ -280,6 +280,11 @@ package org.mangui.hls.stream {
             return netStreamBufferLength + _streamBuffer.bufferLength;
         };
 
+        /** get Back Buffer Length  **/
+        override public function get backBufferLength() : Number {
+            return _streamBuffer.backBufferLength;
+        };
+
         public function get netStreamBufferLength() : Number {
             if (_seekState == HLSSeekStates.SEEKING) {
                 return 0;

@@ -66,6 +66,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getmaxBufferLength", _getmaxBufferLength);
             ExternalInterface.addCallback("getminBufferLength", _getminBufferLength);
             ExternalInterface.addCallback("getlowBufferLength", _getlowBufferLength);
+            ExternalInterface.addCallback("getmaxBackBufferLength", _getmaxBackBufferLength);
             ExternalInterface.addCallback("getbufferLength", _getbufferLength);
             ExternalInterface.addCallback("getLogDebug", _getLogDebug);
             ExternalInterface.addCallback("getLogDebug2", _getLogDebug2);
@@ -93,6 +94,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetmaxBufferLength", _setmaxBufferLength);
             ExternalInterface.addCallback("playerSetminBufferLength", _setminBufferLength);
             ExternalInterface.addCallback("playerSetlowBufferLength", _setlowBufferLength);
+            ExternalInterface.addCallback("playerSetbackBufferLength", _setbackBufferLength);
             ExternalInterface.addCallback("playerSetflushLiveURLCache", _setflushLiveURLCache);
             ExternalInterface.addCallback("playerSetstartFromLevel", _setstartFromLevel);
             ExternalInterface.addCallback("playerSetseekFromLevel", _setseekFromLevel);
@@ -265,6 +267,10 @@ package org.mangui.chromeless {
             return HLSSettings.lowBufferLength;
         };
 
+        protected function _getmaxBackBufferLength() : Number {
+            return HLSSettings.maxBackBufferLength;
+        };
+
         protected function _getflushLiveURLCache() : Boolean {
             return HLSSettings.flushLiveURLCache;
         };
@@ -366,6 +372,10 @@ package org.mangui.chromeless {
 
         protected function _setlowBufferLength(new_len : Number) : void {
             HLSSettings.lowBufferLength = new_len;
+        };
+
+        protected function _setbackBufferLength(new_len : Number) : void {
+            HLSSettings.maxBackBufferLength = new_len;
         };
 
         protected function _setflushLiveURLCache(flushLiveURLCache : Boolean) : void {

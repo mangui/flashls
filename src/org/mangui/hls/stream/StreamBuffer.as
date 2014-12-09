@@ -31,14 +31,8 @@ package org.mangui.hls.stream {
         private var _fragmentLoader : FragmentLoader;
         /** Timer used to process FLV tags. **/
         private var _timer : Timer;
-        private var _audioTags : Vector.<FLVData>;
-        private var _videoTags : Vector.<FLVData>;
-        private var _metaTags : Vector.<FLVData>;
-        private var _audioIdx : uint;
-        private var _videoIdx : uint;
-        private var _metaIdx : uint;
-        private var _aacHeader : FLVData;
-        private var _avcHeader : FLVData;
+        private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
+        private var _audioIdx : uint,  _videoIdx : uint,  _metaIdx : uint, _headerIdx : uint;
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
         /** requested start position **/
@@ -112,7 +106,7 @@ package org.mangui.hls.stream {
             // check if we can seek in buffer
             if (_seek_position_requested >= min_pos && _seek_position_requested <= max_pos) {
                 _seek_pos_reached = false;
-                _audioIdx = _videoIdx = _metaIdx = 0;
+                _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
             } else {
                 // seek position is out of buffer : load from fragment
                 _fragmentLoader.stop();
@@ -124,21 +118,21 @@ package org.mangui.hls.stream {
 
         public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
             for each (var tag : FLVTag in tags) {
-                var position : Number = start_position + (tag.pts - min_pts) / 1000;
-                var tagData : FLVData = new FLVData(tag, position, _time_sliding, continuity);
+                var pos : Number = start_position + (tag.pts - min_pts) / 1000;
+                var tagData : FLVData = new FLVData(tag, pos, _time_sliding, continuity);
                 switch(tag.type) {
+                    case FLVTag.DISCONTINUITY:
                     case FLVTag.AAC_HEADER:
-                        _aacHeader = tagData;
+                    case FLVTag.AVC_HEADER:
+                        _headerTags.push(tagData);
+                        break;
                     case FLVTag.AAC_RAW:
                     case FLVTag.MP3_RAW:
                         _audioTags.push(tagData);
                         break;
-                    case FLVTag.AVC_HEADER:
-                        _avcHeader = tagData;
                     case FLVTag.AVC_NALU:
                         _videoTags.push(tagData);
                         break;
-                    case FLVTag.DISCONTINUITY:
                     case FLVTag.METADATA:
                         _metaTags.push(tagData);
                         break;
@@ -188,7 +182,8 @@ package org.mangui.hls.stream {
             _audioTags = new Vector.<FLVData>();
             _videoTags = new Vector.<FLVData>();
             _metaTags = new Vector.<FLVData>();
-            _audioIdx = _videoIdx = _metaIdx = 0;
+            _headerTags = new Vector.<FLVData>();
+            _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
             _buffer_pts = new Dictionary();
             _seek_pos_reached = false;
             _reached_vod_end = false;
@@ -220,10 +215,22 @@ package org.mangui.hls.stream {
             }
         }
 
-        /**  Timer **/
+        public function get backBufferLength() : Number {
+            if (min_pos != Number.POSITIVE_INFINITY) {
+                return (position - min_pos);
+            } else {
+                return 0;
+            }
+        }
+
+        /**  StreamBuffer Timer, responsible of 
+         * reporting media time event
+         *  injecting tags into NetStream
+         *  clipping backbuffer
+         */
         private function _checkBuffer(e : Event) : void {
             // dispatch media time event
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(position, _playlist_duration, _hls.stream.bufferLength, _time_sliding)));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(position, _playlist_duration, _hls.stream.bufferLength, backBufferLength, _time_sliding)));
 
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
@@ -248,7 +255,7 @@ package org.mangui.hls.stream {
             if (duration > 0) {
                 var data : Vector.<FLVData> = shiftmultipletags(duration);
                 if (!_seek_pos_reached) {
-                    data = seekFilterTags(data);
+                    data = seekFilterTags(data, _seek_position_requested);
                     _seek_pos_reached = true;
                 }
 
@@ -265,122 +272,213 @@ package org.mangui.hls.stream {
                     (_hls.stream as HLSNetStream).appendTags(tags);
                 }
             }
+            // clip backbuffer if needed
+            if (HLSSettings.maxBackBufferLength >= 0) {
+                _clipBackBuffer(HLSSettings.maxBackBufferLength);
+            }
         }
 
         /* filter/tweak tags to seek accurately into the stream */
-        private function seekFilterTags(tags : Vector.<FLVData>) : Vector.<FLVData> {
-            var aacHeaderfound : Boolean = false;
-            var avcHeaderfound : Boolean = false;
+        private function seekFilterTags(tags : Vector.<FLVData>, start_position : Number) : Vector.<FLVData> {
+            var aacIdx : int,avcIdx : int,disIdx : int,keyIdx : int,lastIdx : int;
+            aacIdx = avcIdx = disIdx = keyIdx = lastIdx = -1;
             var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
-            /* PTS of first tag that will be pushed into FLV tag buffer */
+
+            // loop through all tags and find index position of header tags located before start position
+            for (var i : int = 0; i < tags.length; i++) {
+                var data : FLVData = tags[i];
+                if (data.position - (_time_sliding - data.sliding) <= start_position) {
+                    lastIdx = i;
+                    // current tag is before requested start position
+                    // grab AVC/AAC/DISCONTINUITY/KEYFRAMES tag located just before
+                    switch(data.tag.type) {
+                        case FLVTag.DISCONTINUITY:
+                            disIdx = i;
+                            break;
+                        case FLVTag.AAC_HEADER:
+                            aacIdx = i;
+                            break;
+                        case FLVTag.AVC_HEADER:
+                            avcIdx = i;
+                            break;
+                        case FLVTag.AVC_NALU:
+                            if (data.tag.keyframe) keyIdx = i;
+                        default:
+                            break;
+                    }
+                } else {
+                    break;
+                }
+            }
+            if (keyIdx == -1) {
+                // audio only stream, no keyframe. we can seek accurately
+                keyIdx = lastIdx;
+            }
+
             var first_pts : Number;
-            /* PTS of last video keyframe before requested seek position */
-            var keyframe_pts : Number;
-            /* */
-            var min_offset : Number = tags[0].position - (_time_sliding - tags[0].sliding );
-            var min_pts : Number = tags[0].tag.pts;
-            /* 
-             * 
-             *    real seek       requested seek                 Frag 
-             *     position           position                    End
-             *        *------------------*-------------------------
-             *        <------------------>
-             *             seek_offset
-             *
-             * real seek position is the start offset of the first received fragment after seek command. (= fragment start offset).
-             * seek offset is the diff between the requested seek position and the real seek position
+            if (HLSSettings.seekMode == HLSSeekMode.ACCURATE_SEEK) {
+                // start injecting from last tag before start position
+                first_pts = tags[lastIdx].tag.pts;
+                _seek_position_real = tags[lastIdx].position;
+            } else {
+                // start injecting from keyframe tag
+                first_pts = tags[keyIdx].tag.pts;
+                _seek_position_real = tags[keyIdx].position;
+            }
+
+            // inject discontinuity/AVC header/AAC header if available
+            if (disIdx != -1) {
+                var tagclone : FLVTag = tags[disIdx].tag.clone();
+                tagclone.pts = tagclone.dts = first_pts;
+                var dataclone : FLVData = new FLVData(tagclone, _seek_position_real, 0, tags[disIdx].continuity);
+                filteredTags.push(dataclone);
+            }
+            if (aacIdx != -1) {
+                tagclone = tags[aacIdx].tag.clone();
+                tagclone.pts = tagclone.dts = first_pts;
+                dataclone = new FLVData(tagclone, _seek_position_real, 0, tags[aacIdx].continuity);
+                filteredTags.push(dataclone);
+            }
+            if (avcIdx != -1) {
+                tagclone = tags[avcIdx].tag.clone();
+                tagclone.pts = tagclone.dts = first_pts;
+                dataclone = new FLVData(tagclone, _seek_position_real, 0, tags[avcIdx].continuity);
+                filteredTags.push(dataclone);
+            }
+            // inject tags from nearest keyframe to start position
+            for (i = keyIdx; i < lastIdx; i++) {
+                data = tags[i];
+                // if accurate seek mode, adjust tags with pts and position from start position
+                if (HLSSettings.seekMode == HLSSeekMode.ACCURATE_SEEK) {
+                    // only push NALU to be able to reconstruct frame at seek position
+                    if (data.tag.type == FLVTag.AVC_NALU) {
+                        tagclone = data.tag.clone();
+                        tagclone.pts = tagclone.dts = first_pts;
+                        dataclone = new FLVData(tagclone, _seek_position_real, 0, tags[i].continuity);
+                        filteredTags.push(dataclone);
+                    }
+                } else {
+                    // keyframe seeking : push straight away
+                    filteredTags.push(data);
+                }
+            }
+            // tags located after start position, push straight away
+            for (i = lastIdx; i < tags.length; i++) {
+                data = tags[i];
+                filteredTags.push(data);
+            }
+            return filteredTags;
+        }
+
+        private function _clipBackBuffer(maxBackBufferLength : Number) : void {
+            /*      min_pos        		                   current 
+             *                                    		   position
+             *        *------------------*---------------------*----
+             *         ****************** <-------------------->
+             *           to be clipped     maxBackBufferLength
              */
 
-            /* if requested seek position is out of this segment bounds
-             * all the segments will be pushed, first pts should be thus be min_pts
+            // determine clipping position
+            var clipping_position : Number = position - maxBackBufferLength;
+            var clipped_tags : uint = 0;
+
+            // loop through each tag list and clip tags if out of max back buffer boundary
+            while (_audioTags.length && (_audioTags[0].position - (_time_sliding - _audioTags[0].sliding )) < clipping_position) {
+                _audioTags.shift();
+                _audioIdx--;
+                clipped_tags++;
+            }
+
+            while (_videoTags.length && (_videoTags[0].position - (_time_sliding - _videoTags[0].sliding )) < clipping_position) {
+                _videoTags.shift();
+                _videoIdx--;
+                clipped_tags++;
+            }
+
+            while (_metaTags.length && (_metaTags[0].position - (_time_sliding - _metaTags[0].sliding )) < clipping_position) {
+                _metaTags.shift();
+                _metaIdx--;
+                clipped_tags++;
+            }
+
+            /* clip header tags : the tricky thing here is that we need to keep the last AAC HEADER / AVC HEADER before clip position
+             * if we dont keep these tags, we will have audio/video playback issues when seeking into the buffer
+             * 
+             * so we loop through all header tags and we retrieve the position of last AAC/AVC header tags
+             * then if any subsequent header tag is found after seek position, we create a new Vector in which we first append the previously
+             * found AAC/AVC header
+             * 
              */
-            if (_seek_position_requested < min_offset) {
-                _seek_position_real = min_offset;
-                first_pts = min_pts;
-            } else {
-                /* if requested position is within segment bounds, determine real seek position depending on seek mode setting */
-                if (HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
-                    _seek_position_real = min_offset;
-                    first_pts = min_pts;
+            var _aacHeader : FLVData;
+            var _avcHeader : FLVData;
+            var _disHeader : FLVData;
+            var headercounter : uint = 0;
+            var _newheaderTags : Vector.<FLVData> = new Vector.<FLVData>();
+            for (var i : int in _headerTags) {
+                var data : FLVData = _headerTags[i];
+                if ((data.position - (_time_sliding - data.sliding)) < clipping_position) {
+                    switch(data.tag.type) {
+                        case FLVTag.DISCONTINUITY:
+                            _disHeader = data;
+                            headercounter++;
+                            break;
+                        case FLVTag.AAC_HEADER:
+                            _aacHeader = data;
+                            headercounter++;
+                            break;
+                        case FLVTag.AVC_HEADER:
+                            _avcHeader = data;
+                            headercounter++;
+                        default:
+                            break;
+                    }
                 } else {
-                    /* accurate or keyframe seeking */
-                    /* seek_pts is the requested PTS seek position */
-                    var seek_pts : Number = min_pts + 1000 * (_seek_position_requested - min_offset);
-                    /* analyze fragment tags and look for PTS of last keyframe before seek position.*/
-                    keyframe_pts = min_pts;
-                    for each (var flvData : FLVData in tags) {
-                        var tag : FLVTag = flvData.tag;
-                        // look for last keyframe with pts <= seek_pts
-                        if (tag.keyframe == true && tag.pts <= seek_pts && (tag.type == FLVTag.AVC_HEADER || tag.type == FLVTag.AVC_NALU)) {
-                            keyframe_pts = tag.pts;
-                        }
+                    /* tag located after clip position : we need to keep it
+                     * first try to push DISCONTINUITY/AVC HEADER/AAC HEADER tag located
+                     * before the clip position
+                     */
+                    if (_disHeader) {
+                        headercounter--;
+                        // Log.info("push DISCONTINUITY header tags/position:" + _disHeader.position);
+                        _disHeader.position = clipping_position;
+                        _disHeader.sliding = 0;
+                        _newheaderTags.push(_disHeader);
+                        _disHeader = null;
                     }
-                    if (HLSSettings.seekMode == HLSSeekMode.KEYFRAME_SEEK) {
-                        _seek_position_real = min_offset + (keyframe_pts - min_pts) / 1000;
-                        first_pts = keyframe_pts;
-                    } else {
-                        // accurate seek, to exact requested position
-                        _seek_position_real = _seek_position_requested;
-                        first_pts = seek_pts;
+                    if (_aacHeader) {
+                        headercounter--;
+                        // Log.info("push AAC header tags/position:" + _aacHeader.position);
+                        _aacHeader.position = clipping_position;
+                        _aacHeader.sliding = 0;
+                        _newheaderTags.push(_aacHeader);
+                        _aacHeader = null;
                     }
+                    if (_avcHeader) {
+                        headercounter--;
+                        // Log.info("push AVC header tags/position:" + _avcHeader.position);
+                        _avcHeader.position = clipping_position;
+                        _avcHeader.sliding = 0;
+                        _newheaderTags.push(_avcHeader);
+                        _avcHeader = null;
+                    }
+                    // Log.info("push tag type/position:" + data.tag.type + "/" + data.position);
+                    _newheaderTags.push(data);
                 }
             }
-            /* if in segment seeking mode : push all FLV tags */
-            if (HLSSettings.seekMode == HLSSeekMode.SEGMENT_SEEK) {
-                filteredTags = tags;
-            } else {
-                /* keyframe / accurate seeking, we need to filter out some FLV tags */
-                for each (flvData in tags) {
-                    tag = flvData.tag;
-                    if (tag.type == FLVTag.AAC_HEADER) {
-                        aacHeaderfound = true;
-                    } else if (tag.type == FLVTag.AVC_HEADER) {
-                        avcHeaderfound = true;
-                    }
-                    if (tag.pts >= first_pts) {
-                        filteredTags.push(flvData);
-                    } else {
-                        switch(tag.type) {
-                            case FLVTag.AAC_HEADER:
-                            case FLVTag.AVC_HEADER:
-                            case FLVTag.DISCONTINUITY:
-                                // as we need to adjust tag PTS, we need to clone the tag to keep the original tag untouched (this tag is kept in the main buffer
-                                var tagclone : FLVTag = tag.clone();
-                                tagclone.pts = tagclone.dts = first_pts;
-                                var dataclone : FLVData = new FLVData(tagclone, flvData.position, flvData.sliding, flvData.continuity);
-                                filteredTags.push(dataclone);
-                                break;
-                            case FLVTag.AVC_NALU:
-                            case FLVTag.METADATA:
-                                /* only append video and metadata tags starting from last keyframe before seek position to avoid playback artifacts
-                                 *  rationale of this is that there can be multiple keyframes per segment. if we append all keyframes
-                                 *  in NetStream, all of them will be displayed in a row and this will introduce some playback artifacts
-                                 *  */
-                                if (tag.pts >= keyframe_pts) {
-                                    // as we need to adjust tag PTS, we need to clone the tag to keep the original tag untouched (this tag is kept in the main buffer
-                                    tagclone = tag.clone();
-                                    tagclone.pts = tagclone.dts = first_pts;
-                                    dataclone = new FLVData(tagclone, flvData.position, flvData.sliding, flvData.continuity);
-                                    filteredTags.push(dataclone);
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    }
+
+            if (headercounter != 0) {
+                // Log.info("clipped " + headercounter + " header tags");
+                _headerTags = _newheaderTags;
+                // we need to adjust headerIdx, as the size of the Vector has been adjusted
+                _headerIdx -= headercounter;
+                clipped_tags += headercounter;
+            }
+
+            CONFIG::LOGGING {
+                if (clipped_tags > 0) {
+                    Log.debug2("clipped " + clipped_tags + " tags, clipping position :" + clipping_position);
                 }
             }
-            /*
-            if (aacHeaderfound == false && _aacHeader != null) {
-            _aacHeader.tag.pts = first_pts;
-            filteredTags.unshift(_aacHeader);
-            }
-            if (avcHeaderfound == false && _avcHeader != null) {
-            _avcHeader.tag.pts = first_pts;
-            filteredTags.unshift(_avcHeader);
-            }
-             */
-            return filteredTags;
         }
 
         private function _playlistDurationUpdated(event : HLSEvent) : void {
@@ -420,16 +518,16 @@ package org.mangui.hls.stream {
          * retrieve queue containing next tag to be injected, using the following priority :
          * smallest continuity
          * then smallest pts
-         * then metadata then video then audio tags
+         * then header  then video then audio then metadata tags
          */
         private function getnexttag() : FLVData {
-            var mtag : FLVData ,vtag : FLVData,atag : FLVData;
+            var mtag : FLVData ,vtag : FLVData,atag : FLVData, htag : FLVData;
 
             var continuity : int = int.MAX_VALUE;
             // find smallest continuity counter
-            if (_metaTags.length > _metaIdx) {
-                mtag = _metaTags[_metaIdx];
-                continuity = Math.min(continuity, mtag.continuity);
+            if (_headerTags.length > _headerIdx) {
+                htag = _headerTags[_headerIdx];
+                continuity = Math.min(continuity, htag.continuity);
             }
             if (_videoTags.length > _videoIdx) {
                 vtag = _videoTags[_videoIdx];
@@ -439,24 +537,33 @@ package org.mangui.hls.stream {
                 atag = _audioTags[_audioIdx];
                 continuity = Math.min(continuity, atag.continuity);
             }
-
+            if (_metaTags.length > _metaIdx) {
+                mtag = _metaTags[_metaIdx];
+                continuity = Math.min(continuity, mtag.continuity);
+            }
             if (continuity == int.MAX_VALUE)
                 return null;
 
             var pts : Number = Number.MAX_VALUE;
             // for this continuity counter, find smallest PTS
-            if (mtag && mtag.continuity == continuity) pts = Math.min(pts, mtag.tag.pts);
+
+            if (htag && htag.continuity == continuity) pts = Math.min(pts, htag.tag.pts);
             if (vtag && vtag.continuity == continuity) pts = Math.min(pts, vtag.tag.pts);
             if (atag && atag.continuity == continuity) pts = Math.min(pts, atag.tag.pts);
+            if (mtag && mtag.continuity == continuity) pts = Math.min(pts, mtag.tag.pts);
 
-            // for this continuity counter, this PTS, prioritize tags with the following order : metadata/video/audio
-            if (mtag && mtag.continuity == continuity && mtag.tag.pts == pts) {
-                _metaIdx++;
-                return mtag;
+            // for this continuity counter, this PTS, prioritize tags with the following order : header/video/audio/metadata
+            if (htag && htag.continuity == continuity && htag.tag.pts == pts) {
+                _headerIdx++;
+                return htag;
             }
             if (vtag && vtag.continuity == continuity && vtag.tag.pts == pts) {
                 _videoIdx++;
                 return vtag;
+            }
+            if (mtag && mtag.continuity == continuity && mtag.tag.pts == pts) {
+                _metaIdx++;
+                return mtag;
             } else {
                 _audioIdx++;
                 return atag;
@@ -481,17 +588,19 @@ package org.mangui.hls.stream {
 
         private function get min_pos() : Number {
             var min_pos_ : Number = Number.POSITIVE_INFINITY;
-            if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position - (_time_sliding - _metaTags[0].sliding ));
+            if (_headerTags.length) min_pos_ = Math.min(min_pos_, _headerTags[0].position - (_time_sliding - _headerTags[0].sliding ));
             if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position - (_time_sliding - _videoTags[0].sliding ));
             if (_audioTags.length) min_pos_ = Math.min(min_pos_, _audioTags[0].position - (_time_sliding - _audioTags[0].sliding ));
+            if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position - (_time_sliding - _metaTags[0].sliding ));
             return min_pos_;
         }
 
         private function get max_pos() : Number {
             var max_pos_ : Number = Number.NEGATIVE_INFINITY;
-            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[_metaTags.length - 1].sliding ));
+            if (_headerTags.length) max_pos_ = Math.max(max_pos_, _headerTags[_headerTags.length - 1].position - (_time_sliding - _headerTags[_headerTags.length - 1].sliding ));
             if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoTags.length - 1].sliding ));
             if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[_audioTags.length - 1].sliding ));
+            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[_metaTags.length - 1].sliding ));
             return max_pos_;
         }
 

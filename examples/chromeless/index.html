@@ -21,12 +21,14 @@ var X_LOW_BUFFER = 3;
 var X_MIN_BUFFER = 4;
 var X_BUFFER = 5;
 var X_MAX_BUFFER = 6;
-var X_LOAD_LEVEL = 7;
-var X_AUDIOTRACKID = 8 ;
-var X_PLAYLIST_SLIDING = 9;
-var X_UTC_DATE = 10;
-var X_STARTLEVEL = 11;
-var X_SEEKLEVEL = 12;
+var X_BACK_BUFFER = 7;
+var X_MAX_BACK_BUFFER = 8;
+var X_LOAD_LEVEL = 9;
+var X_AUDIOTRACKID = 10;
+var X_PLAYLIST_SLIDING = 11;
+var X_UTC_DATE = 12;
+var X_STARTLEVEL = 13;
+var X_SEEKLEVEL = 14;
 var X_LOGDEBUG = 0;
 var X_LOGDEBUG2 = 1;
 var X_FLUSHLIVEURL = 2;
@@ -41,6 +43,8 @@ var Y_LOW_BUFFER = 1;
 var Y_MIN_BUFFER = 1;
 var Y_BUFFER = 1;
 var Y_MAX_BUFFER = 1;
+var Y_BACK_BUFFER = 1;
+var Y_MAX_BACK_BUFFER = 1;
 var Y_LOAD_LEVEL = 1;
 var Y_AUDIOTRACKID = 1;
 var Y_PLAYLIST_SLIDING = 1;
@@ -128,10 +132,12 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   <td>state</td>
   <td>Position</td>
   <td>Duration</td>
-  <td>Low Buffer Size</td>
-  <td>Min Buffer Size</td>
-  <td>Buffer Size</td>
-  <td>Max Buffer Size</td>
+  <td>Low Buffer Length</td>
+  <td>Min Buffer Length</td>
+  <td>Buffer Length</td>
+  <td>Max Buffer Length</td>
+  <td>Back Buffer Length</td>
+  <td>Max Back Buffer Length</td>
   <td>Load Level</td>
   <td>Audio Track Id</td>
   <td> Playlist Sliding</td>
@@ -146,8 +152,10 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <td>0</td>
     <td>0</td>
     <td>0</td>
+	<td>0</td>
     <td>0</td>
     <td>0</td>
+	<td>0</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -157,17 +165,17 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   <tr>  
       <td colspan="2"><button onclick="toggleDebugLogs()">Toggle Debug1 Logs</button></td>
       <td colspan="2"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></td>
-      <td colspan="2"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></td>
+      <td colspan="3"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></td>
       <td colspan="2"><button onclick="toggleJSURLStream()"> JS URL Loader</button></td>
-      <td colspan="2"><button onclick="toggleCapLeveltoStage()">Toggle Cap Level</button></td>
+      <td colspan="3"><button onclick="toggleCapLeveltoStage()">Toggle Cap Level</button></td>
       <td colspan="3"><button onclick="toggleUseHardwareVideoDecoder()">Toggle HW Decoder</button></td>  
   </tr>
   <tr>
       <td colspan="2">false</td>
       <td colspan="2">false</td>
+      <td colspan="3">false</td>
       <td colspan="2">false</td>
-      <td colspan="2">false</td>
-      <td colspan="2">false</td>
+      <td colspan="3">false</td>
       <td colspan="3">true</td>
   </tr>
 </table>
@@ -194,18 +202,23 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <td><input type="text" name="quality_level"></td>
   </tr>
   <tr>
-  <th><button onclick="setlowBufferLength(document.getElementById('mediaControl').rows[5].cells[1].children[0].value)">Set low Buffer Size</button></th>
+  <th><button onclick="setlowBufferLength(document.getElementById('mediaControl').rows[5].cells[1].children[0].value)">Set low Buffer Length</button></th>
     <td><input type="text" name="low_buffer_size"></td>
   </tr>
   <tr>
-  <th><button onclick="setminBufferLength(document.getElementById('mediaControl').rows[6].cells[1].children[0].value)">Set min Buffer Size</button></th>
+  <th><button onclick="setminBufferLength(document.getElementById('mediaControl').rows[6].cells[1].children[0].value)">Set min Buffer Length</button></th>
     <td><input type="text" name="min_buffer_size"></td>
   </tr>
   <tr>
-    <th><button onclick="setmaxBufferLength(document.getElementById('mediaControl').rows[7].cells[1].children[0].value)">Set max Buffer Size</button></th>
+    <th><button onclick="setmaxBufferLength(document.getElementById('mediaControl').rows[7].cells[1].children[0].value)">Set max Buffer Length</button></th>
     <td><input type="text" name="max_buffer_size"></td>
   </tr>
-</table>
+  <tr>
+    <th><button onclick="setmaxBackBufferLength(document.getElementById('mediaControl').rows[8].cells[1].children[0].value)">Set max back Buffer Length</button></th>
+    <td><input type="text" name="max_buffer_size"></td>
+  </tr>
+  
+  </table>
 
 <h3> Test Videos </h3>
 <div> The following videos should stream correctly. Each time an
@@ -400,14 +413,32 @@ function getMaxBufferLength() {
   }
 }
 
+function getMaxBackBufferLength() {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    return obj.getmaxBackBufferLength();
+  }
+}
+
+
 function setmaxBufferLength(new_len) {
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
     obj.playerSetmaxBufferLength(new_len);
     appendLog("force max buffer len to :" + new_len);
-    document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = getMaxBufferLength().toFixed(2);    
+    document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = getMaxBufferLength().toFixed(2);
   }
 }
+
+function setmaxBackBufferLength(new_len) {
+  var obj = getFlashMovieObject(player_id);
+  if(obj != null) {
+    obj.playerSetbackBufferLength(new_len);
+    appendLog("set back buffer max len to :" + new_len);
+	document.getElementById('mediaInfo').rows[Y_MAX_BACK_BUFFER].cells[X_MAX_BACK_BUFFER].innerHTML = getMaxBackBufferLength().toFixed(2);
+  }
+}
+
 
 function toggleDebugLogs() {
   var obj = getFlashMovieObject(player_id);
@@ -550,6 +581,7 @@ function onPosition(timemetrics) {
   document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);
   document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
   document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
+  document.getElementById('mediaInfo').rows[Y_BACK_BUFFER].cells[X_BACK_BUFFER].innerHTML =  timemetrics.backbuffer.toFixed(2);
   document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding.toFixed(2);
 }
 

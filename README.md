@@ -19,7 +19,6 @@ The plugin is compatible with the following players:
   - Configurable seeking method on VoD & Live
     - Accurate seeking to exact requested position
     - Key frame based seeking (nearest key frame)
-    - Segment based seeking (beginning of segment)
     - ability to seek in buffer and back buffer without redownloading segments
   - Timed Metadata for HTTP Live Streaming (in ID3 format, carried in MPEG2-TS, as defined in https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/HTTP_Live_Streaming_Metadata_Spec/HTTP_Live_Streaming_Metadata_Spec.pdf)
   - AES-128 decryption
@@ -73,7 +72,6 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_seekmode`
     - "ACCURATE" - Seek to exact position
     - "KEYFRAME" - Seek to last keyframe before requested position
-    - "SEGMENT" - Seek to beginning of segment containing requested position
   - `hls_manifestloadmaxretry` (default -1): max number of Manifest load retries after I/O Error.
     - if any I/O error is met during initial Manifest load, it will not be reloaded. an HLSError will be triggered immediately.
     - After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
