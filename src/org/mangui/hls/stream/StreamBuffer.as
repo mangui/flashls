@@ -45,8 +45,8 @@ package org.mangui.hls.stream {
         private var _time_sliding : Number;
         /** buffer PTS (indexed by continuity counter)  */
         private var _buffer_pts : Dictionary;
-        private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 1.0;
-        private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 3.0;
+        private static const MIN_NETSTREAM_BUFFER_SIZE : Number = 3.0;
+        private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 4.0;
         /** means that last fragment of a VOD playlist has been loaded */
         private var _reached_vod_end : Boolean;
 
