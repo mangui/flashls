@@ -321,7 +321,8 @@ package org.mangui.flowplayer {
          * The point in timeline where the buffered data region begins, in seconds.
          */
         public function get bufferStart() : Number {
-            return 0;
+            var _buffer : Number = Math.max(0, _hls.position - _hls.stream.backBufferLength);
+            return _buffer;
         }
 
         /**
