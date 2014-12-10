@@ -35,6 +35,7 @@ package org.mangui.hls.stream {
         private var _audioIdx : uint,  _videoIdx : uint,  _metaIdx : uint, _headerIdx : uint;
         /** playlist duration **/
         private var _playlist_duration : Number = 0;
+        private var _seeking_min_position : Number;
         /** requested start position **/
         private var _seek_position_requested : Number;
         /** real start position , retrieved from first fragment **/
@@ -110,7 +111,7 @@ package org.mangui.hls.stream {
             } else {
                 // seek position is out of buffer : load from fragment
                 _fragmentLoader.stop();
-                _fragmentLoader.seek(position);
+                _fragmentLoader.seek(_seek_position_requested);
                 flushAll();
             }
             _timer.start();
@@ -145,10 +146,11 @@ package org.mangui.hls.stream {
             => live playlist sliding is the difference between the new start position  and this previous value */
             if (_hls.seekState == HLSSeekStates.SEEKED) {
                 if ( _hls.type == HLSTypes.LIVE) {
-                    // Log.info("_time_sliding/_first_start_position/getTotalBufferedDuration/start pos:" + _time_sliding + "/" + _first_start_position + "/" + getTotalBufferedDuration() + "/" + start_position);
-                    _time_sliding = (min_pos + getTotalBufferedDuration()) - start_position;
+                    _time_sliding = (_seeking_min_position + getTotalBufferedDuration()) - start_position;
+                    //Log.info("min_pos/getTotalBufferedDuration/start pos/end pos/_time_sliding:" + "/" + _seeking_min_position.toFixed(2) + "/" + getTotalBufferedDuration().toFixed(2) + "/" + start_position.toFixed(2) + "/" + pos.toFixed(2) + "/" + _time_sliding.toFixed(2));
                 }
             } else {
+                _seeking_min_position = min_pos;
                 /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
                 _timer.start();
             }

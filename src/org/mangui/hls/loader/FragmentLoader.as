@@ -211,7 +211,7 @@ package org.mangui.hls.loader {
                         Log.warn("loading stalled: restart playback");
                     }
                     /* seek to force a restart of the playback session  */
-                    seek(-1);
+                    _streamBuffer.seek(-1);
                     break;
                 // if key loading failed
                 case  LOADING_KEY_IO_ERROR:
