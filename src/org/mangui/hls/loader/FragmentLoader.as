@@ -21,7 +21,6 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.AES;
-    import org.mangui.hls.utils.PTS;
     import org.mangui.hls.stream.StreamBuffer;
 
     import flash.events.*;
@@ -354,11 +353,7 @@ package org.mangui.hls.loader {
             if (fragData.bytes == null) {
                 fragData.bytes = new ByteArray();
                 fragData.bytesLoaded = 0;
-                fragData.tags = new Vector.<FLVTag>();
-                fragData.audio_found = fragData.video_found = false;
-                fragData.metadata_tag_injected = false;
-                fragData.pts_min_audio = fragData.pts_min_video = fragData.tags_pts_min_audio = fragData.tags_pts_min_video = Number.POSITIVE_INFINITY;
-                fragData.pts_max_audio = fragData.pts_max_video = fragData.tags_pts_max_audio = fragData.tags_pts_max_video = Number.NEGATIVE_INFINITY;
+                fragData.flushTags();
                 var fragMetrics : FragmentMetrics = _frag_current.metrics;
                 fragMetrics.loading_begin_time = getTimer();
 
@@ -763,41 +758,8 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug2(tags.length + " tags extracted");
             }
-            var tag : FLVTag;
-            /* ref PTS / DTS value for PTS looping */
             var fragData : FragmentData = _frag_current.data;
-            var ref_pts : Number = fragData.pts_start_computed;
-            // Audio PTS/DTS normalization + min/max computation
-            for each (tag in tags) {
-                tag.pts = PTS.normalize(ref_pts, tag.pts);
-                tag.dts = PTS.normalize(ref_pts, tag.dts);
-                switch( tag.type ) {
-                    case FLVTag.AAC_HEADER:
-                    case FLVTag.AAC_RAW:
-                    case FLVTag.MP3_RAW:
-                        fragData.audio_found = true;
-                        fragData.tags_audio_found = true;
-                        fragData.tags_pts_min_audio = Math.min(fragData.tags_pts_min_audio, tag.pts);
-                        fragData.tags_pts_max_audio = Math.max(fragData.tags_pts_max_audio, tag.pts);
-                        fragData.pts_min_audio = Math.min(fragData.pts_min_audio, tag.pts);
-                        fragData.pts_max_audio = Math.max(fragData.pts_max_audio, tag.pts);
-                        break;
-                    case FLVTag.AVC_HEADER:
-                    case FLVTag.AVC_NALU:
-                        fragData.video_found = true;
-                        fragData.tags_video_found = true;
-                        fragData.tags_pts_min_video = Math.min(fragData.tags_pts_min_video, tag.pts);
-                        fragData.tags_pts_max_video = Math.max(fragData.tags_pts_max_video, tag.pts);
-                        fragData.pts_min_video = Math.min(fragData.pts_min_video, tag.pts);
-                        fragData.pts_max_video = Math.max(fragData.pts_max_video, tag.pts);
-                        break;
-                    case FLVTag.DISCONTINUITY:
-                    case FLVTag.METADATA:
-                    default:
-                        break;
-                }
-                fragData.tags.push(tag);
-            }
+            fragData.appendTags(tags);
 
             /* try to do progressive buffering here. 
              * only do it in case :
@@ -807,15 +769,11 @@ package org.mangui.hls.loader {
              *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
              */
             if (( _fragment_first_loaded || (_manifest_just_loaded && (HLSSettings.startFromLevel !== -1 || HLSSettings.startFromBitrate !== -1 || _levels.length == 1) ) )) {
-                if (_demux.audio_expected() && !fragData.audio_found) {
-                    /* if no audio tags found, it means that only video tags have been retrieved here
-                     * we cannot do progressive buffering in that case.
-                     * we need to have some new audio tags to inject as well
-                     */
-                    return;
-                }
-
-                if (fragData.tag_pts_min != Number.POSITIVE_INFINITY && fragData.tag_pts_max != Number.NEGATIVE_INFINITY) {
+                /* if audio expected, PTS analysis is done on audio
+                 * if audio not expected, PTS analysis is done on video
+                 * the check below ensures that we can compute min/max PTS
+                 */
+                if ((_demux.audio_expected() && fragData.audio_found) || (!_demux.audio_expected() && fragData.video_found)) {
                     if (_pts_analyzing == true) {
                         _pts_analyzing = false;
                         _levels[_hls.level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);
@@ -842,8 +800,7 @@ package org.mangui.hls.loader {
                             // cancel loading
                             _stop_load();
                             // clean-up tags
-                            fragData.tags = new Vector.<FLVTag>();
-                            fragData.tags_audio_found = fragData.tags_video_found = false;
+                            fragData.flushTags();
                             // tell that new fragment could be loaded
                             _loading_state = LOADING_IDLE;
                             return;
@@ -862,16 +819,8 @@ package org.mangui.hls.loader {
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_hls.level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
+                    fragData.shiftTags();
                     _hasDiscontinuity = false;
-                    fragData.tags = new Vector.<FLVTag>();
-                    if (fragData.tags_audio_found) {
-                        fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
-                        fragData.tags_audio_found = false;
-                    }
-                    if (fragData.tags_video_found) {
-                        fragData.tags_pts_min_video = fragData.tags_pts_max_video;
-                        fragData.tags_video_found = false;
-                    }
                 }
             }
         }
@@ -957,16 +906,8 @@ package org.mangui.hls.loader {
                     }
                     _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
-                    if (fragData.tags_audio_found) {
-                        fragData.tags_pts_min_audio = fragData.tags_pts_max_audio;
-                        fragData.tags_audio_found = false;
-                    }
-                    if (fragData.tags_video_found) {
-                        fragData.tags_pts_min_video = fragData.tags_pts_max_video;
-                        fragData.tags_video_found = false;
-                    }
+                    fragData.shiftTags();
                     _hasDiscontinuity = false;
-                    fragData.tags = new Vector.<FLVTag>();
                 }
                 _pts_analyzing = false;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, tagsMetrics));
