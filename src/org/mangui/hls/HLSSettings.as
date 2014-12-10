@@ -61,11 +61,10 @@ package org.mangui.hls {
          * Defines seek mode to one form available in HLSSeekMode class:
          *      HLSSeekMode.ACCURATE_SEEK - accurate seeking to exact requested position
          *      HLSSeekMode.KEYFRAME_SEEK - key-frame based seeking (seek to nearest key frame before requested seek position)
-         *      HLSSeekMode.SEGMENT_SEEK - segment based seeking (seek to beginning of segment containing requested seek position)
          *
-         * Default is HLSSeekMode.ACCURATE_SEEK.
+         * Default is HLSSeekMode.KEYFRAME_SEEK.
          */
-        public static var seekMode : String = HLSSeekMode.ACCURATE_SEEK;
+        public static var seekMode : String = HLSSeekMode.KEYFRAME_SEEK;
         /** max nb of retries for Key Loading in case I/O errors are met,
          *      0, means no retry, error will be triggered automatically
          *     -1 means infinite retry
