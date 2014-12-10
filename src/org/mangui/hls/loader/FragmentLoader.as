@@ -4,24 +4,24 @@
 package org.mangui.hls.loader {
     import flash.utils.getTimer;
 
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.demux.DemuxHelper;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.HLS;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
     import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.utils.AES;
     import org.mangui.hls.stream.StreamBuffer;
+    import org.mangui.hls.utils.AES;
 
     import flash.events.*;
     import flash.net.*;
@@ -40,8 +40,6 @@ package org.mangui.hls.loader {
         private var _levelController : LevelController;
         /** reference to audio track controller */
         private var _audioTrackController : AudioTrackController;
-        /** has manifest been loaded **/
-        private var _manifest_loaded : Boolean;
         /** has manifest just being reloaded **/
         private var _manifest_just_loaded : Boolean;
         /** last loaded level. **/
@@ -87,6 +85,7 @@ package org.mangui.hls.loader {
         private var _frag_current : Fragment;
         /* loading state variable */
         private var _loading_state : int;
+        private static const MANIFEST_LOADING : int = -1;
         private static const LOADING_IDLE : int = 0;
         private static const LOADING_IN_PROGRESS : int = 1;
         private static const LOADING_WAITING_LEVEL_UPDATE : int = 2;
@@ -105,8 +104,7 @@ package org.mangui.hls.loader {
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
-            _loading_state = LOADING_IDLE;
-            _manifest_loaded = false;
+            _loading_state = MANIFEST_LOADING;
             _manifest_just_loaded = false;
             _keymap = new Object();
         };
@@ -115,17 +113,15 @@ package org.mangui.hls.loader {
             stop();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            _manifest_loaded = false;
+            _loading_state = MANIFEST_LOADING;
             _keymap = new Object();
         }
 
         /**  fragment loading Timer **/
         private function _checkLoading(e : Event) : void {
-            // cannot load fragment until manifest is loaded
-            if (_manifest_loaded == false) {
-                return;
-            }
             switch(_loading_state) {
+                // nothing to load until manifest is retrieved
+                case MANIFEST_LOADING:
                 // nothing to load until level is retrieved
                 case LOADING_WAITING_LEVEL_UPDATE:
                 // loading already in progress
@@ -713,7 +709,7 @@ package org.mangui.hls.loader {
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _levels = event.levels;
-            _manifest_loaded = true;
+            _loading_state = LOADING_IDLE;
             _manifest_just_loaded = true;
         };
 
