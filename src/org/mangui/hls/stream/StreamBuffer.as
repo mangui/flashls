@@ -17,6 +17,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.controller.AudioTrackController;
+    import org.mangui.hls.controller.LevelController;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -51,9 +52,9 @@ package org.mangui.hls.stream {
         /** means that last fragment of a VOD playlist has been loaded */
         private var _reached_vod_end : Boolean;
 
-        public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController) {
+        public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
             _hls = hls;
-            _fragmentLoader = new FragmentLoader(hls, audioTrackController, this);
+            _fragmentLoader = new FragmentLoader(hls, audioTrackController, levelController, this);
             flushAll();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
@@ -147,7 +148,7 @@ package org.mangui.hls.stream {
             if (_hls.seekState == HLSSeekStates.SEEKED) {
                 if ( _hls.type == HLSTypes.LIVE) {
                     _time_sliding = (_seeking_min_position + getTotalBufferedDuration()) - start_position;
-                    //Log.info("min_pos/getTotalBufferedDuration/start pos/end pos/_time_sliding:" + "/" + _seeking_min_position.toFixed(2) + "/" + getTotalBufferedDuration().toFixed(2) + "/" + start_position.toFixed(2) + "/" + pos.toFixed(2) + "/" + _time_sliding.toFixed(2));
+                    // Log.info("min_pos/getTotalBufferedDuration/start pos/end pos/_time_sliding:" + "/" + _seeking_min_position.toFixed(2) + "/" + getTotalBufferedDuration().toFixed(2) + "/" + start_position.toFixed(2) + "/" + pos.toFixed(2) + "/" + _time_sliding.toFixed(2));
                 }
             } else {
                 _seeking_min_position = min_pos;

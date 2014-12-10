@@ -5,7 +5,7 @@ package org.mangui.hls.loader {
     import flash.utils.getTimer;
 
     import org.mangui.hls.controller.AudioTrackController;
-    import org.mangui.hls.controller.AutoLevelController;
+    import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.constant.HLSTypes;
@@ -37,7 +37,7 @@ package org.mangui.hls.loader {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
         /** reference to auto level manager */
-        private var _autoLevelManager : AutoLevelController;
+        private var _levelController : LevelController;
         /** reference to audio track controller */
         private var _audioTrackController : AudioTrackController;
         /** has manifest been loaded **/
@@ -96,9 +96,9 @@ package org.mangui.hls.loader {
         private static const LOADING_COMPLETED : int = 6;
 
         /** Create the loader. **/
-        public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController, streamBuffer : StreamBuffer) : void {
+        public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController, streamBuffer : StreamBuffer) : void {
             _hls = hls;
-            _autoLevelManager = new AutoLevelController(hls);
+            _levelController = levelController;
             _audioTrackController = audioTrackController;
             _streamBuffer = streamBuffer;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
@@ -113,7 +113,6 @@ package org.mangui.hls.loader {
 
         public function dispose() : void {
             stop();
-            _autoLevelManager.dispose();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             _manifest_loaded = false;
@@ -178,7 +177,7 @@ package org.mangui.hls.loader {
                             level = _hls.level;
                         } else if (_hls.autolevel && _levels.length > 1 ) {
                             // select level from heuristics (current level / last fragment duration / buffer length)
-                            level = _autoLevelManager.getnextlevel(_hls.level, _hls.stream.bufferLength);
+                            level = _levelController.getnextlevel(_hls.level, _hls.stream.bufferLength);
                         } else if (_hls.autolevel && _levels.length == 1 ) {
                             level = 0;
                         } else {
@@ -714,14 +713,6 @@ package org.mangui.hls.loader {
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _levels = event.levels;
-            var level : int;
-            if (_hls.autolevel) {
-                level = _hls.startlevel;
-            } else {
-                level = _hls.manuallevel;
-            }
-            // always dispatch level after manifest load
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
             _manifest_loaded = true;
             _manifest_just_loaded = true;
         };
@@ -868,7 +859,7 @@ package org.mangui.hls.loader {
                 _manifest_just_loaded = false;
                 if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1 && _levels.length > 1) {
                     // check if we can directly switch to a better bitrate, in case download bandwidth is enough
-                    var bestlevel : int = _autoLevelManager.getbestlevel(fragMetrics.bandwidth);
+                    var bestlevel : int = _levelController.getbestlevel(fragMetrics.bandwidth);
                     if (bestlevel > _hls.level) {
                         CONFIG::LOGGING {
                             Log.info("enough download bandwidth, adjust start level from " + _hls.level + " to " + bestlevel);

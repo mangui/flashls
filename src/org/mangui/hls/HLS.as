@@ -2,9 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
-    import org.mangui.hls.stream.StreamBuffer;
-    import org.mangui.hls.model.AudioTrack;
-
     import flash.display.Stage;
     import flash.net.NetConnection;
     import flash.net.NetStream;
@@ -12,12 +9,15 @@ package org.mangui.hls {
     import flash.events.EventDispatcher;
     import flash.events.Event;
 
-    import org.mangui.hls.model.Level;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.playlist.AltAudioTrack;
-    import org.mangui.hls.loader.ManifestLoader;
+    import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.controller.AudioTrackController;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.loader.ManifestLoader;
+    import org.mangui.hls.model.Level;
+    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.stream.HLSNetStream;
+    import org.mangui.hls.stream.StreamBuffer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -26,6 +26,7 @@ package org.mangui.hls {
     public class HLS extends EventDispatcher {
         private var _manifestLoader : ManifestLoader;
         private var _audioTrackController : AudioTrackController;
+        private var _levelController : LevelController;
         private var _streamBuffer : StreamBuffer;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
@@ -44,7 +45,8 @@ package org.mangui.hls {
             connection.connect(null);
             _manifestLoader = new ManifestLoader(this);
             _audioTrackController = new AudioTrackController(this);
-            _streamBuffer = new StreamBuffer(this, _audioTrackController);
+            _levelController = new LevelController(this);
+            _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
             _hlsURLStream = URLStream as Class;
             // default loader
             _hlsNetStream = new HLSNetStream(connection, this, _streamBuffer);
@@ -70,10 +72,12 @@ package org.mangui.hls {
             this.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _manifestLoader.dispose();
             _audioTrackController.dispose();
+            _levelController.dispose();
             _streamBuffer.dispose();
             _hlsNetStream.dispose_();
             _manifestLoader = null;
             _audioTrackController = null;
+            _levelController = null;
             _hlsNetStream = null;
             _client = null;
             _stage = null;
@@ -82,12 +86,12 @@ package org.mangui.hls {
 
         /** Return the quality level used when starting a fresh playback **/
         public function get startlevel() : int {
-            return _manifestLoader.startlevel;
+            return _levelController.startlevel;
         };
 
         /** Return the quality level used after a seek operation **/
         public function get seeklevel() : int {
-            return _manifestLoader.seeklevel;
+            return _levelController.seeklevel;
         };
 
         /** Return the quality level of the currently played fragment **/
