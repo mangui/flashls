@@ -206,7 +206,7 @@
                     if (_loading_state == LOADING_STALLED) {
                         /* next consecutive fragment not found:
                         it could happen on live playlist :
-                        - if bandwidth available is lower than lowest quality needed bandwidth 
+                        - if bandwidth available is lower than lowest quality needed bandwidth
                         - after long pause */
                         CONFIG::LOGGING {
                             Log.warn("loading stalled: restart playback");
@@ -686,7 +686,7 @@
                     CONFIG::LOGGING {
                         Log.error(err);
                     }
-                    var hlsError : HLSError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, err);
+                    var hlsError : HLSError = new HLSError(HLSError.OTHER_ERROR, frag.url, err);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                     return;
                 }
@@ -811,9 +811,9 @@
                 fragData.tags.push(tag);
             }
 
-            /* try to do progressive buffering here. 
+            /* try to do progressive buffering here.
              * only do it in case :
-             * 		first fragment is already loaded 
+             * 		first fragment is already loaded
              *      if first fragment is not loaded, we can do it if startlevel is already defined (if startFromLevel is set to -1
              *      we first need to download one fragment to check the dl bw, in order to assess start level ...)
              *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
@@ -832,7 +832,7 @@
                     var max_offset : Number = _frag_current.start_time + fragData.tag_pts_end_offset / 1000;
                     // in case of cold start/seek use case,
                     if (!_fragment_first_loaded ) {
-                        /* ensure buffer max offset is greater than requested seek position. 
+                        /* ensure buffer max offset is greater than requested seek position.
                          * this will avoid issues with accurate seeking feature */
                         if (_seek_pos > max_offset) {
                             // cannot do progressive buffering until we have enough data to reach requested seek offset
