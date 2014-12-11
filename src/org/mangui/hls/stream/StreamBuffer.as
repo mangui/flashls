@@ -16,8 +16,10 @@ package org.mangui.hls.stream {
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.loader.FragmentLoader;
+    import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
+    import org.mangui.hls.model.AudioTrack;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -30,6 +32,7 @@ package org.mangui.hls.stream {
     public class StreamBuffer {
         private var _hls : HLS;
         private var _fragmentLoader : FragmentLoader;
+        private var _altaudiofragmentLoader : AltAudioFragmentLoader;
         /** Timer used to process FLV tags. **/
         private var _timer : Timer;
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
@@ -55,26 +58,32 @@ package org.mangui.hls.stream {
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
             _hls = hls;
             _fragmentLoader = new FragmentLoader(hls, audioTrackController, levelController, this);
+            _altaudiofragmentLoader = new AltAudioFragmentLoader(hls, this);
             flushAll();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
         }
 
         public function dispose() : void {
             flushAll();
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
             _timer.stop();
             _fragmentLoader.dispose();
+            _altaudiofragmentLoader.dispose();
             _fragmentLoader = null;
+            _altaudiofragmentLoader = null;
             _hls = null;
             _timer = null;
         }
 
         public function stop() : void {
             _fragmentLoader.stop();
+            _altaudiofragmentLoader.stop();
             flushAll();
         }
 
@@ -113,6 +122,14 @@ package org.mangui.hls.stream {
                 // seek position is out of buffer : load from fragment
                 _fragmentLoader.stop();
                 _fragmentLoader.seek(_seek_position_requested);
+                // check if we need to use alt audio fragment loader
+                if (_hls.audioTracks.length && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
+                    CONFIG::LOGGING {
+                        Log.info("seek : need to load alt audio track");
+                    }
+                    _altaudiofragmentLoader.stop();
+                    _altaudiofragmentLoader.seek(_seek_position_requested);
+                }
                 flushAll();
             }
             _timer.start();
@@ -191,6 +208,18 @@ package org.mangui.hls.stream {
             _seek_pos_reached = false;
             _reached_vod_end = false;
             _time_sliding = 0;
+        }
+
+        private function flushAudio() : void {
+            // flush audio buffer and AAC HEADER tags (if any)
+            _audioTags = new Vector.<FLVData>();
+            _audioIdx = 0;
+            var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(filterAACHeader);
+            _headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
+        }
+
+        private function filterAACHeader(item : FLVData) : Boolean {
+            return (item.tag.type != FLVTag.AAC_HEADER);
         }
 
         /*
@@ -612,6 +641,12 @@ package org.mangui.hls.stream {
                 Log.debug("last fragment loaded");
             }
             _reached_vod_end = true;
+        }
+
+        private function _audioTrackChange(event : HLSEvent) : void {
+            CONFIG::LOGGING {
+                Log.info("audio track changed:" + event.audioTrack);
+            }
         }
     }
 }

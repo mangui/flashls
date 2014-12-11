@@ -40,7 +40,7 @@
         public function set audioTrack(num : int) : void {
             if (_audioTrackId != num) {
                 _audioTrackId = num;
-                var ev : HLSEvent = new HLSEvent(HLSEvent.AUDIO_TRACK_CHANGE);
+                var ev : HLSEvent = new HLSEvent(HLSEvent.AUDIO_TRACK_SWITCH);
                 ev.audioTrack = _audioTrackId;
                 _hls.dispatchEvent(ev);
                 CONFIG::LOGGING {

@@ -32,7 +32,7 @@ package org.mangui.osmf.plugins.traits {
             _numAlternativeAudioStreams = 0;
             _hls = hls;
             _media = media;
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_CHANGE, _audioTrackChangedHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
         }
         
@@ -40,7 +40,7 @@ package org.mangui.osmf.plugins.traits {
             CONFIG::LOGGING {
             Log.debug("HLSAlternativeAudioTrait:dispose");
             }
-            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_CHANGE, _audioTrackChangedHandler);
+            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
             super.dispose();
         }
