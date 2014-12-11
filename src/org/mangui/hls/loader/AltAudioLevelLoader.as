@@ -121,7 +121,9 @@ package org.mangui.hls.loader {
             if (audioTrack.source == AudioTrack.FROM_PLAYLIST) {
                 var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[audioTrack.id];
                 if (altAudioTrack.url && audioTrack.level == null) {
-                    Log.debug("switch to audio level " + _current_level + ", load Playlist");
+                    CONFIG::LOGGING {
+                        Log.debug("switch to audio level " + _current_level + ", load Playlist");
+                    }
                     clearTimeout(_timeoutID);
                     _timeoutID = setTimeout(_loadAudioLevelPlaylist, 0);
                 }
