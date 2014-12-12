@@ -195,7 +195,7 @@
             }
             // check whether last parsed audio PES is complete
             if (_curAudioPES && _curAudioPES.length > 14) {
-                var pes : PES = new PES(_curAudioPES, true);
+                var pes : PES = new PES(_curAudioPES);
                 // consider that PES with unknown size (length=0 found in header) is complete
                 if (pes.len == 0 || (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
@@ -217,7 +217,7 @@
             }
             // check whether last parsed video PES is complete
             if (_curVideoPES && _curVideoPES.length > 14) {
-                pes = new PES(_curVideoPES, false);
+                pes = new PES(_curVideoPES);
                 // consider that PES with unknown size (length=0 found in header) is complete
                 if (pes.len == 0 || (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
@@ -244,7 +244,7 @@
             }
             // check whether last parsed ID3 PES is complete
             if (_curId3PES && _curId3PES.length > 14) {
-                var pes3 : PES = new PES(_curId3PES, false);
+                var pes3 : PES = new PES(_curId3PES);
                 if (pes3.len && (pes3.data.length - pes3.payload - pes3.payload_len) >= 0) {
                     CONFIG::LOGGING {
                         Log.debug2("TS: complete ID3 PES found at end of segment, parse it");
@@ -624,9 +624,9 @@
                     if (stt) {
                         if (_curAudioPES) {
                             if (_audioIsAAC) {
-                                _parseADTSPES(new PES(_curAudioPES, true));
+                                _parseADTSPES(new PES(_curAudioPES));
                             } else {
-                                _parseMPEGPES(new PES(_curAudioPES, true));
+                                _parseMPEGPES(new PES(_curAudioPES));
                             }
                         }
                         _curAudioPES = new ByteArray();
@@ -646,14 +646,14 @@
                     }
                     if (stt) {
                         if (_curId3PES) {
-                            _parseID3PES(new PES(_curId3PES, false));
+                            _parseID3PES(new PES(_curId3PES));
                         }
                         _curId3PES = new ByteArray();
                     }
                     if (_curId3PES) {
                         // store data.  will normally be in a single TS
                         _curId3PES.writeBytes(_data, _data.position, todo);
-                        var pes : PES = new PES(_curId3PES, false);
+                        var pes : PES = new PES(_curId3PES);
                         if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                             CONFIG::LOGGING {
                                 Log.debug2("TS: complete ID3 PES found, parse it");
@@ -681,7 +681,7 @@
                     }
                     if (stt) {
                         if (_curVideoPES) {
-                            _parseAVCPES(new PES(_curVideoPES, false));
+                            _parseAVCPES(new PES(_curVideoPES));
                         }
                         _curVideoPES = new ByteArray();
                     }
