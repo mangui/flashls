@@ -359,9 +359,9 @@ package org.mangui.hls.demux {
             if (!frames.length) {
                 if (_curNalUnit) {
                     _curNalUnit.writeBytes(pes.data, pes.payload, pes.data.length - pes.payload);
-                } else {
-                    null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                    CONFIG::LOGGING {
+                }
+                CONFIG::LOGGING {
+                    if (!_curNalUnit) {
                         Log.warn("TS: no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
                     }
                 }
@@ -631,9 +631,9 @@ package org.mangui.hls.demux {
                     }
                     if (_curAudioPES) {
                         _curAudioPES.writeBytes(_data, _data.position, todo);
-                    } else {
-                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    }
+                    CONFIG::LOGGING {
+                        if (!_curAudioPES) {
                             Log.warn("TS: Discarding audio packet with id " + pid);
                         }
                     }
@@ -665,10 +665,9 @@ package org.mangui.hls.demux {
                             }
                             _curId3PES.position = _curId3PES.length;
                         }
-                    } else {
-                        null;
-                        // just to avoid compilation warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    }
+                    CONFIG::LOGGING {
+                        if (!_curId3PES) {
                             Log.warn("TS: Discarding ID3 packet with id " + pid + " bad TS segmentation ?");
                         }
                     }
@@ -685,9 +684,9 @@ package org.mangui.hls.demux {
                     }
                     if (_curVideoPES) {
                         _curVideoPES.writeBytes(_data, _data.position, todo);
-                    } else {
-                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    }
+                    CONFIG::LOGGING {
+                        if (!_curVideoPES) {
                             Log.warn("TS: Discarding video packet with id " + pid + " bad TS segmentation ?");
                         }
                     }

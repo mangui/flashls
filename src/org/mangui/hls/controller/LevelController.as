@@ -245,11 +245,10 @@ package org.mangui.hls.controller {
             // Then we should check if selected level is higher than max_level if so, than take the min of those two
             switch_to_level = Math.min(max_level, switch_to_level);
 
-            if (switch_to_level != current_level) {
-                CONFIG::LOGGING {
+            CONFIG::LOGGING {
+                if (switch_to_level != current_level) {
                     Log.debug("switch to level " + switch_to_level);
                 }
-                null;
             }
 
             return switch_to_level;
