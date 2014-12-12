@@ -822,23 +822,15 @@ package org.mangui.hls.loader {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
-            if (fragData.audio_found) {
-                null;
-                // just to stop the compiler warning
-                CONFIG::LOGGING {
+            CONFIG::LOGGING {
+                if (fragData.audio_found) {
                     Log.debug("m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
                 }
-            }
-
-            if (fragData.video_found) {
-                CONFIG::LOGGING {
+                if (fragData.video_found) {
                     Log.debug("m/M video PTS:" + fragData.pts_min_video + "/" + fragData.pts_max_video);
-                }
-                if (!fragData.audio_found) {
-                } else {
-                    null;
-                    // just to avoid compilation warnings if CONFIG::LOGGING is false
-                    CONFIG::LOGGING {
+
+                    if (!fragData.audio_found) {
+                    } else {
                         Log.debug("Delta audio/video m/M PTS:" + (fragData.pts_min_video - fragData.pts_min_audio) + "/" + (fragData.pts_max_video - fragData.pts_max_audio));
                     }
                 }

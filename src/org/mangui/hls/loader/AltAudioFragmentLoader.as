@@ -617,10 +617,8 @@ package org.mangui.hls.loader {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
-            if (fragData.audio_found) {
-                null;
-                // just to stop the compiler warning
-                CONFIG::LOGGING {
+            CONFIG::LOGGING {
+                if (fragData.audio_found) {
                     Log.debug("m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
                 }
             }

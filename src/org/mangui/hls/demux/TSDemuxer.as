@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.demux {
+package org.mangui.hls.demux {
     import flash.utils.getTimer;
     import flash.display.DisplayObject;
 
@@ -175,9 +175,8 @@
                     // free ByteArray
                     _data = null;
                     // first check if TS parsing was successful
-                    if (_pmtParsed == false) {
-                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    CONFIG::LOGGING {
+                        if (_pmtParsed == false) {
                             Log.error("TS: no PMT found, report parsing complete");
                         }
                     }
@@ -591,9 +590,8 @@
             switch (pid) {
                 case PAT_ID:
                     todo -= _parsePAT(stt);
-                    if (_pmtParsed == false) {
-                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    CONFIG::LOGGING {
+                        if (_pmtParsed == false) {
                             Log.debug("TS: PAT found.PMT PID:" + _pmtId);
                         }
                     }
@@ -781,9 +779,8 @@
                 read += sel + 5;
             }
 
-            if (audioList.length) {
-                null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                CONFIG::LOGGING {
+            CONFIG::LOGGING {
+                if (audioList.length) {
                     Log.debug("TS: Found " + audioList.length + " audio tracks");
                 }
             }
