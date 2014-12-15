@@ -41,6 +41,8 @@ package org.mangui.flowplayer {
         private var _hls : HLS;
         // event values
         private var _duration : Number = 0;
+        private var _durationCapped : Number = 0;
+        private var _clipStart : Number = 0;
         private var _videoWidth : int = -1;
         private var _videoHeight : int = -1;
         private var _isManifestLoaded : Boolean = false;
@@ -97,9 +99,15 @@ package org.mangui.flowplayer {
         };
 
         private function _manifestHandler(event : HLSEvent) : void {
-            _duration = event.levels[_hls.startlevel].duration;
+            _duration = event.levels[_hls.startlevel].duration - _clipStart;
             _isManifestLoaded = true;
-            _clip.duration = _duration;
+            // only update duration if not capped
+            if (!_durationCapped) {
+                _clip.duration = _duration;
+            } else {
+                // ensure capped duration is lt real one
+                _durationCapped = Math.min(_durationCapped, _duration);
+            }
             _clip.stopLiveOnPause = false;
             /*
             var nbLevel = event.levels.length;
@@ -120,12 +128,8 @@ package org.mangui.flowplayer {
              */
             _clip.dispatch(ClipEventType.METADATA);
             _seekable = true;
-            // if (_hls.type == HLSTypes.LIVE) {
-            // _seekable = false;
-            // } else {
-            // _seekable = true;
-            // }
-            _hls.stream.play();
+            // real seek position : add clip.start offset. if not defined, use -1 to fix seeking issue on live playlist
+            _hls.stream.play(null, (_clip.start == 0) ? -1 : _clipStart);
             _clip.dispatch(ClipEventType.SEEK, 0);
             if (_pauseAfterStart) {
                 pause(new ClipEvent(ClipEventType.PAUSE));
@@ -133,8 +137,20 @@ package org.mangui.flowplayer {
         };
 
         private function _mediaTimeHandler(event : HLSEvent) : void {
-            _duration = event.mediatime.duration;
-            _clip.duration = _duration;
+            _duration = event.mediatime.duration - _clipStart;
+            // only update duration if not capped
+            if (!_durationCapped) {
+                _clip.duration = _duration;
+            } else {
+                // ensure capped duration is lt real one
+                _durationCapped = Math.min(_durationCapped, _duration);
+                if (_durationCapped - time <= 0.1) {
+                    // reach end of stream, stop playback and simulate complete event
+                    _hls.stream.close();
+                    _clip.dispatchBeforeEvent(new ClipEvent(ClipEventType.FINISH));
+                    _clip.startDispatched = false;
+                }
+            }
             var videoWidth : int = _video.videoWidth;
             var videoHeight : int = _video.videoHeight;
             if (videoWidth && videoHeight) {
@@ -195,6 +211,8 @@ package org.mangui.flowplayer {
             }
             _hls.load(clip.completeUrl);
             _pauseAfterStart = pauseAfterStart;
+            _durationCapped = clip.duration;
+            _clipStart = clip.start;
             clip.type = ClipType.VIDEO;
             clip.dispatch(ClipEventType.BEGIN);
             clip.setNetStream(_hls.stream);
@@ -290,7 +308,8 @@ package org.mangui.flowplayer {
                 Log.info("seek(" + seconds + ")");
             }
             if (Math.abs(time - seconds) > 0.2) {
-                _hls.stream.seek(seconds);
+                // real seek position : add clip.start offset
+                _hls.stream.seek(seconds + _clipStart);
             } else {
                 CONFIG::LOGGING {
                     Log.warn("seek(" + seconds + ") to current position, discard");
@@ -313,7 +332,7 @@ package org.mangui.flowplayer {
          * Current playhead time in seconds.
          */
         public function get time() : Number {
-            var _time : Number = Math.max(0, _hls.position);
+            var _time : Number = Math.max(0, _hls.position - _clipStart);
             return _time;
         }
 
@@ -321,16 +340,26 @@ package org.mangui.flowplayer {
          * The point in timeline where the buffered data region begins, in seconds.
          */
         public function get bufferStart() : Number {
-            var _buffer : Number = Math.max(0, _hls.position - _hls.stream.backBufferLength);
-            return _buffer;
+            var _bufferStart : Number;
+            if (!_durationCapped) {
+                _bufferStart = Math.min(_hls.position - _hls.stream.backBufferLength - _clipStart, _duration);
+            } else {
+                _bufferStart = Math.min(_hls.position - _hls.stream.backBufferLength - _clipStart, _durationCapped);
+            }
+            return Math.max(_bufferStart, 0);
         }
 
         /**
          * The point in timeline where the buffered data region ends, in seconds.
          */
         public function get bufferEnd() : Number {
-            var _buffer : Number = Math.max(0, _hls.position + _hls.stream.bufferLength);
-            return _buffer;
+            var _bufferEnd : Number;
+            if (!_durationCapped) {
+                _bufferEnd = Math.min(_hls.stream.bufferLength + _hls.position - _clipStart, _duration);
+            } else {
+                _bufferEnd = Math.min(_hls.stream.bufferLength + _hls.position - _clipStart, _durationCapped);
+            }
+            return Math.max(_bufferEnd, 0);
         }
 
         /**
