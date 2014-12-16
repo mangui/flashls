@@ -117,7 +117,7 @@ package org.mangui.hls.loader {
                             // just after seek, load first fragment
                             _loading_state = _loadfirstfragment(_seek_pos);
                         } else {
-                            if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
+                            if (HLSSettings.maxBufferLength == 0 || _streamBuffer.audioBufferLength < HLSSettings.maxBufferLength) {
                                 _loading_state = _loadnextfragment(_frag_previous);
                             }
                         }

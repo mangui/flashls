@@ -54,6 +54,8 @@ package org.mangui.hls.stream {
         private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 4.0;
         /** means that last fragment of a VOD playlist has been loaded */
         private var _reached_vod_end : Boolean;
+        /* are we using alt-audio ? */
+        private var _use_altaudio : Boolean;
 
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
             _hls = hls;
@@ -129,6 +131,9 @@ package org.mangui.hls.stream {
                     }
                     _altaudiofragmentLoader.stop();
                     _altaudiofragmentLoader.seek(_seek_position_requested);
+                    _use_altaudio = true;
+                } else {
+                    _use_altaudio = false;
                 }
                 flushAll();
             }
@@ -227,11 +232,19 @@ package org.mangui.hls.stream {
         _audioTags = new Vector.<FLVData>();
         }
          */
-        private function get audioBufferLength() : Number {
+        private function get audio_expected() : Boolean {
+            return (_fragmentLoader.audio_expected || _use_altaudio);
+        }
+
+        private function get video_expected() : Boolean {
+            return _fragmentLoader.video_expected;
+        }
+
+        public function get audioBufferLength() : Number {
             return getbuflen(_audioTags, _audioIdx);
         }
 
-        private function get videoBufferLength() : Number {
+        public function get videoBufferLength() : Number {
             return getbuflen(_videoTags, _videoIdx);
         }
 
@@ -240,7 +253,15 @@ package org.mangui.hls.stream {
                 case HLSSeekStates.SEEKING:
                     return  Math.max(0, max_pos - _seek_position_requested);
                 case HLSSeekStates.SEEKED:
-                    return Math.max(audioBufferLength, videoBufferLength);
+                    if (audio_expected) {
+                        if (video_expected) {
+                            return Math.min(audioBufferLength, videoBufferLength);
+                        } else {
+                            return audioBufferLength;
+                        }
+                    } else {
+                        return videoBufferLength;
+                    }
                 case HLSSeekStates.IDLE:
                 default:
                     return 0;
@@ -267,6 +288,9 @@ package org.mangui.hls.stream {
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
              */
+            CONFIG::LOGGING {
+                Log.debug2("audio/video bufferLength:" + audioBufferLength + "/" + videoBufferLength);
+            }
 
             var duration : Number = 0;
             if (_seek_pos_reached) {
@@ -305,7 +329,7 @@ package org.mangui.hls.stream {
                 }
             }
             // clip backbuffer if needed
-            if (HLSSettings.maxBackBufferLength >= 0) {
+            if (HLSSettings.maxBackBufferLength > 0) {
                 _clipBackBuffer(HLSSettings.maxBackBufferLength);
             }
         }
@@ -619,20 +643,50 @@ package org.mangui.hls.stream {
         }
 
         private function get min_pos() : Number {
+            if (audio_expected) {
+                if (video_expected) {
+                    return Math.max(min_audio_pos, min_video_pos);
+                } else {
+                    return min_audio_pos;
+                }
+            } else {
+                return min_video_pos;
+            }
+        }
+
+        private function get min_audio_pos() : Number {
             var min_pos_ : Number = Number.POSITIVE_INFINITY;
-            if (_headerTags.length) min_pos_ = Math.min(min_pos_, _headerTags[0].position - (_time_sliding - _headerTags[0].sliding ));
-            if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position - (_time_sliding - _videoTags[0].sliding ));
             if (_audioTags.length) min_pos_ = Math.min(min_pos_, _audioTags[0].position - (_time_sliding - _audioTags[0].sliding ));
-            if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position - (_time_sliding - _metaTags[0].sliding ));
+            return min_pos_;
+        }
+
+        private function get min_video_pos() : Number {
+            var min_pos_ : Number = Number.POSITIVE_INFINITY;
+            if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position - (_time_sliding - _videoTags[0].sliding ));
             return min_pos_;
         }
 
         private function get max_pos() : Number {
+            if (audio_expected) {
+                if (video_expected) {
+                    return Math.min(max_audio_pos, max_video_pos);
+                } else {
+                    return max_audio_pos;
+                }
+            } else {
+                return max_video_pos;
+            }
+        }
+
+        private function get max_audio_pos() : Number {
             var max_pos_ : Number = Number.NEGATIVE_INFINITY;
-            if (_headerTags.length) max_pos_ = Math.max(max_pos_, _headerTags[_headerTags.length - 1].position - (_time_sliding - _headerTags[_headerTags.length - 1].sliding ));
-            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoTags.length - 1].sliding ));
             if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[_audioTags.length - 1].sliding ));
-            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[_metaTags.length - 1].sliding ));
+            return max_pos_;
+        }
+
+        private function get max_video_pos() : Number {
+            var max_pos_ : Number = Number.NEGATIVE_INFINITY;
+            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoTags.length - 1].sliding ));
             return max_pos_;
         }
 

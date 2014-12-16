@@ -117,6 +117,24 @@ package org.mangui.hls.loader {
             _keymap = new Object();
         }
 
+        public function get audio_expected() : Boolean {
+            if (_demux) {
+                return _demux.audio_expected;
+            } else {
+                // always return true in case demux is not yet initialized
+                return true;
+            }
+        }
+
+        public function get video_expected() : Boolean {
+            if (_demux) {
+                return _demux.video_expected;
+            } else {
+                // always return true in case demux is not yet initialized
+                return true;
+            }
+        }
+
         /**  fragment loading Timer **/
         private function _checkLoading(e : Event) : void {
             switch(_loading_state) {
