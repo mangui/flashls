@@ -19,6 +19,7 @@
         private static var _paramMap : Dictionary = new Dictionary();
         _paramMap["minbufferlength"] = "minBufferLength";
         _paramMap["maxbufferlength"] = "maxBufferLength";
+        _paramMap["maxbackbufferlength"] = "maxBackBufferLength";
         _paramMap["lowbufferlength"] = "lowBufferLength";
         _paramMap["seekmode"] = "seekMode";
         _paramMap["startfromlevel"] = "startFromLevel";

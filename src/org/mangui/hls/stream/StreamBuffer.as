@@ -276,7 +276,7 @@ package org.mangui.hls.stream {
                 }
             }
             // clip backbuffer if needed
-            if (HLSSettings.maxBackBufferLength >= 0) {
+            if (HLSSettings.maxBackBufferLength > 0) {
                 _clipBackBuffer(HLSSettings.maxBackBufferLength);
             }
         }
