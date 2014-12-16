@@ -94,7 +94,7 @@ package org.mangui.hls.loader {
                 var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
                 // set fragment and update sequence number range
                 var newLevel : Level = new Level();
-                newLevel.fragments = frags;
+                newLevel.updateFragments(frags);
                 newLevel.targetduration = Manifest.getTargetDuration(string);
                 _hls.audioTracks[_current_level].level = newLevel;
             }
