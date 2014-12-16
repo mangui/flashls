@@ -760,7 +760,7 @@ package org.mangui.hls.loader {
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
                  */
-                if ((_demux.audio_expected() && fragData.audio_found) || (!_demux.audio_expected() && fragData.video_found)) {
+                if ((_demux.audio_expected && fragData.audio_found) || (!_demux.audio_expected && fragData.video_found)) {
                     if (_pts_analyzing == true) {
                         _pts_analyzing = false;
                         _levels[_hls.level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_min + _frag_current.duration * 1000);

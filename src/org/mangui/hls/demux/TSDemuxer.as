@@ -148,11 +148,11 @@ package org.mangui.hls.demux {
             _data_complete = true;
         }
 
-        public function audio_expected() : Boolean {
+        public function get audio_expected() : Boolean {
             return (_audioId != -1);
         }
 
-        public function video_expected() : Boolean {
+        public function get video_expected() : Boolean {
             return (_avcId != -1);
         }
 
