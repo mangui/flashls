@@ -94,7 +94,7 @@ package org.mangui.hls.loader {
 
         /** update state and level in case of audio level loaded event **/
         private function _audioLevelLoadedHandler(event : HLSEvent) : void {
-            if (_loading_state == LOADING_WAITING_LEVEL_UPDATE) {
+            if (_loading_state == LOADING_WAITING_LEVEL_UPDATE || _loading_state == LOADING_IDLE) {
                 _loading_state = LOADING_IDLE;
                 _level = _hls.audioTracks[_hls.audioTrack].level;
                 // speed up loading of new fragment

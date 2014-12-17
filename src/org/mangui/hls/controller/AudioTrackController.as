@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.controller {
+package org.mangui.hls.controller {
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.model.AudioTrack;
@@ -10,7 +10,6 @@
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-
     /*
      * class that handle audio tracks, consolidating tracks retrieved from Manifest and from Demux
      */
@@ -62,46 +61,51 @@
             _audioTrackId = -1;
             _audioTracksfromDemux = new Vector.<AudioTrack>();
             _audioTracksfromManifest = new Vector.<AudioTrack>();
+            _updateAudioTrackforLevel(_hls.level);
             _audioTracksMerge();
         };
 
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
             if (event.level == _hls.level) {
-                var audioTrackList : Vector.<AudioTrack> = new Vector.<AudioTrack>();
-                var stream_id : String = _hls.levels[ _hls.level].audio_stream_id;
-                // check if audio stream id is set, and alternate audio tracks available
-                if (stream_id && _hls.altAudioTracks) {
-                    // try to find alternate audio streams matching with this ID
-                    for (var idx : int = 0; idx < _hls.altAudioTracks.length; idx++) {
-                        var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[idx];
-                        if (altAudioTrack.group_id == stream_id) {
-                            var isDefault : Boolean = (altAudioTrack.default_track == true || altAudioTrack.autoselect == true);
-                            CONFIG::LOGGING {
-                                Log.debug(" audio track[" + audioTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
-                            }
-                            audioTrackList.push(new AudioTrack(altAudioTrack.name, AudioTrack.FROM_PLAYLIST, idx, isDefault, true));
-                        }
-                    }
-                }
-                // check if audio tracks matching with current level have changed since last time
-                var audio_track_changed : Boolean = false;
-                if (_audioTracksfromManifest.length != audioTrackList.length) {
-                    audio_track_changed = true;
-                } else {
-                    for (idx = 0; idx < _audioTracksfromManifest.length; ++idx) {
-                        if (_audioTracksfromManifest[idx].id != audioTrackList[idx].id) {
-                            audio_track_changed = true;
-                        }
-                    }
-                }
-                // update audio list
-                if (audio_track_changed) {
-                    _audioTracksfromManifest = audioTrackList;
-                    _audioTracksMerge();
-                }
+                _updateAudioTrackforLevel(event.level);
             }
         };
+
+        private function _updateAudioTrackforLevel(level : uint) : void {
+            var audioTrackList : Vector.<AudioTrack> = new Vector.<AudioTrack>();
+            var stream_id : String = _hls.levels[level].audio_stream_id;
+            // check if audio stream id is set, and alternate audio tracks available
+            if (stream_id && _hls.altAudioTracks) {
+                // try to find alternate audio streams matching with this ID
+                for (var idx : int = 0; idx < _hls.altAudioTracks.length; idx++) {
+                    var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[idx];
+                    if (altAudioTrack.group_id == stream_id) {
+                        var isDefault : Boolean = (altAudioTrack.default_track == true || altAudioTrack.autoselect == true);
+                        CONFIG::LOGGING {
+                            Log.debug(" audio track[" + audioTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + altAudioTrack.name);
+                        }
+                        audioTrackList.push(new AudioTrack(altAudioTrack.name, AudioTrack.FROM_PLAYLIST, idx, isDefault, true));
+                    }
+                }
+            }
+            // check if audio tracks matching with current level have changed since last time
+            var audio_track_changed : Boolean = false;
+            if (_audioTracksfromManifest.length != audioTrackList.length) {
+                audio_track_changed = true;
+            } else {
+                for (idx = 0; idx < _audioTracksfromManifest.length; ++idx) {
+                    if (_audioTracksfromManifest[idx].id != audioTrackList[idx].id) {
+                        audio_track_changed = true;
+                    }
+                }
+            }
+            // update audio list
+            if (audio_track_changed) {
+                _audioTracksfromManifest = audioTrackList;
+                _audioTracksMerge();
+            }
+        }
 
         // merge audio track info from demux and from manifest into a unified list that will be exposed to upper layer
         private function _audioTracksMerge() : void {
