@@ -289,7 +289,7 @@ package org.mangui.hls.stream {
              * this is to ensure that accurate seeking will work appropriately
              */
             CONFIG::LOGGING {
-                Log.debug2("audio/video bufferLength:" + audioBufferLength + "/" + videoBufferLength);
+                Log.debug2("position/audio/video bufferLength:" + position.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2));
             }
 
             var duration : Number = 0;
@@ -303,9 +303,14 @@ package org.mangui.hls.stream {
                  * check if buffer max position is greater than requested seek position
                  * if it is the case, then we can start injecting tags in NetStream
                  */
+
+                CONFIG::LOGGING {
+                    //Log.info("min_audio/max_audio/min_video/max_video:" + min_audio_pos.toFixed(2) + "/" + max_audio_pos.toFixed(2) + "/" + min_video_pos.toFixed(2) + "/" + max_video_pos.toFixed(2));  
+                }
+
                 if (max_pos >= _seek_position_requested) {
                     // inject enough tags to reach seek position
-                    duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - min_pos;
+                    duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - min_min_pos;
                 }
             }
             if (duration > 0) {
@@ -646,6 +651,18 @@ package org.mangui.hls.stream {
             if (audio_expected) {
                 if (video_expected) {
                     return Math.max(min_audio_pos, min_video_pos);
+                } else {
+                    return min_audio_pos;
+                }
+            } else {
+                return min_video_pos;
+            }
+        }
+
+        private function get min_min_pos() : Number {
+            if (audio_expected) {
+                if (video_expected) {
+                    return Math.min(min_audio_pos, min_video_pos);
                 } else {
                     return min_audio_pos;
                 }
