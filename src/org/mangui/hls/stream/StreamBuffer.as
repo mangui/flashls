@@ -223,7 +223,7 @@ package org.mangui.hls.stream {
             _headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
         }
 
-        private function filterAACHeader(item : FLVData) : Boolean {
+        private function filterAACHeader(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
             return (item.tag.type != FLVTag.AAC_HEADER);
         }
 
@@ -305,7 +305,7 @@ package org.mangui.hls.stream {
                  */
 
                 CONFIG::LOGGING {
-                    //Log.info("min_audio/max_audio/min_video/max_video:" + min_audio_pos.toFixed(2) + "/" + max_audio_pos.toFixed(2) + "/" + min_video_pos.toFixed(2) + "/" + max_video_pos.toFixed(2));  
+                    // Log.info("min_audio/max_audio/min_video/max_video:" + min_audio_pos.toFixed(2) + "/" + max_audio_pos.toFixed(2) + "/" + min_video_pos.toFixed(2) + "/" + max_video_pos.toFixed(2));  
                 }
 
                 if (max_pos >= _seek_position_requested) {
@@ -716,8 +716,9 @@ package org.mangui.hls.stream {
 
         private function _audioTrackChange(event : HLSEvent) : void {
             CONFIG::LOGGING {
-                Log.info("audio track changed:" + event.audioTrack);
+                Log.debug("StreamBuffer : audio track changed, flushing audio buffer and seek:" + event.audioTrack);
             }
+            flushAudio();
         }
     }
 }

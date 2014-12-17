@@ -39,7 +39,7 @@ package org.mangui.hls.loader {
         /** last reload manifest time **/
         private var _reload_playlists_timer : uint;
         /** current audio level **/
-        private var _current_level : int;
+        private var _current_track : int;
         /** reference to manifest being loaded **/
         private var _manifest_loading : Manifest;
         /** is this loader closed **/
@@ -96,7 +96,7 @@ package org.mangui.hls.loader {
                 var newLevel : Level = new Level();
                 newLevel.updateFragments(frags);
                 newLevel.targetduration = Manifest.getTargetDuration(string);
-                _hls.audioTracks[_current_level].level = newLevel;
+                _hls.audioTracks[_current_track].level = newLevel;
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADED, level));
             _manifest_loading = null;
@@ -108,21 +108,21 @@ package org.mangui.hls.loader {
                 return;
             }
             _reload_playlists_timer = getTimer();
-            var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[_hls.audioTracks[_current_level].id];
+            var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[_hls.audioTracks[_current_track].id];
             _manifest_loading = new Manifest();
-            _manifest_loading.loadPlaylist(altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _current_level, _hls.type, HLSSettings.flushLiveURLCache);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADING, _current_level));
+            _manifest_loading.loadPlaylist(altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _current_track, _hls.type, HLSSettings.flushLiveURLCache);
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADING, _current_track));
         };
 
         /** When audio track switch occurs, assess the need of loading audio level playlist **/
         private function _audioTrackSwitchHandler(event : HLSEvent) : void {
-            _current_level = event.level;
-            var audioTrack : AudioTrack = _hls.audioTracks[_current_level];
+            _current_track = event.audioTrack;
+            var audioTrack : AudioTrack = _hls.audioTracks[_current_track];
             if (audioTrack.source == AudioTrack.FROM_PLAYLIST) {
                 var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[audioTrack.id];
                 if (altAudioTrack.url && audioTrack.level == null) {
                     CONFIG::LOGGING {
-                        Log.debug("switch to audio level " + _current_level + ", load Playlist");
+                        Log.debug("switch to audio track " + _current_track + ", load Playlist");
                     }
                     clearTimeout(_timeoutID);
                     _timeoutID = setTimeout(_loadAudioLevelPlaylist, 0);
