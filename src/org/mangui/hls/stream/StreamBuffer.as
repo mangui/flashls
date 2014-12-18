@@ -227,6 +227,40 @@ package org.mangui.hls.stream {
             return (item.tag.type != FLVTag.AAC_HEADER);
         }
 
+        /* compare two tags, smallest continuity
+         * then smallest pts. then discontinuity then aac/avc header then metadata, then others  
+         * 
+        return a negative number, if x should appear before y in the sorted sequence
+        retun 0, if x equals y
+        return a positive number, if x should appear after y in the sorted sequence* 
+         * 
+         * */
+        private function compareTags(x : FLVData, y : FLVData) : Number {
+            if (x.continuity != y.continuity) {
+                return (x.continuity - y.continuity);
+            } else {
+                if (x.tag.pts != y.tag.pts) {
+                    return (x.tag.pts - y.tag.pts);
+                } else {
+                    return (gettagrank(x.tag) - gettagrank(y.tag));
+                }
+            }
+        }
+
+        private function gettagrank(tag : FLVTag) : uint {
+            switch(tag.type) {
+                case FLVTag.DISCONTINUITY:
+                    return 0;
+                case FLVTag.METADATA:
+                    return 1;
+                case FLVTag.AVC_HEADER:
+                case FLVTag.AAC_HEADER:
+                    return 2;
+                default:
+                    return 3;
+            }
+        }
+
         /*
         private function flushAudio() : void {
         _audioTags = new Vector.<FLVData>();
@@ -316,6 +350,9 @@ package org.mangui.hls.stream {
             if (duration > 0) {
                 var data : Vector.<FLVData> = shiftmultipletags(duration);
                 if (!_seek_pos_reached) {
+                    /* force  tag sorting here : it is mandatory  for seek filtering logic
+                    in case of alt audio tracks, audio/video headers might be not be sorted correctly */
+                    data = data.sort(compareTags);
                     data = seekFilterTags(data, _seek_position_requested);
                     _seek_pos_reached = true;
                 }
@@ -371,6 +408,7 @@ package org.mangui.hls.stream {
                     break;
                 }
             }
+
             if (keyIdx == -1) {
                 // audio only stream, no keyframe. we can seek accurately
                 keyIdx = lastIdx;
