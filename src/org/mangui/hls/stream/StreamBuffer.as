@@ -585,23 +585,13 @@ package org.mangui.hls.stream {
         }
 
         private function getbuflen(tags : Vector.<FLVData>, startIdx : uint) : Number {
-            var min_pts : Number = 0;
-            var max_pts : Number = 0;
-            var continuity : int = -1;
-            var len : Number = 0;
-
-            for (var i : uint = startIdx; i < tags.length; i++) {
-                var data : FLVData = tags[i];
-                if (data.continuity != continuity) {
-                    len += (max_pts - min_pts);
-                    min_pts = data.tag.pts;
-                    continuity = data.continuity;
-                } else {
-                    max_pts = data.tag.pts;
-                }
+            if (tags.length > startIdx) {
+                var start_pos : Number = tags[startIdx].position + tags[startIdx].sliding;
+                var end_pos : Number = tags[tags.length - 1].position + tags[tags.length - 1].sliding;
+                return (end_pos - start_pos);
+            } else {
+                return 0;
             }
-            len += (max_pts - min_pts);
-            return len / 1000;
         }
 
         /** return total buffered duration since seek() call, needed to compute live playlist sliding  */
