@@ -50,6 +50,7 @@ package org.mangui.hls.playlist {
         private static const replacespace : RegExp = new RegExp("\\s+", "g");
         private static const replacesinglequote : RegExp = new RegExp("\\\'", "g");
         private static const replacedoublequote : RegExp = new RegExp("\\\"", "g");
+        private static const trimwhitespace : RegExp = /^\s*|\s*$/gim;
         /** Index in the array with levels. **/
         private var _index : int;
         /** URLLoader instance. **/
@@ -329,7 +330,7 @@ package org.mangui.hls.playlist {
                                 level.codec_mp3 = true;
                             }
                         } else if (param.indexOf('AUDIO') > -1) {
-                            level.audio_stream_id = (param.split('=')[1] as String).replace(replacedoublequote, "");
+                            level.audio_stream_id = (param.split('=')[1] as String).replace(replacedoublequote, "").replace(trimwhitespace,"");
                         } else if (param.indexOf('NAME') > -1) {
                             level.name = (param.split('=')[1] as String).replace(replacedoublequote, "");
                         }
