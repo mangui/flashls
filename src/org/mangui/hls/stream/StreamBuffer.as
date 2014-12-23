@@ -345,14 +345,14 @@ package org.mangui.hls.stream {
                 if (max_pos >= _seek_position_requested) {
                     // inject enough tags to reach seek position
                     duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - min_min_pos;
+                    /* force header tag sorting here : it is mandatory  for seek filtering logic
+                    in case of alt audio tracks, audio/video headers might be not be sorted correctly */
+                    _headerTags = _headerTags.sort(compareTags);
                 }
             }
             if (duration > 0) {
                 var data : Vector.<FLVData> = shiftmultipletags(duration);
                 if (!_seek_pos_reached) {
-                    /* force  tag sorting here : it is mandatory  for seek filtering logic
-                    in case of alt audio tracks, audio/video headers might be not be sorted correctly */
-                    data = data.sort(compareTags);
                     data = seekFilterTags(data, _seek_position_requested);
                     _seek_pos_reached = true;
                 }
