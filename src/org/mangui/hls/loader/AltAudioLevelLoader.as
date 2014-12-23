@@ -124,6 +124,8 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.debug("switch to audio track " + _current_track + ", load Playlist");
                     }
+                    _retry_timeout = 1000;
+                    _retry_count = 0;
                     clearTimeout(_timeoutID);
                     _timeoutID = setTimeout(_loadAudioLevelPlaylist, 0);
                 }
