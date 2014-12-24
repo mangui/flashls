@@ -836,7 +836,7 @@ package org.mangui.hls.loader {
                 return;
             var hlsError : HLSError;
             var fragData : FragmentData = _frag_current.data;
-            if (!fragData.audio_found && !fragData.video_found) {
+            if ((_demux.audio_expected && !fragData.audio_found) || (_demux.video_expected && !fragData.video_found)) {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
@@ -885,27 +885,33 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("Loaded        " + _frag_current.seqnum + " of [" + (_levels[_hls.level].start_seqnum) + "," + (_levels[_hls.level].end_seqnum) + "],level " + _hls.level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
-                _levels[_hls.level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max);
-                // set pts_start here, it might not be updated directly in updateFragment() if this loaded fragment has been removed from a live playlist
-                fragData.pts_start = fragData.pts_min;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_hls.level].duration));
-                _loading_state = LOADING_IDLE;
 
-                var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_hls.level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
+                var tagsMetrics : HLSLoadMetrics;
+                if (fragData.audio_found || fragData.video_found) {
+                    _levels[_hls.level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max);
+                    // set pts_start here, it might not be updated directly in updateFragment() if this loaded fragment has been removed from a live playlist
+                    fragData.pts_start = fragData.pts_min;
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_hls.level].duration));
 
-                if (fragData.tags.length) {
-                    if (fragData.metadata_tag_injected == false) {
-                        fragData.tags.unshift(_frag_current.metadataTag);
-                        if (_hasDiscontinuity) {
-                            fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.pts_min, fragData.pts_min, false));
+                    tagsMetrics = new HLSLoadMetrics(_hls.level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
+
+                    if (fragData.tags.length) {
+                        if (fragData.metadata_tag_injected == false) {
+                            fragData.tags.unshift(_frag_current.metadataTag);
+                            if (_hasDiscontinuity) {
+                                fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.pts_min, fragData.pts_min, false));
+                            }
+                            fragData.metadata_tag_injected = true;
                         }
-                        fragData.metadata_tag_injected = true;
+                        _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
+                        fragData.shiftTags();
+                        _hasDiscontinuity = false;
                     }
-                    _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
-                    fragData.shiftTags();
-                    _hasDiscontinuity = false;
+                } else {
+                    tagsMetrics = new HLSLoadMetrics(_hls.level, fragMetrics.bandwidth, _frag_current.duration * 1000, fragMetrics.processing_duration);
                 }
+                _loading_state = LOADING_IDLE;
                 _pts_analyzing = false;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, tagsMetrics));
                 _fragment_first_loaded = true;
