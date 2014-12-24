@@ -744,7 +744,7 @@ package org.mangui.hls.stream {
 
         private function _audioTrackChange(event : HLSEvent) : void {
             CONFIG::LOGGING {
-                Log.debug("StreamBuffer : audio track changed, flushing audio buffer and seek:" + event.audioTrack);
+                Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
             }
             flushAudio();
         }
