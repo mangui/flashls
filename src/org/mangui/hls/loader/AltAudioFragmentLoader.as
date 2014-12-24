@@ -80,7 +80,6 @@ package org.mangui.hls.loader {
             _streamBuffer = streamBuffer;
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
-            _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _loading_state = LOADING_IDLE;
             _keymap = new Object();
         };
@@ -88,7 +87,6 @@ package org.mangui.hls.loader {
         public function dispose() : void {
             stop();
             _loading_state = LOADING_IDLE;
-            _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _keymap = new Object();
         }
 
@@ -182,6 +180,7 @@ package org.mangui.hls.loader {
             _frag_previous = null;
             _level = _hls.audioTracks[_hls.audioTrack].level;
             _loading_state = LOADING_IDLE;
+            _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _timer.start();
         }
 
@@ -430,6 +429,7 @@ package org.mangui.hls.loader {
         /** stop loading fragment **/
         public function stop() : void {
             _stop_load();
+            _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _timer.stop();
             _loading_state = LOADING_IDLE;
         }
