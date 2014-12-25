@@ -22,11 +22,13 @@ package org.mangui.hls.model {
         public var pts_start : Number;
         /** computed Start PTS of this chunk. **/
         public var pts_start_computed : Number;
-        /** min/max audio/video PTS of this chunk. **/
+        /** min/max audio/video PTS/DTS of this chunk. **/
         public var pts_min_audio : Number;
         public var pts_max_audio : Number;
         public var pts_min_video : Number;
         public var pts_max_video : Number;
+        public var dts_min_audio : Number;
+        public var dts_min_video : Number;
         /** audio/video found ? */
         public var audio_found : Boolean;
         public var video_found : Boolean;
@@ -67,6 +69,7 @@ package org.mangui.hls.model {
                         tags_pts_max_audio = Math.max(tags_pts_max_audio, tag.pts);
                         pts_min_audio = Math.min(pts_min_audio, tag.pts);
                         pts_max_audio = Math.max(pts_max_audio, tag.pts);
+                        dts_min_audio = Math.min(dts_min_audio, tag.dts);
                         break;
                     case FLVTag.AVC_HEADER:
                     case FLVTag.AVC_NALU:
@@ -76,6 +79,7 @@ package org.mangui.hls.model {
                         tags_pts_max_video = Math.max(tags_pts_max_video, tag.pts);
                         pts_min_video = Math.min(pts_min_video, tag.pts);
                         pts_max_video = Math.max(pts_max_video, tag.pts);
+                        dts_min_video = Math.min(dts_min_video, tag.dts);
                         break;
                     case FLVTag.DISCONTINUITY:
                     case FLVTag.METADATA:
@@ -91,7 +95,7 @@ package org.mangui.hls.model {
             tags = new Vector.<FLVTag>();
             tags_audio_found = tags_video_found = false;
             metadata_tag_injected = false;
-            pts_min_audio = pts_min_video = tags_pts_min_audio = tags_pts_min_video = Number.POSITIVE_INFINITY;
+            pts_min_audio = pts_min_video = dts_min_audio = dts_min_video = tags_pts_min_audio = tags_pts_min_video = Number.POSITIVE_INFINITY;
             pts_max_audio = pts_max_video = tags_pts_max_audio = tags_pts_max_video = Number.NEGATIVE_INFINITY;
         }
 
@@ -120,6 +124,14 @@ package org.mangui.hls.model {
                 return pts_max_audio;
             } else {
                 return pts_max_video;
+            }
+        }
+
+        public function get dts_min() : Number {
+            if (audio_found) {
+                return dts_min_audio;
+            } else {
+                return dts_min_video;
             }
         }
 

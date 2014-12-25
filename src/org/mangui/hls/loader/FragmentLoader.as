@@ -814,7 +814,7 @@ package org.mangui.hls.loader {
                     if (fragData.metadata_tag_injected == false) {
                         fragData.tags.unshift(_frag_current.metadataTag);
                         if (_hasDiscontinuity) {
-                            fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.pts_min, fragData.pts_min, false));
+                            fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.dts_min, fragData.dts_min, false));
                         }
                         fragData.metadata_tag_injected = true;
                     }
@@ -836,7 +836,7 @@ package org.mangui.hls.loader {
                 return;
             var hlsError : HLSError;
             var fragData : FragmentData = _frag_current.data;
-            if ((_demux.audio_expected && !fragData.audio_found) || (_demux.video_expected && !fragData.video_found)) {
+            if ((_demux.audio_expected && !fragData.audio_found) && (_demux.video_expected && !fragData.video_found)) {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
@@ -899,7 +899,7 @@ package org.mangui.hls.loader {
                         if (fragData.metadata_tag_injected == false) {
                             fragData.tags.unshift(_frag_current.metadataTag);
                             if (_hasDiscontinuity) {
-                                fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.pts_min, fragData.pts_min, false));
+                                fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.dts_min, fragData.dts_min, false));
                             }
                             fragData.metadata_tag_injected = true;
                         }

@@ -60,7 +60,7 @@ package org.mangui.hls.model {
         };
 
         public function get metadataTag() : FLVTag {
-            var tag : FLVTag = new FLVTag(FLVTag.METADATA, this.data.pts_min, this.data.pts_min, false);
+            var tag : FLVTag = new FLVTag(FLVTag.METADATA, this.data.dts_min, this.data.dts_min, false);
             var data : ByteArray = new ByteArray();
             data.objectEncoding = ObjectEncoding.AMF0;
             data.writeObject("onHLSFragmentChange");

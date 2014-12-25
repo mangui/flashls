@@ -142,6 +142,9 @@ package org.mangui.hls.stream {
 
         public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
             for each (var tag : FLVTag in tags) {
+//                CONFIG::LOGGING {
+//                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
+//                }
                 var pos : Number = start_position + (tag.pts - min_pts) / 1000;
                 var tagData : FLVData = new FLVData(tag, pos, _time_sliding, continuity);
                 switch(tag.type) {
@@ -239,8 +242,8 @@ package org.mangui.hls.stream {
             if (x.continuity != y.continuity) {
                 return (x.continuity - y.continuity);
             } else {
-                if (x.tag.pts != y.tag.pts) {
-                    return (x.tag.pts - y.tag.pts);
+                if (x.tag.dts != y.tag.dts) {
+                    return (x.tag.dts - y.tag.dts);
                 } else {
                     return (gettagrank(x.tag) - gettagrank(y.tag));
                 }
