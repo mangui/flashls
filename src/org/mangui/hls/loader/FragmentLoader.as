@@ -161,6 +161,7 @@ package org.mangui.hls.loader {
                             level = _hls.manuallevel;
                         }
                         if (level != _hls.level) {
+                            _demux = null;
                             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
                         }
                         _switchlevel = true;
@@ -200,6 +201,7 @@ package org.mangui.hls.loader {
                         // notify in case level switch occurs
                         if (level != _hls.level) {
                             _switchlevel = true;
+                            _demux = null;
                             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
                         }
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
@@ -874,6 +876,7 @@ package org.mangui.hls.loader {
                         _hls.level = bestlevel;
                         _loading_state = LOADING_IDLE;
                         _switchlevel = true;
+                        _demux = null;
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _hls.level));
                         return;
                     }
