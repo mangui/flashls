@@ -609,7 +609,7 @@ package org.mangui.hls.stream {
         /*
          * retrieve queue containing next tag to be injected, using the following priority :
          * smallest continuity
-         * then smallest pts
+         * then smallest dts
          * then header  then video then audio then metadata tags
          */
         private function getnexttag() : FLVData {
@@ -636,26 +636,26 @@ package org.mangui.hls.stream {
             if (continuity == int.MAX_VALUE)
                 return null;
 
-            var pts : Number = Number.MAX_VALUE;
-            // for this continuity counter, find smallest PTS
+            var dts : Number = Number.MAX_VALUE;
+            // for this continuity counter, find smallest DTS
 
-            if (htag && htag.continuity == continuity) pts = Math.min(pts, htag.tag.pts);
-            if (vtag && vtag.continuity == continuity) pts = Math.min(pts, vtag.tag.pts);
-            if (atag && atag.continuity == continuity) pts = Math.min(pts, atag.tag.pts);
-            if (mtag && mtag.continuity == continuity) pts = Math.min(pts, mtag.tag.pts);
+            if (htag && htag.continuity == continuity) dts = Math.min(dts, htag.tag.dts);
+            if (vtag && vtag.continuity == continuity) dts = Math.min(dts, vtag.tag.dts);
+            if (atag && atag.continuity == continuity) dts = Math.min(dts, atag.tag.dts);
+            if (mtag && mtag.continuity == continuity) dts = Math.min(dts, mtag.tag.dts);
 
-            // for this continuity counter, this PTS, prioritize tags with the following order : header/video/audio/metadata
-            if (htag && htag.continuity == continuity && htag.tag.pts == pts) {
+            // for this continuity counter, this DTS, prioritize tags with the following order : header/metadata/video/audio
+            if (htag && htag.continuity == continuity && htag.tag.dts == dts) {
                 _headerIdx++;
                 return htag;
             }
-            if (vtag && vtag.continuity == continuity && vtag.tag.pts == pts) {
-                _videoIdx++;
-                return vtag;
-            }
-            if (mtag && mtag.continuity == continuity && mtag.tag.pts == pts) {
+            if (mtag && mtag.continuity == continuity && mtag.tag.dts == dts) {
                 _metaIdx++;
                 return mtag;
+            }
+            if (vtag && vtag.continuity == continuity && vtag.tag.dts == dts) {
+                _videoIdx++;
+                return vtag;
             } else {
                 _audioIdx++;
                 return atag;
