@@ -120,6 +120,7 @@ package org.mangui.hls.loader {
             _reload_playlists_timer = getTimer();
             _retry_timeout = 1000;
             _retry_count = 0;
+            _alt_audio_tracks = null;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADING, url));
 
             if (DataUri.isDataUri(url)) {

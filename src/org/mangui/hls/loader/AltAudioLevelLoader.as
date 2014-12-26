@@ -126,6 +126,7 @@ package org.mangui.hls.loader {
                     }
                     _retry_timeout = 1000;
                     _retry_count = 0;
+                    _closed = false;
                     clearTimeout(_timeoutID);
                     _timeoutID = setTimeout(_loadAudioLevelPlaylist, 0);
                 }
