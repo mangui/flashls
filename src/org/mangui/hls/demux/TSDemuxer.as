@@ -149,11 +149,11 @@ package org.mangui.hls.demux {
         }
 
         public function get audio_expected() : Boolean {
-            return (_audioId != -1);
+            return (_pmtParsed == false || _audioId != -1);
         }
 
         public function get video_expected() : Boolean {
-            return (_avcId != -1);
+            return (_pmtParsed == false || _avcId != -1);
         }
 
         /** Parse a limited amount of packets each time to avoid blocking **/
