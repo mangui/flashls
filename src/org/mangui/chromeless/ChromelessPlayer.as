@@ -42,7 +42,6 @@ package org.mangui.chromeless {
         protected var _duration : Number;
         /** URL autoload feature */
         protected var _autoLoad : Boolean = false;
-        protected var _externalEventsMode : Number = 0;
 
         /** Initialization. **/
         public function ChromelessPlayer() {
@@ -50,7 +49,6 @@ package org.mangui.chromeless {
             _setupSheet();
             _setupExternalGetters();
             _setupExternalCallers();
-            _setupExternalEvents();
 
             setTimeout(_pingJavascript, 50);
         };
@@ -107,13 +105,6 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetAudioTrack", _setAudioTrack);
             ExternalInterface.addCallback("playerSetJSURLStream", _setJSURLStream);
         };
-        
-        protected function _setupExternalEvents() : void {
-            var jsEventsMode : String = root.loaderInfo.parameters.jsEventsMode as String;
-            if (jsEventsMode == "object") {
-                _externalEventsMode = 1;
-            }
-        };
 
         protected function _setupStage() : void {
             stage.scaleMode = StageScaleMode.NO_SCALE;
@@ -135,22 +126,14 @@ package org.mangui.chromeless {
 
         /** Notify javascript the framework is ready. **/
         protected function _pingJavascript() : void {
-            if(_externalEventsMode === 1) {
-                ExternalInterface.call("flashlsEvents.onHLSReady", ExternalInterface.objectID);
-            } else {
-                ExternalInterface.call("onHLSReady", ExternalInterface.objectID);
-            }
+            ExternalInterface.call("flashlsEvents.onHLSReady", ExternalInterface.objectID);
         };
 
         /** Forward events from the framework. **/
         protected function _completeHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
             
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onComplete", ExternalInterface.objectID);
-                } else {
-                    ExternalInterface.call("onComplete");
-                }
+                ExternalInterface.call("flashlsEvents.onComplete", ExternalInterface.objectID);
                 
             }
         };
@@ -158,31 +141,19 @@ package org.mangui.chromeless {
         protected function _errorHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
                 var hlsError : HLSError = event.error;
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onError", ExternalInterface.objectID, hlsError.code, hlsError.url, hlsError.msg);
-                } else {
-                    ExternalInterface.call("onError", hlsError.code, hlsError.url, hlsError.msg);
-                }
+                ExternalInterface.call("flashlsEvents.onError", ExternalInterface.objectID, hlsError.code, hlsError.url, hlsError.msg);
             }
         };
 
         protected function _fragmentLoadedHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onFragmentLoaded", ExternalInterface.objectID, event.loadMetrics);
-                } else {
-                    ExternalInterface.call("onFragmentLoaded", event.loadMetrics);
-                }
+                ExternalInterface.call("flashlsEvents.onFragmentLoaded", ExternalInterface.objectID, event.loadMetrics);
             }
         };
 
         protected function _fragmentPlayingHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onFragmentPlaying", ExternalInterface.objectID, event.playMetrics);
-                } else {
-                    ExternalInterface.call("onFragmentPlaying", event.playMetrics);
-                }
+                ExternalInterface.call("flashlsEvents.onFragmentPlaying", ExternalInterface.objectID, event.playMetrics);
             }
         };
 
@@ -194,11 +165,7 @@ package org.mangui.chromeless {
             }
 
             if (ExternalInterface.available) {
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onManifest", ExternalInterface.objectID, _duration);
-                } else {
-                    ExternalInterface.call("onManifest", _duration);
-                }
+                ExternalInterface.call("flashlsEvents.onManifest", ExternalInterface.objectID, _duration);
             }
         };
 
@@ -206,11 +173,7 @@ package org.mangui.chromeless {
             _duration = event.mediatime.duration;
             _media_position = event.mediatime.position;
             if (ExternalInterface.available) {
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onPosition", ExternalInterface.objectID, event.mediatime);
-                } else {
-                    ExternalInterface.call("onPosition", event.mediatime);
-                }
+                ExternalInterface.call("flashlsEvents.onPosition", ExternalInterface.objectID, event.mediatime);
             }
 
             var videoWidth : int = _video ? _video.videoWidth : _stageVideo.videoWidth;
@@ -223,11 +186,7 @@ package org.mangui.chromeless {
                     _videoWidth = videoWidth;
                     _resize();
                     if (ExternalInterface.available) {
-                        if(_externalEventsMode === 1) {
-                            ExternalInterface.call("flashlsEvents.onVideoSize", ExternalInterface.objectID, _videoWidth, _videoHeight);
-                        } else {
-                            ExternalInterface.call("onVideoSize", _videoWidth, _videoHeight);
-                        }
+                        ExternalInterface.call("flashlsEvents.onVideoSize", ExternalInterface.objectID, _videoWidth, _videoHeight);
                     }
                 }
             }
@@ -235,41 +194,25 @@ package org.mangui.chromeless {
 
         protected function _stateHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onState", ExternalInterface.objectID, event.state);
-                } else {
-                    ExternalInterface.call("onState", event.state);
-                }
+                ExternalInterface.call("flashlsEvents.onState", ExternalInterface.objectID, event.state);
             }
         };
 
         protected function _levelSwitchHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onSwitch", ExternalInterface.objectID, event.level);
-                } else {
-                    ExternalInterface.call("onSwitch", event.level);
-                }
+                ExternalInterface.call("flashlsEvents.onSwitch", ExternalInterface.objectID, event.level);
             }
         };
 
         protected function _audioTracksListChange(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onAudioTracksListChange", ExternalInterface.objectID, _getAudioTrackList());
-                } else {
-                    ExternalInterface.call("onAudioTracksListChange", _getAudioTrackList());
-                }
+                ExternalInterface.call("flashlsEvents.onAudioTracksListChange", ExternalInterface.objectID, _getAudioTrackList());
             }
         }
 
         protected function _audioTrackChange(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                if(_externalEventsMode === 1) {
-                    ExternalInterface.call("flashlsEvents.onAudioTrackChange", ExternalInterface.objectID, event.audioTrack);
-                } else {
-                    ExternalInterface.call("onAudioTrackChange", event.audioTrack);
-                }
+                ExternalInterface.call("flashlsEvents.onAudioTrackChange", ExternalInterface.objectID, event.audioTrack);
             }
         }
 

@@ -152,10 +152,10 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <td>0</td>
     <td>0</td>
     <td>0</td>
-	<td>0</td>
     <td>0</td>
     <td>0</td>
-	<td>0</td>
+    <td>0</td>
+    <td>0</td>
     <td>0</td>
     <td>0</td>
     <td>0</td>
@@ -258,7 +258,7 @@ function listStreams(list, container) {
   var pqs = new ParsedQueryString();
   var url = pqs.param("src");
   if(url == "") {
-  	url = list[0].file;
+    url = list[0].file;
   }
   loadStream(url);
 }
@@ -275,7 +275,7 @@ function load(url) {
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
     obj.playerLoad(url);
-    appendLog("load URL " + url);	
+    appendLog("load URL " + url);
     document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  0;
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  0;
     document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML =  0;
@@ -435,7 +435,7 @@ function setmaxBackBufferLength(new_len) {
   if(obj != null) {
     obj.playerSetbackBufferLength(new_len);
     appendLog("set back buffer max len to :" + new_len);
-	document.getElementById('mediaInfo').rows[Y_MAX_BACK_BUFFER].cells[X_MAX_BACK_BUFFER].innerHTML = getMaxBackBufferLength().toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_MAX_BACK_BUFFER].cells[X_MAX_BACK_BUFFER].innerHTML = getMaxBackBufferLength().toFixed(2);
   }
 }
 
@@ -523,7 +523,8 @@ function setAudioTrack(val) {
   }
 }
 
-function onHLSReady(message) {
+var flashlsEvents = {
+   onHLSReady: function(instanceId) {
     listStreams(teststreams,"streamlist");
     appendLog("onHLSReady()");
 
@@ -537,80 +538,72 @@ function onHLSReady(message) {
       document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = getMinBufferLength().toFixed(2);
       document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = getMaxBufferLength().toFixed(2);
     }
-}
-
-function onVideoSize(width, height) {
-  appendLog("onVideoSize(), " + width + "x" + height);
-  var obj = getFlashMovieObject(player_id);
-  if (obj != null) {    
+  },
+  onVideoSize: function(instanceId, width, height) {
+    appendLog("onVideoSize(), " + width + "x" + height);
+    var obj = getFlashMovieObject(player_id);
+    if (obj != null) {
     var state = obj.getCapLeveltoStage(); 
     if(!state) {
       var ratio = width / height;
       if (height > 720) {
-        height = 720;
-        width = height * ratio;
+      height = 720;
+      width = height * ratio;
       }
       appendLog("onVideoSize(),resize stage to " + width + "x" + height);
       obj.width = width;
       obj.height = height;
     }
+    }
+  },
+  onComplete: function(instanceId) {
+    appendLog("onComplete(), playback completed");
+  },
+  onError: function(instanceId, code, url, message) {
+    appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
+  },
+  onFragmentLoaded: function(instanceId, loadmetrics) {
+    appendLog("onFragmentLoaded(): bandwidth:" + (loadmetrics.bandwidth/1000).toFixed(0) + "kb/s level:" + loadmetrics.level);
+  },
+  onFragmentPlaying: function(instanceId, playmetrics) {
+    appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " video_width:" + playmetrics.video_width + " video_height:" + playmetrics.video_height + " tags:" + playmetrics.tag_list);
+    document.getElementById('mediaInfo').rows[Y_UTC_DATE].cells[X_UTC_DATE].innerHTML =  new Date(playmetrics.program_date).toUTCString();  
+  },
+  onManifest: function(instanceId, duration) {
+    appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
+    document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
+  },
+  onPosition: function(instanceId, timemetrics) {  
+    document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_BACK_BUFFER].cells[X_BACK_BUFFER].innerHTML =  timemetrics.backbuffer.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding.toFixed(2);
+  },
+  onState: function(instanceId, newState) {
+    appendLog("switching state to "+ newState + ", bufferlen:" + getbufferLength());
+    document.getElementById('mediaInfo').rows[Y_STATE].cells[X_STATE].innerHTML =  newState;
+  },
+  onSwitch: function(instanceId, newLevel) {
+    appendLog("switching level to "+ newLevel);
+    document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  newLevel;
+  },
+  onAudioTracksListChange: function(instanceId, trackList) {
+    // update audio switcher
+    var d = document.getElementById('audioControl');
+    var html = '';
+    appendLog("new track list");
+    for (var t in trackList) {
+      appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
+      html += '<button onclick="setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
+    }
+    d.innerHTML = html;
+  },
+  onAudioTrackChange: function(instanceId, trackId) {
+    appendLog("switching audio track to "+ trackId);
+    document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML = trackId;
   }
-}
-
-function onComplete(message) {
-  appendLog("onComplete(), playback completed");
-}
-function onError(code,url,message) {
-  appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
-}
-
-function onFragmentLoaded(loadmetrics) {
-  appendLog("onFragmentLoaded(): bandwidth:" + (loadmetrics.bandwidth/1000).toFixed(0) + "kb/s level:" + loadmetrics.level);
-}
-function onFragmentPlaying(playmetrics) {
-  appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " video_width:" + playmetrics.video_width + " video_height:" + playmetrics.video_height + " tags:" + playmetrics.tag_list);
- document.getElementById('mediaInfo').rows[Y_UTC_DATE].cells[X_UTC_DATE].innerHTML =  new Date(playmetrics.program_date).toUTCString();  
-}
-
-function onManifest(duration) {
-  appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
-  document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
-}
-
-function onPosition(timemetrics) {  
-  document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_BACK_BUFFER].cells[X_BACK_BUFFER].innerHTML =  timemetrics.backbuffer.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding.toFixed(2);
-}
-
-function onState(newState) {
-  appendLog("switching state to "+ newState + ", bufferlen:" + getbufferLength());
-  document.getElementById('mediaInfo').rows[Y_STATE].cells[X_STATE].innerHTML =  newState;
-}
-
-function onSwitch(newLevel) {
-  appendLog("switching level to "+ newLevel);
-  document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  newLevel;
-}
-
-function onAudioTracksListChange(trackList) {
-  // update audio switcher
-  var d = document.getElementById('audioControl');
-  var html = '';
-  appendLog("new track list");
-  for (var t in trackList) {
-    appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
-    html += '<button onclick="setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
-  }
-  d.innerHTML = html;
-}
-
-function onAudioTrackChange(trackId) {
-  appendLog("switching audio track to "+ trackId);
-  document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML = trackId;
-}
+};
 
 function onRequestResource0(URL) {
   appendLog("loading fragment "+ URL + " for instance 0");
