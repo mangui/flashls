@@ -236,8 +236,13 @@ package org.mangui.hls.playlist {
                     var hour : int = parseInt(line.substr(36, 2));
                     var minutes : int = parseInt(line.substr(39, 2));
                     var seconds : int = parseInt(line.substr(42, 2));
+                    var milliseconds : int = 0;
+                    if (line.charAt(44) == ".") {
+                        var ms_size : int = line.indexOf("+") - 45;
+                        milliseconds = parseInt(line.substr(45, ms_size));
+                    }
                     // month should be from 0 (January) to 11 (December).
-                    program_date = new Date(year, (month - 1), day, hour, minutes, seconds).getTime();
+                    program_date = new Date(year, (month - 1), day, hour, minutes, seconds, milliseconds).getTime();
                     program_date_defined = true;
                     tag_list.push(line);
                 } else if (line.indexOf(DISCONTINUITY) == 0) {
