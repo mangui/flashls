@@ -664,7 +664,7 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.error(err);
                     }
-                    var hlsError : HLSError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, err);
+                    var hlsError : HLSError = new HLSError(HLSError.OTHER_ERROR, frag.url, err);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                     return;
                 }
