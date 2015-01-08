@@ -611,6 +611,9 @@ package org.mangui.hls.loader {
                         new_seqnum = Math.max(new_seqnum, _levels[level].getFirstSeqNumfromContinuity(frag_previous.continuity));
                         _pts_analyzing = true;
                         log_prefix = "analyzing PTS ";
+                    } else {
+                        // last seqnum found on new level, reset PTS analysis flag
+                        _pts_analyzing = false;
                     }
                 }
             }
