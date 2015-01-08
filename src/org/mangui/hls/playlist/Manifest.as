@@ -143,8 +143,9 @@ package org.mangui.hls.playlist {
 
             while (i < lines.length) {
                 var line : String = lines[i++];
-                // discard blank line, length could be 0 or 1 if DOS terminated line (CR/LF)
-                if (line.length <= 1) {
+
+                // discard blank line, length could be 0 or if DOS terminated line (CR/LF), only a CR char
+                if (line.length <= 0 || line.indexOf("\r") == 0) {
                     continue;
                 }
 
