@@ -45,6 +45,10 @@
             return _time_total;
         }
 
+        public function get hls() : HLS {
+            return _hls;
+        }
+
         /**  **/
         private function _mediaTimeHandler(event : HLSEvent) : void {
             var time_total : Number = Math.round(10 * event.mediatime.duration) / 10;
