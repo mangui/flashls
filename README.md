@@ -179,6 +179,17 @@ swfobject.embedSWF('StrobeMediaPlayback.swf', 'player', 640, 360, '10.2', null, 
 });
 ```
 
+### Project branches
+---
+
+  * The [master][] branch holds the most recent minor release.
+  * Most development work happens on the [dev][] branch.
+  * Additional development branches may be established for major features.
+
+[master]: https://github.com/mangui/flashls/tree/master
+[dev]: https://github.com/mangui/flashls/tree/dev
+
+
 ### Building
 ---
 
