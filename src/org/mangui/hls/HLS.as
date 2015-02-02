@@ -12,7 +12,8 @@ package org.mangui.hls {
     import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.loader.ManifestLoader;
+    import org.mangui.hls.loader.LevelLoader;
+    import org.mangui.hls.loader.AltAudioLevelLoader;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.playlist.AltAudioTrack;
@@ -24,7 +25,8 @@ package org.mangui.hls {
     }
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
-        private var _manifestLoader : ManifestLoader;
+        private var _levelLoader : LevelLoader;
+        private var _altAudioLevelLoader : AltAudioLevelLoader;
         private var _audioTrackController : AudioTrackController;
         private var _levelController : LevelController;
         private var _streamBuffer : StreamBuffer;
@@ -43,7 +45,8 @@ package org.mangui.hls {
         public function HLS() {
             var connection : NetConnection = new NetConnection();
             connection.connect(null);
-            _manifestLoader = new ManifestLoader(this);
+            _levelLoader = new LevelLoader(this);
+            _altAudioLevelLoader = new AltAudioLevelLoader(this);
             _audioTrackController = new AudioTrackController(this);
             _levelController = new LevelController(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
@@ -70,12 +73,14 @@ package org.mangui.hls {
 
         public function dispose() : void {
             this.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
-            _manifestLoader.dispose();
+            _levelLoader.dispose();
+            _altAudioLevelLoader.dispose();
             _audioTrackController.dispose();
             _levelController.dispose();
             _streamBuffer.dispose();
             _hlsNetStream.dispose_();
-            _manifestLoader = null;
+            _levelLoader = null;
+            _altAudioLevelLoader = null;
             _audioTrackController = null;
             _levelController = null;
             _hlsNetStream = null;
@@ -121,7 +126,7 @@ package org.mangui.hls {
 
         /** Return a Vector of quality level **/
         public function get levels() : Vector.<Level> {
-            return _manifestLoader.levels;
+            return _levelLoader.levels;
         };
 
         /** Return the current playback position. **/
@@ -141,13 +146,13 @@ package org.mangui.hls {
 
         /** Return the type of stream (VOD/LIVE). **/
         public function get type() : String {
-            return _manifestLoader.type;
+            return _levelLoader.type;
         };
 
         /** Load and parse a new HLS URL **/
         public function load(url : String) : void {
             _hlsNetStream.close();
-            _manifestLoader.load(url);
+            _levelLoader.load(url);
         };
 
         /** return HLS NetStream **/
@@ -175,7 +180,7 @@ package org.mangui.hls {
 
         /** get alternate audio tracks list from playlist **/
         public function get altAudioTracks() : Vector.<AltAudioTrack> {
-            return _manifestLoader.altAudioTracks;
+            return _levelLoader.altAudioTracks;
         };
 
         /** get index of the selected audio track (index in audio track lists) **/

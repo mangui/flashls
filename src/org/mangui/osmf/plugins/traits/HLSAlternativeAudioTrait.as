@@ -12,9 +12,8 @@ package org.mangui.osmf.plugins.traits {
     import org.osmf.utils.OSMFStrings;
 
     CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
+        import org.mangui.hls.utils.Log;
     }
-
     public class HLSAlternativeAudioTrait extends AlternativeAudioTrait {
         private var _hls : HLS;
         private var _media : MediaElement;
@@ -29,18 +28,19 @@ package org.mangui.osmf.plugins.traits {
             Log.debug("HLSAlternativeAudioTrait()");
             }
             super(0);
-            _numAlternativeAudioStreams = 0;
             _hls = hls;
+            _audioTrackList = _hls.audioTracks;
+            _numAlternativeAudioStreams = _audioTrackList.length - 1;
             _media = media;
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_CHANGE, _audioTrackChangedHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
         }
-        
+
         override public function dispose() : void {
             CONFIG::LOGGING {
             Log.debug("HLSAlternativeAudioTrait:dispose");
             }
-            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_CHANGE, _audioTrackChangedHandler);
+            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
             super.dispose();
         }
