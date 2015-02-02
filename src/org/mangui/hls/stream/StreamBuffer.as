@@ -16,8 +16,10 @@ package org.mangui.hls.stream {
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.loader.FragmentLoader;
+    import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
+    import org.mangui.hls.model.AudioTrack;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -30,6 +32,7 @@ package org.mangui.hls.stream {
     public class StreamBuffer {
         private var _hls : HLS;
         private var _fragmentLoader : FragmentLoader;
+        private var _altaudiofragmentLoader : AltAudioFragmentLoader;
         /** Timer used to process FLV tags. **/
         private var _timer : Timer;
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
@@ -51,30 +54,38 @@ package org.mangui.hls.stream {
         private static const MAX_NETSTREAM_BUFFER_SIZE : Number = 4.0;
         /** means that last fragment of a VOD playlist has been loaded */
         private var _reached_vod_end : Boolean;
+        /* are we using alt-audio ? */
+        private var _use_altaudio : Boolean;
 
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
             _hls = hls;
             _fragmentLoader = new FragmentLoader(hls, audioTrackController, levelController, this);
+            _altaudiofragmentLoader = new AltAudioFragmentLoader(hls, this);
             flushAll();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
         }
 
         public function dispose() : void {
             flushAll();
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
             _timer.stop();
             _fragmentLoader.dispose();
+            _altaudiofragmentLoader.dispose();
             _fragmentLoader = null;
+            _altaudiofragmentLoader = null;
             _hls = null;
             _timer = null;
         }
 
         public function stop() : void {
             _fragmentLoader.stop();
+            _altaudiofragmentLoader.stop();
             flushAll();
         }
 
@@ -113,6 +124,17 @@ package org.mangui.hls.stream {
                 // seek position is out of buffer : load from fragment
                 _fragmentLoader.stop();
                 _fragmentLoader.seek(_seek_position_requested);
+                // check if we need to use alt audio fragment loader
+                if (_hls.audioTracks.length && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
+                    CONFIG::LOGGING {
+                        Log.info("seek : need to load alt audio track");
+                    }
+                    _altaudiofragmentLoader.stop();
+                    _altaudiofragmentLoader.seek(_seek_position_requested);
+                    _use_altaudio = true;
+                } else {
+                    _use_altaudio = false;
+                }
                 flushAll();
             }
             _timer.start();
@@ -120,6 +142,9 @@ package org.mangui.hls.stream {
 
         public function appendTags(tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
             for each (var tag : FLVTag in tags) {
+//                CONFIG::LOGGING {
+//                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
+//                }
                 var pos : Number = start_position + (tag.pts - min_pts) / 1000;
                 var tagData : FLVData = new FLVData(tag, pos, _time_sliding, continuity);
                 switch(tag.type) {
@@ -193,16 +218,70 @@ package org.mangui.hls.stream {
             _time_sliding = 0;
         }
 
+        private function flushAudio() : void {
+            // flush audio buffer and AAC HEADER tags (if any)
+            _audioTags = new Vector.<FLVData>();
+            _audioIdx = 0;
+            var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(filterAACHeader);
+            _headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
+        }
+
+        private function filterAACHeader(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
+            return (item.tag.type != FLVTag.AAC_HEADER);
+        }
+
+        /* compare two tags, smallest continuity
+         * then smallest pts. then discontinuity then aac/avc header then metadata, then others  
+         * 
+        return a negative number, if x should appear before y in the sorted sequence
+        retun 0, if x equals y
+        return a positive number, if x should appear after y in the sorted sequence* 
+         * 
+         * */
+        private function compareTags(x : FLVData, y : FLVData) : Number {
+            if (x.continuity != y.continuity) {
+                return (x.continuity - y.continuity);
+            } else {
+                if (x.tag.dts != y.tag.dts) {
+                    return (x.tag.dts - y.tag.dts);
+                } else {
+                    return (gettagrank(x.tag) - gettagrank(y.tag));
+                }
+            }
+        }
+
+        private function gettagrank(tag : FLVTag) : uint {
+            switch(tag.type) {
+                case FLVTag.DISCONTINUITY:
+                    return 0;
+                case FLVTag.METADATA:
+                    return 1;
+                case FLVTag.AVC_HEADER:
+                case FLVTag.AAC_HEADER:
+                    return 2;
+                default:
+                    return 3;
+            }
+        }
+
         /*
         private function flushAudio() : void {
         _audioTags = new Vector.<FLVData>();
         }
          */
-        private function get audioBufferLength() : Number {
+        private function get audio_expected() : Boolean {
+            return (_fragmentLoader.audio_expected || _use_altaudio);
+        }
+
+        private function get video_expected() : Boolean {
+            return _fragmentLoader.video_expected;
+        }
+
+        public function get audioBufferLength() : Number {
             return getbuflen(_audioTags, _audioIdx);
         }
 
-        private function get videoBufferLength() : Number {
+        public function get videoBufferLength() : Number {
             return getbuflen(_videoTags, _videoIdx);
         }
 
@@ -211,7 +290,15 @@ package org.mangui.hls.stream {
                 case HLSSeekStates.SEEKING:
                     return  Math.max(0, max_pos - _seek_position_requested);
                 case HLSSeekStates.SEEKED:
-                    return Math.max(audioBufferLength, videoBufferLength);
+                    if (audio_expected) {
+                        if (video_expected) {
+                            return Math.min(audioBufferLength, videoBufferLength);
+                        } else {
+                            return audioBufferLength;
+                        }
+                    } else {
+                        return videoBufferLength;
+                    }
                 case HLSSeekStates.IDLE:
                 default:
                     return 0;
@@ -238,6 +325,9 @@ package org.mangui.hls.stream {
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
              */
+            CONFIG::LOGGING {
+                Log.debug2("position/audio/video bufferLength:" + position.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2));
+            }
 
             var duration : Number = 0;
             if (_seek_pos_reached) {
@@ -250,9 +340,17 @@ package org.mangui.hls.stream {
                  * check if buffer max position is greater than requested seek position
                  * if it is the case, then we can start injecting tags in NetStream
                  */
+
+                CONFIG::LOGGING {
+                    // Log.info("min_audio/max_audio/min_video/max_video:" + min_audio_pos.toFixed(2) + "/" + max_audio_pos.toFixed(2) + "/" + min_video_pos.toFixed(2) + "/" + max_video_pos.toFixed(2));  
+                }
+
                 if (max_pos >= _seek_position_requested) {
                     // inject enough tags to reach seek position
-                    duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - min_pos;
+                    duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - min_min_pos;
+                    /* force header tag sorting here : it is mandatory  for seek filtering logic
+                    in case of alt audio tracks, audio/video headers might be not be sorted correctly */
+                    _headerTags = _headerTags.sort(compareTags);
                 }
             }
             if (duration > 0) {
@@ -313,6 +411,7 @@ package org.mangui.hls.stream {
                     break;
                 }
             }
+
             if (keyIdx == -1) {
                 // audio only stream, no keyframe. we can seek accurately
                 keyIdx = lastIdx;
@@ -489,23 +588,13 @@ package org.mangui.hls.stream {
         }
 
         private function getbuflen(tags : Vector.<FLVData>, startIdx : uint) : Number {
-            var min_pts : Number = 0;
-            var max_pts : Number = 0;
-            var continuity : int = -1;
-            var len : Number = 0;
-
-            for (var i : uint = startIdx; i < tags.length; i++) {
-                var data : FLVData = tags[i];
-                if (data.continuity != continuity) {
-                    len += (max_pts - min_pts);
-                    min_pts = data.tag.pts;
-                    continuity = data.continuity;
-                } else {
-                    max_pts = data.tag.pts;
-                }
+            if (tags.length > startIdx) {
+                var start_pos : Number = tags[startIdx].position + tags[startIdx].sliding;
+                var end_pos : Number = tags[tags.length - 1].position + tags[tags.length - 1].sliding;
+                return (end_pos - start_pos);
+            } else {
+                return 0;
             }
-            len += (max_pts - min_pts);
-            return len / 1000;
         }
 
         /** return total buffered duration since seek() call, needed to compute live playlist sliding  */
@@ -520,7 +609,7 @@ package org.mangui.hls.stream {
         /*
          * retrieve queue containing next tag to be injected, using the following priority :
          * smallest continuity
-         * then smallest pts
+         * then smallest dts
          * then header  then video then audio then metadata tags
          */
         private function getnexttag() : FLVData {
@@ -547,26 +636,26 @@ package org.mangui.hls.stream {
             if (continuity == int.MAX_VALUE)
                 return null;
 
-            var pts : Number = Number.MAX_VALUE;
-            // for this continuity counter, find smallest PTS
+            var dts : Number = Number.MAX_VALUE;
+            // for this continuity counter, find smallest DTS
 
-            if (htag && htag.continuity == continuity) pts = Math.min(pts, htag.tag.pts);
-            if (vtag && vtag.continuity == continuity) pts = Math.min(pts, vtag.tag.pts);
-            if (atag && atag.continuity == continuity) pts = Math.min(pts, atag.tag.pts);
-            if (mtag && mtag.continuity == continuity) pts = Math.min(pts, mtag.tag.pts);
+            if (htag && htag.continuity == continuity) dts = Math.min(dts, htag.tag.dts);
+            if (vtag && vtag.continuity == continuity) dts = Math.min(dts, vtag.tag.dts);
+            if (atag && atag.continuity == continuity) dts = Math.min(dts, atag.tag.dts);
+            if (mtag && mtag.continuity == continuity) dts = Math.min(dts, mtag.tag.dts);
 
-            // for this continuity counter, this PTS, prioritize tags with the following order : header/video/audio/metadata
-            if (htag && htag.continuity == continuity && htag.tag.pts == pts) {
+            // for this continuity counter, this DTS, prioritize tags with the following order : header/metadata/video/audio
+            if (htag && htag.continuity == continuity && htag.tag.dts == dts) {
                 _headerIdx++;
                 return htag;
             }
-            if (vtag && vtag.continuity == continuity && vtag.tag.pts == pts) {
-                _videoIdx++;
-                return vtag;
-            }
-            if (mtag && mtag.continuity == continuity && mtag.tag.pts == pts) {
+            if (mtag && mtag.continuity == continuity && mtag.tag.dts == dts) {
                 _metaIdx++;
                 return mtag;
+            }
+            if (vtag && vtag.continuity == continuity && vtag.tag.dts == dts) {
+                _videoIdx++;
+                return vtag;
             } else {
                 _audioIdx++;
                 return atag;
@@ -590,20 +679,62 @@ package org.mangui.hls.stream {
         }
 
         private function get min_pos() : Number {
+            if (audio_expected) {
+                if (video_expected) {
+                    return Math.max(min_audio_pos, min_video_pos);
+                } else {
+                    return min_audio_pos;
+                }
+            } else {
+                return min_video_pos;
+            }
+        }
+
+        private function get min_min_pos() : Number {
+            if (audio_expected) {
+                if (video_expected) {
+                    return Math.min(min_audio_pos, min_video_pos);
+                } else {
+                    return min_audio_pos;
+                }
+            } else {
+                return min_video_pos;
+            }
+        }
+
+        private function get min_audio_pos() : Number {
             var min_pos_ : Number = Number.POSITIVE_INFINITY;
-            if (_headerTags.length) min_pos_ = Math.min(min_pos_, _headerTags[0].position - (_time_sliding - _headerTags[0].sliding ));
-            if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position - (_time_sliding - _videoTags[0].sliding ));
             if (_audioTags.length) min_pos_ = Math.min(min_pos_, _audioTags[0].position - (_time_sliding - _audioTags[0].sliding ));
-            if (_metaTags.length) min_pos_ = Math.min(min_pos_, _metaTags[0].position - (_time_sliding - _metaTags[0].sliding ));
+            return min_pos_;
+        }
+
+        private function get min_video_pos() : Number {
+            var min_pos_ : Number = Number.POSITIVE_INFINITY;
+            if (_videoTags.length) min_pos_ = Math.min(min_pos_, _videoTags[0].position - (_time_sliding - _videoTags[0].sliding ));
             return min_pos_;
         }
 
         private function get max_pos() : Number {
+            if (audio_expected) {
+                if (video_expected) {
+                    return Math.min(max_audio_pos, max_video_pos);
+                } else {
+                    return max_audio_pos;
+                }
+            } else {
+                return max_video_pos;
+            }
+        }
+
+        private function get max_audio_pos() : Number {
             var max_pos_ : Number = Number.NEGATIVE_INFINITY;
-            if (_headerTags.length) max_pos_ = Math.max(max_pos_, _headerTags[_headerTags.length - 1].position - (_time_sliding - _headerTags[_headerTags.length - 1].sliding ));
-            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoTags.length - 1].sliding ));
             if (_audioTags.length) max_pos_ = Math.max(max_pos_, _audioTags[_audioTags.length - 1].position - (_time_sliding - _audioTags[_audioTags.length - 1].sliding ));
-            if (_metaTags.length) max_pos_ = Math.max(max_pos_, _metaTags[_metaTags.length - 1].position - (_time_sliding - _metaTags[_metaTags.length - 1].sliding ));
+            return max_pos_;
+        }
+
+        private function get max_video_pos() : Number {
+            var max_pos_ : Number = Number.NEGATIVE_INFINITY;
+            if (_videoTags.length) max_pos_ = Math.max(max_pos_, _videoTags[_videoTags.length - 1].position - (_time_sliding - _videoTags[_videoTags.length - 1].sliding ));
             return max_pos_;
         }
 
@@ -612,6 +743,13 @@ package org.mangui.hls.stream {
                 Log.debug("last fragment loaded");
             }
             _reached_vod_end = true;
+        }
+
+        private function _audioTrackChange(event : HLSEvent) : void {
+            CONFIG::LOGGING {
+                Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
+            }
+            flushAudio();
         }
     }
 }

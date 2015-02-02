@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.demux {
+package org.mangui.hls.demux {
     import flash.utils.getTimer;
     import flash.display.DisplayObject;
 
@@ -148,12 +148,12 @@
             _data_complete = true;
         }
 
-        public function audio_expected() : Boolean {
-            return (_audioId != -1);
+        public function get audio_expected() : Boolean {
+            return (_pmtParsed == false || _audioId != -1);
         }
 
-        public function video_expected() : Boolean {
-            return (_avcId != -1);
+        public function get video_expected() : Boolean {
+            return (_pmtParsed == false || _avcId != -1);
         }
 
         /** Parse a limited amount of packets each time to avoid blocking **/
@@ -175,9 +175,8 @@
                     // free ByteArray
                     _data = null;
                     // first check if TS parsing was successful
-                    if (_pmtParsed == false) {
-                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    CONFIG::LOGGING {
+                        if (_pmtParsed == false) {
                             Log.error("TS: no PMT found, report parsing complete");
                         }
                     }
@@ -195,7 +194,7 @@
             }
             // check whether last parsed audio PES is complete
             if (_curAudioPES && _curAudioPES.length > 14) {
-                var pes : PES = new PES(_curAudioPES, true);
+                var pes : PES = new PES(_curAudioPES);
                 // consider that PES with unknown size (length=0 found in header) is complete
                 if (pes.len == 0 || (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
@@ -217,7 +216,7 @@
             }
             // check whether last parsed video PES is complete
             if (_curVideoPES && _curVideoPES.length > 14) {
-                pes = new PES(_curVideoPES, false);
+                pes = new PES(_curVideoPES);
                 // consider that PES with unknown size (length=0 found in header) is complete
                 if (pes.len == 0 || (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                     CONFIG::LOGGING {
@@ -244,7 +243,7 @@
             }
             // check whether last parsed ID3 PES is complete
             if (_curId3PES && _curId3PES.length > 14) {
-                var pes3 : PES = new PES(_curId3PES, false);
+                var pes3 : PES = new PES(_curId3PES);
                 if (pes3.len && (pes3.data.length - pes3.payload - pes3.payload_len) >= 0) {
                     CONFIG::LOGGING {
                         Log.debug2("TS: complete ID3 PES found at end of segment, parse it");
@@ -360,9 +359,9 @@
             if (!frames.length) {
                 if (_curNalUnit) {
                     _curNalUnit.writeBytes(pes.data, pes.payload, pes.data.length - pes.payload);
-                } else {
-                    null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                    CONFIG::LOGGING {
+                }
+                CONFIG::LOGGING {
+                    if (!_curNalUnit) {
                         Log.warn("TS: no NAL unit found in first (?) video PES packet, discarding data. possible segmentation issue ?");
                     }
                 }
@@ -591,9 +590,8 @@
             switch (pid) {
                 case PAT_ID:
                     todo -= _parsePAT(stt);
-                    if (_pmtParsed == false) {
-                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    CONFIG::LOGGING {
+                        if (_pmtParsed == false) {
                             Log.debug("TS: PAT found.PMT PID:" + _pmtId);
                         }
                     }
@@ -624,18 +622,18 @@
                     if (stt) {
                         if (_curAudioPES) {
                             if (_audioIsAAC) {
-                                _parseADTSPES(new PES(_curAudioPES, true));
+                                _parseADTSPES(new PES(_curAudioPES));
                             } else {
-                                _parseMPEGPES(new PES(_curAudioPES, true));
+                                _parseMPEGPES(new PES(_curAudioPES));
                             }
                         }
                         _curAudioPES = new ByteArray();
                     }
                     if (_curAudioPES) {
                         _curAudioPES.writeBytes(_data, _data.position, todo);
-                    } else {
-                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    }
+                    CONFIG::LOGGING {
+                        if (!_curAudioPES) {
                             Log.warn("TS: Discarding audio packet with id " + pid);
                         }
                     }
@@ -646,14 +644,14 @@
                     }
                     if (stt) {
                         if (_curId3PES) {
-                            _parseID3PES(new PES(_curId3PES, false));
+                            _parseID3PES(new PES(_curId3PES));
                         }
                         _curId3PES = new ByteArray();
                     }
                     if (_curId3PES) {
                         // store data.  will normally be in a single TS
                         _curId3PES.writeBytes(_data, _data.position, todo);
-                        var pes : PES = new PES(_curId3PES, false);
+                        var pes : PES = new PES(_curId3PES);
                         if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                             CONFIG::LOGGING {
                                 Log.debug2("TS: complete ID3 PES found, parse it");
@@ -667,10 +665,9 @@
                             }
                             _curId3PES.position = _curId3PES.length;
                         }
-                    } else {
-                        null;
-                        // just to avoid compilation warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    }
+                    CONFIG::LOGGING {
+                        if (!_curId3PES) {
                             Log.warn("TS: Discarding ID3 packet with id " + pid + " bad TS segmentation ?");
                         }
                     }
@@ -681,15 +678,15 @@
                     }
                     if (stt) {
                         if (_curVideoPES) {
-                            _parseAVCPES(new PES(_curVideoPES, false));
+                            _parseAVCPES(new PES(_curVideoPES));
                         }
                         _curVideoPES = new ByteArray();
                     }
                     if (_curVideoPES) {
                         _curVideoPES.writeBytes(_data, _data.position, todo);
-                    } else {
-                        null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                        CONFIG::LOGGING {
+                    }
+                    CONFIG::LOGGING {
+                        if (!_curVideoPES) {
                             Log.warn("TS: Discarding video packet with id " + pid + " bad TS segmentation ?");
                         }
                     }
@@ -781,9 +778,8 @@
                 read += sel + 5;
             }
 
-            if (audioList.length) {
-                null; // just to avoid compilaton warnings if CONFIG::LOGGING is false
-                CONFIG::LOGGING {
+            CONFIG::LOGGING {
+                if (audioList.length) {
                     Log.debug("TS: Found " + audioList.length + " audio tracks");
                 }
             }

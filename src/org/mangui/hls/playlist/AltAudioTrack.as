@@ -21,7 +21,7 @@
         };
 
         public function toString() : String {
-            return "AltAudioTrack url: " + url + " lang: " + lang + " name: " + name + ' default: ' + default_track;
+            return "AltAudioTrack url: " + url + " group_id: " + group_id + " lang: " + lang + " name: " + name + ' default: ' + default_track ;
         };
     }
 }

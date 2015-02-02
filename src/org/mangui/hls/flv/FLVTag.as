@@ -146,7 +146,28 @@ package org.mangui.hls.flv {
             return length;
         }
         ;
-
+        CONFIG::LOGGING {
+            public function get typeString() : String {
+                switch(type) {
+                    case AAC_HEADER:
+                        return "AAC_HEADER";
+                    case AAC_RAW :
+                        return "AAC_RAW";
+                    case AVC_HEADER:
+                        return "AVC_HEADER";
+                    case AVC_NALU:
+                        return "AVC_NALU";
+                    case MP3_RAW:
+                        return "MP3_RAW";
+                    case DISCONTINUITY:
+                        return "DISCONTINUITY";
+                    case METADATA:
+                        return "METADATA";
+                    default:
+                        return "";
+                }
+            }
+        }
         /** push a data pointer into the frame. **/
         public function push(array : ByteArray, start : int, length : int) : void {
             pointers.push(new TagData(array, start, length));

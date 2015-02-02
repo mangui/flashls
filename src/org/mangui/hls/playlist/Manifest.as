@@ -32,6 +32,8 @@ package org.mangui.hls.playlist {
         public static const ENDLIST : String = '#EXT-X-ENDLIST';
         /** Tag that provides info related to alternative audio tracks */
         public static const ALTERNATE_AUDIO : String = '#EXT-X-MEDIA:TYPE=AUDIO,';
+        /** Tag that provides info related to alternative rendition */
+        private static const MEDIA : String = '#EXT-X-MEDIA:';
         /** Tag that provides the sequence number. **/
         private static const SEQNUM : String = '#EXT-X-MEDIA-SEQUENCE:';
         /** Tag that provides the target duration for each segment. **/
@@ -50,6 +52,7 @@ package org.mangui.hls.playlist {
         private static const replacespace : RegExp = new RegExp("\\s+", "g");
         private static const replacesinglequote : RegExp = new RegExp("\\\'", "g");
         private static const replacedoublequote : RegExp = new RegExp("\\\"", "g");
+        private static const trimwhitespace : RegExp = /^\s*|\s*$/gim;
         /** Index in the array with levels. **/
         private var _index : int;
         /** URLLoader instance. **/
@@ -119,7 +122,7 @@ package org.mangui.hls.playlist {
         }
 
         /** Extract fragments from playlist data. **/
-        public static function getFragments(data : String, base : String , level : int) : Vector.<Fragment> {
+        public static function getFragments(data : String, base : String, level : int) : Vector.<Fragment> {
             var fragments : Vector.<Fragment> = new Vector.<Fragment>();
             var lines : Array = data.split("\n");
             // fragment seqnum
@@ -335,7 +338,7 @@ package org.mangui.hls.playlist {
                                 level.codec_mp3 = true;
                             }
                         } else if (param.indexOf('AUDIO') > -1) {
-                            level.audio_stream_id = (param.split('=')[1] as String).replace(replacedoublequote, "");
+                            level.audio_stream_id = (param.split('=')[1] as String).replace(replacedoublequote, "").replace(trimwhitespace, "");
                         } else if (param.indexOf('NAME') > -1) {
                             level.name = (param.split('=')[1] as String).replace(replacedoublequote, "");
                         }
@@ -368,50 +371,94 @@ package org.mangui.hls.playlist {
             var i : int = 0;
             while (i < lines.length) {
                 var line : String = lines[i++];
-                if (line.indexOf(ALTERNATE_AUDIO) == 0) {
-                    line = line.replace(replacedoublequote, "");
-                    CONFIG::LOGGING {
-                        Log.debug("parsing alternate audio level info:\n" + line);
-                    }
+                if (line.indexOf(MEDIA) == 0) {
+                    var params : Object = _parseAlternateRendition(line);
+
                     // #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="bipbop_audio",LANGUAGE="eng",NAME="BipBop Audio 1",AUTOSELECT=YES,DEFAULT=YES
                     // #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="bipbop_audio",LANGUAGE="eng",NAME="BipBop Audio 2",AUTOSELECT=NO,DEFAULT=NO,URI="alternate_audio_aac_sinewave/prog_index.m3u8"
-                    var params : Array = line.substr(ALTERNATE_AUDIO.length).split(',');
-                    var alt_group_id : String;
-                    var alt_lang : String;
-                    var alt_name : String;
-                    var alt_autoselect : Boolean = false;
-                    var alt_default : Boolean = false;
-                    var alt_url : String;
-                    for (var j : int = 0; j < params.length; j++) {
-                        var param : String = params[j];
-                        if (param.indexOf('GROUP-ID') > -1) {
-                            alt_group_id = param.split('=')[1];
-                        } else if (param.indexOf('LANGUAGE') > -1) {
-                            alt_lang = param.split('=')[1];
-                        } else if (param.indexOf('NAME') > -1) {
-                            alt_name = param.split('=')[1];
-                        } else if (param.indexOf('AUTOSELECT') > -1) {
-                            if (param.split('=')[1] == "NO") {
-                                alt_autoselect = false;
-                            } else {
-                                alt_autoselect = true;
-                            }
-                        } else if (param.indexOf('DEFAULT') > -1) {
-                            if (param.split('=')[1] == "NO") {
-                                alt_default = false;
-                            } else {
-                                alt_default = true;
-                            }
-                        } else if (param.indexOf('URI') > -1) {
-                            alt_url = Manifest._extractURL(param.split('=')[1], base);
-                        }
+                    // #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,LANGUAGE="eng",URI="captions.m3u8"
+
+                    var uri : String = params['URI'];
+                    if (uri) {
+                        uri = _extractURL(uri, base);
                     }
-                    var alternate_audio : AltAudioTrack = new AltAudioTrack(alt_group_id, alt_lang, alt_name, alt_autoselect, alt_default, alt_url);
-                    altAudioTracks.push(alternate_audio);
+                    if (params['TYPE'] == 'AUDIO') {
+                        var alternate_audio : AltAudioTrack = new AltAudioTrack(params['GROUP-ID'], params['LANGUAGE'], params['NAME'], params['AUTOSELECT'] == 'YES', params['DEFAULT'] == 'YES', uri);
+                        altAudioTracks.push(alternate_audio);
+                    }
                 }
             }
             return altAudioTracks;
         };
+
+        private static const RENDITION_STATE_READKEY : Number = 1;
+        private static const RENDITION_STATE_READVALUESTART : Number = 2;
+        private static const RENDITION_STATE_READSIMPLEVALUE : Number = 3;
+        private static const RENDITION_STATE_READQUOTEDVALUE : Number = 4;
+        private static const STATE_READQUOTEDVALUE_END : Number = 5;
+
+        private static function _parseAlternateRendition(line : String) : Object {
+            var variables : Object = new Object();
+            var state : Number = RENDITION_STATE_READKEY;
+            var pos : Number = 0;
+            var c : String;
+            var key : String = "";
+            var value : String = "";
+            line = line.substr(MEDIA.length);
+
+            while (pos < line.length) {
+                c = line.charAt(pos);
+                pos++;
+                switch (state) {
+                    case RENDITION_STATE_READKEY:
+                        if (c == '=') {
+                            state = RENDITION_STATE_READVALUESTART;
+                        } else {
+                            key += c;
+                        }
+                        break;
+                    case RENDITION_STATE_READVALUESTART:
+                        if (c == '"') {
+                            state = RENDITION_STATE_READQUOTEDVALUE;
+                        } else {
+                            value += c;
+                            state = RENDITION_STATE_READSIMPLEVALUE;
+                        }
+                        break;
+                    case RENDITION_STATE_READSIMPLEVALUE:
+                        if (c == ",") {
+                            variables[key] = value;
+                            key = "";
+                            value = "";
+                            state = RENDITION_STATE_READKEY;
+                        } else {
+                            value += c;
+                        }
+                        break;
+                    case RENDITION_STATE_READQUOTEDVALUE:
+                        if (c == '"') {
+                            state = STATE_READQUOTEDVALUE_END;
+                        } else {
+                            value += c;
+                        }
+                        break;
+                    case STATE_READQUOTEDVALUE_END:
+                        if (c == ",") {
+                            variables[key] = value;
+                            key = "";
+                            value = "";
+                            state = RENDITION_STATE_READKEY;
+                        }
+                        break;
+                }
+            }
+
+            if (key) {
+                variables[key] = value;
+            }
+
+            return variables;
+        }
 
         /** Extract whether the stream is live or ondemand. **/
         public static function hasEndlist(data : String) : Boolean {

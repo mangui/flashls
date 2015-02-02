@@ -22,11 +22,12 @@ package org.mangui.hls.model {
         public var pts_start : Number;
         /** computed Start PTS of this chunk. **/
         public var pts_start_computed : Number;
-        /** min/max audio/video PTS of this chunk. **/
+        /** min/max audio/video PTS/DTS of this chunk. **/
         public var pts_min_audio : Number;
         public var pts_max_audio : Number;
         public var pts_min_video : Number;
         public var pts_max_video : Number;
+        public var dts_min : Number;
         /** audio/video found ? */
         public var audio_found : Boolean;
         public var video_found : Boolean;
@@ -57,6 +58,7 @@ package org.mangui.hls.model {
             for each (var tag : FLVTag in tags) {
                 tag.pts = PTS.normalize(pts_start_computed, tag.pts);
                 tag.dts = PTS.normalize(pts_start_computed, tag.dts);
+                dts_min = Math.min(dts_min, tag.dts);
                 switch( tag.type ) {
                     case FLVTag.AAC_RAW:
                     case FLVTag.AAC_HEADER:
@@ -91,7 +93,7 @@ package org.mangui.hls.model {
             tags = new Vector.<FLVTag>();
             tags_audio_found = tags_video_found = false;
             metadata_tag_injected = false;
-            pts_min_audio = pts_min_video = tags_pts_min_audio = tags_pts_min_video = Number.POSITIVE_INFINITY;
+            pts_min_audio = pts_min_video = dts_min = tags_pts_min_audio = tags_pts_min_video = Number.POSITIVE_INFINITY;
             pts_max_audio = pts_max_video = tags_pts_max_audio = tags_pts_max_video = Number.NEGATIVE_INFINITY;
         }
 

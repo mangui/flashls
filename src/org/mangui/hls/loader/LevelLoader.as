@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.loader {
+package org.mangui.hls.loader {
     import org.mangui.hls.playlist.DataUri;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.Manifest;
@@ -22,7 +22,7 @@
         import org.mangui.hls.utils.Log;
     }
     /** Loader for hls manifests. **/
-    public class ManifestLoader {
+    public class LevelLoader {
         /** Reference to the hls framework controller. **/
         private var _hls : HLS;
         /** levels vector. **/
@@ -52,7 +52,7 @@
         private var _alt_audio_tracks : Vector.<AltAudioTrack>;
 
         /** Setup the loader. **/
-        public function ManifestLoader(hls : HLS) {
+        public function LevelLoader(hls : HLS) {
             _hls = hls;
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
@@ -120,6 +120,7 @@
             _reload_playlists_timer = getTimer();
             _retry_timeout = 1000;
             _retry_count = 0;
+            _alt_audio_tracks = null;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADING, url));
 
             if (DataUri.isDataUri(url)) {
