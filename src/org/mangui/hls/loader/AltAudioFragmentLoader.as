@@ -518,21 +518,20 @@ package org.mangui.hls.loader {
                     // loading stalled ! report to caller
                     return LOADING_STALLED;
                 }
-                frag = _level.getFragmentfromSeqNum(new_seqnum);
-                if (frag == null) {
-                    CONFIG::LOGGING {
-                        Log.warn("error trying to load audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
-                    }
-                    return LOADING_WAITING_LEVEL_UPDATE;
-                }
-                ;
             }
             frag = _level.getFragmentfromSeqNum(new_seqnum);
-            CONFIG::LOGGING {
-                Log.debug("Loading audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
+            if (frag == null) {
+                CONFIG::LOGGING {
+                    Log.warn("error trying to load audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
+                }
+                return LOADING_WAITING_LEVEL_UPDATE;
+            } else {
+                CONFIG::LOGGING {
+                    Log.debug("Loading audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
+                }
+                _loadfragment(frag);
+                return LOADING_IN_PROGRESS;
             }
-            _loadfragment(frag);
-            return LOADING_IN_PROGRESS;
         };
 
         private function _loadfragment(frag : Fragment) : void {
