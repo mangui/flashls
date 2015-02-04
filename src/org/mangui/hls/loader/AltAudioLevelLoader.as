@@ -96,6 +96,14 @@ package org.mangui.hls.loader {
                 var newLevel : Level = new Level();
                 newLevel.updateFragments(frags);
                 newLevel.targetduration = Manifest.getTargetDuration(string);
+            // if stream is live, arm a timer to periodically reload playlist
+            if (!Manifest.hasEndlist(string)) {
+                var timeout : Number = Math.max(100, _reload_playlists_timer + 1000 * newLevel.averageduration - getTimer());
+                CONFIG::LOGGING {
+                    Log.debug("Alt Audio Level Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
+                }
+                _timeoutID = setTimeout(_loadAudioLevelPlaylist, timeout);
+            }
                 _hls.audioTracks[_current_track].level = newLevel;
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADED, level));
