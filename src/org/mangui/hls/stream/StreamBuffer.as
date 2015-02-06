@@ -341,9 +341,9 @@ package org.mangui.hls.stream {
                  * if it is the case, then we can start injecting tags in NetStream
                  */
 
-                CONFIG::LOGGING {
-                    // Log.info("min_audio/max_audio/min_video/max_video:" + min_audio_pos.toFixed(2) + "/" + max_audio_pos.toFixed(2) + "/" + min_video_pos.toFixed(2) + "/" + max_video_pos.toFixed(2));  
-                }
+//                CONFIG::LOGGING {
+//                    Log.info("min_audio/max_audio/min_video/max_video:" + min_audio_pos.toFixed(2) + "/" + max_audio_pos.toFixed(2) + "/" + min_video_pos.toFixed(2) + "/" + max_video_pos.toFixed(2));
+//                }
 
                 if (max_pos >= _seek_position_requested) {
                     // inject enough tags to reach seek position
@@ -516,8 +516,7 @@ package org.mangui.hls.stream {
             var _disHeader : FLVData;
             var headercounter : uint = 0;
             var _newheaderTags : Vector.<FLVData> = new Vector.<FLVData>();
-            for (var i : int in _headerTags) {
-                var data : FLVData = _headerTags[i];
+            for each (var data : FLVData in _headerTags) {
                 if ((data.position - (_time_sliding - data.sliding)) < clipping_position) {
                     switch(data.tag.type) {
                         case FLVTag.DISCONTINUITY:
