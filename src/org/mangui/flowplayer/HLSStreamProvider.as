@@ -140,7 +140,10 @@ package org.mangui.flowplayer {
             _duration = event.mediatime.duration - _clipStart;
             // only update duration if not capped
             if (!_durationCapped) {
-                _clip.duration = _duration;
+                if(_clip.duration != _duration) {
+                    _clip.duration = _duration;
+                    _clip.dispatch(ClipEventType.METADATA_CHANGED);
+                }
             } else {
                 // ensure capped duration is lt real one
                 _durationCapped = Math.min(_durationCapped, _duration);
