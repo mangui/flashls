@@ -17,6 +17,8 @@ The plugin is compatible with the following players:
   - Adaptive streaming
     - Manual & Auto switching
     - Serial segment fetching method from http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
+  - Alternate Audio Track Rendition
+    - Master Playlist with alternative Audio
   - Configurable seeking method on VoD & Live
     - Accurate seeking to exact requested position
     - Key frame based seeking (nearest key frame)
