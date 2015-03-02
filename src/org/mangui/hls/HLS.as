@@ -9,6 +9,7 @@ package org.mangui.hls {
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.URLStream;
+    import org.mangui.adaptive.Adaptive;
     import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.stream.AdaptiveNetStream;
     import org.mangui.adaptive.stream.StreamBuffer;
@@ -24,7 +25,7 @@ package org.mangui.hls {
         import org.mangui.adaptive.utils.Log;
     }
     /** Class that manages the streaming process. **/
-    public class HLS extends EventDispatcher {
+    public class HLS  extends EventDispatcher implements Adaptive {
         private var _levelLoader : LevelLoader;
         private var _altAudioLevelLoader : AltAudioLevelLoader;
         private var _audioTrackController : AudioTrackController;
