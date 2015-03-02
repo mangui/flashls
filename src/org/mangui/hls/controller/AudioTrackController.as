@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.playlist.AltAudioTrack;
@@ -27,19 +27,19 @@ package org.mangui.hls.controller {
 
         public function AudioTrackController(hls : HLS) {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.LEVEL_LOADED, _levelLoadedHandler);
         }
 
         public function dispose() : void {
-            _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.LEVEL_LOADED, _levelLoadedHandler);
         }
 
         public function set audioTrack(num : int) : void {
             if (_audioTrackId != num) {
                 _audioTrackId = num;
-                var ev : HLSEvent = new HLSEvent(HLSEvent.AUDIO_TRACK_SWITCH);
+                var ev : AdaptiveEvent = new AdaptiveEvent(AdaptiveEvent.AUDIO_TRACK_SWITCH);
                 ev.audioTrack = _audioTrackId;
                 _hls.dispatchEvent(ev);
                 CONFIG::LOGGING {
@@ -56,7 +56,7 @@ package org.mangui.hls.controller {
             return _audioTracks;
         }
 
-        private function _manifestLoadedHandler(event : HLSEvent) : void {
+        private function _manifestLoadedHandler(event : AdaptiveEvent) : void {
             // reset audio tracks
             _audioTrackId = -1;
             _audioTracksfromDemux = new Vector.<AudioTrack>();
@@ -66,7 +66,7 @@ package org.mangui.hls.controller {
         };
 
         /** Store the manifest data. **/
-        private function _levelLoadedHandler(event : HLSEvent) : void {
+        private function _levelLoadedHandler(event : AdaptiveEvent) : void {
             if (event.level == _hls.level) {
                 _updateAudioTrackforLevel(event.level);
             }
@@ -179,7 +179,7 @@ package org.mangui.hls.controller {
                 }
             }
             // notify audio track list update
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_TRACKS_LIST_CHANGE));
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.AUDIO_TRACKS_LIST_CHANGE));
 
             // switch track id to default audio track, if found
             if (default_found == true && _audioTrackId == -1) {

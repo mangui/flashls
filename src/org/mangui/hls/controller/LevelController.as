@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
     import org.mangui.adaptive.constant.MaxLevelCappingMode;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.Level;
@@ -36,24 +36,24 @@ package org.mangui.hls.controller {
         /** Create the loader. **/
         public function LevelController(hls : HLS) : void {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
         ;
 
         public function dispose() : void {
-            _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
 
-        private function _fragmentLoadedHandler(event : HLSEvent) : void {
+        private function _fragmentLoadedHandler(event : AdaptiveEvent) : void {
             last_bandwidth = event.loadMetrics.bandwidth;
             _last_segment_duration = event.loadMetrics.frag_duration;
             _last_fetch_duration = event.loadMetrics.frag_processing_time;
         }
 
         /** Store the manifest data. **/
-        private function _manifestLoadedHandler(event : HLSEvent) : void {
+        private function _manifestLoadedHandler(event : AdaptiveEvent) : void {
             var levels : Vector.<Level> = event.levels;
             var maxswitchup : Number = 0;
             var minswitchdwown : Number = Number.MAX_VALUE;
@@ -105,7 +105,7 @@ package org.mangui.hls.controller {
                 level = _hls.manuallevel;
             }
             // always dispatch level after manifest load
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_SWITCH, level));
         }
         ;
 

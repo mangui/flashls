@@ -2,22 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.adaptive.stream {
-    import org.mangui.adaptive.constant.PlayStates;
-    import org.mangui.adaptive.constant.SeekStates;
-    import org.mangui.adaptive.flv.FLVTag;
-    import org.mangui.adaptive.utils.Hex;
-    import org.mangui.hls.controller.BufferThresholdController;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSPlayMetrics;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
 
     import flash.events.Event;
     import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
     import flash.net.*;
     import flash.utils.*;
+    import org.mangui.adaptive.constant.PlayStates;
+    import org.mangui.adaptive.constant.SeekStates;
+    import org.mangui.adaptive.event.AdaptiveError;
+    import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.event.AdaptivePlayMetrics;
+    import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.adaptive.utils.Hex;
+    import org.mangui.hls.controller.BufferThresholdController;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -79,7 +79,7 @@ package org.mangui.adaptive.stream {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, audio_only, program_date, width, height, tag_list)));
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT_PLAYING, new AdaptivePlayMetrics(level, seqnum, cc, audio_only, program_date, width, height, tag_list)));
         }
 
         // function is called by SCRIPT in FLV
@@ -94,7 +94,7 @@ package org.mangui.adaptive.stream {
             CONFIG::LOGGING {
                 Log.debug("id3:" + dump);
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ID3_UPDATED, dump));
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ID3_UPDATED, dump));
         }
 
         /** timer function, check/update NetStream state, and append tags if needed **/
@@ -115,7 +115,7 @@ package org.mangui.adaptive.stream {
                         CONFIG::LOGGING {
                             Log.debug("reached end of VOD playlist, notify playback complete");
                         }
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
+                        _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.PLAYBACK_COMPLETE));
                         _setPlaybackState(PlayStates.IDLE);
                         _setSeekState(SeekStates.IDLE);
                         return;
@@ -198,8 +198,8 @@ package org.mangui.adaptive.stream {
                     }
                     super.appendBytes(tagBuffer.data);
                 } catch (error : Error) {
-                    var hlsError : HLSError = new HLSError(HLSError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                    var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
                 }
             }
             if (_seekState == SeekStates.SEEKING) {
@@ -216,7 +216,7 @@ package org.mangui.adaptive.stream {
                     Log.debug('[PLAYBACK_STATE] from ' + _playbackState + ' to ' + state);
                 }
                 _playbackState = state;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_STATE, _playbackState));
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.PLAYBACK_STATE, _playbackState));
             }
         };
 
@@ -227,7 +227,7 @@ package org.mangui.adaptive.stream {
                     Log.debug('[SEEK_STATE] from ' + _seekState + ' to ' + state);
                 }
                 _seekState = state;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.SEEK_STATE, _seekState));
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.SEEK_STATE, _seekState));
             }
         };
 

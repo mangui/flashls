@@ -8,8 +8,8 @@ package org.mangui.hls.playlist {
     import flash.utils.ByteArray;
     import org.mangui.adaptive.constant.Types;
     import org.mangui.adaptive.utils.Hex;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveError;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
@@ -350,8 +350,8 @@ package org.mangui.hls.playlist {
             }
             var levelsLength : int = levels.length;
             if (levelsLength == 0) {
-                var hlsError : HLSError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, base, "No level found in Manifest");
-                hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.MANIFEST_PARSING_ERROR, base, "No level found in Manifest");
+                hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
             levels.sortOn('bitrate', Array.NUMERIC);
             var vectorLevels : Vector.<Level> = new Vector.<Level>();

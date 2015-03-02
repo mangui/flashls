@@ -13,10 +13,10 @@ package org.mangui.player.chromeless {
     import flash.media.Video;
     import flash.net.URLStream;
     import flash.utils.setTimeout;
+    import org.mangui.adaptive.event.AdaptiveError;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.utils.Log;
     import org.mangui.adaptive.utils.ScaleVideo;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
@@ -128,7 +128,7 @@ package org.mangui.player.chromeless {
         };
 
         /** Forward events from the framework. **/
-        protected function _completeHandler(event : HLSEvent) : void {
+        protected function _completeHandler(event : AdaptiveEvent) : void {
             if (ExternalInterface.available) {
 
                 ExternalInterface.call("flashlsEvents.onComplete", ExternalInterface.objectID);
@@ -136,26 +136,26 @@ package org.mangui.player.chromeless {
             }
         };
 
-        protected function _errorHandler(event : HLSEvent) : void {
+        protected function _errorHandler(event : AdaptiveEvent) : void {
             if (ExternalInterface.available) {
-                var hlsError : HLSError = event.error;
+                var hlsError : AdaptiveError = event.error;
                 ExternalInterface.call("flashlsEvents.onError", ExternalInterface.objectID, hlsError.code, hlsError.url, hlsError.msg);
             }
         };
 
-        protected function _fragmentLoadedHandler(event : HLSEvent) : void {
+        protected function _fragmentLoadedHandler(event : AdaptiveEvent) : void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("flashlsEvents.onFragmentLoaded", ExternalInterface.objectID, event.loadMetrics);
             }
         };
 
-        protected function _fragmentPlayingHandler(event : HLSEvent) : void {
+        protected function _fragmentPlayingHandler(event : AdaptiveEvent) : void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("flashlsEvents.onFragmentPlaying", ExternalInterface.objectID, event.playMetrics);
             }
         };
 
-        protected function _manifestHandler(event : HLSEvent) : void {
+        protected function _manifestHandler(event : AdaptiveEvent) : void {
             _duration = event.levels[_hls.startlevel].duration;
 
             if (_autoLoad) {
@@ -167,7 +167,7 @@ package org.mangui.player.chromeless {
             }
         };
 
-        protected function _mediaTimeHandler(event : HLSEvent) : void {
+        protected function _mediaTimeHandler(event : AdaptiveEvent) : void {
             _duration = event.mediatime.duration;
             _media_position = event.mediatime.position;
             if (ExternalInterface.available) {
@@ -190,25 +190,25 @@ package org.mangui.player.chromeless {
             }
         };
 
-        protected function _stateHandler(event : HLSEvent) : void {
+        protected function _stateHandler(event : AdaptiveEvent) : void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("flashlsEvents.onState", ExternalInterface.objectID, event.state);
             }
         };
 
-        protected function _levelSwitchHandler(event : HLSEvent) : void {
+        protected function _levelSwitchHandler(event : AdaptiveEvent) : void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("flashlsEvents.onSwitch", ExternalInterface.objectID, event.level);
             }
         };
 
-        protected function _audioTracksListChange(event : HLSEvent) : void {
+        protected function _audioTracksListChange(event : AdaptiveEvent) : void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("flashlsEvents.onAudioTracksListChange", ExternalInterface.objectID, _getAudioTrackList());
             }
         }
 
-        protected function _audioTrackChange(event : HLSEvent) : void {
+        protected function _audioTrackChange(event : AdaptiveEvent) : void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("flashlsEvents.onAudioTrackChange", ExternalInterface.objectID, event.audioTrack);
             }
@@ -436,16 +436,16 @@ package org.mangui.player.chromeless {
             var available : Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
             _hls = new HLS();
             _hls.stage = stage;
-            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
-            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
-            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            _hls.addEventListener(AdaptiveEvent.PLAYBACK_COMPLETE, _completeHandler);
+            _hls.addEventListener(AdaptiveEvent.ERROR, _errorHandler);
+            _hls.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
+            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestHandler);
+            _hls.addEventListener(AdaptiveEvent.MEDIA_TIME, _mediaTimeHandler);
+            _hls.addEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateHandler);
+            _hls.addEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _hls.addEventListener(AdaptiveEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
+            _hls.addEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
 
             if (available && stage.stageVideos.length > 0) {
                 _stageVideo = stage.stageVideos[0];

@@ -8,8 +8,8 @@ package org.mangui.hls.loader {
     import flash.utils.*;
     import org.mangui.adaptive.constant.PlayStates;
     import org.mangui.adaptive.constant.Types;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveError;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.Fragment;
@@ -54,8 +54,8 @@ package org.mangui.hls.loader {
         /** Setup the loader. **/
         public function LevelLoader(hls : HLS) {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _hls.addEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateHandler);
+            _hls.addEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _levels = new Vector.<Level>();
             _urlloader = new URLLoader();
             _urlloader.addEventListener(Event.COMPLETE, _loaderHandler);
@@ -68,8 +68,8 @@ package org.mangui.hls.loader {
             _urlloader.removeEventListener(Event.COMPLETE, _loaderHandler);
             _urlloader.removeEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
             _urlloader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, _errorHandler);
-            _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
-            _hls.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _hls.removeEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateHandler);
+            _hls.removeEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
         }
 
         /** Loading failed; return errors. **/
@@ -77,7 +77,7 @@ package org.mangui.hls.loader {
             var txt : String;
             var code : int;
             if (event is SecurityErrorEvent) {
-                code = HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
+                code = AdaptiveError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
                 txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
             } else if (event is IOErrorEvent && _levels.length && (HLSSettings.manifestLoadMaxRetry == -1 || _retry_count < HLSSettings.manifestLoadMaxRetry)) {
                 CONFIG::LOGGING {
@@ -89,11 +89,11 @@ package org.mangui.hls.loader {
                 _retry_count++;
                 return;
             } else {
-                code = HLSError.MANIFEST_LOADING_IO_ERROR;
+                code = AdaptiveError.MANIFEST_LOADING_IO_ERROR;
                 txt = "Cannot load M3U8: " + event.text;
             }
-            var hlsError : HLSError = new HLSError(code, _url, txt);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+            var hlsError : AdaptiveError = new AdaptiveError(code, _url, txt);
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
         };
 
         /** Return the current manifest. **/
@@ -121,7 +121,7 @@ package org.mangui.hls.loader {
             _retry_timeout = 1000;
             _retry_count = 0;
             _alt_audio_tracks = null;
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADING, url));
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MANIFEST_LOADING, url));
 
             if (DataUri.isDataUri(url)) {
                 CONFIG::LOGGING {
@@ -153,13 +153,13 @@ package org.mangui.hls.loader {
                 // set fragment and update sequence number range
                 _levels[level].updateFragments(frags);
                 _levels[level].targetduration = Manifest.getTargetDuration(string);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[level].duration));
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.PLAYLIST_DURATION_UPDATED, _levels[level].duration));
             }
 
             // Check whether the stream is live or not finished yet
             if (Manifest.hasEndlist(string)) {
                 _type = Types.VOD;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_ENDLIST, level));
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_ENDLIST, level));
             } else {
                 _type = Types.LIVE;
                 var timeout : Number = Math.max(100, _reload_playlists_timer + 1000 * _levels[level].averageduration - getTimer());
@@ -174,10 +174,10 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.debug("first level filled with at least 1 fragment, notify event");
                     }
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED, _levels));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MANIFEST_LOADED, _levels));
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, level));
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_LOADED, level));
             _manifest_loading = null;
         };
 
@@ -190,8 +190,8 @@ package org.mangui.hls.loader {
                     var level : Level = new Level();
                     level.url = _url;
                     _levels.push(level);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, 0));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MANIFEST_PARSED, _levels));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_LOADING, 0));
                     CONFIG::LOGGING {
                         Log.debug("1 Level Playlist, load it");
                     }
@@ -205,7 +205,7 @@ package org.mangui.hls.loader {
                     _levels = Manifest.extractLevels(_hls, string, _url);
                     // retrieve start level from helper function
                     _current_level = _hls.startlevel;
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MANIFEST_PARSED, _levels));
                     _loadActiveLevelPlaylist();
                     if (string.indexOf(Manifest.ALTERNATE_AUDIO) > 0) {
                         CONFIG::LOGGING {
@@ -221,8 +221,8 @@ package org.mangui.hls.loader {
                     }
                 }
             } else {
-                var hlsError : HLSError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "Manifest is not a valid M3U8 file");
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.MANIFEST_PARSING_ERROR, _url, "Manifest is not a valid M3U8 file");
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         };
 
@@ -234,12 +234,12 @@ package org.mangui.hls.loader {
             _reload_playlists_timer = getTimer();
             // load active M3U8 playlist only
             _manifest_loading = new Manifest();
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, _current_level));
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_LOADING, _current_level));
             _manifest_loading.loadPlaylist(_levels[_current_level].url, _parseLevelPlaylist, _errorHandler, _current_level, _type, HLSSettings.flushLiveURLCache);
         };
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
-        private function _levelSwitchHandler(event : HLSEvent) : void {
+        private function _levelSwitchHandler(event : AdaptiveEvent) : void {
             if (_current_level != event.level) {
                 _current_level = event.level;
                 CONFIG::LOGGING {
@@ -272,7 +272,7 @@ package org.mangui.hls.loader {
         }
 
         /** When the framework idles out, stop reloading manifest **/
-        private function _stateHandler(event : HLSEvent) : void {
+        private function _stateHandler(event : AdaptiveEvent) : void {
             if (event.state == PlayStates.IDLE) {
                 _close();
             }

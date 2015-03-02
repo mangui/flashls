@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.player.osmf.plugins.traits {
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.osmf.media.MediaResourceBase;
     import org.osmf.net.NetStreamLoadTrait;
@@ -26,14 +26,14 @@
             _time_loaded = 0;
             _time_total = duration;
             super.netStream = _hls.stream;
-            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
+            _hls.addEventListener(AdaptiveEvent.MEDIA_TIME, _mediaTimeHandler);
         }
 
         override public function dispose() : void {
             CONFIG::LOGGING {
             Log.debug("HLSNetStreamLoadTrait:dispose");
             }
-            _hls.removeEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
+            _hls.removeEventListener(AdaptiveEvent.MEDIA_TIME, _mediaTimeHandler);
             super.dispose();
         }
 
@@ -46,7 +46,7 @@
         }
 
         /**  **/
-        private function _mediaTimeHandler(event : HLSEvent) : void {
+        private function _mediaTimeHandler(event : AdaptiveEvent) : void {
             var time_total : Number = Math.round(10 * event.mediatime.duration) / 10;
             var time_loaded : Number = Math.round(10 * (event.mediatime.position + event.mediatime.buffer)) / 10;
 

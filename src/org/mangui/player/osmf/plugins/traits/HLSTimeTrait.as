@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.player.osmf.plugins.traits {
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.osmf.traits.TimeTrait;
 
@@ -20,21 +20,21 @@
             super(duration);
             setCurrentTime(0);
             _hls = hls;
-            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+            _hls.addEventListener(AdaptiveEvent.MEDIA_TIME, _mediaTimeHandler);
+            _hls.addEventListener(AdaptiveEvent.PLAYBACK_COMPLETE, _playbackComplete);
         }
 
         override public function dispose() : void {
             CONFIG::LOGGING {
             Log.debug("HLSTimeTrait:dispose");
             }
-            _hls.removeEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+            _hls.removeEventListener(AdaptiveEvent.MEDIA_TIME, _mediaTimeHandler);
+            _hls.removeEventListener(AdaptiveEvent.PLAYBACK_COMPLETE, _playbackComplete);
             super.dispose();
         }
 
         /** Update playback position/duration **/
-        private function _mediaTimeHandler(event : HLSEvent) : void {
+        private function _mediaTimeHandler(event : AdaptiveEvent) : void {
             var new_duration : Number = event.mediatime.duration;
             var new_position : Number = Math.max(0, event.mediatime.position);
             setDuration(new_duration);
@@ -42,7 +42,7 @@
         };
 
         /** playback complete handler **/
-        private function _playbackComplete(event : HLSEvent) : void {
+        private function _playbackComplete(event : AdaptiveEvent) : void {
             signalComplete();
         }
     }

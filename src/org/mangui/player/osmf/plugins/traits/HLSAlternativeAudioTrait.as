@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.player.osmf.plugins.traits {
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.model.AudioTrack;
     import org.osmf.events.AlternativeAudioEvent;
@@ -32,16 +32,16 @@ package org.mangui.player.osmf.plugins.traits {
             _audioTrackList = _hls.audioTracks;
             _numAlternativeAudioStreams = _audioTrackList.length - 1;
             _media = media;
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
+            _hls.addEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
+            _hls.addEventListener(AdaptiveEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
         }
 
         override public function dispose() : void {
             CONFIG::LOGGING {
             Log.debug("HLSAlternativeAudioTrait:dispose");
             }
-            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
-            _hls.removeEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
+            _hls.removeEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
+            _hls.removeEventListener(AdaptiveEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
             super.dispose();
         }
 
@@ -90,7 +90,7 @@ package org.mangui.player.osmf.plugins.traits {
             }
         }
 
-        private function _audioTrackChangedHandler(event : HLSEvent) : void {
+        private function _audioTrackChangedHandler(event : AdaptiveEvent) : void {
             CONFIG::LOGGING {
             Log.debug("HLSDynamicStreamTrait:_audioTrackChangedHandler");
             }
@@ -98,7 +98,7 @@ package org.mangui.player.osmf.plugins.traits {
             setSwitching(false, _lastTransitionIndex);
         }
 
-        private function _audioTrackListChangedHandler(event : HLSEvent) : void {
+        private function _audioTrackListChangedHandler(event : AdaptiveEvent) : void {
             CONFIG::LOGGING {
             Log.debug("HLSDynamicStreamTrait:_audioTrackListChangedHandler");
             }

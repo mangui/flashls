@@ -10,14 +10,14 @@ package org.mangui.hls.loader {
     import flash.utils.Timer;
     import org.mangui.adaptive.constant.Types;
     import org.mangui.adaptive.demux.Demuxer;
+    import org.mangui.adaptive.event.AdaptiveError;
+    import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.event.AdaptiveLoadMetrics;
     import org.mangui.adaptive.flv.FLVTag;
     import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.demux.DemuxHelper;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
@@ -99,8 +99,8 @@ package org.mangui.hls.loader {
             _levelController = levelController;
             _audioTrackController = audioTrackController;
             _streamBuffer = streamBuffer;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.LEVEL_LOADED, _levelLoadedHandler);
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
             _loading_state = MANIFEST_LOADING;
@@ -110,8 +110,8 @@ package org.mangui.hls.loader {
 
         public function dispose() : void {
             stop();
-            _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.LEVEL_LOADED, _levelLoadedHandler);
             _loading_state = MANIFEST_LOADING;
             _keymap = new Object();
         }
@@ -161,7 +161,7 @@ package org.mangui.hls.loader {
                         }
                         if (level != _hls.level) {
                             _demux = null;
-                            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
+                            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_SWITCH, level));
                         }
                         _switchlevel = true;
 
@@ -201,7 +201,7 @@ package org.mangui.hls.loader {
                         if (level != _hls.level) {
                             _switchlevel = true;
                             _demux = null;
-                            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
+                            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_SWITCH, level));
                         }
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
                         if ((_levels[level].fragments.length == 0) || (_hls.type == Types.LIVE && _last_loaded_level != level)) {
@@ -247,7 +247,7 @@ package org.mangui.hls.loader {
                     }
                     break;
                 case LOADING_COMPLETED:
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED));
                     // stop loading timer as well, as no other fragments can be loaded
                     _timer.stop();
                     break;
@@ -277,7 +277,7 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug("key loading completed");
             }
-            var hlsError : HLSError;
+            var hlsError : AdaptiveError;
             // Collect key data
             if ( _keystreamloader.bytesAvailable == 16 ) {
                 // load complete, reset retry counter
@@ -292,15 +292,15 @@ package org.mangui.hls.loader {
                         Log.debug("loading fragment:" + _frag_current.url);
                     }
                     _frag_current.data.bytes = null;
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, _frag_current.url));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT_LOADING, _frag_current.url));
                     _fragstreamloader.load(new URLRequest(_frag_current.url));
                 } catch (error : Error) {
-                    hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, error.message);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                    hlsError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_ERROR, _frag_current.url, error.message);
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
                 }
             } else {
-                hlsError = new HLSError(HLSError.KEY_PARSING_ERROR, _frag_current.decrypt_url, "invalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes");
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                hlsError = new AdaptiveError(AdaptiveError.KEY_PARSING_ERROR, _frag_current.decrypt_url, "invalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes");
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         };
 
@@ -322,8 +322,8 @@ package org.mangui.hls.loader {
                 _key_retry_count++;
                 _key_retry_timeout = Math.min(HLSSettings.keyLoadMaxRetryTimeout, 2 * _key_retry_timeout);
             } else {
-                var hlsError : HLSError = new HLSError(HLSError.KEY_LOADING_ERROR, _frag_current.decrypt_url, "I/O Error :" + message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.KEY_LOADING_ERROR, _frag_current.decrypt_url, "I/O Error :" + message);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         }
 
@@ -353,8 +353,8 @@ package org.mangui.hls.loader {
                 _frag_retry_count++;
                 _frag_retry_timeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _frag_retry_timeout);
             } else {
-                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         }
 
@@ -549,7 +549,7 @@ package org.mangui.hls.loader {
             var code : int;
             if (event is SecurityErrorEvent) {
                 txt = "Cannot load key: crossdomain access denied:" + event.text;
-                code = HLSError.KEY_LOADING_CROSSDOMAIN_ERROR;
+                code = AdaptiveError.KEY_LOADING_CROSSDOMAIN_ERROR;
             } else {
                 _keyhandleIOError("HTTP status:" + _key_load_status + ",msg:" + event.text);
             }
@@ -559,8 +559,8 @@ package org.mangui.hls.loader {
         private function _fragLoadErrorHandler(event : ErrorEvent) : void {
             if (event is SecurityErrorEvent) {
                 var txt : String = "Cannot load fragment: crossdomain access denied:" + event.text;
-                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR, _frag_current.url, txt);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR, _frag_current.url, txt);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             } else {
                 _fraghandleIOError("HTTP status:" + _frag_load_status + ",msg:" + event.text);
             }
@@ -683,8 +683,8 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.error(err);
                     }
-                    var hlsError : HLSError = new HLSError(HLSError.OTHER_ERROR, frag.url, err);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                    var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.OTHER_ERROR, frag.url, err);
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
                     return;
                 }
                 var urlStreamClass : Class = _hls.URLstream as Class;
@@ -720,23 +720,23 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("loading fragment:" + frag.url);
                 }
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, frag.url));
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT_LOADING, frag.url));
                 _fragstreamloader.load(new URLRequest(frag.url));
             } catch (error : Error) {
-                hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                hlsError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         }
 
         /** Store the manifest data. **/
-        private function _manifestLoadedHandler(event : HLSEvent) : void {
+        private function _manifestLoadedHandler(event : AdaptiveEvent) : void {
             _levels = event.levels;
             _loading_state = LOADING_IDLE;
             _manifest_just_loaded = true;
         };
 
         /** Store the manifest data. **/
-        private function _levelLoadedHandler(event : HLSEvent) : void {
+        private function _levelLoadedHandler(event : AdaptiveEvent) : void {
             _last_loaded_level = event.level;
             if (_loading_state == LOADING_WAITING_LEVEL_UPDATE && _last_loaded_level == _hls.level) {
                 _loading_state = LOADING_IDLE;
@@ -826,8 +826,8 @@ package org.mangui.hls.loader {
                     _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     var processing_duration : Number = (getTimer() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
-                    var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_hls.level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
+                    var tagsMetrics : AdaptiveLoadMetrics = new AdaptiveLoadMetrics(_hls.level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.TAGS_LOADED, tagsMetrics));
                     fragData.shiftTags();
                     _hasDiscontinuity = false;
                 }
@@ -838,11 +838,11 @@ package org.mangui.hls.loader {
         private function _fragParsingCompleteHandler() : void {
             if (_loading_state == LOADING_IDLE)
                 return;
-            var hlsError : HLSError;
+            var hlsError : AdaptiveError;
             var fragData : FragmentData = _frag_current.data;
             if ((_demux.audio_expected && !fragData.audio_found) && (_demux.video_expected && !fragData.video_found)) {
-                hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                hlsError = new AdaptiveError(AdaptiveError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
             CONFIG::LOGGING {
                 if (fragData.audio_found) {
@@ -879,7 +879,7 @@ package org.mangui.hls.loader {
                         _loading_state = LOADING_IDLE;
                         _switchlevel = true;
                         _demux = null;
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _hls.level));
+                        _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_SWITCH, _hls.level));
                         return;
                     }
                 }
@@ -891,14 +891,14 @@ package org.mangui.hls.loader {
                     Log.debug("Loaded        " + _frag_current.seqnum + " of [" + (_levels[_hls.level].start_seqnum) + "," + (_levels[_hls.level].end_seqnum) + "],level " + _hls.level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
 
-                var tagsMetrics : HLSLoadMetrics;
+                var tagsMetrics : AdaptiveLoadMetrics;
                 if (fragData.audio_found || fragData.video_found) {
                     _levels[_hls.level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max);
                     // set pts_start here, it might not be updated directly in updateFragment() if this loaded fragment has been removed from a live playlist
                     fragData.pts_start = fragData.pts_min;
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_hls.level].duration));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.PLAYLIST_DURATION_UPDATED, _levels[_hls.level].duration));
 
-                    tagsMetrics = new HLSLoadMetrics(_hls.level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
+                    tagsMetrics = new AdaptiveLoadMetrics(_hls.level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
 
                     if (fragData.tags.length) {
                         if (fragData.metadata_tag_injected == false) {
@@ -909,21 +909,21 @@ package org.mangui.hls.loader {
                             fragData.metadata_tag_injected = true;
                         }
                         _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
+                        _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.TAGS_LOADED, tagsMetrics));
                         fragData.shiftTags();
                         _hasDiscontinuity = false;
                     }
                 } else {
-                    tagsMetrics = new HLSLoadMetrics(_hls.level, fragMetrics.bandwidth, _frag_current.duration * 1000, fragMetrics.processing_duration);
+                    tagsMetrics = new AdaptiveLoadMetrics(_hls.level, fragMetrics.bandwidth, _frag_current.duration * 1000, fragMetrics.processing_duration);
                 }
                 _loading_state = LOADING_IDLE;
                 _pts_analyzing = false;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, tagsMetrics));
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT_LOADED, tagsMetrics));
                 _fragment_first_loaded = true;
                 _frag_previous = _frag_current;
             } catch (error : Error) {
-                hlsError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, error.message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                hlsError = new AdaptiveError(AdaptiveError.OTHER_ERROR, _frag_current.url, error.message);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         }
     }

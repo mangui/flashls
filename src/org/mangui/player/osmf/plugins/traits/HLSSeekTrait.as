@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.player.osmf.plugins.traits {
     import org.mangui.adaptive.constant.SeekStates;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.osmf.traits.SeekTrait;
     import org.osmf.traits.TimeTrait;
@@ -21,14 +21,14 @@
             }
             super(timeTrait);
             _hls = hls;
-            _hls.addEventListener(HLSEvent.SEEK_STATE, _stateChangedHandler);
+            _hls.addEventListener(AdaptiveEvent.SEEK_STATE, _stateChangedHandler);
         }
 
         override public function dispose() : void {
             CONFIG::LOGGING {
             Log.debug("HLSSeekTrait:dispose");
             }
-            _hls.removeEventListener(HLSEvent.SEEK_STATE, _stateChangedHandler);
+            _hls.removeEventListener(AdaptiveEvent.SEEK_STATE, _stateChangedHandler);
             super.dispose();
         }
 
@@ -49,7 +49,7 @@
         }
 
         /** state changed handler **/
-        private function _stateChangedHandler(event : HLSEvent) : void {
+        private function _stateChangedHandler(event : AdaptiveEvent) : void {
             if (seeking && event.state != SeekStates.SEEKING) {
                 CONFIG::LOGGING {
                 Log.debug("HLSSeekTrait:setSeeking(false);");

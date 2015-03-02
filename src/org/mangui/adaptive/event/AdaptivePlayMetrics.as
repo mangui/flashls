@@ -1,9 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-package org.mangui.hls.event {
+package org.mangui.adaptive.event {
     /** playback metrics, notified when playback of a given fragment starts **/
-    public class HLSPlayMetrics {
+    public class AdaptivePlayMetrics {
         public var level : int;
         public var seqnum : int;
         public var continuity_counter : int;
@@ -13,7 +13,7 @@ package org.mangui.hls.event {
         public var video_height : int;
         public var tag_list : Array;
 
-        public function HLSPlayMetrics(level : int, seqnum : int, cc : int, audio_only : Boolean, program_date : Number, video_width : int, video_height : int, tag_list : Array) {
+        public function AdaptivePlayMetrics(level : int, seqnum : int, cc : int, audio_only : Boolean, program_date : Number, video_width : int, video_height : int, tag_list : Array) {
             this.level = level;
             this.seqnum = seqnum;
             this.continuity_counter = cc;

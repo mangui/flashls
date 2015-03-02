@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.player.osmf.plugins.traits {
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.osmf.traits.DynamicStreamTrait;
     import org.osmf.utils.OSMFStrings;
@@ -19,7 +19,7 @@
             Log.debug("HLSDynamicStreamTrait()");
             }
             _hls = hls;
-            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _hls.addEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
             super(true, _hls.startlevel, hls.levels.length);
         }
 
@@ -27,7 +27,7 @@
             CONFIG::LOGGING {
             Log.debug("HLSDynamicStreamTrait:dispose");
             }
-            _hls.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _hls.removeEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
             super.dispose();
         }
 
@@ -78,7 +78,7 @@
         }
 
         /** Update playback position/duration **/
-        private function _levelSwitchHandler(event : HLSEvent) : void {
+        private function _levelSwitchHandler(event : AdaptiveEvent) : void {
             var newLevel : int = event.level;
             CONFIG::LOGGING {
             Log.debug("HLSDynamicStreamTrait:_qualitySwitchHandler:" + newLevel);

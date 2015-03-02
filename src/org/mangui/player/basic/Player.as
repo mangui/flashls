@@ -5,7 +5,7 @@ package org.mangui.basic {
 
     import flash.display.Sprite;
     import flash.media.Video;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
 
     public class Player extends Sprite {
@@ -21,11 +21,11 @@ package org.mangui.basic {
             video.y = 0;
             video.smoothing = true;
             video.attachNetStream(hls.stream);
-            hls.addEventListener(HLSEvent.MANIFEST_LOADED, manifestHandler);
+            hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, manifestHandler);
             hls.load("http://domain.com/hls/m1.m3u8");
         }
 
-        public function manifestHandler(event : HLSEvent) : void {
+        public function manifestHandler(event : AdaptiveEvent) : void {
             hls.stream.play(null, -1);
         };
     }

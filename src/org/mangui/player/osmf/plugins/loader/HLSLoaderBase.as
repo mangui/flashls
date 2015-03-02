@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.player.osmf.plugins.loader {
-    import org.mangui.hls.model.Level;
     import org.mangui.adaptive.constant.Types;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
+    import org.mangui.hls.model.Level;
     import org.mangui.player.osmf.plugins.HLSMediaElement;
     import org.mangui.player.osmf.plugins.utils.ErrorManager;
     import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;
@@ -71,14 +71,14 @@
             updateLoadTrait(loadTrait, LoadState.LOADING);
 
             if (_hls != null) {
-                _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
-                _hls.removeEventListener(HLSEvent.ERROR, _errorHandler);
+                _hls.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestHandler);
+                _hls.removeEventListener(AdaptiveEvent.ERROR, _errorHandler);
                 _hls.dispose();
                 _hls = null;
             }
             _hls = new HLS();
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
-            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
+            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestHandler);
+            _hls.addEventListener(AdaptiveEvent.ERROR, _errorHandler);
             /* load playlist */
             _hls.load(URLResource(loadTrait.resource).url);
         }
@@ -88,7 +88,7 @@
         }
 
         /** Update video A/R on manifest load. **/
-        private function _manifestHandler(event : HLSEvent) : void {
+        private function _manifestHandler(event : AdaptiveEvent) : void {
             var resource : MediaResourceBase = URLResource(_loadTrait.resource);
 
             // retrieve stream type
@@ -142,7 +142,7 @@
             }
         }
 
-        private function _errorHandler(event : HLSEvent) : void {
+        private function _errorHandler(event : AdaptiveEvent) : void {
             var errorCode : int = ErrorManager.getMediaErrorCode(event);
             var errorMsg : String = ErrorManager.getMediaErrorMessage(event);
             CONFIG::LOGGING {

@@ -21,7 +21,7 @@ package org.mangui.player.flowplayer {
     import org.flowplayer.view.Flowplayer;
     import org.flowplayer.view.StageVideoWrapper;
     import org.mangui.adaptive.constant.PlayStates;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.utils.Params2Settings;
 
@@ -66,12 +66,12 @@ package org.mangui.player.flowplayer {
             _player = player;
             _hls = new HLS();
             _hls.stage = player.screen.getDisplayObject().stage;
-            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
-            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
-            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
-            _hls.addEventListener(HLSEvent.ID3_UPDATED, _ID3Handler);
+            _hls.addEventListener(AdaptiveEvent.PLAYBACK_COMPLETE, _completeHandler);
+            _hls.addEventListener(AdaptiveEvent.ERROR, _errorHandler);
+            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestHandler);
+            _hls.addEventListener(AdaptiveEvent.MEDIA_TIME, _mediaTimeHandler);
+            _hls.addEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateHandler);
+            _hls.addEventListener(AdaptiveEvent.ID3_UPDATED, _ID3Handler);
 
             var cfg : Object = _model.config;
             for (var object : String in cfg) {
@@ -84,20 +84,20 @@ package org.mangui.player.flowplayer {
             _model.dispatchOnLoad();
         }
 
-        private function _completeHandler(event : HLSEvent) : void {
+        private function _completeHandler(event : AdaptiveEvent) : void {
             // dispatch a before event because the finish has default behavior that can be prevented by listeners
             _clip.dispatchBeforeEvent(new ClipEvent(ClipEventType.FINISH));
             _clip.startDispatched = false;
         };
 
-        private function _errorHandler(event : HLSEvent) : void {
+        private function _errorHandler(event : AdaptiveEvent) : void {
         };
 
-        private function _ID3Handler(event : HLSEvent) : void {
+        private function _ID3Handler(event : AdaptiveEvent) : void {
             _clip.dispatch(ClipEventType.NETSTREAM_EVENT, "onID3", event.ID3Data);
         };
 
-        private function _manifestHandler(event : HLSEvent) : void {
+        private function _manifestHandler(event : AdaptiveEvent) : void {
             _duration = event.levels[_hls.startlevel].duration - _clipStart;
             _isManifestLoaded = true;
             // only update duration if not capped
@@ -135,7 +135,7 @@ package org.mangui.player.flowplayer {
             }
         };
 
-        private function _mediaTimeHandler(event : HLSEvent) : void {
+        private function _mediaTimeHandler(event : AdaptiveEvent) : void {
             _duration = event.mediatime.duration - _clipStart;
             // only update duration if not capped
             if (!_durationCapped) {
@@ -174,7 +174,7 @@ package org.mangui.player.flowplayer {
             }
         };
 
-        private function _stateHandler(event : HLSEvent) : void {
+        private function _stateHandler(event : AdaptiveEvent) : void {
             // CONFIG::LOGGING {
             // Log.txt("state:"+ event.state);
             // }

@@ -1,9 +1,9 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.event {
+ package org.mangui.adaptive.event {
     /** Error Identifier **/
-    public class HLSError {
+    public class AdaptiveError {
         public static const OTHER_ERROR : int = 0;
         public static const MANIFEST_LOADING_CROSSDOMAIN_ERROR : int = 1;
         public static const MANIFEST_LOADING_IO_ERROR : int = 2;
@@ -20,7 +20,7 @@
         private var _url : String;
         private var _msg : String;
 
-        public function HLSError(code : int, url : String, msg : String) {
+        public function AdaptiveError(code : int, url : String, msg : String) {
             _code = code;
             _url = url;
             _msg = msg;
@@ -39,7 +39,7 @@
         }
 
         public function toString() : String {
-            return "HLSError(code/url/msg)=" + _code + "/" + _url + "/" + _msg;
+            return "AdaptiveError(code/url/msg)=" + _code + "/" + _url + "/" + _msg;
         }
     }
 }

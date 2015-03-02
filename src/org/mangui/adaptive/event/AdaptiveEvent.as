@@ -1,57 +1,57 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-package org.mangui.hls.event {
+package org.mangui.adaptive.event {
     import org.mangui.hls.model.Level;
 
     import flash.events.Event;
 
     /** Event fired when an error prevents playback. **/
-    public class HLSEvent extends Event {
+    public class AdaptiveEvent extends Event {
         /** Identifier for a manifest loading event, triggered after a call to hls.load(url) **/
-        public static const MANIFEST_LOADING : String = "hlsEventManifestLoading";
+        public static const MANIFEST_LOADING : String = "eventManifestLoading";
         /** Identifier for a manifest parsed event,
          * triggered after main manifest has been retrieved and parsed.
          * hls playlist may not be playable yet, in case of adaptive streaming, start level playlist is not downloaded yet at that stage */
-        public static const MANIFEST_PARSED : String = "hlsEventManifestParsed";
+        public static const MANIFEST_PARSED : String = "eventManifestParsed";
         /** Identifier for a manifest loaded event, when this event is received, main manifest and start level has been retrieved */
-        public static const MANIFEST_LOADED : String = "hlsEventManifestLoaded";
+        public static const MANIFEST_LOADED : String = "eventManifestLoaded";
         /** Identifier for a level loading event  **/
-        public static const LEVEL_LOADING : String = "hlsEventLevelLoading";
+        public static const LEVEL_LOADING : String = "eventLevelLoading";
         /** Identifier for a level loaded event  **/
-        public static const LEVEL_LOADED : String = "hlsEventLevelLoaded";
+        public static const LEVEL_LOADED : String = "eventLevelLoaded";
         /** Identifier for a level switch event. **/
-        public static const LEVEL_SWITCH : String = "hlsEventLevelSwitch";
+        public static const LEVEL_SWITCH : String = "eventLevelSwitch";
         /** Identifier for a level ENDLIST event. **/
-        public static const LEVEL_ENDLIST : String = "hlsEventLevelEndList";
+        public static const LEVEL_ENDLIST : String = "eventLevelEndList";
         /** Identifier for a fragment loading event. **/
-        public static const FRAGMENT_LOADING : String = "hlsEventFragmentLoading";
+        public static const FRAGMENT_LOADING : String = "eventFragmentLoading";
         /** Identifier for a fragment loaded event. **/
-        public static const FRAGMENT_LOADED : String = "hlsEventFragmentLoaded";
+        public static const FRAGMENT_LOADED : String = "eventFragmentLoaded";
         /** Identifier for a fragment playing event. **/
-        public static const FRAGMENT_PLAYING : String = "hlsEventFragmentPlaying";
+        public static const FRAGMENT_PLAYING : String = "eventFragmentPlaying";
         /** Identifier for a audio tracks list change **/
         public static const AUDIO_TRACKS_LIST_CHANGE : String = "audioTracksListChange";
         /** Identifier for a audio track switch **/
         public static const AUDIO_TRACK_SWITCH : String = "audioTrackSwitch";
         /** Identifier for a audio level loading event  **/
-        public static const AUDIO_LEVEL_LOADING : String = "hlsEventAudioLevelLoading";
+        public static const AUDIO_LEVEL_LOADING : String = "eventAudioLevelLoading";
         /** Identifier for a audio level loaded event  **/
-        public static const AUDIO_LEVEL_LOADED : String = "hlsEventAudioLevelLoaded";
+        public static const AUDIO_LEVEL_LOADED : String = "eventAudioLevelLoaded";
         /** Identifier for audio/video TAGS loaded event. **/
-        public static const TAGS_LOADED : String = "hlsEventTagsLoaded";
+        public static const TAGS_LOADED : String = "eventTagsLoaded";
         /** Identifier when last fragment of playlist has been loaded **/
-        public static const LAST_VOD_FRAGMENT_LOADED : String = "hlsEventLastFragmentLoaded";
+        public static const LAST_VOD_FRAGMENT_LOADED : String = "eventLastFragmentLoaded";
         /** Identifier for a playback error event. **/
-        public static const ERROR : String = "hlsEventError";
+        public static const ERROR : String = "eventError";
         /** Identifier for a playback media time change event. **/
-        public static const MEDIA_TIME : String = "hlsEventMediaTime";
+        public static const MEDIA_TIME : String = "eventMediaTime";
         /** Identifier for a playback state switch event. **/
         public static const PLAYBACK_STATE : String = "hlsPlaybackState";
         /** Identifier for a seek state switch event. **/
         public static const SEEK_STATE : String = "hlsSeekState";
         /** Identifier for a playback complete event. **/
-        public static const PLAYBACK_COMPLETE : String = "hlsEventPlayBackComplete";
+        public static const PLAYBACK_COMPLETE : String = "eventPlayBackComplete";
         /** Identifier for a Playlist Duration updated event **/
         public static const PLAYLIST_DURATION_UPDATED : String = "hlsPlayListDurationUpdated";
         /** Identifier for a ID3 updated event **/
@@ -65,13 +65,13 @@ package org.mangui.hls.event {
         /** The list with quality levels. **/
         public var levels : Vector.<Level>;
         /** The error message. **/
-        public var error : HLSError;
+        public var error : AdaptiveError;
         /** Load Metrics. **/
-        public var loadMetrics : HLSLoadMetrics;
+        public var loadMetrics : AdaptiveLoadMetrics;
         /** Play Metrics. **/
-        public var playMetrics : HLSPlayMetrics;
+        public var playMetrics : AdaptivePlayMetrics;
         /** The time position. **/
-        public var mediatime : HLSMediatime;
+        public var mediatime : AdaptiveMediatime;
         /** The new playback state. **/
         public var state : String;
         /** The current audio track **/
@@ -80,45 +80,45 @@ package org.mangui.hls.event {
         public var ID3Data : String;
 
         /** Assign event parameter and dispatch. **/
-        public function HLSEvent(type : String, parameter : *=null) {
+        public function AdaptiveEvent(type : String, parameter : *=null) {
             switch(type) {
-                case HLSEvent.MANIFEST_LOADING:
-                case HLSEvent.FRAGMENT_LOADING:
+                case AdaptiveEvent.MANIFEST_LOADING:
+                case AdaptiveEvent.FRAGMENT_LOADING:
                     url = parameter as String;
                     break;
-                case HLSEvent.ERROR:
-                    error = parameter as HLSError;
+                case AdaptiveEvent.ERROR:
+                    error = parameter as AdaptiveError;
                     break;
-                case HLSEvent.TAGS_LOADED:
-                case HLSEvent.FRAGMENT_LOADED:
-                    loadMetrics = parameter as HLSLoadMetrics;
+                case AdaptiveEvent.TAGS_LOADED:
+                case AdaptiveEvent.FRAGMENT_LOADED:
+                    loadMetrics = parameter as AdaptiveLoadMetrics;
                     break;
-                case HLSEvent.MANIFEST_PARSED:
-                case HLSEvent.MANIFEST_LOADED:
+                case AdaptiveEvent.MANIFEST_PARSED:
+                case AdaptiveEvent.MANIFEST_LOADED:
                     levels = parameter as Vector.<Level>;
                     break;
-                case HLSEvent.MEDIA_TIME:
-                    mediatime = parameter as HLSMediatime;
+                case AdaptiveEvent.MEDIA_TIME:
+                    mediatime = parameter as AdaptiveMediatime;
                     break;
-                case HLSEvent.PLAYBACK_STATE:
-                case HLSEvent.SEEK_STATE:
+                case AdaptiveEvent.PLAYBACK_STATE:
+                case AdaptiveEvent.SEEK_STATE:
                     state = parameter as String;
                     break;
-                case HLSEvent.LEVEL_LOADING:
-                case HLSEvent.LEVEL_LOADED:
-                case HLSEvent.LEVEL_SWITCH:
-                case HLSEvent.AUDIO_LEVEL_LOADED:
-                case HLSEvent.AUDIO_LEVEL_LOADING:
+                case AdaptiveEvent.LEVEL_LOADING:
+                case AdaptiveEvent.LEVEL_LOADED:
+                case AdaptiveEvent.LEVEL_SWITCH:
+                case AdaptiveEvent.AUDIO_LEVEL_LOADED:
+                case AdaptiveEvent.AUDIO_LEVEL_LOADING:
                     level = parameter as int;
                     break;
-                case HLSEvent.PLAYLIST_DURATION_UPDATED:
+                case AdaptiveEvent.PLAYLIST_DURATION_UPDATED:
                     duration = parameter as Number;
                     break;
-                case HLSEvent.ID3_UPDATED:
+                case AdaptiveEvent.ID3_UPDATED:
                     ID3Data = parameter as String;
                     break;
-                case HLSEvent.FRAGMENT_PLAYING:
-                    playMetrics = parameter as HLSPlayMetrics;
+                case AdaptiveEvent.FRAGMENT_PLAYING:
+                    playMetrics = parameter as AdaptivePlayMetrics;
                     break;
             }
             super(type, false, false);

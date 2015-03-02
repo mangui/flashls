@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
 
@@ -24,15 +24,15 @@ package org.mangui.hls.controller {
         /** Create the loader. **/
         public function BufferThresholdController(hls : HLS) : void {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.TAGS_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         };
 
         public function dispose() : void {
-            _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.removeEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
-            _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.TAGS_LOADED, _fragmentLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
 
         public function get minBufferLength() : Number {
@@ -52,14 +52,14 @@ package org.mangui.hls.controller {
             }
         }
 
-        private function _manifestLoadedHandler(event : HLSEvent) : void {
+        private function _manifestLoadedHandler(event : AdaptiveEvent) : void {
             _nb_samples = 0;
             _targetduration = event.levels[_hls.startlevel].targetduration;
             _bw = new Vector.<Number>(MAX_SAMPLES);
             _minBufferLength = _targetduration;
         };
 
-        private function _fragmentLoadedHandler(event : HLSEvent) : void {
+        private function _fragmentLoadedHandler(event : AdaptiveEvent) : void {
             var cur_bw : Number = event.loadMetrics.bandwidth;
             _bw[_nb_samples % MAX_SAMPLES] = cur_bw;
             _nb_samples++;

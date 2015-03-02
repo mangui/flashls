@@ -14,8 +14,8 @@ package org.mangui.hls.loader {
     import org.mangui.adaptive.flv.FLVTag;
     import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.demux.DemuxHelper;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveError;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
@@ -91,7 +91,7 @@ package org.mangui.hls.loader {
         }
 
         /** update state and level in case of audio level loaded event **/
-        private function _audioLevelLoadedHandler(event : HLSEvent) : void {
+        private function _audioLevelLoadedHandler(event : AdaptiveEvent) : void {
             if (_loading_state == LOADING_WAITING_LEVEL_UPDATE || _loading_state == LOADING_IDLE) {
                 _loading_state = LOADING_IDLE;
                 _level = _hls.audioTracks[_hls.audioTrack].level;
@@ -159,7 +159,7 @@ package org.mangui.hls.loader {
                     }
                     break;
                 case LOADING_COMPLETED:
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED));
                     // stop loading timer as well, as no other fragments can be loaded
                     _timer.stop();
                     break;
@@ -180,7 +180,7 @@ package org.mangui.hls.loader {
             _frag_previous = null;
             _level = _hls.audioTracks[_hls.audioTrack].level;
             _loading_state = LOADING_IDLE;
-            _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _timer.start();
         }
 
@@ -191,7 +191,7 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug("key loading completed");
             }
-            var hlsError : HLSError;
+            var hlsError : AdaptiveError;
             // Collect key data
             if ( _keystreamloader.bytesAvailable == 16 ) {
                 // load complete, reset retry counter
@@ -206,15 +206,15 @@ package org.mangui.hls.loader {
                         Log.debug("loading audio fragment:" + _frag_current.url);
                     }
                     _frag_current.data.bytes = null;
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, _frag_current.url));
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT_LOADING, _frag_current.url));
                     _fragstreamloader.load(new URLRequest(_frag_current.url));
                 } catch (error : Error) {
-                    hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, error.message);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                    hlsError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_ERROR, _frag_current.url, error.message);
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
                 }
             } else {
-                hlsError = new HLSError(HLSError.KEY_PARSING_ERROR, _frag_current.decrypt_url, "invalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes");
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                hlsError = new AdaptiveError(AdaptiveError.KEY_PARSING_ERROR, _frag_current.decrypt_url, "invalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes");
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         };
 
@@ -236,8 +236,8 @@ package org.mangui.hls.loader {
                 _key_retry_count++;
                 _key_retry_timeout = Math.min(HLSSettings.keyLoadMaxRetryTimeout, 2 * _key_retry_timeout);
             } else {
-                var hlsError : HLSError = new HLSError(HLSError.KEY_LOADING_ERROR, _frag_current.decrypt_url, "I/O Error :" + message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.KEY_LOADING_ERROR, _frag_current.decrypt_url, "I/O Error :" + message);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         }
 
@@ -267,8 +267,8 @@ package org.mangui.hls.loader {
                 _frag_retry_count++;
                 _frag_retry_timeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _frag_retry_timeout);
             } else {
-                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         }
 
@@ -429,7 +429,7 @@ package org.mangui.hls.loader {
         /** stop loading fragment **/
         public function stop() : void {
             _stop_load();
-            _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _timer.stop();
             _loading_state = LOADING_IDLE;
         }
@@ -463,7 +463,7 @@ package org.mangui.hls.loader {
             var code : int;
             if (event is SecurityErrorEvent) {
                 txt = "Cannot load key: crossdomain access denied:" + event.text;
-                code = HLSError.KEY_LOADING_CROSSDOMAIN_ERROR;
+                code = AdaptiveError.KEY_LOADING_CROSSDOMAIN_ERROR;
             } else {
                 _keyhandleIOError("HTTP status:" + _key_load_status + ",msg:" + event.text);
             }
@@ -473,8 +473,8 @@ package org.mangui.hls.loader {
         private function _fragLoadErrorHandler(event : ErrorEvent) : void {
             if (event is SecurityErrorEvent) {
                 var txt : String = "Cannot load fragment: crossdomain access denied:" + event.text;
-                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR, _frag_current.url, txt);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR, _frag_current.url, txt);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             } else {
                 _fraghandleIOError("HTTP status:" + _frag_load_status + ",msg:" + event.text);
             }
@@ -542,8 +542,8 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.error(err);
                     }
-                    var hlsError : HLSError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, err);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                    var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.OTHER_ERROR, _frag_current.url, err);
+                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
                     return;
                 }
                 var urlStreamClass : Class = _hls.URLstream as Class;
@@ -576,11 +576,11 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("loading fragment:" + frag.url);
                 }
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, frag.url));
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT_LOADING, frag.url));
                 _fragstreamloader.load(new URLRequest(frag.url));
             } catch (error : Error) {
-                hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                hlsError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         }
 
@@ -610,11 +610,11 @@ package org.mangui.hls.loader {
         private function _fragParsingCompleteHandler() : void {
             if (_loading_state == LOADING_IDLE)
                 return;
-            var hlsError : HLSError;
+            var hlsError : AdaptiveError;
             var fragData : FragmentData = _frag_current.data;
             if (!fragData.audio_found && !fragData.video_found) {
-                hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                hlsError = new AdaptiveError(AdaptiveError.FRAGMENT_PARSING_ERROR, _frag_current.url, "error parsing fragment, no tag found");
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
             CONFIG::LOGGING {
                 if (fragData.audio_found) {
@@ -646,8 +646,8 @@ package org.mangui.hls.loader {
                 _fragment_first_loaded = true;
                 _frag_previous = _frag_current;
             } catch (error : Error) {
-                hlsError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, error.message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                hlsError = new AdaptiveError(AdaptiveError.OTHER_ERROR, _frag_current.url, error.message);
+                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
             }
         }
     }

@@ -5,7 +5,7 @@
 
     import flash.media.Video;
     import flash.net.NetStream;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.mangui.player.osmf.plugins.loader.HLSNetLoader;
     import org.mangui.player.osmf.plugins.traits.*;
@@ -45,7 +45,7 @@
             _hls = hls;
             _defaultduration = duration;
             super(resource, new HLSNetLoader(hls));
-            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
+            _hls.addEventListener(AdaptiveEvent.ERROR, _errorHandler);
         }
 
         protected function createVideo() : Video {
@@ -164,7 +164,7 @@
             addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
         }
 
-        private function _errorHandler(event : HLSEvent) : void {
+        private function _errorHandler(event : AdaptiveEvent) : void {
             var errorCode : int = ErrorManager.getMediaErrorCode(event);
             var errorMsg : String = ErrorManager.getMediaErrorMessage(event);
             CONFIG::LOGGING {

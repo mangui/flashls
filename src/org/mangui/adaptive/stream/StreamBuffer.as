@@ -2,19 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.adaptive.stream {
-    import flash.events.TimerEvent;
-    import flash.events.Event;
-    import flash.utils.Timer;
-    import flash.utils.Dictionary;
 
+    import flash.events.Event;
+    import flash.events.TimerEvent;
+    import flash.utils.Dictionary;
+    import flash.utils.Timer;
     import org.mangui.adaptive.constant.SeekMode;
     import org.mangui.adaptive.constant.SeekStates;
     import org.mangui.adaptive.constant.Types;
+    import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.event.AdaptiveMediatime;
     import org.mangui.adaptive.flv.FLVTag;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSMediatime;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
@@ -64,16 +64,16 @@ package org.mangui.adaptive.stream {
             flushAll();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
-            _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
-            _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            _hls.addEventListener(AdaptiveEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
+            _hls.addEventListener(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _hls.addEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
         }
 
         public function dispose() : void {
             flushAll();
-            _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
-            _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
-            _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            _hls.removeEventListener(AdaptiveEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
+            _hls.removeEventListener(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _hls.removeEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
             _timer.stop();
             _fragmentLoader.dispose();
             _altaudiofragmentLoader.dispose();
@@ -320,7 +320,7 @@ package org.mangui.adaptive.stream {
          */
         private function _checkBuffer(e : Event) : void {
             // dispatch media time event
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(position, _playlist_duration, _hls.stream.bufferLength, backBufferLength, _time_sliding)));
+            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MEDIA_TIME, new AdaptiveMediatime(position, _playlist_duration, _hls.stream.bufferLength, backBufferLength, _time_sliding)));
 
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
@@ -582,7 +582,7 @@ package org.mangui.adaptive.stream {
             }
         }
 
-        private function _playlistDurationUpdated(event : HLSEvent) : void {
+        private function _playlistDurationUpdated(event : AdaptiveEvent) : void {
             _playlist_duration = event.duration;
         }
 
@@ -737,14 +737,14 @@ package org.mangui.adaptive.stream {
             return max_pos_;
         }
 
-        private function _lastVODFragmentLoadedHandler(event : HLSEvent) : void {
+        private function _lastVODFragmentLoadedHandler(event : AdaptiveEvent) : void {
             CONFIG::LOGGING {
                 Log.debug("last fragment loaded");
             }
             _reached_vod_end = true;
         }
 
-        private function _audioTrackChange(event : HLSEvent) : void {
+        private function _audioTrackChange(event : AdaptiveEvent) : void {
             CONFIG::LOGGING {
                 Log.debug("StreamBuffer : audio track changed, flushing audio buffer:" + event.audioTrack);
             }

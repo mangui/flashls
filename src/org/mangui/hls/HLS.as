@@ -9,11 +9,11 @@ package org.mangui.hls {
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.URLStream;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.stream.AdaptiveNetStream;
     import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
-    import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.loader.AltAudioLevelLoader;
     import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.model.AudioTrack;
@@ -53,26 +53,26 @@ package org.mangui.hls {
             _hlsURLStream = URLStream as Class;
             // default loader
             _AdaptiveNetStream = new AdaptiveNetStream(connection, this, _streamBuffer);
-            this.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            this.addEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
         };
 
         /** Forward internal errors. **/
         override public function dispatchEvent(event : Event) : Boolean {
-            if (event.type == HLSEvent.ERROR) {
+            if (event.type == AdaptiveEvent.ERROR) {
                 CONFIG::LOGGING {
-                    Log.error((event as HLSEvent).error);
+                    Log.error((event as AdaptiveEvent).error);
                 }
                 _AdaptiveNetStream.close();
             }
             return super.dispatchEvent(event);
         };
 
-        private function _levelSwitchHandler(event : HLSEvent) : void {
+        private function _levelSwitchHandler(event : AdaptiveEvent) : void {
             _level = event.level;
         };
 
         public function dispose() : void {
-            this.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            this.removeEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _levelLoader.dispose();
             _altAudioLevelLoader.dispose();
             _audioTrackController.dispose();

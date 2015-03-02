@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.player.osmf.plugins.traits {
     import org.mangui.adaptive.constant.PlayStates;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.hls.HLS;
     import org.osmf.traits.BufferTrait;
 
@@ -20,14 +20,14 @@
             }
             super();
             _hls = hls;
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
+            _hls.addEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateChangedHandler);
         }
 
         override public function dispose() : void {
             CONFIG::LOGGING {
             Log.debug("HLSBufferTrait:dispose");
             }
-            _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
+            _hls.removeEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateChangedHandler);
             super.dispose();
         }
 
@@ -36,7 +36,7 @@
         }
 
         /** state changed handler **/
-        private function _stateChangedHandler(event : HLSEvent) : void {
+        private function _stateChangedHandler(event : AdaptiveEvent) : void {
             switch(event.state) {
                 case PlayStates.PLAYING_BUFFERING:
                 case PlayStates.PAUSED_BUFFERING:
