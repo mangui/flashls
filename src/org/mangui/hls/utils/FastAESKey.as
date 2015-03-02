@@ -138,13 +138,13 @@
                 }
             }
         }
-        
+
         public function decrypt128(input : Vector.<uint>,output : Vector.<uint>) : void {
             // Swap 2nd and 4th rows
           state[0] = input[0];
           state[1] = input[3];
           state[2] = input[2];
-          state[3] = input[1];          
+          state[3] = input[1];
           _doCryptBlock(invKeySchedule, _INV_SUB_MIX_0, _INV_SUB_MIX_1, _INV_SUB_MIX_2, _INV_SUB_MIX_3, _INV_SBOX);
           // Inv swap 2nd and 4th rows
           output[0] = state[0];

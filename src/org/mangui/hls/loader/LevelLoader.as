@@ -2,24 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
-    import org.mangui.hls.playlist.DataUri;
-    import org.mangui.hls.playlist.AltAudioTrack;
-    import org.mangui.hls.playlist.Manifest;
-    import org.mangui.hls.constant.HLSPlayStates;
-    import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.model.Level;
-    import org.mangui.hls.model.Fragment;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
 
     import flash.events.*;
     import flash.net.*;
     import flash.utils.*;
+    import org.mangui.adaptive.constant.PlayStates;
+    import org.mangui.adaptive.constant.Types;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.model.Level;
+    import org.mangui.hls.playlist.AltAudioTrack;
+    import org.mangui.hls.playlist.DataUri;
+    import org.mangui.hls.playlist.Manifest;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
     /** Loader for hls manifests. **/
     public class LevelLoader {
@@ -158,10 +158,10 @@ package org.mangui.hls.loader {
 
             // Check whether the stream is live or not finished yet
             if (Manifest.hasEndlist(string)) {
-                _type = HLSTypes.VOD;
+                _type = Types.VOD;
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_ENDLIST, level));
             } else {
-                _type = HLSTypes.LIVE;
+                _type = Types.LIVE;
                 var timeout : Number = Math.max(100, _reload_playlists_timer + 1000 * _levels[level].averageduration - getTimer());
                 CONFIG::LOGGING {
                     Log.debug("Level " + level + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
@@ -245,7 +245,7 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("switch to level " + _current_level);
                 }
-                if (_type == HLSTypes.LIVE || _levels[_current_level].fragments.length == 0) {
+                if (_type == Types.LIVE || _levels[_current_level].fragments.length == 0) {
                     _closed = false;
                     CONFIG::LOGGING {
                         Log.debug("(re)load Playlist");
@@ -273,7 +273,7 @@ package org.mangui.hls.loader {
 
         /** When the framework idles out, stop reloading manifest **/
         private function _stateHandler(event : HLSEvent) : void {
-            if (event.state == HLSPlayStates.IDLE) {
+            if (event.state == PlayStates.IDLE) {
                 _close();
             }
         };

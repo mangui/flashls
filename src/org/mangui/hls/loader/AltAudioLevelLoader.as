@@ -2,31 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
-    import org.mangui.hls.model.Level;
 
-    import flash.utils.getTimer;
-    import flash.utils.clearTimeout;
-    import flash.utils.setTimeout;
     import flash.events.ErrorEvent;
-    import flash.events.SecurityErrorEvent;
     import flash.events.IOErrorEvent;
-
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.constant.HLSPlayStates;
-    import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.model.Fragment;
+    import flash.events.SecurityErrorEvent;
+    import flash.net.URLLoader;
+    import flash.utils.clearTimeout;
+    import flash.utils.getTimer;
+    import flash.utils.setTimeout;
+    import org.mangui.adaptive.constant.PlayStates;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.Manifest;
 
-    import flash.net.URLLoader;
-
-    import org.mangui.hls.HLS;
-
     public class AltAudioLevelLoader {
         CONFIG::LOGGING {
-            import org.mangui.hls.utils.Log;
+            import org.mangui.adaptive.utils.Log;
         }
         /** Reference to the hls framework controller. **/
         private var _hls : HLS;
@@ -158,7 +155,7 @@ package org.mangui.hls.loader {
 
         /** When the framework idles out, stop reloading manifest **/
         private function _stateHandler(event : HLSEvent) : void {
-            if (event.state == HLSPlayStates.IDLE) {
+            if (event.state == PlayStates.IDLE) {
                 _close();
             }
         };

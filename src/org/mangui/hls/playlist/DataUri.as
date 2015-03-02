@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.playlist {
     CONFIG::LOGGING {
-    import org.mangui.hls.utils.Log;
+    import org.mangui.adaptive.utils.Log;
     }
 
     /**

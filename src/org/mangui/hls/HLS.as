@@ -2,26 +2,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
+
     import flash.display.Stage;
+    import flash.events.Event;
+    import flash.events.EventDispatcher;
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.URLStream;
-    import flash.events.EventDispatcher;
-    import flash.events.Event;
-
-    import org.mangui.hls.controller.LevelController;
+    import org.mangui.adaptive.stream.AdaptiveNetStream;
+    import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.controller.AudioTrackController;
+    import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.loader.AltAudioLevelLoader;
-    import org.mangui.hls.model.Level;
+    import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.AltAudioTrack;
-    import org.mangui.hls.stream.HLSNetStream;
-    import org.mangui.hls.stream.StreamBuffer;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
@@ -31,7 +31,7 @@ package org.mangui.hls {
         private var _levelController : LevelController;
         private var _streamBuffer : StreamBuffer;
         /** HLS NetStream **/
-        private var _hlsNetStream : HLSNetStream;
+        private var _AdaptiveNetStream : AdaptiveNetStream;
         /** HLS URLStream **/
         private var _hlsURLStream : Class;
         private var _client : Object = {};
@@ -52,7 +52,7 @@ package org.mangui.hls {
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
             _hlsURLStream = URLStream as Class;
             // default loader
-            _hlsNetStream = new HLSNetStream(connection, this, _streamBuffer);
+            _AdaptiveNetStream = new AdaptiveNetStream(connection, this, _streamBuffer);
             this.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
         };
 
@@ -62,7 +62,7 @@ package org.mangui.hls {
                 CONFIG::LOGGING {
                     Log.error((event as HLSEvent).error);
                 }
-                _hlsNetStream.close();
+                _AdaptiveNetStream.close();
             }
             return super.dispatchEvent(event);
         };
@@ -78,15 +78,15 @@ package org.mangui.hls {
             _audioTrackController.dispose();
             _levelController.dispose();
             _streamBuffer.dispose();
-            _hlsNetStream.dispose_();
+            _AdaptiveNetStream.dispose_();
             _levelLoader = null;
             _altAudioLevelLoader = null;
             _audioTrackController = null;
             _levelController = null;
-            _hlsNetStream = null;
+            _AdaptiveNetStream = null;
             _client = null;
             _stage = null;
-            _hlsNetStream = null;
+            _AdaptiveNetStream = null;
         }
 
         /** Return the quality level used when starting a fresh playback **/
@@ -101,7 +101,7 @@ package org.mangui.hls {
 
         /** Return the quality level of the currently played fragment **/
         public function get playbacklevel() : int {
-            return _hlsNetStream.playbackLevel;
+            return _AdaptiveNetStream.playbackLevel;
         };
 
         /** Return the quality level of last loaded fragment **/
@@ -136,12 +136,12 @@ package org.mangui.hls {
 
         /** Return the current playback state. **/
         public function get playbackState() : String {
-            return _hlsNetStream.playbackState;
+            return _AdaptiveNetStream.playbackState;
         };
 
         /** Return the current seek state. **/
         public function get seekState() : String {
-            return _hlsNetStream.seekState;
+            return _AdaptiveNetStream.seekState;
         };
 
         /** Return the type of stream (VOD/LIVE). **/
@@ -151,13 +151,13 @@ package org.mangui.hls {
 
         /** Load and parse a new HLS URL **/
         public function load(url : String) : void {
-            _hlsNetStream.close();
+            _AdaptiveNetStream.close();
             _levelLoader.load(url);
         };
 
         /** return HLS NetStream **/
         public function get stream() : NetStream {
-            return _hlsNetStream;
+            return _AdaptiveNetStream;
         }
 
         public function get client() : Object {
@@ -170,7 +170,7 @@ package org.mangui.hls {
 
         /** get current Buffer Length  **/
         public function get bufferLength() : Number {
-            return _hlsNetStream.bufferLength;
+            return _AdaptiveNetStream.bufferLength;
         };
 
         /** get audio tracks list**/

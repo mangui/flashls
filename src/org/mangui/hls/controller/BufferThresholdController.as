@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
+    import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.event.HLSEvent;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
     /** Class that manages buffer threshold values (minBufferLength/lowBufferLength)
      */
@@ -75,12 +75,12 @@ package org.mangui.hls.controller {
             var bw_ratio : Number = 2 * cur_bw / (min_bw + cur_bw);
 
             /* predict time to dl next segment using a conservative approach.
-             * 
+             *
              * heuristic is as follow :
-             * 
+             *
              * time to dl next segment = time to dl current segment *  (playlist target duration / current segment duration) * bw_ratio
              *                           \---------------------------------------------------------------------------------/
-             *                                  this part is a simple rule by 3, assuming we keep same dl bandwidth 
+             *                                  this part is a simple rule by 3, assuming we keep same dl bandwidth
              *  bw ratio is the conservative factor, assuming that next segment will be downloaded with min bandwidth
              */
             _minBufferLength = event.loadMetrics.frag_processing_time * (_targetduration / event.loadMetrics.frag_duration) * bw_ratio;

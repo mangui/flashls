@@ -2,32 +2,32 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
-    import flash.utils.getTimer;
 
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.demux.Demuxer;
+
+    import flash.events.*;
+    import flash.net.*;
+    import flash.utils.ByteArray;
+    import flash.utils.getTimer;
+    import flash.utils.Timer;
+    import org.mangui.adaptive.constant.Types;
+    import org.mangui.adaptive.demux.Demuxer;
+    import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.demux.DemuxHelper;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
     import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.AES;
 
-    import flash.events.*;
-    import flash.net.*;
-    import flash.utils.ByteArray;
-    import flash.utils.Timer;
-
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
-        import org.mangui.hls.utils.Hex;
+        import org.mangui.adaptive.utils.Log;
+        import org.mangui.adaptive.utils.Hex;
     }
     /** Class that fetches alt audio fragments. **/
     public class AltAudioFragmentLoader {
@@ -130,7 +130,7 @@ package org.mangui.hls.loader {
                 case LOADING_STALLED:
                     /* next consecutive fragment not found:
                     it could happen on live playlist :
-                    - if bandwidth available is lower than lowest quality needed bandwidth 
+                    - if bandwidth available is lower than lowest quality needed bandwidth
                     - after long pause */
                     CONFIG::LOGGING {
                         Log.warn("audio loading stalled: restart playback???");
@@ -504,7 +504,7 @@ package org.mangui.hls.loader {
             last_seqnum = frag_previous.seqnum;
             if (last_seqnum == _level.end_seqnum) {
                 // if last segment of level already loaded, return
-                if (_hls.type == HLSTypes.VOD) {
+                if (_hls.type == Types.VOD) {
                     // if VOD playlist, loading is completed
                     return LOADING_COMPLETED;
                 } else {
@@ -601,7 +601,7 @@ package org.mangui.hls.loader {
                 fragData.tags.unshift(_frag_current.metadataTag);
                 fragData.metadata_tag_injected = true;
             }
-            // provide tags to HLSNetStream
+            // provide tags to AdaptiveNetStream
             _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
             fragData.shiftTags();
         }

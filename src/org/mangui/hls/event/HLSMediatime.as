@@ -4,9 +4,9 @@
 package org.mangui.hls.event {
     /** Identifiers for the different stream types. **/
     public class HLSMediatime {
-        /**  playback position (in seconds), relative to current playlist start. 
+        /**  playback position (in seconds), relative to current playlist start.
          * this value could be negative in case of live playlist sliding :
-         *  this can happen in case current playback position 
+         *  this can happen in case current playback position
          * is in a fragment that has been removed from the playlist
          */
         public var position : Number;

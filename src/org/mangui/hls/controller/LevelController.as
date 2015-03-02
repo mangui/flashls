@@ -2,18 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
-    import org.mangui.hls.constant.HLSMaxLevelCappingMode;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.model.Level;
+    import org.mangui.adaptive.constant.MaxLevelCappingMode;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.model.Level;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
-    /** Class that manages auto level selection 
-     * 
-     * this is an implementation based on Serial segment fetching method from 
+    /** Class that manages auto level selection
+     *
+     * this is an implementation based on Serial segment fetching method from
      * http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
      */
     public class LevelController {
@@ -145,7 +145,7 @@ package org.mangui.hls.controller {
                     var maxLevel : Level = this._maxUniqueLevels[0], maxLevelIdx : int = maxLevel.index, sWidth : Number = this._hls.stage.stageWidth, sHeight : Number = this._hls.stage.stageHeight, lWidth : int, lHeight : int, i : int;
 
                     switch (HLSSettings.maxLevelCappingMode) {
-                        case HLSMaxLevelCappingMode.UPSCALE:
+                        case MaxLevelCappingMode.UPSCALE:
                             for (i = maxLevelsCount - 1; i >= 0; i--) {
                                 maxLevel = this._maxUniqueLevels[i];
                                 maxLevelIdx = maxLevel.index;
@@ -160,7 +160,7 @@ package org.mangui.hls.controller {
                                 }
                             }
                             break;
-                        case HLSMaxLevelCappingMode.DOWNSCALE:
+                        case MaxLevelCappingMode.DOWNSCALE:
                             for (i = 0; i < maxLevelsCount; i++) {
                                 maxLevel = this._maxUniqueLevels[i];
                                 maxLevelIdx = maxLevel.index;
@@ -216,7 +216,7 @@ package org.mangui.hls.controller {
                 }
                 switch_to_level = current_level + 1;
             }
-            
+
             /* to switch level down :
             rsft should be smaller than switch up condition,
             or the current level is greater than max level

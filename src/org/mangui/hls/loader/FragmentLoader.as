@@ -2,35 +2,34 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
-    import flash.utils.getTimer;
 
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
+    import flash.events.*;
+    import flash.net.*;
+    import flash.utils.ByteArray;
+    import flash.utils.getTimer;
+    import flash.utils.Timer;
+    import org.mangui.adaptive.constant.Types;
+    import org.mangui.adaptive.demux.Demuxer;
+    import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
-    import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.demux.DemuxHelper;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
     import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.AES;
 
-    import flash.events.*;
-    import flash.net.*;
-    import flash.utils.ByteArray;
-    import flash.utils.Timer;
-
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
-        import org.mangui.hls.utils.Hex;
+        import org.mangui.adaptive.utils.Log;
+        import org.mangui.adaptive.utils.Hex;
     }
     /** Class that fetches fragments. **/
     public class FragmentLoader {
@@ -167,7 +166,7 @@ package org.mangui.hls.loader {
                         _switchlevel = true;
 
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
-                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                        if ((_levels[level].fragments.length == 0) || (_hls.type == Types.LIVE && _last_loaded_level != level)) {
                             // playlist not yet received
                             CONFIG::LOGGING {
                                 Log.debug("_checkLoading : playlist not received for level:" + level);
@@ -205,7 +204,7 @@ package org.mangui.hls.loader {
                             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
                         }
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
-                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                        if ((_levels[level].fragments.length == 0) || (_hls.type == Types.LIVE && _last_loaded_level != level)) {
                             // playlist not yet received
                             CONFIG::LOGGING {
                                 Log.debug("_checkLoading : playlist not received for level:" + level);
@@ -219,7 +218,7 @@ package org.mangui.hls.loader {
                 case LOADING_STALLED:
                     /* next consecutive fragment not found:
                     it could happen on live playlist :
-                    - if bandwidth available is lower than lowest quality needed bandwidth 
+                    - if bandwidth available is lower than lowest quality needed bandwidth
                     - after long pause */
                     CONFIG::LOGGING {
                         Log.warn("loading stalled: restart playback");
@@ -641,7 +640,7 @@ package org.mangui.hls.loader {
             if (_pts_analyzing == false) {
                 if (last_seqnum == _levels[level].end_seqnum) {
                     // if last segment of level already loaded, return
-                    if (_hls.type == HLSTypes.VOD) {
+                    if (_hls.type == Types.VOD) {
                         // if VOD playlist, loading is completed
                         return LOADING_COMPLETED;
                     } else {
@@ -771,9 +770,9 @@ package org.mangui.hls.loader {
             var fragData : FragmentData = _frag_current.data;
             fragData.appendTags(tags);
 
-            /* try to do progressive buffering here. 
+            /* try to do progressive buffering here.
              * only do it in case :
-             * 		first fragment is already loaded 
+             * 		first fragment is already loaded
              *      if first fragment is not loaded, we can do it if startlevel is already defined (if startFromLevel is set to -1
              *      we first need to download one fragment to check the dl bw, in order to assess start level ...)
              *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
@@ -823,7 +822,7 @@ package org.mangui.hls.loader {
                         }
                         fragData.metadata_tag_injected = true;
                     }
-                    // provide tags to HLSNetStream
+                    // provide tags to AdaptiveNetStream
                     _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     var processing_duration : Number = (getTimer() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);

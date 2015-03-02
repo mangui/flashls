@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
-    import org.mangui.hls.constant.HLSSeekMode;
-    import org.mangui.hls.constant.HLSMaxLevelCappingMode;
+    import org.mangui.adaptive.constant.MaxLevelCappingMode;
+    import org.mangui.adaptive.constant.SeekMode;
 
     public final class HLSSettings extends Object {
         /**
@@ -24,10 +24,10 @@ package org.mangui.hls {
          *
          * Default is HLSMaxLevelCappingMode.DOWNSCALE
          */
-        public static var maxLevelCappingMode : String = HLSMaxLevelCappingMode.DOWNSCALE;
+        public static var maxLevelCappingMode : String = MaxLevelCappingMode.DOWNSCALE;
         // // // // // // /////////////////////////////////
         //
-        // org.mangui.hls.stream.HLSNetStream
+        // org.mangui.adaptive.stream.AdaptiveNetStream
         //
         // // // // // // /////////////////////////////////
         /**
@@ -58,13 +58,13 @@ package org.mangui.hls {
          */
         public static var lowBufferLength : Number = 3;
         /**
-         * Defines seek mode to one form available in HLSSeekMode class:
-         *      HLSSeekMode.ACCURATE_SEEK - accurate seeking to exact requested position
-         *      HLSSeekMode.KEYFRAME_SEEK - key-frame based seeking (seek to nearest key frame before requested seek position)
+         * Defines seek mode to one form available in SeekMode class:
+         *      SeekMode.ACCURATE_SEEK - accurate seeking to exact requested position
+         *      SeekMode.KEYFRAME_SEEK - key-frame based seeking (seek to nearest key frame before requested seek position)
          *
-         * Default is HLSSeekMode.KEYFRAME_SEEK.
+         * Default is SeekMode.KEYFRAME_SEEK.
          */
-        public static var seekMode : String = HLSSeekMode.KEYFRAME_SEEK;
+        public static var seekMode : String = SeekMode.KEYFRAME_SEEK;
         /** max nb of retries for Key Loading in case I/O errors are met,
          *      0, means no retry, error will be triggered automatically
          *     -1 means infinite retry

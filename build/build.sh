@@ -24,22 +24,31 @@ OPT_RELEASE_10_1="-use-network=false \
     -define=CONFIG::LOGGING,false \
     -define=CONFIG::FLASH_11_1,false"
 
+
+dir=`mktemp -d`
+cp  -r ../src  $dir
+rm -rf $dir/src/org/mangui/player
+
 echo "Compiling bin/debug/flashls.swc"
+
+
 $FLEXPATH/bin/compc \
     $OPT_DEBUG_10_1 \
-    -include-sources ../src/org/mangui/hls \
+    -include-sources $dir/src/org/mangui \
     -output ../bin/debug/flashls.swc \
     -target-player="10.1"
 
 echo "Compiling bin/release/flashls.swc"
 $FLEXPATH/bin/compc \
     $OPT_RELEASE_10_1 \
-    -include-sources ../src/org/mangui/hls \
+    -include-sources $dir/src/org/mangui \
     -output ../bin/release/flashls.swc \
     -target-player="10.1"
 
+rm -rf $dir
+
 echo "Compiling bin/release/flashlsChromeless.swf"
-$FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
+$FLEXPATH/bin/mxmlc ../src/org/mangui/player/chromeless/ChromelessPlayer.as \
     -source-path ../src \
     -o ../bin/release/flashlsChromeless.swf \
     $OPT_RELEASE \
@@ -50,7 +59,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
 ./add-opt-in.py ../bin/release/flashlsChromeless.swf
 
 echo "Compiling bin/debug/flashlsChromeless.swf"
-$FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
+$FLEXPATH/bin/mxmlc ../src/org/mangui/player/chromeless/ChromelessPlayer.as \
     -source-path ../src \
     -o ../bin/debug/flashlsChromeless.swf \
     $OPT_DEBUG \
@@ -70,7 +79,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
 #   -default-background-color=0x000000
 
 echo "Compiling bin/release/flashlsFlowPlayer.swf"
-$FLEXPATH/bin/mxmlc ../src/org/mangui/flowplayer/HLSPluginFactory.as \
+$FLEXPATH/bin/mxmlc ../src/org/mangui/player/flowplayer/HLSPluginFactory.as \
     -source-path ../src -o ../bin/release/flashlsFlowPlayer.swf \
     $OPT_RELEASE \
     -library-path+=../lib/flowplayer \
@@ -79,7 +88,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/flowplayer/HLSPluginFactory.as \
 ./add-opt-in.py ../bin/release/flashlsFlowPlayer.swf
 
 echo "Compiling bin/debug/flashlsFlowPlayer.swf"
-$FLEXPATH/bin/mxmlc ../src/org/mangui/flowplayer/HLSPluginFactory.as \
+$FLEXPATH/bin/mxmlc ../src/org/mangui/player/flowplayer/HLSPluginFactory.as \
     -source-path ../src -o ../bin/debug/flashlsFlowPlayer.swf \
     $OPT_DEBUG \
     -library-path+=../lib/flowplayer \
@@ -88,7 +97,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/flowplayer/HLSPluginFactory.as \
 ./add-opt-in.py ../bin/debug/flashlsFlowPlayer.swf
 
 echo "Compiling bin/release/flashlsOSMF.swf"
-$FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as \
+$FLEXPATH/bin/mxmlc ../src/org/mangui/player/osmf/plugins/HLSDynamicPlugin.as \
     -source-path ../src \
     -o ../bin/release/flashlsOSMF.swf \
     $OPT_RELEASE_10_1 \
@@ -98,7 +107,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as \
 ./add-opt-in.py ../bin/release/flashlsOSMF.swf
 
 echo "Compiling bin/debug/flashlsOSMF.swf"
-$FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as \
+$FLEXPATH/bin/mxmlc ../src/org/mangui/player/osmf/plugins/HLSDynamicPlugin.as \
     -source-path ../src \
     -o ../bin/debug/flashlsOSMF.swf \
     $OPT_DEBUG_10_1 \
@@ -108,7 +117,7 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/osmf/plugins/HLSDynamicPlugin.as \
 ./add-opt-in.py ../bin/debug/flashlsOSMF.swf
 
 echo "Compiling bin/release/flashlsOSMF.swc"
-$FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf \
+$FLEXPATH/bin/compc -include-sources ../src/org/mangui/player/osmf \
     -output ../bin/release/flashlsOSMF.swc \
     $OPT_RELEASE_10_1 \
     -library-path+=../bin/release/flashls.swc \
@@ -118,7 +127,7 @@ $FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf \
     -external-library-path+=../lib/osmf
 
 echo "Compiling bin/debug/flashlsOSMF.swc"
-$FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf \
+$FLEXPATH/bin/compc -include-sources ../src/org/mangui/player/osmf \
     -output ../bin/debug/flashlsOSMF.swc \
     $OPT_DEBUG_10_1 \
     -library-path+=../bin/debug/flashls.swc \

@@ -2,14 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.utils {
+
+    import flash.utils.Dictionary;
+    import flash.utils.getDefinitionByName;
+    import flash.utils.getQualifiedClassName;
     import org.mangui.hls.HLSSettings;
 
-    import flash.utils.getQualifiedClassName;
-    import flash.utils.getDefinitionByName;
-    import flash.utils.Dictionary;
-
+    CONFIG::LOGGING {
+        import org.mangui.adaptive.utils.Log;
+    }
     /**
-     * Params2Settings is an helper class that holds every legal external params names 
+     * Params2Settings is an helper class that holds every legal external params names
      * which can be used to customize HLSSettings and maps them to the relevant HLSSettings values
      */
     public class Params2Settings {

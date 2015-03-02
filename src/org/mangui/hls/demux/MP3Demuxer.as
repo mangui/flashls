@@ -4,11 +4,13 @@
  package org.mangui.hls.demux {
     import flash.utils.ByteArray;
 
+    import org.mangui.adaptive.demux.AudioFrame;
+    import org.mangui.adaptive.demux.Demuxer;
+    import org.mangui.adaptive.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.flv.FLVTag;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
     public class MP3Demuxer implements Demuxer {
         /* MPEG1-Layer3 syncword */

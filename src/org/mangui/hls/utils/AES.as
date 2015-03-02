@@ -2,11 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.utils {
-    import flash.utils.getTimer;
     import flash.display.DisplayObject;
-    import flash.utils.ByteArray;
     import flash.events.Event;
+    import flash.utils.ByteArray;
+    import flash.utils.getTimer;
 
+    CONFIG::LOGGING {
+        import org.mangui.adaptive.utils.Log;
+    }
     /**
      * Contains Utility functions for AES-128 CBC Decryption
      */
@@ -119,7 +122,7 @@
             }
         }
 
-        /* Cypher Block Chaining Decryption, refer to 
+        /* Cypher Block Chaining Decryption, refer to
          * http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher-block_chaining_
          * for algorithm description
          */

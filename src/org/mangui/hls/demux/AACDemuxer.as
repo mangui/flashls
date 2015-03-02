@@ -2,15 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.demux {
+    import org.mangui.adaptive.demux.AudioFrame;
+    import org.mangui.adaptive.demux.Demuxer;
+    import org.mangui.adaptive.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.flv.FLVTag;
 
     import flash.utils.ByteArray;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
-    /** Constants and utilities for the AAC audio format, refer to 
+    /** Constants and utilities for the AAC audio format, refer to
      *  http://wiki.multimedia.cx/index.php?title=ADTS
      **/
     public class AACDemuxer implements Demuxer {

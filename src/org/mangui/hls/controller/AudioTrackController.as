@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
-    import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.HLS;
+    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.playlist.AltAudioTrack;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
     /*
      * class that handle audio tracks, consolidating tracks retrieved from Manifest and from Demux
@@ -208,7 +208,7 @@ package org.mangui.hls.controller {
                 _audioTracksMerge();
             }
 
-            /* if audio track not defined, or audio from external source (playlist) 
+            /* if audio track not defined, or audio from external source (playlist)
             return null (demux audio not selected) */
             if (_audioTrackId == -1 || _audioTracks[_audioTrackId].source == AudioTrack.FROM_PLAYLIST) {
                 return null;

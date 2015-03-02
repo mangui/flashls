@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.model {
-    import org.mangui.hls.utils.PTS;
-    import org.mangui.hls.utils.AES;
-    import org.mangui.hls.flv.FLVTag;
 
     import flash.utils.ByteArray;
+    import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.hls.utils.AES;
+    import org.mangui.hls.utils.PTS;
 
     /** Fragment Data. **/
     public class FragmentData {

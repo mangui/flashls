@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.model {
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
     import org.mangui.hls.utils.PTS;
 
@@ -245,7 +245,7 @@ package org.mangui.hls.model {
                     /* normalize computed PTS value based on known PTS value.
                      * this is to avoid computing wrong fragment duration in case of PTS looping */
                     var from_pts : Number = PTS.normalize(frag_to.data.pts_start, frag_from.data.pts_start_computed);
-                    /* update fragment duration. 
+                    /* update fragment duration.
                     it helps to fix drifts between playlist reported duration and fragment real duration */
                     if (to_index > from_index) {
                         frag_from.duration = (frag_to.data.pts_start - from_pts) / 1000;

@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.demux {
-    import org.mangui.hls.model.Level;
-
     import flash.display.DisplayObject;
     import flash.utils.ByteArray;
+    import org.mangui.adaptive.demux.Demuxer;
+    import org.mangui.hls.model.Level;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
     public class DemuxHelper {
         public static function probe(data : ByteArray, level : Level, displayObject : DisplayObject, audioselect : Function, progress : Function, complete : Function, videometadata : Function) : Demuxer {

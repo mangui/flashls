@@ -2,21 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.playlist {
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.utils.Hex;
 
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
-
-    import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.model.Level;
+    import org.mangui.adaptive.constant.Types;
+    import org.mangui.adaptive.utils.Hex;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.HLS;
     import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.model.Level;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
     }
     /** Helpers for parsing M3U8 files. **/
     public class Manifest {
@@ -72,7 +71,7 @@ package org.mangui.hls.playlist {
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR, error);
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, error);
 
-            if (flushLiveURLcache && type == HLSTypes.LIVE) {
+            if (flushLiveURLcache && type == Types.LIVE) {
                 /*
                 add time parameter to force reload URL, there are some issues with browsers/CDN reloading from cache even if the URL has been updated ...
                 see http://stackoverflow.com/questions/14448219/as3-resetting-urlloader-cache

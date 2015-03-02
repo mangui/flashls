@@ -4,13 +4,13 @@
  package org.mangui.hls.demux {
     import flash.utils.ByteArray;
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
         import org.mangui.hls.HLSSettings;
     }
     public class AVCC {
-        
+
         /** H264 profiles. **/
-        private static const PROFILES : Object = {'66':'H264 Baseline', '77':'H264 Main', '100':'H264 High'};        
+        private static const PROFILES : Object = {'66':'H264 Baseline', '77':'H264 Main', '100':'H264 High'};
         /** Get Avcc header from AVC stream
            See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
          **/

@@ -10,7 +10,7 @@ package org.mangui.hls.event {
     public class HLSEvent extends Event {
         /** Identifier for a manifest loading event, triggered after a call to hls.load(url) **/
         public static const MANIFEST_LOADING : String = "hlsEventManifestLoading";
-        /** Identifier for a manifest parsed event, 
+        /** Identifier for a manifest parsed event,
          * triggered after main manifest has been retrieved and parsed.
          * hls playlist may not be playable yet, in case of adaptive streaming, start level playlist is not downloaded yet at that stage */
         public static const MANIFEST_PARSED : String = "hlsEventManifestParsed";

@@ -2,21 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.demux {
-    import flash.utils.getTimer;
     import flash.display.DisplayObject;
-
-    import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.model.AudioTrack;
-
     import flash.events.Event;
     import flash.events.EventDispatcher;
-    import flash.utils.ByteArray;
     import flash.net.ObjectEncoding;
+    import flash.utils.ByteArray;
+    import flash.utils.getTimer;
+    import org.mangui.adaptive.demux.AudioFrame;
+    import org.mangui.adaptive.demux.Demuxer;
+    import org.mangui.adaptive.demux.VideoFrame;
+    import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.hls.model.AudioTrack;
 
     CONFIG::LOGGING {
-        import org.mangui.hls.utils.Log;
+        import org.mangui.adaptive.utils.Log;
         import org.mangui.hls.HLSSettings;
-        import org.mangui.hls.utils.Hex;
+        import org.mangui.adaptive.utils.Hex;
     }
     /** Representation of an MPEG transport stream. **/
     public class TSDemuxer extends EventDispatcher implements Demuxer {
@@ -380,7 +381,7 @@ package org.mangui.hls.demux {
             }
 
             /* first loop : look for AUD/SPS/PPS NAL unit :
-             * AUD (Access Unit Delimiter) are used to detect switch to new video tag 
+             * AUD (Access Unit Delimiter) are used to detect switch to new video tag
              * SPS/PPS are used to generate AVC HEADER
              */
 
@@ -436,7 +437,7 @@ package org.mangui.hls.demux {
                 }
             }
 
-            /* 
+            /*
              * second loop, handle other NAL units and push them in tags accordingly
              */
             for each (frame in frames) {
@@ -455,9 +456,9 @@ package org.mangui.hls.demux {
                         // +1 to skip NAL unit type
                         ba.position = frame.start + 1;
                         var eg : ExpGolomb = new ExpGolomb(ba);
-                        /* add a try/catch, 
-                         * as NALu might be partial here (in case NALu/slice header is splitted accross several PES packet ... we might end up 
-                         * with buffer overflow. prevent this and in case of overflow assume it is not a keyframe. should be fixed later on 
+                        /* add a try/catch,
+                         * as NALu might be partial here (in case NALu/slice header is splitted accross several PES packet ... we might end up
+                         * with buffer overflow. prevent this and in case of overflow assume it is not a keyframe. should be fixed later on
                          */
                         try {
                             // discard first_mb_in_slice
