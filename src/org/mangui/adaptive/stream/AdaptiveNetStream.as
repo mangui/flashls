@@ -10,12 +10,12 @@ package org.mangui.adaptive.stream {
     import flash.utils.*;
     import org.mangui.adaptive.constant.PlayStates;
     import org.mangui.adaptive.constant.SeekStates;
+    import org.mangui.adaptive.controller.BufferThresholdController;
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.event.AdaptivePlayMetrics;
     import org.mangui.adaptive.flv.FLVTag;
     import org.mangui.adaptive.utils.Hex;
-    import org.mangui.hls.controller.BufferThresholdController;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
 
@@ -26,10 +26,10 @@ package org.mangui.adaptive.stream {
      *
      * play state transition :
      * 				FROM								TO								condition
-     *  PlayStates.IDLE              	PlayStates.PLAYING_BUFFERING     play()/play2()/seek() called
-     *  PlayStates.PLAYING_BUFFERING  	PlayStates.PLAYING  				buflen > minBufferLength
+     *  PlayStates.IDLE              	PlayStates.PLAYING_BUFFERING    play()/play2()/seek() called
+     *  PlayStates.PLAYING_BUFFERING  	PlayStates.PLAYING  			buflen > minBufferLength
      *  PlayStates.PAUSED_BUFFERING  	PlayStates.PAUSED  				buflen > minBufferLength
-     *  PlayStates.PLAYING  				PlayStates.PLAYING_BUFFERING  	buflen < lowBufferLength
+     *  PlayStates.PLAYING  			PlayStates.PLAYING_BUFFERING  	buflen < lowBufferLength
      *  PlayStates.PAUSED  				PlayStates.PAUSED_BUFFERING  	buflen < lowBufferLength
      */
     public class AdaptiveNetStream extends NetStream {
