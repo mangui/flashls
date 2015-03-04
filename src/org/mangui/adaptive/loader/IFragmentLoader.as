@@ -4,20 +4,20 @@
  package org.mangui.adaptive.loader {
 
 
-	import org.mangui.adaptive.stream.StreamBuffer;
+    import org.mangui.adaptive.stream.StreamBuffer;
 
     public interface IFragmentLoader {
-    	function attachStreamBuffer(streamBuffer : StreamBuffer) : void;
-		/* dispose method */
-		function dispose() : void;
+        function attachStreamBuffer(streamBuffer : StreamBuffer) : void;
+        /* dispose method */
+        function dispose() : void;
 
-		function get audio_expected() : Boolean;
+        function get audio_expected() : Boolean;
 
-		function get video_expected() : Boolean;
+        function get video_expected() : Boolean;
 
-		function stop() : void;
+        function stop() : void;
 
-		function seek(position : Number) : void;
+        function seek(position : Number) : void;
 
     }
 }

@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.adaptive.controller {
 
-   import org.mangui.adaptive.model.AudioTrack;
-   
-    public interface IAudioTrackController {
+     import org.mangui.adaptive.model.AudioTrack;
+
+     public interface IAudioTrackController {
 
         function set audioTrack(num : int) : void;
 
@@ -15,7 +15,7 @@
 
         function audioTrackSelectionHandler(audioTrackList : Vector.<AudioTrack>) : AudioTrack;
 
-		/* dispose method */
-		function dispose() : void;
+        /* dispose method */
+        function dispose() : void;
     }
 }

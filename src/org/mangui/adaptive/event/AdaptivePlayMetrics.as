@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-package org.mangui.adaptive.event {
+ package org.mangui.adaptive.event {
     /** playback metrics, notified when playback of a given fragment starts **/
     public class AdaptivePlayMetrics {
         public var level : int;

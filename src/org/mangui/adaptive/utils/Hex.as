@@ -6,7 +6,7 @@
  *
  * See LICENSE.txt for full license information.
  */
-package org.mangui.adaptive.utils {
+ package org.mangui.adaptive.utils {
     import flash.utils.ByteArray;
 
     public class Hex {
@@ -17,7 +17,7 @@ package org.mangui.adaptive.utils {
          * The first nibble (hex digit) may be omitted.
          * Any whitespace characters are ignored.
          */
-        public static function toArray(hex : String) : ByteArray {
+         public static function toArray(hex : String) : ByteArray {
             hex = hex.replace(/^0x|\s|:/gm, '');
             var a : ByteArray = new ByteArray;
             var len : uint = hex.length;
@@ -31,7 +31,7 @@ package org.mangui.adaptive.utils {
         /**
          * Generates lowercase hexadecimal string from given byte-array
          */
-        public static function fromArray(array : ByteArray, colons : Boolean = false) : String {
+         public static function fromArray(array : ByteArray, colons : Boolean = false) : String {
             var s : String = "";
             var len : uint = array.length;
             for (var i : uint = 0; i < len; i++) {
