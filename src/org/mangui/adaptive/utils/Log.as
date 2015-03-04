@@ -4,7 +4,7 @@
 package org.mangui.adaptive.utils {
     import flash.external.ExternalInterface;
 
-    import org.mangui.hls.HLSSettings;
+    import org.mangui.adaptive.AdaptiveSettings;
 
     /** Class that sends log messages to browser console. **/
     public class Log {
@@ -14,27 +14,27 @@ package org.mangui.adaptive.utils {
         private static const LEVEL_ERROR : String = "ERROR:";
 
         public static function info(message : *) : void {
-            if (HLSSettings.logInfo)
+            if (AdaptiveSettings.logInfo)
                 outputlog(LEVEL_INFO, String(message));
         };
 
         public static function debug(message : *) : void {
-            if (HLSSettings.logDebug)
+            if (AdaptiveSettings.logDebug)
                 outputlog(LEVEL_DEBUG, String(message));
         };
 
         public static function debug2(message : *) : void {
-            if (HLSSettings.logDebug2)
+            if (AdaptiveSettings.logDebug2)
                 outputlog(LEVEL_DEBUG, String(message));
         };
 
         public static function warn(message : *) : void {
-            if (HLSSettings.logWarn)
+            if (AdaptiveSettings.logWarn)
                 outputlog(LEVEL_WARN, String(message));
         };
 
         public static function error(message : *) : void {
-            if (HLSSettings.logError)
+            if (AdaptiveSettings.logError)
                 outputlog(LEVEL_ERROR, String(message));
         };
 

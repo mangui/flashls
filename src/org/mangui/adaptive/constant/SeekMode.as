@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.adaptive.constant {
-    /** HLS Seek mode configuration **/
+    /** Adaptive Seek mode configuration **/
     public class SeekMode {
         /** seek on keyframe boundary **/
         public static const KEYFRAME_SEEK : String = "KEYFRAME";

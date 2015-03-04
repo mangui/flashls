@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
+    import org.mangui.adaptive.Adaptive;
+    import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.constant.MaxLevelCappingMode;
     import org.mangui.adaptive.event.AdaptiveEvent;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.model.Level;
+    import org.mangui.adaptive.model.Level;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -17,8 +17,8 @@ package org.mangui.hls.controller {
      * http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
      */
     public class LevelController {
-        /** Reference to the HLS controller. **/
-        private var _hls : HLS;
+        /** Reference to the Adaptive controller. **/
+        private var _hls : Adaptive;
         /** switch up threshold **/
         private var _switchup : Vector.<Number> = null;
         /** switch down threshold **/
@@ -34,7 +34,7 @@ package org.mangui.hls.controller {
         private var  last_bandwidth : Number;
 
         /** Create the loader. **/
-        public function LevelController(hls : HLS) : void {
+        public function LevelController(hls : Adaptive) : void {
             _hls = hls;
             _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
@@ -95,7 +95,7 @@ package org.mangui.hls.controller {
                 }
             }
 
-            if (HLSSettings.capLevelToStage) {
+            if (AdaptiveSettings.capLevelToStage) {
                 _maxUniqueLevels = _maxLevelsWithUniqueDimensions;
             }
             var level : int;
@@ -138,13 +138,13 @@ package org.mangui.hls.controller {
         }
 
         private function get _max_level() : int {
-            if (HLSSettings.capLevelToStage) {
+            if (AdaptiveSettings.capLevelToStage) {
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
                 if (_hls.stage && maxLevelsCount) {
                     var maxLevel : Level = this._maxUniqueLevels[0], maxLevelIdx : int = maxLevel.index, sWidth : Number = this._hls.stage.stageWidth, sHeight : Number = this._hls.stage.stageHeight, lWidth : int, lHeight : int, i : int;
 
-                    switch (HLSSettings.maxLevelCappingMode) {
+                    switch (AdaptiveSettings.maxLevelCappingMode) {
                         case MaxLevelCappingMode.UPSCALE:
                             for (i = maxLevelsCount - 1; i >= 0; i--) {
                                 maxLevel = this._maxUniqueLevels[i];
@@ -258,7 +258,7 @@ package org.mangui.hls.controller {
             var start_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (levels) {
-                if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1) {
+                if (AdaptiveSettings.startFromLevel === -1 && AdaptiveSettings.startFromBitrate === -1) {
                     /* if startFromLevel is set to -1, it means that effective startup level
                      * will be determined from first segment download bandwidth
                      * let's use lowest bitrate for this download bandwidth assessment
@@ -281,11 +281,11 @@ package org.mangui.hls.controller {
                     }
                     start_level = 0;
                 } else {
-                    if (HLSSettings.startFromBitrate > 0) {
-                        start_level = findIndexOfClosestLevel(HLSSettings.startFromBitrate);
-                    } else if (HLSSettings.startFromLevel > 0) {
+                    if (AdaptiveSettings.startFromBitrate > 0) {
+                        start_level = findIndexOfClosestLevel(AdaptiveSettings.startFromBitrate);
+                    } else if (AdaptiveSettings.startFromLevel > 0) {
                         // adjust start level using a rule by 3
-                        start_level += Math.round(HLSSettings.startFromLevel * (levels.length - start_level - 1));
+                        start_level += Math.round(AdaptiveSettings.startFromLevel * (levels.length - start_level - 1));
                     }
                 }
             }
@@ -320,7 +320,7 @@ package org.mangui.hls.controller {
         public function get seeklevel() : int {
             var seek_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
-            if (HLSSettings.seekFromLevel == -1) {
+            if (AdaptiveSettings.seekFromLevel == -1) {
                 // keep last level
                 return _hls.level;
             }
@@ -336,9 +336,9 @@ package org.mangui.hls.controller {
             if (seek_level == -1) {
                 seek_level = 0;
             } else {
-                if (HLSSettings.seekFromLevel > 0) {
+                if (AdaptiveSettings.seekFromLevel > 0) {
                     // adjust start level using a rule by 3
-                    seek_level += Math.round(HLSSettings.seekFromLevel * (levels.length - seek_level - 1));
+                    seek_level += Math.round(AdaptiveSettings.seekFromLevel * (levels.length - seek_level - 1));
                 }
             }
             CONFIG::LOGGING {

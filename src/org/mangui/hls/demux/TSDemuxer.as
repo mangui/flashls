@@ -12,12 +12,12 @@ package org.mangui.hls.demux {
     import org.mangui.adaptive.demux.Demuxer;
     import org.mangui.adaptive.demux.VideoFrame;
     import org.mangui.adaptive.flv.FLVTag;
-    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.adaptive.model.AudioTrack;
 
     CONFIG::LOGGING {
-        import org.mangui.adaptive.utils.Log;
-        import org.mangui.hls.HLSSettings;
+        import org.mangui.adaptive.AdaptiveSettings;
         import org.mangui.adaptive.utils.Hex;
+        import org.mangui.adaptive.utils.Log;
     }
     /** Representation of an MPEG transport stream. **/
     public class TSDemuxer extends EventDispatcher implements Demuxer {
@@ -548,7 +548,7 @@ package org.mangui.hls.demux {
                     var pos_end : uint = _data.position;
                     CONFIG::LOGGING {
                         Log.warn("TS: lost sync between offsets:" + pos_start + "/" + pos_end);
-                        if (HLSSettings.logDebug2) {
+                        if (AdaptiveSettings.logDebug2) {
                             var ba : ByteArray = new ByteArray();
                             _data.position = pos_start;
                             _data.readBytes(ba, 0, pos_end - pos_start);

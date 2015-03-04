@@ -11,15 +11,15 @@ package org.mangui.hls {
     import flash.net.URLStream;
     import org.mangui.adaptive.Adaptive;
     import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.model.AltAudioTrack;
+    import org.mangui.adaptive.model.AudioTrack;
+    import org.mangui.adaptive.model.Level;
     import org.mangui.adaptive.stream.AdaptiveNetStream;
     import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.loader.AltAudioLevelLoader;
     import org.mangui.hls.loader.LevelLoader;
-    import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.model.Level;
-    import org.mangui.hls.playlist.AltAudioTrack;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -31,9 +31,9 @@ package org.mangui.hls {
         private var _audioTrackController : AudioTrackController;
         private var _levelController : LevelController;
         private var _streamBuffer : StreamBuffer;
-        /** HLS NetStream **/
+        /** Adaptive NetStream **/
         private var _AdaptiveNetStream : AdaptiveNetStream;
-        /** HLS URLStream **/
+        /** Adaptive URLStream **/
         private var _hlsURLStream : Class;
         private var _client : Object = {};
         private var _stage : Stage;
@@ -150,13 +150,13 @@ package org.mangui.hls {
             return _levelLoader.type;
         };
 
-        /** Load and parse a new HLS URL **/
+        /** Load and parse a new Adaptive URL **/
         public function load(url : String) : void {
             _AdaptiveNetStream.close();
             _levelLoader.load(url);
         };
 
-        /** return HLS NetStream **/
+        /** return Adaptive NetStream **/
         public function get stream() : NetStream {
             return _AdaptiveNetStream;
         }

@@ -5,7 +5,7 @@
     import flash.display.DisplayObject;
     import flash.utils.ByteArray;
     import org.mangui.adaptive.demux.Demuxer;
-    import org.mangui.hls.model.Level;
+    import org.mangui.adaptive.model.Level;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;

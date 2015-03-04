@@ -1,11 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-package org.mangui.hls {
+package org.mangui.adaptive {
     import org.mangui.adaptive.constant.MaxLevelCappingMode;
     import org.mangui.adaptive.constant.SeekMode;
 
-    public final class HLSSettings extends Object {
+    public final class AdaptiveSettings extends Object {
         /**
          * Limit levels usable in auto-quality by the stage dimensions (width and height).
          *      true - level width and height (defined in m3u8 playlist) will be compared with the player width and height (stage.stageWidth and stage.stageHeight).
@@ -52,7 +52,7 @@ package org.mangui.hls {
         public static var maxBackBufferLength : Number = 30;
         /**
          * Defines low buffer length in seconds.
-         * When crossing down this threshold, HLS will switch to buffering state.
+         * When crossing down this threshold, Adaptive will switch to buffering state.
          *
          * Default is 3.
          */

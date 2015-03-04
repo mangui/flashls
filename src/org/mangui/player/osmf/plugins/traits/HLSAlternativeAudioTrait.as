@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.player.osmf.plugins.traits {
     import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.model.AudioTrack;
     import org.mangui.hls.HLS;
-    import org.mangui.hls.model.AudioTrack;
     import org.osmf.events.AlternativeAudioEvent;
     import org.osmf.media.MediaElement;
     import org.osmf.net.StreamingItem;

@@ -1,13 +1,13 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-package org.mangui.hls.model {
+package org.mangui.adaptive.model {
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
     }
     import org.mangui.hls.utils.PTS;
 
-    /** HLS streaming quality level. **/
+    /** Adaptive streaming quality level. **/
     public class Level {
         /** audio only Level ? **/
         public var audio : Boolean;

@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
+    import org.mangui.adaptive.Adaptive;
     import org.mangui.adaptive.event.AdaptiveEvent;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.playlist.AltAudioTrack;
+    import org.mangui.adaptive.model.AltAudioTrack;
+    import org.mangui.adaptive.model.AudioTrack;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -14,8 +14,8 @@ package org.mangui.hls.controller {
      * class that handle audio tracks, consolidating tracks retrieved from Manifest and from Demux
      */
     public class AudioTrackController {
-        /** Reference to the HLS controller. **/
-        private var _hls : HLS;
+        /** Reference to the Adaptive controller. **/
+        private var _hls : Adaptive;
         /** list of audio tracks from demuxed fragments **/
         private var _audioTracksfromDemux : Vector.<AudioTrack>;
         /** list of audio tracks from Manifest, matching with current level **/
@@ -25,7 +25,7 @@ package org.mangui.hls.controller {
         /** current audio track id **/
         private var _audioTrackId : int;
 
-        public function AudioTrackController(hls : HLS) {
+        public function AudioTrackController(hls : Adaptive) {
             _hls = hls;
             _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(AdaptiveEvent.LEVEL_LOADED, _levelLoadedHandler);

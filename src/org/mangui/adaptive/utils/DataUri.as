@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- package org.mangui.hls.playlist {
+ package org.mangui.adaptive.utils {
     CONFIG::LOGGING {
     import org.mangui.adaptive.utils.Log;
     }
@@ -42,7 +42,7 @@
 
         /**
          * Data URIs support base 64 encoding the data section.
-         * This is not typically used for plain text files, which includes HLS manifests.
+         * This is not typically used for plain text files, which includes Adaptive manifests.
          * As such, decoded base 64 data sections is not currently (6/18/14) supported.
          * @param data
          * @return

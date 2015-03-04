@@ -8,23 +8,23 @@ package org.mangui.hls.loader {
     import flash.utils.ByteArray;
     import flash.utils.getTimer;
     import flash.utils.Timer;
+    import org.mangui.adaptive.Adaptive;
+    import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.constant.Types;
     import org.mangui.adaptive.demux.Demuxer;
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.event.AdaptiveLoadMetrics;
     import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.adaptive.model.AudioTrack;
+    import org.mangui.adaptive.model.Fragment;
+    import org.mangui.adaptive.model.FragmentData;
+    import org.mangui.adaptive.model.FragmentMetrics;
+    import org.mangui.adaptive.model.Level;
     import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.demux.DemuxHelper;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.model.Fragment;
-    import org.mangui.hls.model.FragmentData;
-    import org.mangui.hls.model.FragmentMetrics;
-    import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.AES;
 
     CONFIG::LOGGING {
@@ -33,8 +33,8 @@ package org.mangui.hls.loader {
     }
     /** Class that fetches fragments. **/
     public class FragmentLoader {
-        /** Reference to the HLS controller. **/
-        private var _hls : HLS;
+        /** Reference to the Adaptive controller. **/
+        private var _hls : Adaptive;
         /** reference to auto level manager */
         private var _levelController : LevelController;
         /** reference to audio track controller */
@@ -94,7 +94,7 @@ package org.mangui.hls.loader {
         private static const LOADING_COMPLETED : int = 6;
 
         /** Create the loader. **/
-        public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController, streamBuffer : StreamBuffer) : void {
+        public function FragmentLoader(hls : Adaptive, audioTrackController : AudioTrackController, levelController : LevelController, streamBuffer : StreamBuffer) : void {
             _hls = hls;
             _levelController = levelController;
             _audioTrackController = audioTrackController;
@@ -180,7 +180,7 @@ package org.mangui.hls.loader {
                         /* first fragment already loaded
                          * check if we need to load next fragment, do it only if buffer is NOT full
                          */
-                    } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
+                    } else if (AdaptiveSettings.maxBufferLength == 0 || _hls.stream.bufferLength < AdaptiveSettings.maxBufferLength) {
                         // select level for next fragment load
                         // dont switch level after PTS analysis
                         if (_pts_just_analyzed == true) {
@@ -312,7 +312,7 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.error("I/O Error while loading key:" + message);
             }
-            if (HLSSettings.keyLoadMaxRetry == -1 || _key_retry_count < HLSSettings.keyLoadMaxRetry) {
+            if (AdaptiveSettings.keyLoadMaxRetry == -1 || _key_retry_count < AdaptiveSettings.keyLoadMaxRetry) {
                 _loading_state = LOADING_KEY_IO_ERROR;
                 _key_load_error_date = getTimer() + _key_retry_timeout;
                 CONFIG::LOGGING {
@@ -320,7 +320,7 @@ package org.mangui.hls.loader {
                 }
                 /* exponential increase of retry timeout, capped to keyLoadMaxRetryTimeout */
                 _key_retry_count++;
-                _key_retry_timeout = Math.min(HLSSettings.keyLoadMaxRetryTimeout, 2 * _key_retry_timeout);
+                _key_retry_timeout = Math.min(AdaptiveSettings.keyLoadMaxRetryTimeout, 2 * _key_retry_timeout);
             } else {
                 var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.KEY_LOADING_ERROR, _frag_current.decrypt_url, "I/O Error :" + message);
                 _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
@@ -333,7 +333,7 @@ package org.mangui.hls.loader {
             - live playlist : when we are trying to load an out of bound fragments : for example,
             the playlist on webserver is from SN [51-61]
             the one in memory is from SN [50-60], and we are trying to load SN50.
-            we will keep getting 404 error if the HLS server does not follow HLS spec,
+            we will keep getting 404 error if the Adaptive server does not follow Adaptive spec,
             which states that the server should keep SN50 during EXT-X-TARGETDURATION period
             after it is removed from playlist
             in the meantime, ManifestLoader will keep refreshing the playlist in the background ...
@@ -343,7 +343,7 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.error("I/O Error while loading fragment:" + message);
             }
-            if (HLSSettings.fragmentLoadMaxRetry == -1 || _frag_retry_count < HLSSettings.fragmentLoadMaxRetry) {
+            if (AdaptiveSettings.fragmentLoadMaxRetry == -1 || _frag_retry_count < AdaptiveSettings.fragmentLoadMaxRetry) {
                 _loading_state = LOADING_FRAGMENT_IO_ERROR;
                 _frag_load_error_date = getTimer() + _frag_retry_timeout;
                 CONFIG::LOGGING {
@@ -351,7 +351,7 @@ package org.mangui.hls.loader {
                 }
                 /* exponential increase of retry timeout, capped to fragmentLoadMaxRetryTimeout */
                 _frag_retry_count++;
-                _frag_retry_timeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _frag_retry_timeout);
+                _frag_retry_timeout = Math.min(AdaptiveSettings.fragmentLoadMaxRetryTimeout, 2 * _frag_retry_timeout);
             } else {
                 var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
                 _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
@@ -496,7 +496,7 @@ package org.mangui.hls.loader {
             if (_demux == null) {
                 CONFIG::LOGGING {
                     Log.error("unknown fragment type");
-                    if (HLSSettings.logDebug2) {
+                    if (AdaptiveSettings.logDebug2) {
                         fragData.bytes.position = 0;
                         var bytes2 : ByteArray = new ByteArray();
                         fragData.bytes.readBytes(bytes2, 0, 512);
@@ -777,7 +777,7 @@ package org.mangui.hls.loader {
              *      we first need to download one fragment to check the dl bw, in order to assess start level ...)
              *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
              */
-            if (( _fragment_first_loaded || (_manifest_just_loaded && (HLSSettings.startFromLevel !== -1 || HLSSettings.startFromBitrate !== -1 || _levels.length == 1) ) )) {
+            if (( _fragment_first_loaded || (_manifest_just_loaded && (AdaptiveSettings.startFromLevel !== -1 || AdaptiveSettings.startFromBitrate !== -1 || _levels.length == 1) ) )) {
                 /* if audio expected, PTS analysis is done on audio
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
@@ -867,7 +867,7 @@ package org.mangui.hls.loader {
 
             if (_manifest_just_loaded) {
                 _manifest_just_loaded = false;
-                if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1 && _levels.length > 1) {
+                if (AdaptiveSettings.startFromLevel === -1 && AdaptiveSettings.startFromBitrate === -1 && _levels.length > 1) {
                     // check if we can directly switch to a better bitrate, in case download bandwidth is enough
                     var bestlevel : int = _levelController.getbestlevel(fragMetrics.bandwidth);
                     if (bestlevel > _hls.level) {

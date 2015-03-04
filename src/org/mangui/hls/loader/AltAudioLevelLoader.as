@@ -10,15 +10,15 @@ package org.mangui.hls.loader {
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
+    import org.mangui.adaptive.Adaptive;
+    import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.constant.PlayStates;
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.model.Fragment;
-    import org.mangui.hls.model.Level;
-    import org.mangui.hls.playlist.AltAudioTrack;
+    import org.mangui.adaptive.model.AltAudioTrack;
+    import org.mangui.adaptive.model.AudioTrack;
+    import org.mangui.adaptive.model.Fragment;
+    import org.mangui.adaptive.model.Level;
     import org.mangui.hls.playlist.Manifest;
 
     public class AltAudioLevelLoader {
@@ -26,7 +26,7 @@ package org.mangui.hls.loader {
             import org.mangui.adaptive.utils.Log;
         }
         /** Reference to the hls framework controller. **/
-        private var _hls : HLS;
+        private var _hls : Adaptive;
         /** Object that fetches the manifest. **/
         private var _urlloader : URLLoader;
         /** Link to the M3U8 file. **/
@@ -46,7 +46,7 @@ package org.mangui.hls.loader {
         private var _retry_count : int;
 
         /** Setup the loader. **/
-        public function AltAudioLevelLoader(hls : HLS) {
+        public function AltAudioLevelLoader(hls : Adaptive) {
             _hls = hls;
             _hls.addEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
@@ -65,13 +65,13 @@ package org.mangui.hls.loader {
             if (event is SecurityErrorEvent) {
                 code = AdaptiveError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
                 txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
-            } else if (event is IOErrorEvent && (HLSSettings.manifestLoadMaxRetry == -1 || _retry_count < HLSSettings.manifestLoadMaxRetry)) {
+            } else if (event is IOErrorEvent && (AdaptiveSettings.manifestLoadMaxRetry == -1 || _retry_count < AdaptiveSettings.manifestLoadMaxRetry)) {
                 CONFIG::LOGGING {
                     Log.warn("I/O Error while trying to load Playlist, retry in " + _retry_timeout + " ms");
                 }
                 _timeoutID = setTimeout(_loadAudioLevelPlaylist, _retry_timeout);
                 /* exponential increase of retry timeout, capped to manifestLoadMaxRetryTimeout */
-                _retry_timeout = Math.min(HLSSettings.manifestLoadMaxRetryTimeout, 2 * _retry_timeout);
+                _retry_timeout = Math.min(AdaptiveSettings.manifestLoadMaxRetryTimeout, 2 * _retry_timeout);
                 _retry_count++;
                 return;
             } else {
@@ -115,7 +115,7 @@ package org.mangui.hls.loader {
             _reload_playlists_timer = getTimer();
             var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[_hls.audioTracks[_current_track].id];
             _manifest_loading = new Manifest();
-            _manifest_loading.loadPlaylist(altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _current_track, _hls.type, HLSSettings.flushLiveURLCache);
+            _manifest_loading.loadPlaylist(altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _current_track, _hls.type, AdaptiveSettings.flushLiveURLCache);
             _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.AUDIO_LEVEL_LOADING, _current_track));
         };
 

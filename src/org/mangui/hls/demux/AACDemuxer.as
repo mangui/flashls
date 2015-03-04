@@ -5,7 +5,7 @@ package org.mangui.hls.demux {
     import org.mangui.adaptive.demux.AudioFrame;
     import org.mangui.adaptive.demux.Demuxer;
     import org.mangui.adaptive.flv.FLVTag;
-    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.adaptive.model.AudioTrack;
 
     import flash.utils.ByteArray;
 

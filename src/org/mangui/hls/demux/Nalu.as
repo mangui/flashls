@@ -4,8 +4,8 @@
  package org.mangui.hls.demux {
 
     import flash.utils.ByteArray;
+    import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.demux.VideoFrame;
-    import org.mangui.hls.HLSSettings;
     CONFIG::LOGGING {
     import org.mangui.adaptive.utils.Log;
     }
@@ -76,7 +76,7 @@
             }
             // Reset position and return results.
             CONFIG::LOGGING {
-            if (HLSSettings.logDebug2) {
+            if (AdaptiveSettings.logDebug2) {
                 if (units.length) {
                     var txt : String = "AVC: ";
                     for (var i : int = 0; i < units.length; i++) {

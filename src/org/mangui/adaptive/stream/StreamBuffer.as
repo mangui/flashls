@@ -7,19 +7,19 @@ package org.mangui.adaptive.stream {
     import flash.events.TimerEvent;
     import flash.utils.Dictionary;
     import flash.utils.Timer;
+    import org.mangui.adaptive.Adaptive;
+    import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.constant.SeekMode;
     import org.mangui.adaptive.constant.SeekStates;
     import org.mangui.adaptive.constant.Types;
     import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.event.AdaptiveMediatime;
     import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.adaptive.model.AudioTrack;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
-    import org.mangui.hls.model.AudioTrack;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -30,7 +30,7 @@ package org.mangui.adaptive.stream {
      *  output : provide muxed FLV tags to AdaptiveNetStream
      */
     public class StreamBuffer {
-        private var _hls : HLS;
+        private var _adaptive : Adaptive;
         private var _fragmentLoader : FragmentLoader;
         private var _altaudiofragmentLoader : AltAudioFragmentLoader;
         /** Timer used to process FLV tags. **/
@@ -57,29 +57,29 @@ package org.mangui.adaptive.stream {
         /* are we using alt-audio ? */
         private var _use_altaudio : Boolean;
 
-        public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
-            _hls = hls;
-            _fragmentLoader = new FragmentLoader(hls, audioTrackController, levelController, this);
-            _altaudiofragmentLoader = new AltAudioFragmentLoader(hls, this);
+        public function StreamBuffer(adaptive : Adaptive, audioTrackController : AudioTrackController, levelController : LevelController) {
+            _adaptive = adaptive;
+            _fragmentLoader = new FragmentLoader(adaptive, audioTrackController, levelController, this);
+            _altaudiofragmentLoader = new AltAudioFragmentLoader(adaptive, this);
             flushAll();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
-            _hls.addEventListener(AdaptiveEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
-            _hls.addEventListener(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
-            _hls.addEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            _adaptive.addEventListener(AdaptiveEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
+            _adaptive.addEventListener(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _adaptive.addEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
         }
 
         public function dispose() : void {
             flushAll();
-            _hls.removeEventListener(AdaptiveEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
-            _hls.removeEventListener(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
-            _hls.removeEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            _adaptive.removeEventListener(AdaptiveEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
+            _adaptive.removeEventListener(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
+            _adaptive.removeEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
             _timer.stop();
             _fragmentLoader.dispose();
             _altaudiofragmentLoader.dispose();
             _fragmentLoader = null;
             _altaudiofragmentLoader = null;
-            _hls = null;
+            _adaptive = null;
             _timer = null;
         }
 
@@ -96,14 +96,14 @@ package org.mangui.adaptive.stream {
          */
         public function seek(position : Number) : void {
             // compute _seek_position_requested based on position and playlist type
-            if (_hls.type == Types.LIVE) {
-                /* follow HLS spec :
+            if (_adaptive.type == Types.LIVE) {
+                /* follow Adaptive spec :
                 If the EXT-X-ENDLIST tag is not present
                 and the client intends to play the media regularly (i.e. in playlist
                 order at the nominal playback rate), the client SHOULD NOT
                 choose a segment which starts less than three target durations from
                 the end of the Playlist file */
-                var maxLivePosition : Number = Math.max(0, _hls.levels[_hls.level].duration - 3 * _hls.levels[_hls.level].averageduration);
+                var maxLivePosition : Number = Math.max(0, _adaptive.levels[_adaptive.level].duration - 3 * _adaptive.levels[_adaptive.level].averageduration);
                 if (position == -1) {
                     // seek 3 fragments from end
                     _seek_position_requested = maxLivePosition;
@@ -125,7 +125,7 @@ package org.mangui.adaptive.stream {
                 _fragmentLoader.stop();
                 _fragmentLoader.seek(_seek_position_requested);
                 // check if we need to use alt audio fragment loader
-                if (_hls.audioTracks.length && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
+                if (_adaptive.audioTracks.length && _adaptive.audioTracks[_adaptive.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
                     CONFIG::LOGGING {
                         Log.info("seek : need to load alt audio track");
                     }
@@ -170,8 +170,8 @@ package org.mangui.adaptive.stream {
             _seek_position_real + getTotalBufferedDuration()  should be the start_position
              * /of the new fragment if the playlist was not sliding
             => live playlist sliding is the difference between the new start position  and this previous value */
-            if (_hls.seekState == SeekStates.SEEKED) {
-                if ( _hls.type == Types.LIVE) {
+            if (_adaptive.seekState == SeekStates.SEEKED) {
+                if ( _adaptive.type == Types.LIVE) {
                     _time_sliding = (_seeking_min_position + getTotalBufferedDuration()) - start_position;
                     // Log.info("min_pos/getTotalBufferedDuration/start pos/end pos/_time_sliding:" + "/" + _seeking_min_position.toFixed(2) + "/" + getTotalBufferedDuration().toFixed(2) + "/" + start_position.toFixed(2) + "/" + pos.toFixed(2) + "/" + _time_sliding.toFixed(2));
                 }
@@ -190,12 +190,12 @@ package org.mangui.adaptive.stream {
 
         /** Return current media position **/
         public function get position() : Number {
-            switch(_hls.seekState) {
+            switch(_adaptive.seekState) {
                 case SeekStates.SEEKING:
                     return  _seek_position_requested;
                 case SeekStates.SEEKED:
                     /** Relative playback position = (Absolute Position(seek position + play time) - playlist sliding, non null for Live Playlist) **/
-                    return _seek_position_real + _hls.stream.time - _time_sliding;
+                    return _seek_position_real + _adaptive.stream.time - _time_sliding;
                 case SeekStates.IDLE:
                 default:
                     return 0;
@@ -286,7 +286,7 @@ package org.mangui.adaptive.stream {
         }
 
         public function get bufferLength() : Number {
-            switch(_hls.seekState) {
+            switch(_adaptive.seekState) {
                 case SeekStates.SEEKING:
                     return  Math.max(0, max_pos - _seek_position_requested);
                 case SeekStates.SEEKED:
@@ -320,7 +320,7 @@ package org.mangui.adaptive.stream {
          */
         private function _checkBuffer(e : Event) : void {
             // dispatch media time event
-            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MEDIA_TIME, new AdaptiveMediatime(position, _playlist_duration, _hls.stream.bufferLength, backBufferLength, _time_sliding)));
+            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.MEDIA_TIME, new AdaptiveMediatime(position, _playlist_duration, _adaptive.stream.bufferLength, backBufferLength, _time_sliding)));
 
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
@@ -331,7 +331,7 @@ package org.mangui.adaptive.stream {
 
             var duration : Number = 0;
             if (_seek_pos_reached) {
-                var netStreamBuffer : Number = (_hls.stream as AdaptiveNetStream).netStreamBufferLength;
+                var netStreamBuffer : Number = (_adaptive.stream as AdaptiveNetStream).netStreamBufferLength;
                 if (netStreamBuffer < MIN_NETSTREAM_BUFFER_SIZE) {
                     duration = MAX_NETSTREAM_BUFFER_SIZE - netStreamBuffer;
                 }
@@ -370,12 +370,12 @@ package org.mangui.adaptive.stream {
                         var t1 : Number = data[data.length - 1].position - (_time_sliding - data[data.length - 1].sliding );
                         Log.debug2("appending " + tags.length + " tags, start/end :" + t0.toFixed(2) + "/" + t1.toFixed(2));
                     }
-                    (_hls.stream as AdaptiveNetStream).appendTags(tags);
+                    (_adaptive.stream as AdaptiveNetStream).appendTags(tags);
                 }
             }
             // clip backbuffer if needed
-            if (HLSSettings.maxBackBufferLength > 0) {
-                _clipBackBuffer(HLSSettings.maxBackBufferLength);
+            if (AdaptiveSettings.maxBackBufferLength > 0) {
+                _clipBackBuffer(AdaptiveSettings.maxBackBufferLength);
             }
         }
 
@@ -418,7 +418,7 @@ package org.mangui.adaptive.stream {
             }
 
             var first_pts : Number;
-            if (HLSSettings.seekMode == SeekMode.ACCURATE_SEEK) {
+            if (AdaptiveSettings.seekMode == SeekMode.ACCURATE_SEEK) {
                 // start injecting from last tag before start position
                 first_pts = tags[lastIdx].tag.pts;
                 _seek_position_real = tags[lastIdx].position;
@@ -451,7 +451,7 @@ package org.mangui.adaptive.stream {
             for (i = keyIdx; i < lastIdx; i++) {
                 data = tags[i];
                 // if accurate seek mode, adjust tags with pts and position from start position
-                if (HLSSettings.seekMode == SeekMode.ACCURATE_SEEK) {
+                if (AdaptiveSettings.seekMode == SeekMode.ACCURATE_SEEK) {
                     // only push NALU to be able to reconstruct frame at seek position
                     if (data.tag.type == FLVTag.AVC_NALU) {
                         tagclone = data.tag.clone();

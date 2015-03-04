@@ -13,14 +13,14 @@ package org.mangui.player.chromeless {
     import flash.media.Video;
     import flash.net.URLStream;
     import flash.utils.setTimeout;
+    import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.model.AudioTrack;
+    import org.mangui.adaptive.model.Level;
     import org.mangui.adaptive.utils.Log;
     import org.mangui.adaptive.utils.ScaleVideo;
     import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.model.Level;
 
     // import com.sociodox.theminer.*;
     public class ChromelessPlayer extends Sprite {
@@ -256,47 +256,47 @@ package org.mangui.player.chromeless {
         };
 
         protected function _getmaxBufferLength() : Number {
-            return HLSSettings.maxBufferLength;
+            return AdaptiveSettings.maxBufferLength;
         };
 
         protected function _getminBufferLength() : Number {
-            return HLSSettings.minBufferLength;
+            return AdaptiveSettings.minBufferLength;
         };
 
         protected function _getlowBufferLength() : Number {
-            return HLSSettings.lowBufferLength;
+            return AdaptiveSettings.lowBufferLength;
         };
 
         protected function _getmaxBackBufferLength() : Number {
-            return HLSSettings.maxBackBufferLength;
+            return AdaptiveSettings.maxBackBufferLength;
         };
 
         protected function _getflushLiveURLCache() : Boolean {
-            return HLSSettings.flushLiveURLCache;
+            return AdaptiveSettings.flushLiveURLCache;
         };
 
         protected function _getstartFromLevel() : int {
-            return HLSSettings.startFromLevel;
+            return AdaptiveSettings.startFromLevel;
         };
 
         protected function _getseekFromLevel() : int {
-            return HLSSettings.seekFromLevel;
+            return AdaptiveSettings.seekFromLevel;
         };
 
         protected function _getLogDebug() : Boolean {
-            return HLSSettings.logDebug;
+            return AdaptiveSettings.logDebug;
         };
 
         protected function _getLogDebug2() : Boolean {
-            return HLSSettings.logDebug2;
+            return AdaptiveSettings.logDebug2;
         };
 
         protected function _getUseHardwareVideoDecoder() : Boolean {
-            return HLSSettings.useHardwareVideoDecoder;
+            return AdaptiveSettings.useHardwareVideoDecoder;
         };
 
         protected function _getCapLeveltoStage() : Boolean {
-            return HLSSettings.capLevelToStage;
+            return AdaptiveSettings.capLevelToStage;
         };
 
         protected function _getJSURLStream() : Boolean {
@@ -363,47 +363,47 @@ package org.mangui.player.chromeless {
         };
 
         protected function _setmaxBufferLength(new_len : Number) : void {
-            HLSSettings.maxBufferLength = new_len;
+            AdaptiveSettings.maxBufferLength = new_len;
         };
 
         protected function _setminBufferLength(new_len : Number) : void {
-            HLSSettings.minBufferLength = new_len;
+            AdaptiveSettings.minBufferLength = new_len;
         };
 
         protected function _setlowBufferLength(new_len : Number) : void {
-            HLSSettings.lowBufferLength = new_len;
+            AdaptiveSettings.lowBufferLength = new_len;
         };
 
         protected function _setbackBufferLength(new_len : Number) : void {
-            HLSSettings.maxBackBufferLength = new_len;
+            AdaptiveSettings.maxBackBufferLength = new_len;
         };
 
         protected function _setflushLiveURLCache(flushLiveURLCache : Boolean) : void {
-            HLSSettings.flushLiveURLCache = flushLiveURLCache;
+            AdaptiveSettings.flushLiveURLCache = flushLiveURLCache;
         };
 
         protected function _setstartFromLevel(startFromLevel : int) : void {
-            HLSSettings.startFromLevel = startFromLevel;
+            AdaptiveSettings.startFromLevel = startFromLevel;
         };
 
         protected function _setseekFromLevel(seekFromLevel : int) : void {
-            HLSSettings.seekFromLevel = seekFromLevel;
+            AdaptiveSettings.seekFromLevel = seekFromLevel;
         };
 
         protected function _setLogDebug(debug : Boolean) : void {
-            HLSSettings.logDebug = debug;
+            AdaptiveSettings.logDebug = debug;
         };
 
         protected function _setLogDebug2(debug2 : Boolean) : void {
-            HLSSettings.logDebug2 = debug2;
+            AdaptiveSettings.logDebug2 = debug2;
         };
 
         protected function _setUseHardwareVideoDecoder(value : Boolean) : void {
-            HLSSettings.useHardwareVideoDecoder = value;
+            AdaptiveSettings.useHardwareVideoDecoder = value;
         };
 
         protected function _setCapLeveltoStage(value : Boolean) : void {
-            HLSSettings.capLevelToStage = value;
+            AdaptiveSettings.capLevelToStage = value;
         };
 
         protected function _setJSURLStream(jsURLstream : Boolean) : void {

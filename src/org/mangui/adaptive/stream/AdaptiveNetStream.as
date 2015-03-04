@@ -8,6 +8,8 @@ package org.mangui.adaptive.stream {
     import flash.events.TimerEvent;
     import flash.net.*;
     import flash.utils.*;
+    import org.mangui.adaptive.Adaptive;
+    import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.constant.PlayStates;
     import org.mangui.adaptive.constant.SeekStates;
     import org.mangui.adaptive.controller.BufferThresholdController;
@@ -16,8 +18,6 @@ package org.mangui.adaptive.stream {
     import org.mangui.adaptive.event.AdaptivePlayMetrics;
     import org.mangui.adaptive.flv.FLVTag;
     import org.mangui.adaptive.utils.Hex;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -34,7 +34,7 @@ package org.mangui.adaptive.stream {
      */
     public class AdaptiveNetStream extends NetStream {
         /** Reference to the framework controller. **/
-        private var _hls : HLS;
+        private var _adaptive : Adaptive;
         /** reference to buffer threshold controller */
         private var _bufferThresholdController : BufferThresholdController;
         /** FLV Tag Buffer . **/
@@ -51,11 +51,11 @@ package org.mangui.adaptive.stream {
         private var _client : AdaptiveNetStreamClient;
 
         /** Create the buffer. **/
-        public function AdaptiveNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
+        public function AdaptiveNetStream(connection : NetConnection, adaptive : Adaptive, streamBuffer : StreamBuffer) : void {
             super(connection);
             super.bufferTime = 0.1;
-            _hls = hls;
-            _bufferThresholdController = new BufferThresholdController(hls);
+            _adaptive = adaptive;
+            _bufferThresholdController = new BufferThresholdController(adaptive);
             _streamBuffer = streamBuffer;
             _playbackState = PlayStates.IDLE;
             _seekState = SeekStates.IDLE;
@@ -79,7 +79,7 @@ package org.mangui.adaptive.stream {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT_PLAYING, new AdaptivePlayMetrics(level, seqnum, cc, audio_only, program_date, width, height, tag_list)));
+            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.FRAGMENT_PLAYING, new AdaptivePlayMetrics(level, seqnum, cc, audio_only, program_date, width, height, tag_list)));
         }
 
         // function is called by SCRIPT in FLV
@@ -94,7 +94,7 @@ package org.mangui.adaptive.stream {
             CONFIG::LOGGING {
                 Log.debug("id3:" + dump);
             }
-            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ID3_UPDATED, dump));
+            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ID3_UPDATED, dump));
         }
 
         /** timer function, check/update NetStream state, and append tags if needed **/
@@ -115,7 +115,7 @@ package org.mangui.adaptive.stream {
                         CONFIG::LOGGING {
                             Log.debug("reached end of VOD playlist, notify playback complete");
                         }
-                        _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.PLAYBACK_COMPLETE));
+                        _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.PLAYBACK_COMPLETE));
                         _setPlaybackState(PlayStates.IDLE);
                         _setSeekState(SeekStates.IDLE);
                         return;
@@ -174,7 +174,7 @@ package org.mangui.adaptive.stream {
                 super.close();
                 CONFIG::FLASH_11_1 {
                     try {
-                        super.useHardwareDecoder = HLSSettings.useHardwareVideoDecoder;
+                        super.useHardwareDecoder = AdaptiveSettings.useHardwareVideoDecoder;
                     } catch(e : Error) {
                     }
                 }
@@ -199,7 +199,7 @@ package org.mangui.adaptive.stream {
                     super.appendBytes(tagBuffer.data);
                 } catch (error : Error) {
                     var hlsError : AdaptiveError = new AdaptiveError(AdaptiveError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
-                    _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
+                    _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.ERROR, hlsError));
                 }
             }
             if (_seekState == SeekStates.SEEKING) {
@@ -216,7 +216,7 @@ package org.mangui.adaptive.stream {
                     Log.debug('[PLAYBACK_STATE] from ' + _playbackState + ' to ' + state);
                 }
                 _playbackState = state;
-                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.PLAYBACK_STATE, _playbackState));
+                _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.PLAYBACK_STATE, _playbackState));
             }
         };
 
@@ -227,7 +227,7 @@ package org.mangui.adaptive.stream {
                     Log.debug('[SEEK_STATE] from ' + _seekState + ' to ' + state);
                 }
                 _seekState = state;
-                _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.SEEK_STATE, _seekState));
+                _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.SEEK_STATE, _seekState));
             }
         };
 
@@ -306,7 +306,7 @@ package org.mangui.adaptive.stream {
             }
             _streamBuffer.seek(position);
             _setSeekState(SeekStates.SEEKING);
-            /* if HLS was in paused state before seeking,
+            /* if Adaptive was in paused state before seeking,
              * switch to paused buffering state
              * otherwise, switch to playing buffering state
              */

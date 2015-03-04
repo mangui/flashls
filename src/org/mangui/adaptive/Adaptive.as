@@ -4,15 +4,16 @@
  package org.mangui.adaptive {
 
     import flash.display.Stage;
+    import flash.events.IEventDispatcher;
     import flash.net.NetStream;
     import flash.net.URLStream;
-    import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.model.Level;
-    import org.mangui.hls.playlist.AltAudioTrack;
+    import org.mangui.adaptive.model.AltAudioTrack;
+    import org.mangui.adaptive.model.AudioTrack;
+    import org.mangui.adaptive.model.Level;
 
-    public interface Adaptive {
+    public interface Adaptive extends IEventDispatcher {
 
-        /** Load and parse a new HLS URL **/
+        /** Load and parse a new Adaptive URL **/
         function load(url : String) : void;
 
         /** Return the quality level used when starting a fresh playback **/

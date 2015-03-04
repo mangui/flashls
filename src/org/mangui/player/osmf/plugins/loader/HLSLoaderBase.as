@@ -4,8 +4,8 @@
  package org.mangui.player.osmf.plugins.loader {
     import org.mangui.adaptive.constant.Types;
     import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.model.Level;
     import org.mangui.hls.HLS;
-    import org.mangui.hls.model.Level;
     import org.mangui.player.osmf.plugins.HLSMediaElement;
     import org.mangui.player.osmf.plugins.utils.ErrorManager;
     import org.osmf.elements.proxyClasses.LoadFromDocumentLoadTrait;

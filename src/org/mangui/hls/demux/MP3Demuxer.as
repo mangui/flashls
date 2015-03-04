@@ -7,7 +7,7 @@
     import org.mangui.adaptive.demux.AudioFrame;
     import org.mangui.adaptive.demux.Demuxer;
     import org.mangui.adaptive.flv.FLVTag;
-    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.adaptive.model.AudioTrack;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;

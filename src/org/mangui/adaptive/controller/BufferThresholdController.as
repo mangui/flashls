@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.adaptive.controller {
+    import org.mangui.adaptive.Adaptive;
     import org.mangui.adaptive.event.AdaptiveEvent;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
+    import org.mangui.adaptive.AdaptiveSettings;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -12,8 +12,8 @@ package org.mangui.adaptive.controller {
     /** Class that manages buffer threshold values (minBufferLength/lowBufferLength)
      */
     public class BufferThresholdController {
-        /** Reference to the HLS controller. **/
-        private var _hls : HLS;
+        /** Reference to the Adaptive controller. **/
+        private var _adaptive : Adaptive;
         // max nb of samples used for bw checking. the bigger it is, the more conservative it is.
         private static const MAX_SAMPLES : int = 30;
         private var _bw : Vector.<Number>;
@@ -22,39 +22,39 @@ package org.mangui.adaptive.controller {
         private var _minBufferLength : Number;
 
         /** Create the loader. **/
-        public function BufferThresholdController(hls : HLS) : void {
-            _hls = hls;
-            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(AdaptiveEvent.TAGS_LOADED, _fragmentLoadedHandler);
-            _hls.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+        public function BufferThresholdController(adaptive : Adaptive) : void {
+            _adaptive = adaptive;
+            _adaptive.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _adaptive.addEventListener(AdaptiveEvent.TAGS_LOADED, _fragmentLoadedHandler);
+            _adaptive.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         };
 
         public function dispose() : void {
-            _hls.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.removeEventListener(AdaptiveEvent.TAGS_LOADED, _fragmentLoadedHandler);
-            _hls.removeEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _adaptive.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _adaptive.removeEventListener(AdaptiveEvent.TAGS_LOADED, _fragmentLoadedHandler);
+            _adaptive.removeEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
 
         public function get minBufferLength() : Number {
-            if (HLSSettings.minBufferLength == -1) {
+            if (AdaptiveSettings.minBufferLength == -1) {
                 return _minBufferLength;
             } else {
-                return HLSSettings.minBufferLength;
+                return AdaptiveSettings.minBufferLength;
             }
         }
 
         public function get lowBufferLength() : Number {
-            if (HLSSettings.minBufferLength == -1) {
+            if (AdaptiveSettings.minBufferLength == -1) {
                 // in automode, low buffer threshold should be less than min auto buffer
-                return Math.min(minBufferLength / 2, HLSSettings.lowBufferLength);
+                return Math.min(minBufferLength / 2, AdaptiveSettings.lowBufferLength);
             } else {
-                return HLSSettings.lowBufferLength;
+                return AdaptiveSettings.lowBufferLength;
             }
         }
 
         private function _manifestLoadedHandler(event : AdaptiveEvent) : void {
             _nb_samples = 0;
-            _targetduration = event.levels[_hls.startlevel].targetduration;
+            _targetduration = event.levels[_adaptive.startlevel].targetduration;
             _bw = new Vector.<Number>(MAX_SAMPLES);
             _minBufferLength = _targetduration;
         };
@@ -85,8 +85,8 @@ package org.mangui.adaptive.controller {
              */
             _minBufferLength = event.loadMetrics.frag_processing_time * (_targetduration / event.loadMetrics.frag_duration) * bw_ratio;
             // avoid min > max
-            if (HLSSettings.maxBufferLength) {
-                _minBufferLength = Math.min(HLSSettings.maxBufferLength, _minBufferLength);
+            if (AdaptiveSettings.maxBufferLength) {
+                _minBufferLength = Math.min(AdaptiveSettings.maxBufferLength, _minBufferLength);
             }
             CONFIG::LOGGING {
                 Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);

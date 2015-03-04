@@ -6,13 +6,15 @@ package org.mangui.hls.playlist {
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
+    import org.mangui.adaptive.Adaptive;
     import org.mangui.adaptive.constant.Types;
-    import org.mangui.adaptive.utils.Hex;
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.model.Fragment;
-    import org.mangui.hls.model.Level;
+    import org.mangui.adaptive.model.AltAudioTrack;
+    import org.mangui.adaptive.model.Fragment;
+    import org.mangui.adaptive.model.Level;
+    import org.mangui.adaptive.utils.DataUri;
+    import org.mangui.adaptive.utils.Hex;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -262,7 +264,7 @@ package org.mangui.hls.playlist {
                     var url : String = _extractURL(line, base);
                     var fragment_decrypt_iv : ByteArray;
                     if (decrypt_url != null) {
-                        /* as per HLS spec :
+                        /* as per Adaptive spec :
                         if IV not defined, then use seqnum as IV :
                         http://tools.ietf.org/html/draft-pantos-http-live-streaming-11#section-5.2
                          */
@@ -300,7 +302,7 @@ package org.mangui.hls.playlist {
         };
 
         /** Extract levels from manifest data. **/
-        public static function extractLevels(hls : HLS, data : String, base : String = '') : Vector.<Level> {
+        public static function extractLevels(hls : Adaptive, data : String, base : String = '') : Vector.<Level> {
             var levels : Array = [];
             var level : Level;
             var lines : Array = data.split("\n");

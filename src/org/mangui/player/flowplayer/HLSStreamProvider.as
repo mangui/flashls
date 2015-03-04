@@ -22,8 +22,8 @@ package org.mangui.player.flowplayer {
     import org.flowplayer.view.StageVideoWrapper;
     import org.mangui.adaptive.constant.PlayStates;
     import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.utils.Params2Settings;
     import org.mangui.hls.HLS;
-    import org.mangui.hls.utils.Params2Settings;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;

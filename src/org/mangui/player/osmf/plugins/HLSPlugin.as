@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.player.osmf.plugins {
-    import org.mangui.hls.utils.Params2Settings;
+    import org.mangui.adaptive.utils.Params2Settings;
     import org.mangui.player.osmf.plugins.loader.HLSLoaderBase;
     import org.mangui.player.osmf.plugins.loader.HLSLoadFromDocumentElement;
     import org.osmf.media.MediaElement;
@@ -25,7 +25,7 @@
 
         /**
          * Called from super class when plugin has been initialized with the MediaFactory from which it was loaded.
-         * Used for customize HLSSettings with values provided in resource metadata (that was set eg. in flash vars)
+         * Used for customize AdaptiveSettings with values provided in resource metadata (that was set eg. in flash vars)
          *
          * @param resource  Provides acces to the resource used to load the plugin and any associated metadata
          *

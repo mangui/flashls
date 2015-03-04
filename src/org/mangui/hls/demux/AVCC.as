@@ -4,8 +4,8 @@
  package org.mangui.hls.demux {
     import flash.utils.ByteArray;
     CONFIG::LOGGING {
+        import org.mangui.adaptive.AdaptiveSettings;
         import org.mangui.adaptive.utils.Log;
-        import org.mangui.hls.HLSSettings;
     }
     public class AVCC {
 
@@ -37,7 +37,7 @@
                 avcc.writeBytes(pps, 0, pps.length);
             }
             CONFIG::LOGGING {
-                if (HLSSettings.logDebug) {
+                if (AdaptiveSettings.logDebug) {
                     // Grab profile/level
                     sps.position = 1;
                     var prf : int = sps.readByte();
