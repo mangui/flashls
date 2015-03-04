@@ -6,6 +6,7 @@
     import flash.events.Event;
     import flash.utils.ByteArray;
     import flash.utils.getTimer;
+    import org.mangui.adaptive.utils.Decrypter;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -13,7 +14,7 @@
     /**
      * Contains Utility functions for AES-128 CBC Decryption
      */
-    public class AES {
+    public class AES implements Decrypter {
         private var _key : FastAESKey;
         //private var _keyArray : ByteArray;
         private var iv0 : uint;
@@ -158,7 +159,7 @@
             return decrypt;
         }
 
-        public function unpad(a : ByteArray) : void {
+        private function unpad(a : ByteArray) : void {
             var c : uint = a.length % 16;
             if (c != 0) throw new Error("PKCS#5::unpad: ByteArray.length isn't a multiple of the blockSize");
             c = a[a.length - 1];

@@ -5,7 +5,7 @@ package org.mangui.adaptive.model {
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
     }
-    import org.mangui.hls.utils.PTS;
+    import org.mangui.adaptive.utils.PTS;
 
     /** Adaptive streaming quality level. **/
     public class Level {

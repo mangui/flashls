@@ -18,7 +18,9 @@ package org.mangui.hls {
     import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
+    import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.AltAudioLevelLoader;
+    import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.loader.LevelLoader;
 
     CONFIG::LOGGING {
@@ -30,6 +32,8 @@ package org.mangui.hls {
         private var _altAudioLevelLoader : AltAudioLevelLoader;
         private var _audioTrackController : AudioTrackController;
         private var _levelController : LevelController;
+        private var _fragmentLoader : FragmentLoader;
+        private var _altaudiofragmentLoader : AltAudioFragmentLoader;
         private var _streamBuffer : StreamBuffer;
         /** Adaptive NetStream **/
         private var _AdaptiveNetStream : AdaptiveNetStream;
@@ -50,7 +54,11 @@ package org.mangui.hls {
             _altAudioLevelLoader = new AltAudioLevelLoader(this);
             _audioTrackController = new AudioTrackController(this);
             _levelController = new LevelController(this);
-            _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
+            _fragmentLoader = new FragmentLoader(this, _audioTrackController, _levelController);
+            _altaudiofragmentLoader = new AltAudioFragmentLoader(this);
+            _streamBuffer = new StreamBuffer(this, _fragmentLoader, _altaudiofragmentLoader);
+            _fragmentLoader.attachStreamBuffer(_streamBuffer);
+            _altaudiofragmentLoader.attachStreamBuffer(_streamBuffer);
             _hlsURLStream = URLStream as Class;
             // default loader
             _AdaptiveNetStream = new AdaptiveNetStream(connection, this, _streamBuffer);
@@ -79,11 +87,16 @@ package org.mangui.hls {
             _audioTrackController.dispose();
             _levelController.dispose();
             _streamBuffer.dispose();
+            _fragmentLoader.dispose();
+            _altaudiofragmentLoader.dispose();
             _AdaptiveNetStream.dispose_();
             _levelLoader = null;
             _altAudioLevelLoader = null;
             _audioTrackController = null;
             _levelController = null;
+            _fragmentLoader = null;
+            _altaudiofragmentLoader = null;
+            _streamBuffer = null;
             _AdaptiveNetStream = null;
             _client = null;
             _stage = null;

@@ -15,6 +15,7 @@ package org.mangui.hls.loader {
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.event.AdaptiveLoadMetrics;
+    import org.mangui.adaptive.loader.IFragmentLoader;
     import org.mangui.adaptive.flv.FLVTag;
     import org.mangui.adaptive.model.AudioTrack;
     import org.mangui.adaptive.model.Fragment;
@@ -32,7 +33,7 @@ package org.mangui.hls.loader {
         import org.mangui.adaptive.utils.Hex;
     }
     /** Class that fetches fragments. **/
-    public class FragmentLoader {
+    public class FragmentLoader implements IFragmentLoader {
         /** Reference to the Adaptive controller. **/
         private var _hls : Adaptive;
         /** reference to auto level manager */
@@ -94,11 +95,10 @@ package org.mangui.hls.loader {
         private static const LOADING_COMPLETED : int = 6;
 
         /** Create the loader. **/
-        public function FragmentLoader(hls : Adaptive, audioTrackController : AudioTrackController, levelController : LevelController, streamBuffer : StreamBuffer) : void {
+        public function FragmentLoader(hls : Adaptive, audioTrackController : AudioTrackController, levelController : LevelController) : void {
             _hls = hls;
             _levelController = levelController;
             _audioTrackController = audioTrackController;
-            _streamBuffer = streamBuffer;
             _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(AdaptiveEvent.LEVEL_LOADED, _levelLoadedHandler);
             _timer = new Timer(100, 0);
@@ -107,6 +107,10 @@ package org.mangui.hls.loader {
             _manifest_just_loaded = false;
             _keymap = new Object();
         };
+
+        public function attachStreamBuffer(streamBuffer : StreamBuffer) : void {
+            _streamBuffer = streamBuffer;
+        }
 
         public function dispose() : void {
             stop();
@@ -374,12 +378,12 @@ package org.mangui.hls.loader {
                 // decrypt data if needed
                 if (_frag_current.decrypt_url != null) {
                     fragMetrics.decryption_begin_time = getTimer();
-                    fragData.decryptAES = new AES(_hls.stage, _keymap[_frag_current.decrypt_url], _frag_current.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
+                    fragData.decrypter = new AES(_hls.stage, _keymap[_frag_current.decrypt_url], _frag_current.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
-                        Log.debug("init AES context:" + fragData.decryptAES);
+                        Log.debug("init AES context:" + fragData.decrypter);
                     }
                 } else {
-                    fragData.decryptAES = null;
+                    fragData.decrypter = null;
                 }
             }
             if (event.bytesLoaded > fragData.bytesLoaded) {
@@ -389,8 +393,8 @@ package org.mangui.hls.loader {
                 // CONFIG::LOGGING {
                 // Log.debug2("bytesLoaded/bytesTotal:" + event.bytesLoaded + "/" + event.bytesTotal);
                 // }
-                if (fragData.decryptAES != null) {
-                    fragData.decryptAES.append(data);
+                if (fragData.decrypter != null) {
+                    fragData.decrypter.append(data);
                 } else {
                     _fragDecryptProgressHandler(data);
                 }
@@ -422,8 +426,8 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug("Loading       duration/RTT/length/speed:" + _loading_duration + "/" + (fragMetrics.loading_begin_time - fragMetrics.loading_request_time) + "/" + fragMetrics.size + "/" + ((8000 * fragMetrics.size / _loading_duration) / 1024).toFixed(0) + " kb/s");
             }
-            if (fragData.decryptAES) {
-                fragData.decryptAES.notifycomplete();
+            if (fragData.decrypter) {
+                fragData.decrypter.notifycomplete();
             } else {
                 _fragDecryptCompleteHandler();
             }
@@ -468,14 +472,14 @@ package org.mangui.hls.loader {
                 return;
             var fragData : FragmentData = _frag_current.data;
 
-            if (fragData.decryptAES) {
+            if (fragData.decrypter) {
                 var fragMetrics : FragmentMetrics = _frag_current.metrics;
                 fragMetrics.decryption_end_time = getTimer();
                 var decrypt_duration : Number = fragMetrics.decryption_end_time - fragMetrics.decryption_begin_time;
                 CONFIG::LOGGING {
                     Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + fragData.bytesLoaded + "/" + ((8000 * fragData.bytesLoaded / decrypt_duration) / 1024).toFixed(0) + " kb/s");
                 }
-                fragData.decryptAES = null;
+                fragData.decrypter = null;
             }
 
             // deal with byte range here
@@ -535,9 +539,9 @@ package org.mangui.hls.loader {
 
             if (_frag_current) {
                 var fragData : FragmentData = _frag_current.data;
-                if (fragData.decryptAES) {
-                    fragData.decryptAES.cancel();
-                    fragData.decryptAES = null;
+                if (fragData.decrypter) {
+                    fragData.decrypter.cancel();
+                    fragData.decrypter = null;
                 }
                 fragData.bytes = null;
             }

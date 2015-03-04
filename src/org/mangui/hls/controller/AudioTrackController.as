@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
     import org.mangui.adaptive.Adaptive;
+    import org.mangui.adaptive.controller.IAudioTrackController;
     import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.model.AltAudioTrack;
     import org.mangui.adaptive.model.AudioTrack;
@@ -13,7 +14,7 @@ package org.mangui.hls.controller {
     /*
      * class that handle audio tracks, consolidating tracks retrieved from Manifest and from Demux
      */
-    public class AudioTrackController {
+    public class AudioTrackController implements IAudioTrackController {
         /** Reference to the Adaptive controller. **/
         private var _hls : Adaptive;
         /** list of audio tracks from demuxed fragments **/

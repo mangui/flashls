@@ -5,8 +5,8 @@ package org.mangui.adaptive.model {
 
     import flash.utils.ByteArray;
     import org.mangui.adaptive.flv.FLVTag;
-    import org.mangui.hls.utils.AES;
-    import org.mangui.hls.utils.PTS;
+    import org.mangui.adaptive.utils.Decrypter;
+    import org.mangui.adaptive.utils.PTS;
 
     /** Fragment Data. **/
     public class FragmentData {
@@ -16,8 +16,8 @@ package org.mangui.adaptive.model {
         public var bytes : ByteArray;
         /** bytes Loaded **/
         public var bytesLoaded : int;
-        /** AES decryption instance **/
-        public var decryptAES : AES;
+        /**  decryption instance **/
+        public var decrypter : Decrypter;
         /** Start PTS of this chunk. **/
         public var pts_start : Number;
         /** computed Start PTS of this chunk. **/

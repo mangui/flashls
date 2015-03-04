@@ -12,14 +12,12 @@ package org.mangui.adaptive.stream {
     import org.mangui.adaptive.constant.SeekMode;
     import org.mangui.adaptive.constant.SeekStates;
     import org.mangui.adaptive.constant.Types;
+    import org.mangui.adaptive.controller.IAudioTrackController;
     import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.event.AdaptiveMediatime;
     import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.adaptive.loader.IFragmentLoader;
     import org.mangui.adaptive.model.AudioTrack;
-    import org.mangui.hls.controller.AudioTrackController;
-    import org.mangui.hls.controller.LevelController;
-    import org.mangui.hls.loader.AltAudioFragmentLoader;
-    import org.mangui.hls.loader.FragmentLoader;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
@@ -31,8 +29,8 @@ package org.mangui.adaptive.stream {
      */
     public class StreamBuffer {
         private var _adaptive : Adaptive;
-        private var _fragmentLoader : FragmentLoader;
-        private var _altaudiofragmentLoader : AltAudioFragmentLoader;
+        private var _fragmentLoader : IFragmentLoader;
+        private var _altaudiofragmentLoader : IFragmentLoader;
         /** Timer used to process FLV tags. **/
         private var _timer : Timer;
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
@@ -57,10 +55,10 @@ package org.mangui.adaptive.stream {
         /* are we using alt-audio ? */
         private var _use_altaudio : Boolean;
 
-        public function StreamBuffer(adaptive : Adaptive, audioTrackController : AudioTrackController, levelController : LevelController) {
+        public function StreamBuffer(adaptive : Adaptive, fragmentLoader : IFragmentLoader, altaudiofragmentLoader : IFragmentLoader) {
             _adaptive = adaptive;
-            _fragmentLoader = new FragmentLoader(adaptive, audioTrackController, levelController, this);
-            _altaudiofragmentLoader = new AltAudioFragmentLoader(adaptive, this);
+            _fragmentLoader = fragmentLoader;
+            _altaudiofragmentLoader =  altaudiofragmentLoader;
             flushAll();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
@@ -75,8 +73,6 @@ package org.mangui.adaptive.stream {
             _adaptive.removeEventListener(AdaptiveEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _adaptive.removeEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
             _timer.stop();
-            _fragmentLoader.dispose();
-            _altaudiofragmentLoader.dispose();
             _fragmentLoader = null;
             _altaudiofragmentLoader = null;
             _adaptive = null;
