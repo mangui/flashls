@@ -152,8 +152,7 @@ package org.mangui.hls.loader {
                 case LOADING_FRAGMENT_IO_ERROR:
                     // compare current date and next retry date.
                     if (getTimer() >= _frag_load_error_date) {
-                        /* try to reload the key ...
-                        calling _loadfragment will also reload key */
+                        /* try to reload fragment ... */
                         _loadfragment(_frag_current);
                         _loading_state = LOADING_IN_PROGRESS;
                     }
@@ -267,8 +266,16 @@ package org.mangui.hls.loader {
                 _frag_retry_count++;
                 _frag_retry_timeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _frag_retry_timeout);
             } else {
-                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
+                    CONFIG::LOGGING {
+                        Log.warn("max fragment load retry reached, skip fragment and load next one");
+                    }
+                    _frag_current = _frag_previous;
+                    _loading_state = LOADING_IDLE;
+                } else {
+                    var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                }
             }
         }
 

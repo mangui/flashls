@@ -83,16 +83,25 @@ package org.mangui.hls {
          *      0, means no retry, error will be triggered automatically
          *     -1 means infinite retry
          */
-        public static var fragmentLoadMaxRetry : int = -1;
+        public static var fragmentLoadMaxRetry : int = 4000;
         /** fragmentLoadMaxRetryTimeout
 
          * Maximum Fragment retry timeout (in milliseconds) in case I/O errors are met.
          * Every fail on fragment request, player will exponentially increase the timeout to try again.
          * It starts waiting 1 second (1000ms), than 2, 4, 8, 16, until fragmentLoadMaxRetryTimeout is reached.
          *
-         * Default is 64000.
+         * Default is 4000.
          */
         public static var fragmentLoadMaxRetryTimeout : Number = 64000;
+        /** fragmentLoadSkipAfterMaxRetry
+
+         * control behaviour in case fragment load still fails after max retry timeout
+         * if set to true, fragment will be skipped and next one will be loaded.
+         * If set to false, an I/O Error will be raised.
+         *
+         * Default is true.
+         */
+        public static var fragmentLoadSkipAfterMaxRetry : Boolean = true;
         /**
          * If set to true, live playlist will be flushed from URL cache before reloading
          * (this is to workaround some cache issues with some combination of Flash Player / IE version)

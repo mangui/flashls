@@ -29,6 +29,7 @@
         _paramMap["manifestloadmaxretrytimeout"] = "manifestLoadMaxRetryTimeout";
         _paramMap["fragmentloadmaxretry"] = "fragmentLoadMaxRetry";
         _paramMap["fragmentloadmaxretrytimeout"] = "fragmentLoadMaxRetryTimeout";
+        _paramMap["fragmentloadskipaftermaxretry"] = "fragmentLoadSkipAfterMaxRetry";
         _paramMap["capleveltostage"] = "capLevelToStage";
         _paramMap["maxlevelcappingmode"] = "maxLevelCappingMode";
         _paramMap["usehardwarevideodecoder"] = "useHardwareVideoDecoder";

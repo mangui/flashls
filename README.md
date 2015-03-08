@@ -84,10 +84,13 @@ The plugin accepts several **optional** configuration options, such as:
       * any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
           * 0, means no retry, error message will be triggered automatically
           * -1 means infinite retry
-  - `hls_fragmentloadmaxretry` (default -1): max number of Fragment load retries after I/O Error.
+  - `hls_fragmentloadmaxretry` (default 4s): max number of Fragment load retries after I/O Error.
       * any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
           * 0, means no retry, error message will be triggered automatically
           * -1 means infinite retry
+  - `hls_fragmentloadskipaftermaxretry` (default true): control behaviour in case fragment load still fails after max retry timeout
+          * true : fragment will be skipped and next one will be loaded.
+          * false : an I/O Error will be raised.
   - `hls_capleveltostage` (default false) : limit levels usable in auto-quality by the stage dimensions (width and height)
     - true : level width and height (defined in m3u8 playlist) will be compared with the player width and height (stage.stageWidth and stage.stageHeight). Max level will be set depending on the `hls_maxlevelcappingmode` option. Note: this setting is ignored in manual mode so all the levels could be selected manually.
     - false : levels will not be limited. All available levels could be used in auto-quality mode taking only bandwidth into consideration.
