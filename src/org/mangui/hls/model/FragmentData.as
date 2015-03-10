@@ -95,6 +95,7 @@ package org.mangui.hls.model {
             metadata_tag_injected = false;
             pts_min_audio = pts_min_video = dts_min = tags_pts_min_audio = tags_pts_min_video = Number.POSITIVE_INFINITY;
             pts_max_audio = pts_max_video = tags_pts_max_audio = tags_pts_max_video = Number.NEGATIVE_INFINITY;
+            audio_found = video_found = tags_audio_found = tags_video_found = false;
         }
 
         public function shiftTags() : void {
