@@ -162,7 +162,14 @@ package org.mangui.hls.loader {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_ENDLIST, level));
             } else {
                 _type = HLSTypes.LIVE;
-                var timeout : Number = Math.max(100, _reload_playlists_timer + 1000 * _levels[level].averageduration - getTimer());
+                /* in order to determine playlist reload timer, 
+                    check playback position against playlist duration. 
+                    if we are near the edge of a live playlist, reload playlist quickly
+                    to discover quicker new fragments and avoid buffer starvation.
+                */
+                var reload_interval : Number = 1000*Math.min((_levels[level].duration - _hls.position)/2,_levels[level].averageduration);
+                // avoid spamming the server if we are at the edge ... wait 500ms between 2 reload at least
+                var timeout : Number = Math.max(500, _reload_playlists_timer + reload_interval - getTimer());
                 CONFIG::LOGGING {
                     Log.debug("Level " + level + " Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
                 }
