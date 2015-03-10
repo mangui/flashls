@@ -315,6 +315,7 @@ package org.mangui.hls.stream {
                 case HLSPlayStates.PAUSED_BUFFERING:
                     _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                     break;
+                case HLSPlayStates.IDLE:
                 case HLSPlayStates.PLAYING:
                 case HLSPlayStates.PLAYING_BUFFERING:
                     _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
