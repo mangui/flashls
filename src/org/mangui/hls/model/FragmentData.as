@@ -44,6 +44,12 @@ package org.mangui.hls.model {
         public var video_width : int;
         public var video_height : int;
 
+        /**  tag duration */
+        private var audio_tag_duration : Number;
+        private var video_tag_duration : Number;
+        private var audio_tag_last_dts : Number;
+        private var video_tag_last_dts : Number;
+
         /** Fragment metrics **/
         public function FragmentData() {
             this.pts_start = NaN;
@@ -65,6 +71,8 @@ package org.mangui.hls.model {
                     case FLVTag.MP3_RAW:
                         audio_found = true;
                         tags_audio_found = true;
+                        audio_tag_duration = tag.dts - audio_tag_last_dts;
+                        audio_tag_last_dts = tag.dts;
                         tags_pts_min_audio = Math.min(tags_pts_min_audio, tag.pts);
                         tags_pts_max_audio = Math.max(tags_pts_max_audio, tag.pts);
                         pts_min_audio = Math.min(pts_min_audio, tag.pts);
@@ -74,6 +82,8 @@ package org.mangui.hls.model {
                     case FLVTag.AVC_NALU:
                         video_found = true;
                         tags_video_found = true;
+                        video_tag_duration = tag.dts - video_tag_last_dts;
+                        video_tag_last_dts = tag.dts;
                         tags_pts_min_video = Math.min(tags_pts_min_video, tag.pts);
                         tags_pts_max_video = Math.max(tags_pts_max_video, tag.pts);
                         pts_min_video = Math.min(pts_min_video, tag.pts);
@@ -123,6 +133,14 @@ package org.mangui.hls.model {
                 return pts_max_audio;
             } else {
                 return pts_max_video;
+            }
+        }
+
+        public function get tag_duration() : Number {
+            if (audio_found) {
+                return audio_tag_duration;
+            } else {
+                return video_tag_duration;
             }
         }
 

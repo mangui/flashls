@@ -638,7 +638,7 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("Loaded        " + _frag_current.seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "],audio track " + _hls.audioTrack + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
-                _level.updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max);
+                _level.updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max + fragData.tag_duration);
                 // set pts_start here, it might not be updated directly in updateFragment() if this loaded fragment has been removed from a live playlist
                 fragData.pts_start = fragData.pts_min;
                 _loading_state = LOADING_IDLE;
