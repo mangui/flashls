@@ -84,13 +84,10 @@ package org.mangui.hls.stream {
 
         // function is called by SCRIPT in FLV
         public function onID3Data(data : ByteArray) : void {
-            var dump : String = "unset";
-
             // we dump the content as hex to get it to the Javascript in the browser.
             // from lots of searching, we could use base64, but even then, the decode would
             // not be native, so hex actually seems more efficient
-            dump = Hex.fromArray(data);
-
+            var dump : String = Hex.fromArray(data);
             CONFIG::LOGGING {
                 Log.debug("id3:" + dump);
             }
