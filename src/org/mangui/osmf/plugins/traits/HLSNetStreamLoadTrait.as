@@ -48,7 +48,7 @@
         /**  **/
         private function _mediaTimeHandler(event : HLSEvent) : void {
             var time_total : Number = Math.round(10 * event.mediatime.duration) / 10;
-            var time_loaded : Number = Math.round(10 * (event.mediatime.position + event.mediatime.buffer)) / 10;
+            var time_loaded : Number = Math.max(0,Math.round(10 * (event.mediatime.position + event.mediatime.buffer)) / 10);
 
             if (_time_total != time_total) {
                 if (time_total < _time_loaded || time_total < 0) {
