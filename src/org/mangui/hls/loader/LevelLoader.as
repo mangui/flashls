@@ -12,6 +12,7 @@ package org.mangui.hls.loader {
     import org.mangui.adaptive.constant.Types;
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
+    import org.mangui.adaptive.loader.ILevelLoader;
     import org.mangui.adaptive.model.AltAudioTrack;
     import org.mangui.adaptive.model.Fragment;
     import org.mangui.adaptive.model.Level;
@@ -22,7 +23,7 @@ package org.mangui.hls.loader {
         import org.mangui.adaptive.utils.Log;
     }
     /** Loader for hls manifests. **/
-    public class LevelLoader {
+    public class LevelLoader implements ILevelLoader {
         /** Reference to the hls framework controller. **/
         private var _hls : Adaptive;
         /** levels vector. **/
@@ -33,7 +34,7 @@ package org.mangui.hls.loader {
         private var _url : String;
         /** are all playlists filled ? **/
         private var _canStart : Boolean;
-        /** Timeout ID for reloading live playlists. **/
+        /** Timeout ID for reloading live/on error playlists. **/
         private var _timeoutID : uint;
         /** Streaming type (live, ondemand). **/
         private var _type : String;

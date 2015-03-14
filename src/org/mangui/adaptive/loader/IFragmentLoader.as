@@ -8,8 +8,6 @@
 
     public interface IFragmentLoader {
         function attachStreamBuffer(streamBuffer : StreamBuffer) : void;
-        /* dispose method */
-        function dispose() : void;
 
         function get audio_expected() : Boolean;
 
@@ -19,5 +17,7 @@
 
         function seek(position : Number) : void;
 
+        /* dispose method */
+        function dispose() : void;
     }
 }

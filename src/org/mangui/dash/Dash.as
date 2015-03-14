@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-package org.mangui.hls {
+package org.mangui.dash {
 
     import flash.display.Stage;
     import flash.events.Event;
@@ -17,28 +17,26 @@ package org.mangui.hls {
     import org.mangui.adaptive.model.Level;
     import org.mangui.adaptive.stream.AdaptiveNetStream;
     import org.mangui.adaptive.stream.StreamBuffer;
-    import org.mangui.hls.controller.AudioTrackController;
-    import org.mangui.hls.loader.AltAudioFragmentLoader;
-    import org.mangui.hls.loader.AltAudioLevelLoader;
-    import org.mangui.hls.loader.FragmentLoader;
-    import org.mangui.hls.loader.LevelLoader;
+    import org.mangui.dash.controller.AudioTrackController;
+    import org.mangui.dash.loader.AudioFragmentLoader;
+    import org.mangui.dash.loader.FragmentLoader;
+    import org.mangui.dash.loader.LevelLoader;
 
     CONFIG::LOGGING {
         import org.mangui.adaptive.utils.Log;
     }
     /** Class that manages the streaming process. **/
-    public class HLS  extends EventDispatcher implements Adaptive {
+    public class Dash extends EventDispatcher implements Adaptive {
         private var _levelLoader : LevelLoader;
-        private var _altAudioLevelLoader : AltAudioLevelLoader;
         private var _audioTrackController : AudioTrackController;
         private var _levelController : LevelController;
         private var _fragmentLoader : FragmentLoader;
-        private var _altaudiofragmentLoader : AltAudioFragmentLoader;
+        private var _audiofragmentLoader : AudioFragmentLoader;
         private var _streamBuffer : StreamBuffer;
         /** Adaptive NetStream **/
         private var _AdaptiveNetStream : AdaptiveNetStream;
         /** Adaptive URLStream **/
-        private var _hlsURLStream : Class;
+        private var _dashURLStream : Class;
         private var _client : Object = {};
         private var _stage : Stage;
         /* level handling */
@@ -47,19 +45,18 @@ package org.mangui.hls {
         private var _manual_level : int = -1;
 
         /** Create and connect all components. **/
-        public function HLS() {
+        public function Dash() {
             var connection : NetConnection = new NetConnection();
             connection.connect(null);
             _levelLoader = new LevelLoader(this);
-            _altAudioLevelLoader = new AltAudioLevelLoader(this);
             _audioTrackController = new AudioTrackController(this);
             _levelController = new LevelController(this);
             _fragmentLoader = new FragmentLoader(this, _audioTrackController, _levelController);
-            _altaudiofragmentLoader = new AltAudioFragmentLoader(this);
-            _streamBuffer = new StreamBuffer(this, _fragmentLoader, _altaudiofragmentLoader);
+            _audiofragmentLoader = new AudioFragmentLoader(this);
+            _streamBuffer = new StreamBuffer(this, _fragmentLoader, _audiofragmentLoader);
             _fragmentLoader.attachStreamBuffer(_streamBuffer);
-            _altaudiofragmentLoader.attachStreamBuffer(_streamBuffer);
-            _hlsURLStream = URLStream as Class;
+            _audiofragmentLoader.attachStreamBuffer(_streamBuffer);
+            _dashURLStream = URLStream as Class;
             // default loader
             _AdaptiveNetStream = new AdaptiveNetStream(connection, this, _streamBuffer);
             this.addEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
@@ -83,19 +80,17 @@ package org.mangui.hls {
         public function dispose() : void {
             this.removeEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _levelLoader.dispose();
-            _altAudioLevelLoader.dispose();
             _audioTrackController.dispose();
             _levelController.dispose();
             _streamBuffer.dispose();
             _fragmentLoader.dispose();
-            _altaudiofragmentLoader.dispose();
+            _audiofragmentLoader.dispose();
             _AdaptiveNetStream.dispose_();
             _levelLoader = null;
-            _altAudioLevelLoader = null;
             _audioTrackController = null;
             _levelController = null;
             _fragmentLoader = null;
-            _altaudiofragmentLoader = null;
+            _audiofragmentLoader = null;
             _streamBuffer = null;
             _AdaptiveNetStream = null;
             _client = null;
@@ -219,13 +214,12 @@ package org.mangui.hls {
 
         /* set URL stream loader */
         public function set URLstream(urlstream : Class) : void {
-            _hlsURLStream = urlstream;
+            _dashURLStream = urlstream;
         }
 
         /* retrieve URL stream loader */
         public function get URLstream() : Class {
-            return _hlsURLStream;
+            return _dashURLStream;
         }
     }
-    ;
 }

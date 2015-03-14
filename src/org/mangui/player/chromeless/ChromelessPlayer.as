@@ -13,6 +13,7 @@ package org.mangui.player.chromeless {
     import flash.media.Video;
     import flash.net.URLStream;
     import flash.utils.setTimeout;
+    import org.mangui.adaptive.Adaptive;
     import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
@@ -20,12 +21,18 @@ package org.mangui.player.chromeless {
     import org.mangui.adaptive.model.Level;
     import org.mangui.adaptive.utils.Log;
     import org.mangui.adaptive.utils.ScaleVideo;
-    import org.mangui.hls.HLS;
+
+    CONFIG::HLS {
+        import org.mangui.hls.HLS;
+    }
+    CONFIG::DASH {
+        import org.mangui.dash.Dash;
+    }
 
     // import com.sociodox.theminer.*;
     public class ChromelessPlayer extends Sprite {
         /** reference to the framework. **/
-        protected var _hls : HLS;
+        protected var _adaptive : Adaptive;
         /** Sheet to place on top of the video. **/
         protected var _sheet : Sprite;
         /** Reference to the stage video element. **/
@@ -156,7 +163,7 @@ package org.mangui.player.chromeless {
         };
 
         protected function _manifestHandler(event : AdaptiveEvent) : void {
-            _duration = event.levels[_hls.startlevel].duration;
+            _duration = event.levels[_adaptive.startlevel].duration;
 
             if (_autoLoad) {
                 _play(-1);
@@ -216,19 +223,19 @@ package org.mangui.player.chromeless {
 
         /** Javascript getters. **/
         protected function _getLevel() : int {
-            return _hls.level;
+            return _adaptive.level;
         };
 
         protected function _getPlaybackLevel() : int {
-            return _hls.playbacklevel;
+            return _adaptive.playbacklevel;
         };
 
         protected function _getLevels() : Vector.<Level> {
-            return _hls.levels;
+            return _adaptive.levels;
         };
 
         protected function _getAutoLevel() : Boolean {
-            return _hls.autolevel;
+            return _adaptive.autolevel;
         };
 
         protected function _getDuration() : Number {
@@ -236,23 +243,23 @@ package org.mangui.player.chromeless {
         };
 
         protected function _getPosition() : Number {
-            return _hls.position;
+            return _adaptive.position;
         };
 
         protected function _getPlaybackState() : String {
-            return _hls.playbackState;
+            return _adaptive.playbackState;
         };
 
         protected function _getSeekState() : String {
-            return _hls.seekState;
+            return _adaptive.seekState;
         };
 
         protected function _getType() : String {
-            return _hls.type;
+            return _adaptive.type;
         };
 
         protected function _getbufferLength() : Number {
-            return _hls.bufferLength;
+            return _adaptive.bufferLength;
         };
 
         protected function _getmaxBufferLength() : Number {
@@ -300,7 +307,7 @@ package org.mangui.player.chromeless {
         };
 
         protected function _getJSURLStream() : Boolean {
-            return (_hls.URLstream is JSURLStream);
+            return (_adaptive.URLstream is JSURLStream);
         };
 
         protected function _getPlayerVersion() : Number {
@@ -309,7 +316,7 @@ package org.mangui.player.chromeless {
 
         protected function _getAudioTrackList() : Array {
             var list : Array = [];
-            var vec : Vector.<AudioTrack> = _hls.audioTracks;
+            var vec : Vector.<AudioTrack> = _adaptive.audioTracks;
             for (var i : Object in vec) {
                 list.push(vec[i]);
             }
@@ -317,48 +324,48 @@ package org.mangui.player.chromeless {
         };
 
         protected function _getAudioTrackId() : int {
-            return _hls.audioTrack;
+            return _adaptive.audioTrack;
         };
 
         /** Javascript calls. **/
         protected function _load(url : String) : void {
-            _hls.load(url);
+            _adaptive.load(url);
         };
 
         protected function _play(position : Number = -1) : void {
-            _hls.stream.play(null, position);
+            _adaptive.stream.play(null, position);
         };
 
         protected function _pause() : void {
-            _hls.stream.pause();
+            _adaptive.stream.pause();
         };
 
         protected function _resume() : void {
-            _hls.stream.resume();
+            _adaptive.stream.resume();
         };
 
         protected function _seek(position : Number) : void {
-            _hls.stream.seek(position);
+            _adaptive.stream.seek(position);
         };
 
         protected function _stop() : void {
-            _hls.stream.close();
+            _adaptive.stream.close();
         };
 
         protected function _volume(percent : Number) : void {
-            _hls.stream.soundTransform = new SoundTransform(percent / 100);
+            _adaptive.stream.soundTransform = new SoundTransform(percent / 100);
         };
 
         protected function _setLevel(level : int) : void {
             _smoothSetLevel(level);
             if (!isNaN(_media_position) && level != -1) {
-                _hls.stream.seek(_media_position);
+                _adaptive.stream.seek(_media_position);
             }
         };
 
         protected function _smoothSetLevel(level : int) : void {
-            if (level != _hls.level) {
-                _hls.level = level;
+            if (level != _adaptive.level) {
+                _adaptive.level = level;
             }
         };
 
@@ -408,17 +415,17 @@ package org.mangui.player.chromeless {
 
         protected function _setJSURLStream(jsURLstream : Boolean) : void {
             if (jsURLstream) {
-                _hls.URLstream = JSURLStream as Class;
+                _adaptive.URLstream = JSURLStream as Class;
             } else {
-                _hls.URLstream = URLStream as Class;
+                _adaptive.URLstream = URLStream as Class;
             }
         };
 
         protected function _setAudioTrack(val : int) : void {
-            if (val == _hls.audioTrack) return;
-            _hls.audioTrack = val;
+            if (val == _adaptive.audioTrack) return;
+            _adaptive.audioTrack = val;
             if (!isNaN(_media_position)) {
-                _hls.stream.seek(_media_position);
+                _adaptive.stream.seek(_media_position);
             }
         };
 
@@ -434,30 +441,35 @@ package org.mangui.player.chromeless {
         /** StageVideo detector. **/
         protected function _onStageVideoState(event : StageVideoAvailabilityEvent) : void {
             var available : Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
-            _hls = new HLS();
-            _hls.stage = stage;
-            _hls.addEventListener(AdaptiveEvent.PLAYBACK_COMPLETE, _completeHandler);
-            _hls.addEventListener(AdaptiveEvent.ERROR, _errorHandler);
-            _hls.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
-            _hls.addEventListener(AdaptiveEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
-            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestHandler);
-            _hls.addEventListener(AdaptiveEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateHandler);
-            _hls.addEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
-            _hls.addEventListener(AdaptiveEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
-            _hls.addEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            CONFIG::HLS {
+                _adaptive = new HLS();
+            }
+            CONFIG::DASH {
+                _adaptive = new Dash();
+            }
+            _adaptive.stage = stage;
+            _adaptive.addEventListener(AdaptiveEvent.PLAYBACK_COMPLETE, _completeHandler);
+            _adaptive.addEventListener(AdaptiveEvent.ERROR, _errorHandler);
+            _adaptive.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _adaptive.addEventListener(AdaptiveEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
+            _adaptive.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestHandler);
+            _adaptive.addEventListener(AdaptiveEvent.MEDIA_TIME, _mediaTimeHandler);
+            _adaptive.addEventListener(AdaptiveEvent.PLAYBACK_STATE, _stateHandler);
+            _adaptive.addEventListener(AdaptiveEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _adaptive.addEventListener(AdaptiveEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
+            _adaptive.addEventListener(AdaptiveEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
 
             if (available && stage.stageVideos.length > 0) {
                 _stageVideo = stage.stageVideos[0];
                 _stageVideo.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange)
                 _stageVideo.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
-                _stageVideo.attachNetStream(_hls.stream);
+                _stageVideo.attachNetStream(_adaptive.stream);
             } else {
                 _video = new Video(stage.stageWidth, stage.stageHeight);
                 _video.addEventListener(VideoEvent.RENDER_STATE, _onVideoStateChange);
                 addChild(_video);
                 _video.smoothing = true;
-                _video.attachNetStream(_hls.stream);
+                _video.attachNetStream(_adaptive.stream);
             }
             stage.removeEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
 

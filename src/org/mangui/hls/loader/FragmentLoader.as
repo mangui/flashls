@@ -11,12 +11,13 @@ package org.mangui.hls.loader {
     import org.mangui.adaptive.Adaptive;
     import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.constant.Types;
+    import org.mangui.adaptive.controller.LevelController;
     import org.mangui.adaptive.demux.Demuxer;
     import org.mangui.adaptive.event.AdaptiveError;
     import org.mangui.adaptive.event.AdaptiveEvent;
     import org.mangui.adaptive.event.AdaptiveLoadMetrics;
-    import org.mangui.adaptive.loader.IFragmentLoader;
     import org.mangui.adaptive.flv.FLVTag;
+    import org.mangui.adaptive.loader.IFragmentLoader;
     import org.mangui.adaptive.model.AudioTrack;
     import org.mangui.adaptive.model.Fragment;
     import org.mangui.adaptive.model.FragmentData;
@@ -24,7 +25,6 @@ package org.mangui.hls.loader {
     import org.mangui.adaptive.model.Level;
     import org.mangui.adaptive.stream.StreamBuffer;
     import org.mangui.hls.controller.AudioTrackController;
-    import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.demux.DemuxHelper;
     import org.mangui.hls.utils.AES;
 

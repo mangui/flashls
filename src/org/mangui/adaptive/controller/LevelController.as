@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-package org.mangui.hls.controller {
+package org.mangui.adaptive.controller {
     import org.mangui.adaptive.Adaptive;
     import org.mangui.adaptive.AdaptiveSettings;
     import org.mangui.adaptive.constant.MaxLevelCappingMode;
@@ -18,7 +18,7 @@ package org.mangui.hls.controller {
      */
     public class LevelController {
         /** Reference to the Adaptive controller. **/
-        private var _hls : Adaptive;
+        private var _adaptive : Adaptive;
         /** switch up threshold **/
         private var _switchup : Vector.<Number> = null;
         /** switch down threshold **/
@@ -34,16 +34,16 @@ package org.mangui.hls.controller {
         private var  last_bandwidth : Number;
 
         /** Create the loader. **/
-        public function LevelController(hls : Adaptive) : void {
-            _hls = hls;
-            _hls.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+        public function LevelController(adaptive : Adaptive) : void {
+            _adaptive = adaptive;
+            _adaptive.addEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _adaptive.addEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
         ;
 
         public function dispose() : void {
-            _hls.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.removeEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _adaptive.removeEventListener(AdaptiveEvent.MANIFEST_LOADED, _manifestLoadedHandler);
+            _adaptive.removeEventListener(AdaptiveEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
 
         private function _fragmentLoadedHandler(event : AdaptiveEvent) : void {
@@ -99,13 +99,13 @@ package org.mangui.hls.controller {
                 _maxUniqueLevels = _maxLevelsWithUniqueDimensions;
             }
             var level : int;
-            if (_hls.autolevel) {
-                level = _hls.startlevel;
+            if (_adaptive.autolevel) {
+                level = _adaptive.startlevel;
             } else {
-                level = _hls.manuallevel;
+                level = _adaptive.manuallevel;
             }
             // always dispatch level after manifest load
-            _hls.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_SWITCH, level));
+            _adaptive.dispatchEvent(new AdaptiveEvent(AdaptiveEvent.LEVEL_SWITCH, level));
         }
         ;
 
@@ -134,15 +134,15 @@ package org.mangui.hls.controller {
                 return false;
             };
 
-            return _hls.levels.filter(filter);
+            return _adaptive.levels.filter(filter);
         }
 
         private function get _max_level() : int {
             if (AdaptiveSettings.capLevelToStage) {
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
-                if (_hls.stage && maxLevelsCount) {
-                    var maxLevel : Level = this._maxUniqueLevels[0], maxLevelIdx : int = maxLevel.index, sWidth : Number = this._hls.stage.stageWidth, sHeight : Number = this._hls.stage.stageHeight, lWidth : int, lHeight : int, i : int;
+                if (_adaptive.stage && maxLevelsCount) {
+                    var maxLevel : Level = this._maxUniqueLevels[0], maxLevelIdx : int = maxLevel.index, sWidth : Number = this._adaptive.stage.stageWidth, sHeight : Number = this._adaptive.stage.stageHeight, lWidth : int, lHeight : int, i : int;
 
                     switch (AdaptiveSettings.maxLevelCappingMode) {
                         case MaxLevelCappingMode.UPSCALE:
@@ -256,7 +256,7 @@ package org.mangui.hls.controller {
 
         public function get startlevel() : int {
             var start_level : int = -1;
-            var levels : Vector.<Level> = _hls.levels;
+            var levels : Vector.<Level> = _adaptive.levels;
             if (levels) {
                 if (AdaptiveSettings.startFromLevel === -1 && AdaptiveSettings.startFromBitrate === -1) {
                     /* if startFromLevel is set to -1, it means that effective startup level
@@ -302,7 +302,7 @@ package org.mangui.hls.controller {
         private function findIndexOfClosestLevel(desiredBitrate : Number) : int {
             var levelIndex : int = -1;
             var minDistance : Number = Number.MAX_VALUE;
-            var levels : Vector.<Level> = _hls.levels;
+            var levels : Vector.<Level> = _adaptive.levels;
 
             for (var index : int = 0; index < levels.length; index++) {
                 var level : Level = levels[index];
@@ -319,10 +319,10 @@ package org.mangui.hls.controller {
 
         public function get seeklevel() : int {
             var seek_level : int = -1;
-            var levels : Vector.<Level> = _hls.levels;
+            var levels : Vector.<Level> = _adaptive.levels;
             if (AdaptiveSettings.seekFromLevel == -1) {
                 // keep last level
-                return _hls.level;
+                return _adaptive.level;
             }
 
             // set up seek level as being the lowest non-audio level.
