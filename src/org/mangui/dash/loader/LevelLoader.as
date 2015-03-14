@@ -142,8 +142,9 @@ package org.mangui.dash.loader {
 
         /** Parse First Level Playlist **/
         private function _parseManifest(string : String) : void {
+            var xml : XML = new XML(string);
             CONFIG::LOGGING {
-                Log.info("Dash Manifest:" + string);
+                Log.info("Dash Manifest:" + xml.toXMLString());
             }
         };
 
