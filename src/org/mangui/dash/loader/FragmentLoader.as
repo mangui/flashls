@@ -10,45 +10,45 @@ package org.mangui.dash.loader {
     import org.mangui.adaptive.stream.StreamBuffer;
 
 
-	public class FragmentLoader implements IFragmentLoader {
+    public class FragmentLoader implements IFragmentLoader {
 
-		private var _adaptive : Adaptive;
-        private var _streamBuffer : StreamBuffer;
-        /** reference to auto level manager */
-        private var _levelController : LevelController;
-        /** reference to audio track controller */
-        private var _audioTrackController : IAudioTrackController;
+       private var _adaptive : Adaptive;
+       private var _streamBuffer : StreamBuffer;
+       /** reference to auto level manager */
+       private var _levelController : LevelController;
+       /** reference to audio track controller */
+       private var _audioTrackController : IAudioTrackController;
 
-        public function FragmentLoader(adaptive : Adaptive, audioTrackController : IAudioTrackController, levelController : LevelController) : void {
-            _adaptive = adaptive;
-            _levelController = levelController;
-            _audioTrackController = audioTrackController;
-        };
+       public function FragmentLoader(adaptive : Adaptive, audioTrackController : IAudioTrackController, levelController : LevelController) : void {
+        _adaptive = adaptive;
+        _levelController = levelController;
+        _audioTrackController = audioTrackController;
+    };
 
 
-        public function attachStreamBuffer(streamBuffer : StreamBuffer) : void {
-            _streamBuffer = streamBuffer;
-        }
+    public function attachStreamBuffer(streamBuffer : StreamBuffer) : void {
+        _streamBuffer = streamBuffer;
+    }
 
-        public function get audio_expected() : Boolean {
-        	return true;
-        }
+    public function get audio_expected() : Boolean {
+    	return true;
+    }
 
-        public function get video_expected() : Boolean {
-        	return true;
-        }
+    public function get video_expected() : Boolean {
+    	return true;
+    }
 
-        public function stop() : void {
-        	return;
-        }
+    public function stop() : void {
+    	return;
+    }
 
-        public function seek(position : Number) : void {
+    public function seek(position : Number) : void {
 
-        }
+    }
 
-        /* dispose method */
-        public function dispose() : void {
+    /* dispose method */
+    public function dispose() : void {
 
-        }
-	}
+    }
+}
 }
