@@ -182,7 +182,6 @@ package org.mangui.hls.model {
                 frag = getFragmentfromSeqNum(_fragments[i].seqnum);
                 if (frag != null) {
                     continuity_offset = frag.continuity - _fragments[i].continuity;
-                    _fragments[i].continuity
                     if(!isNaN(frag.data.pts_start)) {
                     _fragments[i].data = frag.data;
                     idx_with_metrics = i;
