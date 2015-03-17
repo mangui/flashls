@@ -2,29 +2,29 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.flowplayer {
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.utils.Params2Settings;
 
     import flash.display.DisplayObject;
+    import flash.media.Video;
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.utils.Dictionary;
-    import flash.media.Video;
-
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.constant.HLSPlayStates;
-    import org.flowplayer.model.Plugin;
-    import org.flowplayer.model.PluginModel;
-    import org.flowplayer.view.Flowplayer;
     import org.flowplayer.controller.StreamProvider;
     import org.flowplayer.controller.TimeProvider;
     import org.flowplayer.controller.VolumeController;
     import org.flowplayer.model.Clip;
-    import org.flowplayer.model.ClipType;
+    import org.flowplayer.model.ClipError;
     import org.flowplayer.model.ClipEvent;
     import org.flowplayer.model.ClipEventType;
+    import org.flowplayer.model.ClipType;
     import org.flowplayer.model.Playlist;
+    import org.flowplayer.model.Plugin;
+    import org.flowplayer.model.PluginModel;
+    import org.flowplayer.view.Flowplayer;
     import org.flowplayer.view.StageVideoWrapper;
+    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.utils.Params2Settings;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -92,6 +92,7 @@ package org.mangui.flowplayer {
         };
 
         private function _errorHandler(event : HLSEvent) : void {
+            _clip.dispatchError(ClipError.STREAM_LOAD_FAILED,event.error.toString());
         };
 
         private function _ID3Handler(event : HLSEvent) : void {
