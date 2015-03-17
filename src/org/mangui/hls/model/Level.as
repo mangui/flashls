@@ -175,17 +175,29 @@ package org.mangui.hls.model {
         public function updateFragments(_fragments : Vector.<Fragment>) : void {
             var idx_with_metrics : int = -1;
             var len : int = _fragments.length;
+            var continuity_offset : int;
             var frag : Fragment;
             // update PTS from previous fragments
             for (var i : int = 0; i < len; i++) {
                 frag = getFragmentfromSeqNum(_fragments[i].seqnum);
-                if (frag != null && !isNaN(frag.data.pts_start)) {
+                if (frag != null) {
+                    continuity_offset = frag.continuity - _fragments[i].continuity;
+                    _fragments[i].continuity
+                    if(!isNaN(frag.data.pts_start)) {
                     _fragments[i].data = frag.data;
                     idx_with_metrics = i;
+                    }
+                }
+            }
+            if(continuity_offset) {
+                CONFIG::LOGGING {
+                    Log.debug("updateFragments: discontinuity sliding from live playlist,take into account discontinuity drift:" + continuity_offset);
+                }
+                for (i = 0; i < len; i++) {
+                     _fragments[i].continuity+= continuity_offset;
                 }
             }
             updateFragmentsProgramDate(_fragments);
-
             fragments = _fragments;
 
             if (len > 0) {
@@ -245,7 +257,7 @@ package org.mangui.hls.model {
                     /* normalize computed PTS value based on known PTS value.
                      * this is to avoid computing wrong fragment duration in case of PTS looping */
                     var from_pts : Number = PTS.normalize(frag_to.data.pts_start, frag_from.data.pts_start_computed);
-                    /* update fragment duration. 
+                    /* update fragment duration.
                     it helps to fix drifts between playlist reported duration and fragment real duration */
                     if (to_index > from_index) {
                         frag_from.duration = (frag_to.data.pts_start - from_pts) / 1000;
