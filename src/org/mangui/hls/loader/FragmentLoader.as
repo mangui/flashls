@@ -219,7 +219,7 @@ package org.mangui.hls.loader {
                 case LOADING_STALLED:
                     /* next consecutive fragment not found:
                     it could happen on live playlist :
-                    - if bandwidth available is lower than lowest quality needed bandwidth 
+                    - if bandwidth available is lower than lowest quality needed bandwidth
                     - after long pause */
                     CONFIG::LOGGING {
                         Log.warn("loading stalled: restart playback");
@@ -359,6 +359,8 @@ package org.mangui.hls.loader {
                         Log.warn("max fragment load retry reached, skip fragment and load next one");
                     }
                     _frag_current = _frag_previous;
+                    // set fragment first loaded to be true to ensure that we can skip first fragment as well
+                    _fragment_first_loaded = true;
                     _loading_state = LOADING_IDLE;
                 } else {
                     var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _frag_current.url, "I/O Error :" + message);
@@ -779,9 +781,9 @@ package org.mangui.hls.loader {
             var fragData : FragmentData = _frag_current.data;
             fragData.appendTags(tags);
 
-            /* try to do progressive buffering here. 
+            /* try to do progressive buffering here.
              * only do it in case :
-             * 		first fragment is already loaded 
+             * 		first fragment is already loaded
              *      if first fragment is not loaded, we can do it if startlevel is already defined (if startFromLevel is set to -1
              *      we first need to download one fragment to check the dl bw, in order to assess start level ...)
              *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
