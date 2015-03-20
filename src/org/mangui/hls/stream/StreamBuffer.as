@@ -2,23 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.stream {
-    import flash.events.TimerEvent;
     import flash.events.Event;
-    import flash.utils.Timer;
+    import flash.events.TimerEvent;
     import flash.utils.Dictionary;
-
-    import org.mangui.hls.event.HLSMediatime;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.constant.HLSSeekStates;
+    import flash.utils.Timer;
+    import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekMode;
+    import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.constant.HLSTypes;
+    import org.mangui.hls.controller.AudioTrackController;
+    import org.mangui.hls.controller.LevelController;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSMediatime;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
-    import org.mangui.hls.controller.AudioTrackController;
-    import org.mangui.hls.controller.LevelController;
+    import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.model.AudioTrack;
 
     CONFIG::LOGGING {
@@ -89,10 +89,10 @@ package org.mangui.hls.stream {
             flushAll();
         }
 
-        /* 
-         * if requested position is available in StreamBuffer, trim buffer 
+        /*
+         * if requested position is available in StreamBuffer, trim buffer
          * and inject from that point
-         * if seek position out of buffer, ask fragment loader to retrieve data 
+         * if seek position out of buffer, ask fragment loader to retrieve data
          */
         public function seek(position : Number) : void {
             // compute _seek_position_requested based on position and playlist type
@@ -195,11 +195,10 @@ package org.mangui.hls.stream {
                 case HLSSeekStates.SEEKING:
                     return  _seek_position_requested;
                 case HLSSeekStates.SEEKED:
-                    /** Relative playback position = (Absolute Position(seek position + play time) - playlist sliding, non null for Live Playlist) **/
-                    return _seek_position_real + _hls.stream.time - _time_sliding;
                 case HLSSeekStates.IDLE:
                 default:
-                    return 0;
+                    /** Relative playback position = (Absolute Position(seek position + play time) - playlist sliding, non null for Live Playlist) **/
+                    return _seek_position_real + _hls.stream.time - _time_sliding;
             }
         };
 
@@ -232,12 +231,12 @@ package org.mangui.hls.stream {
         }
 
         /* compare two tags, smallest continuity
-         * then smallest pts. then discontinuity then aac/avc header then metadata, then others  
-         * 
+         * then smallest pts. then discontinuity then aac/avc header then metadata, then others
+         *
         return a negative number, if x should appear before y in the sorted sequence
         retun 0, if x equals y
-        return a positive number, if x should appear after y in the sorted sequence* 
-         * 
+        return a positive number, if x should appear after y in the sorted sequence*
+         *
          * */
         private function compareTags(x : FLVData, y : FLVData) : Number {
             if (x.continuity != y.continuity) {
@@ -314,7 +313,7 @@ package org.mangui.hls.stream {
             }
         }
 
-        /**  StreamBuffer Timer, responsible of 
+        /**  StreamBuffer Timer, responsible of
          * reporting media time event
          *  injecting tags into NetStream
          *  clipping backbuffer
@@ -333,11 +332,11 @@ package org.mangui.hls.stream {
             var duration : Number = 0;
             if (_seek_pos_reached) {
                 var netStreamBuffer : Number = (_hls.stream as HLSNetStream).netStreamBufferLength;
-                if (netStreamBuffer < MIN_NETSTREAM_BUFFER_SIZE) {
+                if (netStreamBuffer < MIN_NETSTREAM_BUFFER_SIZE && _hls.playbackState != HLSPlayStates.IDLE) {
                     duration = MAX_NETSTREAM_BUFFER_SIZE - netStreamBuffer;
                 }
             } else {
-                /* seek position not reached yet. 
+                /* seek position not reached yet.
                  * check if buffer max position is greater than requested seek position
                  * if it is the case, then we can start injecting tags in NetStream
                  */
@@ -474,7 +473,7 @@ package org.mangui.hls.stream {
         }
 
         private function _clipBackBuffer(maxBackBufferLength : Number) : void {
-            /*      min_pos        		                   current 
+            /*      min_pos        		                   current
              *                                    		   position
              *        *------------------*---------------------*----
              *         ****************** <-------------------->
@@ -506,11 +505,11 @@ package org.mangui.hls.stream {
 
             /* clip header tags : the tricky thing here is that we need to keep the last AAC HEADER / AVC HEADER before clip position
              * if we dont keep these tags, we will have audio/video playback issues when seeking into the buffer
-             * 
+             *
              * so we loop through all header tags and we retrieve the position of last AAC/AVC header tags
              * then if any subsequent header tag is found after seek position, we create a new Vector in which we first append the previously
              * found AAC/AVC header
-             * 
+             *
              */
             var _aacHeader : FLVData;
             var _avcHeader : FLVData;
