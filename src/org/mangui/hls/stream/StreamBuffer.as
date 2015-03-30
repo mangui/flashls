@@ -146,6 +146,7 @@ package org.mangui.hls.stream {
 //                CONFIG::LOGGING {
 //                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
 //                }
+
                 var pos : Number = start_position + (tag.pts - min_pts) / 1000;
                 var tagData : FLVData = new FLVData(tag, pos, _time_sliding, continuity);
                 switch(tag.type) {
@@ -606,12 +607,12 @@ package org.mangui.hls.stream {
         }
 
         /*
-         * retrieve queue containing next tag to be injected, using the following priority :
+         * retrieve next tag and update pointer, using the following priority :
          * smallest continuity
          * then smallest dts
          * then header  then video then audio then metadata tags
          */
-        private function getnexttag() : FLVData {
+        private function shiftnexttag() : FLVData {
             var mtag : FLVData ,vtag : FLVData,atag : FLVData, htag : FLVData;
 
             var continuity : int = int.MAX_VALUE;
@@ -663,7 +664,7 @@ package org.mangui.hls.stream {
 
         private function shiftmultipletags(max_duration : Number) : Vector.<FLVData> {
             var tags : Vector.<FLVData>=  new Vector.<FLVData>();
-            var tag : FLVData = getnexttag();
+            var tag : FLVData = shiftnexttag();
             if (tag) {
                 var min_offset : Number = tag.position_absolute;
                 do {
@@ -672,7 +673,7 @@ package org.mangui.hls.stream {
                     if (tag_offset - min_offset > max_duration) {
                         break;
                     }
-                } while ((tag = getnexttag()) != null);
+                } while ((tag = shiftnexttag()) != null);
             }
             return tags;
         }
