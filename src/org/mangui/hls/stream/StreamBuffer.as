@@ -251,6 +251,9 @@ package org.mangui.hls.stream {
             }
         }
 
+        /*
+            helper function used to sort tags, lower values have highest priority
+        */
         private function gettagrank(tag : FLVTag) : uint {
             switch(tag.type) {
                 case FLVTag.DISCONTINUITY:
