@@ -201,7 +201,11 @@ package org.mangui.hls.stream {
                 case HLSSeekStates.IDLE:
                 default:
                     /** Relative playback position = (Absolute Position(seek position + play time) - playlist sliding, non null for Live Playlist) **/
-                    return _seek_position_real + _hls.stream.time - _playlist_sliding_main;
+                    var pos: Number = _seek_position_real + _hls.stream.time - _playlist_sliding_main;
+                    if(isNaN(pos)) {
+                        pos = 0;
+                    }
+                    return pos;
             }
         }
 
