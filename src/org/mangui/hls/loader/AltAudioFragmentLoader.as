@@ -613,7 +613,7 @@ package org.mangui.hls.loader {
                 fragData.metadata_tag_injected = true;
             }
             // provide tags to HLSNetStream
-            _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+            _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
             fragData.shiftTags();
         }
 
@@ -651,7 +651,7 @@ package org.mangui.hls.loader {
                         fragData.tags.unshift(_frag_current.metadataTag);
                         fragData.metadata_tag_injected = true;
                     }
-                    _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                    _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     fragData.shiftTags();
                 }
                 _fragment_first_loaded = true;
