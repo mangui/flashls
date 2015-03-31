@@ -214,6 +214,7 @@ package org.mangui.hls.stream {
             _videoTags = new Vector.<FLVData>();
             _metaTags = new Vector.<FLVData>();
             _headerTags = new Vector.<FLVData>();
+            FLVData.ref_pts_main = FLVData.ref_pts_altaudio = NaN;
             _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
             _seek_pos_reached = false;
             _reached_vod_end = false;
@@ -225,6 +226,9 @@ package org.mangui.hls.stream {
             // flush audio buffer and AAC HEADER tags (if any)
             _audioTags = new Vector.<FLVData>();
             _audioIdx = 0;
+            FLVData.ref_pts_altaudio = NaN;
+            _next_expected_absolute_start_pos_alt_audio = -1;
+            _playlist_sliding_altaudio = 0;
             var _filteredHeaderTags : Vector.<FLVData> = _headerTags.filter(filterAACHeader);
             _headerIdx -= (_headerTags.length - _filteredHeaderTags.length);
         }
