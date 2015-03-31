@@ -306,7 +306,8 @@ package org.mangui.hls.loader {
                     fragData.decryptAES = null;
                 }
             }
-            if (event.bytesLoaded > fragData.bytesLoaded) {
+            if (event.bytesLoaded > fragData.bytesLoaded
+                && _fragstreamloader.bytesAvailable > 0) {  // prevent EOF error race condition
                 var data : ByteArray = new ByteArray();
                 _fragstreamloader.readBytes(data);
                 fragData.bytesLoaded += data.length;
