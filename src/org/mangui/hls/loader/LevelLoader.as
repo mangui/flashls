@@ -162,8 +162,8 @@ package org.mangui.hls.loader {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_ENDLIST, level));
             } else {
                 _type = HLSTypes.LIVE;
-                /* in order to determine playlist reload timer, 
-                    check playback position against playlist duration. 
+                /* in order to determine playlist reload timer,
+                    check playback position against playlist duration.
                     if we are near the edge of a live playlist, reload playlist quickly
                     to discover quicker new fragments and avoid buffer starvation.
                 */
