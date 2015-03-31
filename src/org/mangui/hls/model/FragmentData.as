@@ -137,11 +137,16 @@ package org.mangui.hls.model {
         }
 
         public function get tag_duration() : Number {
+            var duration : Number;
             if (audio_found) {
-                return audio_tag_duration;
+                duration = audio_tag_duration;
             } else {
-                return video_tag_duration;
+                duration = video_tag_duration;
             }
+            if(isNaN(duration)) {
+                duration = 0;
+            }
+            return duration;
         }
 
         public function get tag_pts_min() : Number {
