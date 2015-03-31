@@ -8,6 +8,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
+    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.demux.DemuxHelper;
@@ -834,7 +835,7 @@ package org.mangui.hls.loader {
                         fragData.metadata_tag_injected = true;
                     }
                     // provide tags to HLSNetStream
-                    _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                    _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     var processing_duration : Number = (getTimer() - _frag_current.metrics.loading_request_time);
                     var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
                     var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_hls.level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
@@ -919,7 +920,7 @@ package org.mangui.hls.loader {
                             }
                             fragData.metadata_tag_injected = true;
                         }
-                        _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                        _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
                         fragData.shiftTags();
                         _hasDiscontinuity = false;

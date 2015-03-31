@@ -6,6 +6,7 @@ package org.mangui.hls.loader {
 
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.demux.DemuxHelper;
@@ -130,7 +131,7 @@ package org.mangui.hls.loader {
                 case LOADING_STALLED:
                     /* next consecutive fragment not found:
                     it could happen on live playlist :
-                    - if bandwidth available is lower than lowest quality needed bandwidth 
+                    - if bandwidth available is lower than lowest quality needed bandwidth
                     - after long pause */
                     CONFIG::LOGGING {
                         Log.warn("audio loading stalled: restart playback???");
@@ -609,7 +610,7 @@ package org.mangui.hls.loader {
                 fragData.metadata_tag_injected = true;
             }
             // provide tags to HLSNetStream
-            _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+            _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
             fragData.shiftTags();
         }
 
@@ -647,7 +648,7 @@ package org.mangui.hls.loader {
                         fragData.tags.unshift(_frag_current.metadataTag);
                         fragData.metadata_tag_injected = true;
                     }
-                    _streamBuffer.appendTags(fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                    _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     fragData.shiftTags();
                 }
                 _fragment_first_loaded = true;

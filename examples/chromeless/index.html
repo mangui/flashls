@@ -57,7 +57,7 @@ var Y_FLUSHLIVEURL = 3;
 var Y_JSURLLOADER = 3;
 var Y_CAPLEVEL  = 3;
 var Y_USEHWDECODER = 3;
-  
+
 </script>
 
 <script type="text/javascript" src="../libs/ParsedQueryString.js"></script>
@@ -162,13 +162,13 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <td>-1</td>
     <td>-1</td>
   </tr>
-  <tr>  
+  <tr>
       <td colspan="2"><button onclick="toggleDebugLogs()">Toggle Debug1 Logs</button></td>
       <td colspan="2"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></td>
       <td colspan="3"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></td>
       <td colspan="2"><button onclick="toggleJSURLStream()"> JS URL Loader</button></td>
       <td colspan="3"><button onclick="toggleCapLeveltoStage()">Toggle Cap Level</button></td>
-      <td colspan="3"><button onclick="toggleUseHardwareVideoDecoder()">Toggle HW Decoder</button></td>  
+      <td colspan="3"><button onclick="toggleUseHardwareVideoDecoder()">Toggle HW Decoder</button></td>
   </tr>
   <tr>
       <td colspan="2">false</td>
@@ -196,7 +196,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   <tr>
     <th><button onclick="setseekfromlevel(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)">Set Seek From Level</button></th>
     <td><input type="text" name="quality_level"></td>
-  </tr>  
+  </tr>
   <tr>
     <th><button onclick="setlevel(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set Level</button></th>
     <td><input type="text" name="quality_level"></td>
@@ -217,7 +217,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <th><button onclick="setmaxBackBufferLength(document.getElementById('mediaControl').rows[8].cells[1].children[0].value)">Set max back Buffer Length</button></th>
     <td><input type="text" name="max_buffer_size"></td>
   </tr>
-  
+
   </table>
 
 <h3> Test Videos </h3>
@@ -402,7 +402,7 @@ function setminBufferLength(new_len) {
   if(obj != null) {
     obj.playerSetminBufferLength(new_len);
     appendLog("force min buffer len to :" + new_len);
-    document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = getMinBufferLength().toFixed(2);    
+    document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = getMinBufferLength().toFixed(2);
   }
 }
 
@@ -543,7 +543,7 @@ var flashlsEvents = {
     appendLog("onVideoSize(), " + width + "x" + height);
     var obj = getFlashMovieObject(player_id);
     if (obj != null) {
-    var state = obj.getCapLeveltoStage(); 
+    var state = obj.getCapLeveltoStage();
     if(!state) {
       var ratio = width / height;
       if (height > 720) {
@@ -567,18 +567,18 @@ var flashlsEvents = {
   },
   onFragmentPlaying: function(instanceId, playmetrics) {
     appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " video_width:" + playmetrics.video_width + " video_height:" + playmetrics.video_height + " tags:" + playmetrics.tag_list);
-    document.getElementById('mediaInfo').rows[Y_UTC_DATE].cells[X_UTC_DATE].innerHTML =  new Date(playmetrics.program_date).toUTCString();  
+    document.getElementById('mediaInfo').rows[Y_UTC_DATE].cells[X_UTC_DATE].innerHTML =  new Date(playmetrics.program_date).toUTCString();
   },
   onManifest: function(instanceId, duration) {
     appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
   },
-  onPosition: function(instanceId, timemetrics) {  
+  onPosition: function(instanceId, timemetrics) {
     document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
     document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
     document.getElementById('mediaInfo').rows[Y_BACK_BUFFER].cells[X_BACK_BUFFER].innerHTML =  timemetrics.backbuffer.toFixed(2);
-    document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding_main.toFixed(2);
   },
   onState: function(instanceId, newState) {
     appendLog("switching state to "+ newState + ", bufferlen:" + getbufferLength());
@@ -607,12 +607,12 @@ var flashlsEvents = {
 
 function onRequestResource0(URL) {
   appendLog("loading fragment "+ URL + " for instance 0");
-  URL_request(URL,URL_readBytes0, transferFailed0, "arraybuffer");  
+  URL_request(URL,URL_readBytes0, transferFailed0, "arraybuffer");
 }
 
 function onRequestResource1(URL) {
   appendLog("loading fragment "+ URL + " for instance 1");
-  URL_request(URL,URL_readBytes1,transferFailed1, "arraybuffer");  
+  URL_request(URL,URL_readBytes1,transferFailed1, "arraybuffer");
 }
 
 function URL_request(url, loadcallback, errorcallback,responseType) {
@@ -670,7 +670,7 @@ function resourceLoaded0(res) {
 function resourceLoaded1(res) {
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.resourceLoaded1(res);    
+    obj.resourceLoaded1(res);
   }
 }
 
