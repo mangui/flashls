@@ -145,7 +145,7 @@ package org.mangui.hls.stream {
 
         public function appendTags(fragmentType : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, start_position : Number) : void {
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
-            var sliding:Number = 0, next_relative_start_pos: Number = start_position + (max_pts - min_pts) / 1000;
+            var sliding:Number = 0, next_relative_start_pos: Number = start_position + (max_pts - min_pts) / 1000, headerAppended : Boolean = false, metaAppended : Boolean = false;
             if(_hls.type == HLSTypes.LIVE) {
                 if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
                     // if -1 : it is not the first appending for this fragment type : we can compute playlist sliding
@@ -172,6 +172,7 @@ package org.mangui.hls.stream {
                     case FLVTag.AAC_HEADER:
                     case FLVTag.AVC_HEADER:
                         _headerTags.push(tagData);
+                        headerAppended = true;
                         break;
                     case FLVTag.AAC_RAW:
                     case FLVTag.MP3_RAW:
@@ -182,10 +183,21 @@ package org.mangui.hls.stream {
                         break;
                     case FLVTag.METADATA:
                         _metaTags.push(tagData);
+                        metaAppended = true;
                         break;
                     default:
                 }
             }
+
+            if(_use_altaudio) {
+                if(headerAppended) {
+                    _headerTags = _headerTags.sort(compareTags);
+                }
+                if(metaAppended) {
+                    _metaTags = _metaTags.sort(compareTags);
+                }
+            }
+
             if (_hls.seekState == HLSSeekStates.SEEKING) {
                 /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
                 _timer.start();
@@ -362,9 +374,6 @@ package org.mangui.hls.stream {
                 if (max_pos >= _seek_position_requested) {
                     // inject enough tags to reach seek position
                     duration = _seek_position_requested + MAX_NETSTREAM_BUFFER_SIZE - min_min_pos;
-                    /* force header tag sorting here : it is mandatory  for seek filtering logic
-                    in case of alt audio tracks, audio/video headers might be not be sorted correctly */
-                    _headerTags = _headerTags.sort(compareTags);
                 }
             }
             if (duration > 0) {
@@ -395,8 +404,8 @@ package org.mangui.hls.stream {
 
         /* filter/tweak tags to seek accurately into the stream */
         private function seekFilterTags(tags : Vector.<FLVData>, start_position : Number) : Vector.<FLVData> {
-            var aacIdx : int,avcIdx : int,disIdx : int,metIdx : int,keyIdx : int,lastIdx : int;
-            aacIdx = avcIdx = disIdx = metIdx = keyIdx = lastIdx = -1;
+            var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, keyIdx : int,lastIdx : int;
+            aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = keyIdx = lastIdx = -1;
             var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
             var idx2Clone : Vector.<int> = new Vector.<int>();
 
@@ -412,7 +421,11 @@ package org.mangui.hls.stream {
                             disIdx = i;
                             break;
                         case FLVTag.METADATA:
-                            metIdx = i;
+                            if(data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
+                                metIdxMain = i;
+                            } else {
+                                metIdxAltAudio = i;
+                            }
                             break;
                         case FLVTag.AAC_HEADER:
                             aacIdx = i;
@@ -447,7 +460,8 @@ package org.mangui.hls.stream {
             }
             // inject discontinuity/metadata/AVC header/AAC header if available
             if (disIdx != -1)  idx2Clone.push(disIdx);
-            if (metIdx != -1)  idx2Clone.push(metIdx);
+            if (metIdxMain != -1)  idx2Clone.push(metIdxMain);
+            if (metIdxAltAudio != -1)  idx2Clone.push(metIdxAltAudio);
             if (aacIdx != -1)  idx2Clone.push(aacIdx);
             if (avcIdx != -1)  idx2Clone.push(avcIdx);
 
