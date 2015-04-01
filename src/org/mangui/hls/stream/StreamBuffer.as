@@ -395,9 +395,10 @@ package org.mangui.hls.stream {
 
         /* filter/tweak tags to seek accurately into the stream */
         private function seekFilterTags(tags : Vector.<FLVData>, start_position : Number) : Vector.<FLVData> {
-            var aacIdx : int,avcIdx : int,disIdx : int,keyIdx : int,lastIdx : int;
-            aacIdx = avcIdx = disIdx = keyIdx = lastIdx = -1;
+            var aacIdx : int,avcIdx : int,disIdx : int,metIdx : int,keyIdx : int,lastIdx : int;
+            aacIdx = avcIdx = disIdx = metIdx = keyIdx = lastIdx = -1;
             var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
+            var idx2Clone : Vector.<int> = new Vector.<int>();
 
             // loop through all tags and find index position of header tags located before start position
             for (var i : int = 0; i < tags.length; i++) {
@@ -405,10 +406,13 @@ package org.mangui.hls.stream {
                 if (data.position_absolute - _playlist_sliding_main <= start_position) {
                     lastIdx = i;
                     // current tag is before requested start position
-                    // grab AVC/AAC/DISCONTINUITY/KEYFRAMES tag located just before
+                    // grab AVC/AAC/DISCONTINUITY/METADATA/KEYFRAMES tag located just before
                     switch(data.tag.type) {
                         case FLVTag.DISCONTINUITY:
                             disIdx = i;
+                            break;
+                        case FLVTag.METADATA:
+                            metIdx = i;
                             break;
                         case FLVTag.AAC_HEADER:
                             aacIdx = i;
@@ -441,29 +445,20 @@ package org.mangui.hls.stream {
                 first_pts = tags[keyIdx].tag.pts;
                 _seek_position_real = tags[keyIdx].position;
             }
+            // inject discontinuity/metadata/AVC header/AAC header if available
+            if (disIdx != -1)  idx2Clone.push(disIdx);
+            if (metIdx != -1)  idx2Clone.push(metIdx);
+            if (aacIdx != -1)  idx2Clone.push(aacIdx);
+            if (avcIdx != -1)  idx2Clone.push(avcIdx);
 
-            // inject discontinuity/AVC header/AAC header if available
-            if (disIdx != -1) {
-                data = tags[disIdx];
+            for each (i in idx2Clone) {
+                data = tags[i];
                 var tagclone : FLVTag = data.tag.clone();
                 tagclone.pts = tagclone.dts = first_pts;
                 var dataclone : FLVData = new FLVData(tagclone, _seek_position_real, 0, data.continuity, data.loaderType);
                 filteredTags.push(dataclone);
             }
-            if (aacIdx != -1) {
-                data = tags[aacIdx];
-                tagclone = data.tag.clone();
-                tagclone.pts = tagclone.dts = first_pts;
-                dataclone = new FLVData(tagclone, _seek_position_real, 0, data.continuity, data.loaderType);
-                filteredTags.push(dataclone);
-            }
-            if (avcIdx != -1) {
-                data = tags[avcIdx];
-                tagclone = tags[avcIdx].tag.clone();
-                tagclone.pts = tagclone.dts = first_pts;
-                dataclone = new FLVData(tagclone, _seek_position_real, 0, data.continuity, data.loaderType);
-                filteredTags.push(dataclone);
-            }
+
             // inject tags from nearest keyframe to start position
             for (i = keyIdx; i < lastIdx; i++) {
                 data = tags[i];
