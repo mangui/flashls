@@ -21,7 +21,7 @@
     import org.osmf.traits.LoadState;
     import org.osmf.traits.LoadTrait;
     import org.osmf.traits.LoaderBase;
-    
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
@@ -71,13 +71,13 @@
             updateLoadTrait(loadTrait, LoadState.LOADING);
 
             if (_hls != null) {
-                _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
+                _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
                 _hls.removeEventListener(HLSEvent.ERROR, _errorHandler);
                 _hls.dispose();
                 _hls = null;
             }
             _hls = new HLS();
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
             /* load playlist */
             _hls.load(URLResource(loadTrait.resource).url);
@@ -88,7 +88,7 @@
         }
 
         /** Update video A/R on manifest load. **/
-        private function _manifestHandler(event : HLSEvent) : void {
+        private function _manifestLoadedHandler(event : HLSEvent) : void {
             var resource : MediaResourceBase = URLResource(_loadTrait.resource);
 
             // retrieve stream type
