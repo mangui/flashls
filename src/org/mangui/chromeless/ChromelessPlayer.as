@@ -132,9 +132,9 @@ package org.mangui.chromeless {
         /** Forward events from the framework. **/
         protected function _completeHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-            
+
                 ExternalInterface.call("flashlsEvents.onComplete", ExternalInterface.objectID);
-                
+
             }
         };
 
@@ -142,6 +142,18 @@ package org.mangui.chromeless {
             if (ExternalInterface.available) {
                 var hlsError : HLSError = event.error;
                 ExternalInterface.call("flashlsEvents.onError", ExternalInterface.objectID, hlsError.code, hlsError.url, hlsError.msg);
+            }
+        };
+
+        protected function _levelLoadedHandler(event : HLSEvent) : void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call("flashlsEvents.onLevelLoaded", ExternalInterface.objectID, event.loadMetrics);
+            }
+        };
+
+        protected function _audioLevelLoadedHandler(event : HLSEvent) : void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call("flashlsEvents.onAudioLevelLoaded", ExternalInterface.objectID, event.loadMetrics);
             }
         };
 
@@ -157,7 +169,7 @@ package org.mangui.chromeless {
             }
         };
 
-        protected function _manifestHandler(event : HLSEvent) : void {
+        protected function _manifestLoadedHandler(event : HLSEvent) : void {
             _duration = event.levels[_hls.startlevel].duration;
 
             if (_autoLoad) {
@@ -165,7 +177,7 @@ package org.mangui.chromeless {
             }
 
             if (ExternalInterface.available) {
-                ExternalInterface.call("flashlsEvents.onManifest", ExternalInterface.objectID, _duration);
+                ExternalInterface.call("flashlsEvents.onManifest", ExternalInterface.objectID, _duration, event.loadMetrics);
             }
         };
 
@@ -192,9 +204,15 @@ package org.mangui.chromeless {
             }
         };
 
-        protected function _stateHandler(event : HLSEvent) : void {
+        protected function _playbackStateHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("flashlsEvents.onState", ExternalInterface.objectID, event.state);
+                ExternalInterface.call("flashlsEvents.onPlaybackState", ExternalInterface.objectID, event.state);
+            }
+        };
+
+        protected function _seekStateHandler(event : HLSEvent) : void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call("flashlsEvents.onSeekState", ExternalInterface.objectID, event.state);
             }
         };
 
@@ -441,10 +459,13 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
+            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
+            _hls.addEventListener(HLSEvent.SEEK_STATE, _seekStateHandler);
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
