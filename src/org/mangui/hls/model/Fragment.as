@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.model {
-    import org.mangui.hls.flv.FLVTag;
 
-    import flash.utils.ByteArray;
     import flash.net.ObjectEncoding;
+    import flash.utils.ByteArray;
+    import org.mangui.hls.flv.FLVTag;
 
     /** Fragment model **/
     public class Fragment {
@@ -33,8 +33,6 @@ package org.mangui.hls.model {
         public var byterange_end_offset : int;
         /** data **/
         public var data : FragmentData;
-        /** metrics **/
-        public var metrics : FragmentMetrics;
         /** custom tags **/
         public var tag_list : Vector.<String>;
 
@@ -53,7 +51,6 @@ package org.mangui.hls.model {
             this.byterange_end_offset = byterange_end_offset;
             this.tag_list = tag_list;
             data = new FragmentData();
-            metrics = new FragmentMetrics();
             // CONFIG::LOGGING {
             // Log.info("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
             // }

@@ -4,19 +4,19 @@
 package org.mangui.hls.loader {
     import flash.utils.getTimer;
 
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.demux.DemuxHelper;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
-    import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.AES;
@@ -67,6 +67,8 @@ package org.mangui.hls.loader {
         private var _frag_current : Fragment;
         /* loading state variable */
         private var _loading_state : int;
+        /* loading metrics */
+        private var _metrics : HLSLoadMetrics;
         private static const LOADING_IDLE : int = 0;
         private static const LOADING_IN_PROGRESS : int = 1;
         private static const LOADING_WAITING_LEVEL_UPDATE : int = 2;
@@ -175,11 +177,11 @@ package org.mangui.hls.loader {
             // reset IO Error when seeking
             _frag_retry_count = _key_retry_count = 0;
             _frag_retry_timeout = _key_retry_timeout = 1000;
+            _loading_state = LOADING_IDLE;
             _seek_pos = position;
             _fragment_first_loaded = false;
             _frag_previous = null;
             _level = _hls.audioTracks[_hls.audioTrack].level;
-            _loading_state = LOADING_IDLE;
             _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _timer.start();
         }
@@ -292,12 +294,11 @@ package org.mangui.hls.loader {
                 fragData.bytes = new ByteArray();
                 fragData.bytesLoaded = 0;
                 fragData.flushTags();
-                var fragMetrics : FragmentMetrics = _frag_current.metrics;
-                fragMetrics.loading_begin_time = getTimer();
+                _metrics.loading_begin_time = getTimer();
 
                 // decrypt data if needed
                 if (_frag_current.decrypt_url != null) {
-                    fragMetrics.decryption_begin_time = getTimer();
+                    _metrics.decryption_begin_time = getTimer();
                     fragData.decryptAES = new AES(_hls.stage, _keymap[_frag_current.decrypt_url], _frag_current.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
                         Log.debug("init AES context:" + fragData.decryptAES);
@@ -339,13 +340,12 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug("loading completed");
             }
-            var fragMetrics : FragmentMetrics = _frag_current.metrics;
-            fragMetrics.loading_end_time = getTimer();
-            fragMetrics.size = fragData.bytesLoaded;
+            _metrics.loading_end_time = getTimer();
+            _metrics.size = fragData.bytesLoaded;
 
-            var _loading_duration : uint = fragMetrics.loading_end_time - fragMetrics.loading_request_time;
+            var _loading_duration : uint = _metrics.loading_end_time - _metrics.loading_request_time;
             CONFIG::LOGGING {
-                Log.debug("Loading       duration/RTT/length/speed:" + _loading_duration + "/" + (fragMetrics.loading_begin_time - fragMetrics.loading_request_time) + "/" + fragMetrics.size + "/" + ((8000 * fragMetrics.size / _loading_duration) / 1024).toFixed(0) + " kb/s");
+                Log.debug("Loading       duration/RTT/length/speed:" + _loading_duration + "/" + (_metrics.loading_begin_time - _metrics.loading_request_time) + "/" + _metrics.size + "/" + _metrics.bandwidth.toFixed(0) + " kb/s");
             }
             if (fragData.decryptAES) {
                 fragData.decryptAES.notifycomplete();
@@ -357,9 +357,8 @@ package org.mangui.hls.loader {
         private function _fragDecryptProgressHandler(data : ByteArray) : void {
             data.position = 0;
             var fragData : FragmentData = _frag_current.data;
-            var fragMetrics : FragmentMetrics = _frag_current.metrics;
-            if (isNaN(fragMetrics.parsing_begin_time)) {
-                fragMetrics.parsing_begin_time = getTimer();
+            if (_metrics.parsing_begin_time ==0) {
+                _metrics.parsing_begin_time = getTimer();
             }
             var bytes : ByteArray = fragData.bytes;
             if (_frag_current.byterange_start_offset != -1) {
@@ -393,9 +392,8 @@ package org.mangui.hls.loader {
             var fragData : FragmentData = _frag_current.data;
 
             if (fragData.decryptAES) {
-                var fragMetrics : FragmentMetrics = _frag_current.metrics;
-                fragMetrics.decryption_end_time = getTimer();
-                var decrypt_duration : Number = fragMetrics.decryption_end_time - fragMetrics.decryption_begin_time;
+                _metrics.decryption_end_time = getTimer();
+                var decrypt_duration : Number = _metrics.decryption_end_time - _metrics.decryption_begin_time;
                 CONFIG::LOGGING {
                     Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + fragData.bytesLoaded + "/" + ((8000 * fragData.bytesLoaded / decrypt_duration) / 1024).toFixed(0) + " kb/s");
                 }
@@ -570,7 +568,10 @@ package org.mangui.hls.loader {
                 _keystreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _keyLoadHTTPStatusHandler);
                 _keystreamloader.addEventListener(Event.COMPLETE, _keyLoadCompleteHandler);
             }
-            frag.metrics.loading_request_time = getTimer();
+            _metrics = new HLSLoadMetrics(HLSLoaderTypes.FRAGMENT_ALTAUDIO);
+            _metrics.level = _level.index;
+            _metrics.id = frag.seqnum;
+            _metrics.loading_request_time = getTimer();
             _frag_current = frag;
             if (frag.decrypt_url != null) {
                 if (_keymap[frag.decrypt_url] == undefined) {
@@ -633,10 +634,9 @@ package org.mangui.hls.loader {
                 }
             }
             // Calculate bandwidth
-            var fragMetrics : FragmentMetrics = _frag_current.metrics;
-            fragMetrics.parsing_end_time = getTimer();
+            _metrics.parsing_end_time = getTimer();
             CONFIG::LOGGING {
-                Log.debug("Total Process duration/length/bw:" + fragMetrics.processing_duration + "/" + fragMetrics.size + "/" + (fragMetrics.bandwidth / 1024).toFixed(0) + " kb/s");
+                Log.debug("Total Process duration/length/bw:" + _metrics.processing_duration + "/" + _metrics.size + "/" + (_metrics.bandwidth / 1024).toFixed(0) + " kb/s");
             }
             try {
                 CONFIG::LOGGING {
@@ -652,8 +652,11 @@ package org.mangui.hls.loader {
                         fragData.metadata_tag_injected = true;
                     }
                     _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
+                    _metrics.duration = fragData.pts_max + fragData.tag_duration - fragData.pts_min;
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, _metrics));
                     fragData.shiftTags();
                 }
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, _metrics));
                 _fragment_first_loaded = true;
                 _frag_previous = _frag_current;
             } catch (error : Error) {

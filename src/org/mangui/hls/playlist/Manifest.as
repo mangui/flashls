@@ -2,19 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.playlist {
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.utils.DateUtil;
-    import org.mangui.hls.utils.Hex;
-
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
-
+    import flash.utils.getTimer;
+    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.model.Level;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.HLS;
     import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.model.Level;
+    import org.mangui.hls.utils.DateUtil;
+    import org.mangui.hls.utils.Hex;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -62,6 +63,8 @@ package org.mangui.hls.playlist {
         private var _success : Function;
         /** URL of an M3U8 playlist. **/
         private var _url : String;
+        /** load metrics **/
+        private var _metrics : HLSLoadMetrics;
 
         /** Load a playlist M3U8 file. **/
         public function loadPlaylist(url : String, success : Function, error : Function, index : int, type : String, flushLiveURLcache : Boolean) : void {
@@ -69,7 +72,8 @@ package org.mangui.hls.playlist {
             _success = success;
             _index = index;
             _urlloader = new URLLoader();
-            _urlloader.addEventListener(Event.COMPLETE, _loaderHandler);
+            _urlloader.addEventListener(Event.COMPLETE, _loadCompleteHandler);
+            _urlloader.addEventListener(ProgressEvent.PROGRESS, _loadProgressHandler);
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR, error);
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, error);
 
@@ -93,7 +97,9 @@ package org.mangui.hls.playlist {
                 onLoadedData(data || "");
                 return;
             }
-
+            _metrics = new HLSLoadMetrics(HLSLoaderTypes.LEVEL_MAIN);
+            _metrics.level = index;
+            _metrics.loading_request_time = getTimer();
             _urlloader.load(new URLRequest(url));
         };
 
@@ -105,14 +111,23 @@ package org.mangui.hls.playlist {
             }
         }
 
-        /** The M3U8 playlist was loaded. **/
-        private function _loaderHandler(event : Event) : void {
+        /** loading progress handler, use to determine loading latency **/
+        private function _loadProgressHandler(event : Event) : void {
+            if(_metrics.loading_begin_time == 0) {
+                _metrics.loading_begin_time = getTimer();
+            }
+        };
+
+
+        /** loading complete handler **/
+        private function _loadCompleteHandler(event : Event) : void {
+            _metrics.loading_end_time = getTimer();
             var loader : URLLoader = URLLoader(event.target);
             onLoadedData(String(loader.data));
         };
 
         private function onLoadedData(data : String) : void {
-            _success(data, _url, _index);
+            _success(data, _url, _index, _metrics);
         }
 
         private static function zeropad(str : String, length : uint) : String {

@@ -10,7 +10,7 @@ package org.mangui.hls.event {
     public class HLSEvent extends Event {
         /** Identifier for a manifest loading event, triggered after a call to hls.load(url) **/
         public static const MANIFEST_LOADING : String = "hlsEventManifestLoading";
-        /** Identifier for a manifest parsed event, 
+        /** Identifier for a manifest parsed event,
          * triggered after main manifest has been retrieved and parsed.
          * hls playlist may not be playable yet, in case of adaptive streaming, start level playlist is not downloaded yet at that stage */
         public static const MANIFEST_PARSED : String = "hlsEventManifestParsed";
@@ -80,7 +80,7 @@ package org.mangui.hls.event {
         public var ID3Data : String;
 
         /** Assign event parameter and dispatch. **/
-        public function HLSEvent(type : String, parameter : *=null) {
+        public function HLSEvent(type : String, parameter : *=null, parameter2 : *=null) {
             switch(type) {
                 case HLSEvent.MANIFEST_LOADING:
                 case HLSEvent.FRAGMENT_LOADING:
@@ -91,11 +91,16 @@ package org.mangui.hls.event {
                     break;
                 case HLSEvent.TAGS_LOADED:
                 case HLSEvent.FRAGMENT_LOADED:
+                case HLSEvent.LEVEL_LOADED:
+                case HLSEvent.AUDIO_LEVEL_LOADED:
                     loadMetrics = parameter as HLSLoadMetrics;
                     break;
                 case HLSEvent.MANIFEST_PARSED:
                 case HLSEvent.MANIFEST_LOADED:
                     levels = parameter as Vector.<Level>;
+                    if(parameter2) {
+                        loadMetrics = parameter2 as HLSLoadMetrics;
+                    }
                     break;
                 case HLSEvent.MEDIA_TIME:
                     mediatime = parameter as HLSMediatime;
@@ -105,9 +110,7 @@ package org.mangui.hls.event {
                     state = parameter as String;
                     break;
                 case HLSEvent.LEVEL_LOADING:
-                case HLSEvent.LEVEL_LOADED:
                 case HLSEvent.LEVEL_SWITCH:
-                case HLSEvent.AUDIO_LEVEL_LOADED:
                 case HLSEvent.AUDIO_LEVEL_LOADING:
                     level = parameter as int;
                     break;

@@ -2,18 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
+    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.model.Level;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.model.Level;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-    /** Class that manages auto level selection 
-     * 
-     * this is an implementation based on Serial segment fetching method from 
+    /** Class that manages auto level selection
+     *
+     * this is an implementation based on Serial segment fetching method from
      * http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
      */
     public class LevelController {
@@ -47,9 +49,13 @@ package org.mangui.hls.controller {
         }
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
-            last_bandwidth = event.loadMetrics.bandwidth;
-            _last_segment_duration = event.loadMetrics.frag_duration;
-            _last_fetch_duration = event.loadMetrics.frag_processing_time;
+            var metrics : HLSLoadMetrics = event.loadMetrics;
+            // only monitor main fragment metrics for level switching
+            if(metrics.type == HLSLoaderTypes.FRAGMENT_MAIN) {
+                last_bandwidth = metrics.bandwidth;
+                _last_segment_duration = metrics.duration;
+                _last_fetch_duration = metrics.processing_duration;
+            }
         }
 
         /** Store the manifest data. **/
@@ -216,7 +222,7 @@ package org.mangui.hls.controller {
                 }
                 switch_to_level = current_level + 1;
             }
-            
+
             /* to switch level down :
             rsft should be smaller than switch up condition,
             or the current level is greater than max level

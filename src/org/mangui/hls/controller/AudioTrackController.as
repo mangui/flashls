@@ -67,8 +67,9 @@ package org.mangui.hls.controller {
 
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
-            if (event.level == _hls.level) {
-                _updateAudioTrackforLevel(event.level);
+            var level : int = event.loadMetrics.level;
+            if (level == _hls.level) {
+                _updateAudioTrackforLevel(level);
             }
         };
 
@@ -208,7 +209,7 @@ package org.mangui.hls.controller {
                 _audioTracksMerge();
             }
 
-            /* if audio track not defined, or audio from external source (playlist) 
+            /* if audio track not defined, or audio from external source (playlist)
             return null (demux audio not selected) */
             if (_audioTrackId == -1 || _audioTracks[_audioTrackId].source == AudioTrack.FROM_PLAYLIST) {
                 return null;

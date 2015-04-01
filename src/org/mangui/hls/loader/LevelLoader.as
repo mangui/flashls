@@ -2,26 +2,33 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
-    import org.mangui.hls.playlist.DataUri;
-    import org.mangui.hls.playlist.AltAudioTrack;
-    import org.mangui.hls.playlist.Manifest;
+    import flash.events.ErrorEvent;
+    import flash.events.Event;
+    import flash.events.IOErrorEvent;
+    import flash.events.ProgressEvent;
+    import flash.events.SecurityErrorEvent;
+    import flash.net.URLLoader;
+    import flash.net.URLRequest;
+    import flash.utils.clearTimeout;
+    import flash.utils.getTimer;
+    import flash.utils.setTimeout;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.model.Level;
-    import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
-
-    import flash.events.*;
-    import flash.net.*;
-    import flash.utils.*;
+    import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.model.Level;
+    import org.mangui.hls.playlist.AltAudioTrack;
+    import org.mangui.hls.playlist.DataUri;
+    import org.mangui.hls.playlist.Manifest;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-    /** Loader for hls manifests. **/
     public class LevelLoader {
         /** Reference to the hls framework controller. **/
         private var _hls : HLS;
@@ -50,6 +57,8 @@ package org.mangui.hls.loader {
         private var _retry_count : int;
         /* alt audio tracks */
         private var _alt_audio_tracks : Vector.<AltAudioTrack>;
+        /* manifest load metrics */
+        private var _metrics : HLSLoadMetrics;
 
         /** Setup the loader. **/
         public function LevelLoader(hls : HLS) {
@@ -58,14 +67,16 @@ package org.mangui.hls.loader {
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _levels = new Vector.<Level>();
             _urlloader = new URLLoader();
-            _urlloader.addEventListener(Event.COMPLETE, _loaderHandler);
+            _urlloader.addEventListener(Event.COMPLETE, _loadCompleteHandler);
+            _urlloader.addEventListener(ProgressEvent.PROGRESS, _loadProgressHandler);
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _errorHandler);
         };
 
         public function dispose() : void {
             _close();
-            _urlloader.removeEventListener(Event.COMPLETE, _loaderHandler);
+            _urlloader.removeEventListener(Event.COMPLETE, _loadCompleteHandler);
+            _urlloader.removeEventListener(ProgressEvent.PROGRESS, _loadProgressHandler);
             _urlloader.removeEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
             _urlloader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, _errorHandler);
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
@@ -131,11 +142,22 @@ package org.mangui.hls.loader {
                 _parseManifest(data || "");
             } else {
                 _urlloader.load(new URLRequest(url));
+                _metrics = new HLSLoadMetrics(HLSLoaderTypes.MANIFEST);
+                _metrics.loading_request_time = getTimer();
             }
         };
 
+        /** loading progress handler, use to determine loading latency **/
+        private function _loadProgressHandler(event : Event) : void {
+            if(_metrics.loading_begin_time == 0) {
+                _metrics.loading_begin_time = getTimer();
+            }
+        };
+
+
         /** Manifest loaded; check and parse it **/
-        private function _loaderHandler(event : Event) : void {
+        private function _loadCompleteHandler(event : Event) : void {
+             _metrics.loading_end_time = getTimer();
             // successful loading, reset retry counter
             _retry_timeout = 1000;
             _retry_count = 0;
@@ -144,7 +166,7 @@ package org.mangui.hls.loader {
         };
 
         /** parse a playlist **/
-        private function _parseLevelPlaylist(string : String, url : String, level : int) : void {
+        private function _parseLevelPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
             if (string != null && string.length != 0) {
                 CONFIG::LOGGING {
                     Log.debug("level " + level + " playlist:\n" + string);
@@ -181,10 +203,12 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.debug("first level filled with at least 1 fragment, notify event");
                     }
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED, _levels));
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED, _levels, _metrics));
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, level));
+            metrics.id  = _levels[level].start_seqnum;
+            metrics.id2 = _levels[level].end_seqnum;
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, metrics));
             _manifest_loading = null;
         };
 
@@ -197,13 +221,15 @@ package org.mangui.hls.loader {
                     var level : Level = new Level();
                     level.url = _url;
                     _levels.push(level);
+                    _metrics.parsing_end_time = getTimer();
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, 0));
                     CONFIG::LOGGING {
                         Log.debug("1 Level Playlist, load it");
                     }
                     _current_level = 0;
-                    _parseLevelPlaylist(string, _url, 0);
+                    _metrics.type = HLSLoaderTypes.LEVEL_MAIN;
+                    _parseLevelPlaylist(string, _url, 0,_metrics);
                 } else if (string.indexOf(Manifest.LEVEL) > 0) {
                     CONFIG::LOGGING {
                         Log.debug("adaptive playlist:\n" + string);
@@ -212,6 +238,7 @@ package org.mangui.hls.loader {
                     _levels = Manifest.extractLevels(_hls, string, _url);
                     // retrieve start level from helper function
                     _current_level = _hls.startlevel;
+                    _metrics.parsing_end_time = getTimer();
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
                     _loadActiveLevelPlaylist();
                     if (string.indexOf(Manifest.ALTERNATE_AUDIO) > 0) {

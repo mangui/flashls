@@ -19,7 +19,6 @@ package org.mangui.hls.loader {
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
-    import org.mangui.hls.model.FragmentMetrics;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.AES;
@@ -86,6 +85,8 @@ package org.mangui.hls.loader {
         private var _frag_current : Fragment;
         /* loading state variable */
         private var _loading_state : int;
+        /* loading metrics */
+        private var _metrics : HLSLoadMetrics;
         private static const MANIFEST_LOADING : int = -1;
         private static const LOADING_IDLE : int = 0;
         private static const LOADING_IN_PROGRESS : int = 1;
@@ -242,8 +243,7 @@ package org.mangui.hls.loader {
                 case LOADING_FRAGMENT_IO_ERROR:
                     // compare current date and next retry date.
                     if (getTimer() >= _frag_load_error_date) {
-                        /* try to reload the key ...
-                        calling _loadfragment will also reload key */
+                        /* try to reload fragment ... */
                         _loadfragment(_frag_current);
                         _loading_state = LOADING_IN_PROGRESS;
                     }
@@ -380,12 +380,11 @@ package org.mangui.hls.loader {
                 fragData.bytes = new ByteArray();
                 fragData.bytesLoaded = 0;
                 fragData.flushTags();
-                var fragMetrics : FragmentMetrics = _frag_current.metrics;
-                fragMetrics.loading_begin_time = getTimer();
+                _metrics.loading_begin_time = getTimer();
 
                 // decrypt data if needed
                 if (_frag_current.decrypt_url != null) {
-                    fragMetrics.decryption_begin_time = getTimer();
+                    _metrics.decryption_begin_time = getTimer();
                     fragData.decryptAES = new AES(_hls.stage, _keymap[_frag_current.decrypt_url], _frag_current.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
                         Log.debug("init AES context:" + fragData.decryptAES);
@@ -427,13 +426,12 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug("loading completed");
             }
-            var fragMetrics : FragmentMetrics = _frag_current.metrics;
-            fragMetrics.loading_end_time = getTimer();
-            fragMetrics.size = fragData.bytesLoaded;
+            _metrics.loading_end_time = getTimer();
+            _metrics.size = fragData.bytesLoaded;
 
-            var _loading_duration : uint = fragMetrics.loading_end_time - fragMetrics.loading_request_time;
+            var _loading_duration : uint = _metrics.loading_end_time - _metrics.loading_request_time;
             CONFIG::LOGGING {
-                Log.debug("Loading       duration/RTT/length/speed:" + _loading_duration + "/" + (fragMetrics.loading_begin_time - fragMetrics.loading_request_time) + "/" + fragMetrics.size + "/" + ((8000 * fragMetrics.size / _loading_duration) / 1024).toFixed(0) + " kb/s");
+                Log.debug("Loading       duration/RTT/length/speed:" + _loading_duration + "/" + (_metrics.loading_begin_time - _metrics.loading_request_time) + "/" + _metrics.size + "/" + ((8000 * _metrics.size / _loading_duration) / 1024).toFixed(0) + " kb/s");
             }
             if (fragData.decryptAES) {
                 fragData.decryptAES.notifycomplete();
@@ -445,9 +443,8 @@ package org.mangui.hls.loader {
         private function _fragDecryptProgressHandler(data : ByteArray) : void {
             data.position = 0;
             var fragData : FragmentData = _frag_current.data;
-            var fragMetrics : FragmentMetrics = _frag_current.metrics;
-            if (isNaN(fragMetrics.parsing_begin_time)) {
-                fragMetrics.parsing_begin_time = getTimer();
+            if (_metrics.parsing_begin_time ==0) {
+                _metrics.parsing_begin_time = getTimer();
             }
             var bytes : ByteArray = fragData.bytes;
             if (_frag_current.byterange_start_offset != -1) {
@@ -463,7 +460,6 @@ package org.mangui.hls.loader {
                 /* dont do progressive parsing of segment with byte range option */
                 return;
             }
-
             if (_demux == null) {
                 /* probe file type */
                 bytes.position = bytes.length;
@@ -482,9 +478,8 @@ package org.mangui.hls.loader {
             var fragData : FragmentData = _frag_current.data;
 
             if (fragData.decryptAES) {
-                var fragMetrics : FragmentMetrics = _frag_current.metrics;
-                fragMetrics.decryption_end_time = getTimer();
-                var decrypt_duration : Number = fragMetrics.decryption_end_time - fragMetrics.decryption_begin_time;
+                _metrics.decryption_end_time = getTimer();
+                var decrypt_duration : Number = _metrics.decryption_end_time - _metrics.decryption_begin_time;
                 CONFIG::LOGGING {
                     Log.debug("Decrypted     duration/length/speed:" + decrypt_duration + "/" + fragData.bytesLoaded + "/" + ((8000 * fragData.bytesLoaded / decrypt_duration) / 1024).toFixed(0) + " kb/s");
                 }
@@ -716,7 +711,10 @@ package org.mangui.hls.loader {
             if (_hasDiscontinuity || _switchlevel) {
                 _demux = null;
             }
-            frag.metrics.loading_request_time = getTimer();
+            _metrics = new HLSLoadMetrics(HLSLoaderTypes.FRAGMENT_MAIN);
+            _metrics.level = frag.level;
+            _metrics.id = frag.seqnum;
+            _metrics.loading_request_time = getTimer();
             _frag_current = frag;
             if (frag.decrypt_url != null) {
                 if (_keymap[frag.decrypt_url] == undefined) {
@@ -750,7 +748,7 @@ package org.mangui.hls.loader {
 
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
-            _last_loaded_level = event.level;
+            _last_loaded_level = event.loadMetrics.level;
             if (_loading_state == LOADING_WAITING_LEVEL_UPDATE && _last_loaded_level == _hls.level) {
                 _loading_state = LOADING_IDLE;
                 // speed up loading of new fragment
@@ -837,10 +835,10 @@ package org.mangui.hls.loader {
                     }
                     // provide tags to HLSNetStream
                     _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
-                    var processing_duration : Number = (getTimer() - _frag_current.metrics.loading_request_time);
-                    var bandwidth : Number = Math.round(fragData.bytesLoaded * 8000 / processing_duration);
-                    var tagsMetrics : HLSLoadMetrics = new HLSLoadMetrics(_hls.level, bandwidth, fragData.tag_pts_end_offset, processing_duration);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
+                    _metrics.parsing_end_time = getTimer();
+                    _metrics.size = fragData.bytesLoaded;
+                    _metrics.duration = fragData.tag_pts_end_offset;
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, _metrics));
                     fragData.shiftTags();
                     _hasDiscontinuity = false;
                 }
@@ -872,21 +870,22 @@ package org.mangui.hls.loader {
             }
 
             // Calculate bandwidth
-            var fragMetrics : FragmentMetrics = _frag_current.metrics;
-            fragMetrics.parsing_end_time = getTimer();
+            _metrics.parsing_end_time = getTimer();
             CONFIG::LOGGING {
-                Log.debug("Total Process duration/length/bw:" + fragMetrics.processing_duration + "/" + fragMetrics.size + "/" + (fragMetrics.bandwidth / 1024).toFixed(0) + " kb/s");
+                Log.debug("Total Process duration/length/bw:" + _metrics.processing_duration + "/" + _metrics.size + "/" + (_metrics.bandwidth / 1024).toFixed(0) + " kb/s");
             }
 
             if (_manifest_just_loaded) {
                 _manifest_just_loaded = false;
                 if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1 && _levels.length > 1) {
                     // check if we can directly switch to a better bitrate, in case download bandwidth is enough
-                    var bestlevel : int = _levelController.getbestlevel(fragMetrics.bandwidth);
+                    var bestlevel : int = _levelController.getbestlevel(_metrics.bandwidth);
                     if (bestlevel > _hls.level) {
                         CONFIG::LOGGING {
                             Log.info("enough download bandwidth, adjust start level from " + _hls.level + " to " + bestlevel);
                         }
+                        // dispatch event for tracking purpose
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, _metrics));
                         // let's directly jump to the accurate level to improve quality at player start
                         _hls.level = bestlevel;
                         _loading_state = LOADING_IDLE;
@@ -903,16 +902,11 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("Loaded        " + _frag_current.seqnum + " of [" + (_levels[_hls.level].start_seqnum) + "," + (_levels[_hls.level].end_seqnum) + "],level " + _hls.level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
-
-                var tagsMetrics : HLSLoadMetrics;
                 if (fragData.audio_found || fragData.video_found) {
                     _levels[_hls.level].updateFragment(_frag_current.seqnum, true, fragData.pts_min, fragData.pts_max + fragData.tag_duration);
                     // set pts_start here, it might not be updated directly in updateFragment() if this loaded fragment has been removed from a live playlist
                     fragData.pts_start = fragData.pts_min;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_hls.level].duration));
-
-                    tagsMetrics = new HLSLoadMetrics(_hls.level, fragMetrics.bandwidth, fragData.pts_max - fragData.pts_min, fragMetrics.processing_duration);
-
                     if (fragData.tags.length) {
                         if (fragData.metadata_tag_injected == false) {
                             fragData.tags.unshift(_frag_current.metadataTag);
@@ -922,16 +916,17 @@ package org.mangui.hls.loader {
                             fragData.metadata_tag_injected = true;
                         }
                         _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, tagsMetrics));
+                        _metrics.duration = fragData.pts_max + fragData.tag_duration - fragData.pts_min;
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, _metrics));
                         fragData.shiftTags();
                         _hasDiscontinuity = false;
                     }
                 } else {
-                    tagsMetrics = new HLSLoadMetrics(_hls.level, fragMetrics.bandwidth, _frag_current.duration * 1000, fragMetrics.processing_duration);
+                    _metrics.duration = _frag_current.duration * 1000;
                 }
                 _loading_state = LOADING_IDLE;
                 _pts_analyzing = false;
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, tagsMetrics));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, _metrics));
                 _fragment_first_loaded = true;
                 _frag_previous = _frag_current;
             } catch (error : Error) {
