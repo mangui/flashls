@@ -69,9 +69,9 @@ package org.mangui.flowplayer {
             _hls.stage = player.screen.getDisplayObject().stage;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
             _hls.addEventListener(HLSEvent.ID3_UPDATED, _ID3Handler);
 
             var cfg : Object = _model.config;
@@ -99,7 +99,7 @@ package org.mangui.flowplayer {
             _clip.dispatch(ClipEventType.NETSTREAM_EVENT, "onID3", event.ID3Data);
         };
 
-        private function _manifestHandler(event : HLSEvent) : void {
+        private function _manifestLoadedHandler(event : HLSEvent) : void {
             _duration = event.levels[_hls.startlevel].duration - _clipStart;
             _isManifestLoaded = true;
             // only update duration if not capped
@@ -176,7 +176,7 @@ package org.mangui.flowplayer {
             }
         };
 
-        private function _stateHandler(event : HLSEvent) : void {
+        private function _playbackStateHandler(event : HLSEvent) : void {
             // CONFIG::LOGGING {
             // Log.txt("state:"+ event.state);
             // }
