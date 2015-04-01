@@ -77,8 +77,8 @@ package org.mangui.hls {
             _altAudioLevelLoader.dispose();
             _audioTrackController.dispose();
             _levelController.dispose();
-            _streamBuffer.dispose();
             _hlsNetStream.dispose_();
+            _streamBuffer.dispose();
             _levelLoader = null;
             _altAudioLevelLoader = null;
             _audioTrackController = null;
