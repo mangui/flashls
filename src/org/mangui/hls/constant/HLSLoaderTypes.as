@@ -4,13 +4,15 @@
  package org.mangui.hls.constant {
     /** Identifiers for the different stream types. **/
     public class HLSLoaderTypes {
+        // manifest loader
+        public static const MANIFEST : int = 0;
     	// playlist / level loader
-        public static const LEVEL_MAIN : int = 0;
+        public static const LEVEL_MAIN : int = 1;
     	// playlist / level loader
-        public static const LEVEL_ALTAUDIO : int = 1;
+        public static const LEVEL_ALTAUDIO : int = 2;
         // main fragment loader
-        public static const FRAGMENT_MAIN : int = 2;
+        public static const FRAGMENT_MAIN : int = 3;
         // alt audio fragment loader
-        public static const FRAGMENT_ALTAUDIO : int = 3;
+        public static const FRAGMENT_ALTAUDIO : int = 4;
     }
 }
