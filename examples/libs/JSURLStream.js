@@ -1,15 +1,17 @@
-function onRequestResource0(URL) {
-  appendLog("loading fragment "+ URL + " for instance 0");
-  URL_request(URL,URL_readBytes0, transferFailed0, "arraybuffer");
-}
+var JSURLStream = {
 
-function onRequestResource1(URL) {
-  appendLog("loading fragment "+ URL + " for instance 1");
-  URL_request(URL,URL_readBytes1,transferFailed1, "arraybuffer");
-}
-
-function URL_request(url, loadcallback, errorcallback,responseType) {
+  onRequestResource : function(instanceId,url, resourceLoadedFlashCallback, resourceFailureFlashCallback) {
+    //console.log("JSURLStream.onRequestResource");
+    if(!this.flashObject) {
+      this.flashObject = getFlashMovieObject(instanceId);
+    }
+    this.xhrGET(url,this.xhrReadBytes, this.xhrTransferFailed, resourceLoadedFlashCallback, resourceFailureFlashCallback, "arraybuffer");
+  },
+  xhrGET : function (url,loadcallback, errorcallback,resourceLoadedFlashCallback, resourceFailureFlashCallback, responseType) {
     var xhr = new XMLHttpRequest();
+    xhr.binding = this;
+    xhr.resourceLoadedFlashCallback = resourceLoadedFlashCallback;
+    xhr.resourceFailureFlashCallback = resourceFailureFlashCallback;
     xhr.open("GET", url, loadcallback? true: false);
     if (responseType) {
       xhr.responseType = responseType;
@@ -22,52 +24,17 @@ function URL_request(url, loadcallback, errorcallback,responseType) {
       xhr.send();
       return xhr.status == 200? xhr.response: "";
     }
-}
-function transferFailed0(oEvent) {
-    appendLog("An error occurred while transferring the file :" + oEvent.target.status);
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.resourceLoadingError0();
-  }
-}
-
-function transferFailed1(oEvent) {
-    appendLog("An error occurred while transferring the file :" + oEvent.target.status);
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.resourceLoadingError1();
-  }
-}
-
-
-function URL_readBytes0(event) {
-  appendLog("fragment loaded");
-  var res = base64ArrayBuffer(event.currentTarget.response);
-  resourceLoaded0(res);
-}
-
-function URL_readBytes1(event) {
-  appendLog("fragment loaded");
-  var res = base64ArrayBuffer(event.currentTarget.response);
-  resourceLoaded1(res);
-}
-
-
-function resourceLoaded0(res) {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.resourceLoaded0(res);
-  }
-}
-
-function resourceLoaded1(res) {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.resourceLoaded1(res);
-  }
-}
-
-function base64ArrayBuffer(arrayBuffer) {
+  },
+  xhrReadBytes : function(event) {
+    //console.log("fragment loaded");
+    var res = this.binding.base64ArrayBuffer(event.currentTarget.response);
+    this.binding.flashObject[this.resourceLoadedFlashCallback](res);
+  },
+  xhrTransferFailed : function(oEvent) {
+    console.log("An error occurred while transferring the file :" + oEvent.target.status);
+    this.binding.flashObject[this.resourceFailureFlashCallback](res);
+  },
+  base64ArrayBuffer : function(arrayBuffer) {
     var base64 = ''
     var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
     var bytes = new Uint8Array(arrayBuffer)
@@ -97,6 +64,6 @@ function base64ArrayBuffer(arrayBuffer) {
       c = (chunk & 15) << 2 // 15 = 2^4 - 1
       base64 += encodings[a] + encodings[b] + encodings[c] + '='
     }
-
     return base64;
+  }
 }

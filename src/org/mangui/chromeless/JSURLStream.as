@@ -2,24 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.chromeless {
-    import flash.events.IOErrorEvent;
-
     import by.blooddy.crypto.Base64;
-
-    import flash.events.TimerEvent;
-    import flash.utils.Timer;
-    import flash.external.ExternalInterface;
     import flash.events.Event;
+    import flash.events.IOErrorEvent;
     import flash.events.ProgressEvent;
-    import flash.utils.ByteArray;
-    import flash.net.URLStream;
+    import flash.events.TimerEvent;
+    import flash.external.ExternalInterface;
     import flash.net.URLRequest;
-    
+    import flash.net.URLStream;
+    import flash.utils.ByteArray;
+    import flash.utils.getTimer;
+    import flash.utils.Timer;
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
 
-    public class JSURLStream extends URLStream {
+    public dynamic class JSURLStream extends URLStream {
         private var _connected : Boolean;
         private var _resource : ByteArray = new ByteArray();
         /** Timer for decode packets **/
@@ -28,23 +27,29 @@ package org.mangui.chromeless {
         private var _read_position : uint;
         /** read position **/
         private var _base64_resource : String;
+        /* callback names */
+        private var _callback_loaded : String;
+        private var _callback_failure : String;
         /** chunk size to avoid blocking **/
         private static const CHUNK_SIZE : uint = 65536;
         private static var _instance_count : int = 0;
-        private var _id : int;
 
         public function JSURLStream() {
             addEventListener(Event.OPEN, onOpen);
             super();
             // Connect calls to JS.
             if (ExternalInterface.available) {
-                _id = _instance_count;
-                _instance_count++;
                 CONFIG::LOGGING {
-                Log.info("add callback resourceLoaded");
+                    Log.debug("add callback resourceLoaded, id:" + _instance_count);
                 }
-                ExternalInterface.addCallback("resourceLoaded" + _id, resourceLoaded);
-                ExternalInterface.addCallback("resourceLoadingError" + _id, resourceLoadingError);
+                _callback_loaded = "resourceLoaded" + _instance_count;
+                _callback_failure = "resourceLoadingError" + _instance_count;
+                // dynamically register callbacks
+                this[_callback_loaded] = function(res): void { resourceLoaded(res)};
+                this[_callback_failure] = function() : void { resourceLoadingError()};
+                ExternalInterface.addCallback(_callback_loaded, resourceLoaded);
+                ExternalInterface.addCallback(_callback_failure, resourceLoadingError);
+                _instance_count++;
             }
         }
 
@@ -73,10 +78,10 @@ package org.mangui.chromeless {
 
         override public function load(request : URLRequest) : void {
             CONFIG::LOGGING {
-            Log.info("JSURLStream.load:" + request.url);
+            Log.debug("JSURLStream.load:" + request.url);
             }
             if (ExternalInterface.available) {
-                ExternalInterface.call("onRequestResource" + _id, request.url);
+                ExternalInterface.call("JSURLStream.onRequestResource",ExternalInterface.objectID, request.url,_callback_loaded,_callback_failure);
                 this.dispatchEvent(new Event(Event.OPEN));
             } else {
                 super.load(request);
@@ -89,11 +94,11 @@ package org.mangui.chromeless {
 
         protected function resourceLoaded(base64Resource : String) : void {
             CONFIG::LOGGING {
-            Log.info("resourceLoaded");
-            }           
+              Log.debug("resourceLoaded");
+            }
             _resource = new ByteArray();
             _read_position = 0;
-            _timer = new Timer(0, 0);
+            _timer = new Timer(20, 0);
             _timer.addEventListener(TimerEvent.TIMER, _decodeData);
             _timer.start();
             _base64_resource = base64Resource;
@@ -101,7 +106,7 @@ package org.mangui.chromeless {
 
         protected function resourceLoadingError() : void {
             CONFIG::LOGGING {
-            Log.info("resourceLoadingError");
+            Log.debug("resourceLoadingError");
             }
             _timer.stop();
             this.dispatchEvent(new IOErrorEvent(IOErrorEvent.IO_ERROR));
@@ -109,7 +114,7 @@ package org.mangui.chromeless {
 
         protected function resourceLoadingSuccess() : void {
             CONFIG::LOGGING {
-            Log.info("resourceLoaded and decoded");
+            Log.debug("resourceLoaded and decoded");
             }
 	     _timer.stop();
 	     _resource.position = 0;
@@ -119,25 +124,28 @@ package org.mangui.chromeless {
 
         /** decrypt a small chunk of packets each time to avoid blocking **/
         private function _decodeData(e : Event) : void {
-            var start_pos : uint = _read_position;
-            var end_pos : uint;
-            var decode_completed : Boolean;
-            if (_base64_resource.length <= _read_position + CHUNK_SIZE) {
-                end_pos = _base64_resource.length;
-                decode_completed = true;
-            } else {
-                end_pos = _read_position + CHUNK_SIZE;
-            }
-            var tmpString : String = _base64_resource.substring(start_pos, end_pos);
-            try {
-                _resource.writeBytes(Base64.decode(tmpString));
-            } catch (error:Error) {
-                resourceLoadingError();
-            }
-            if (decode_completed) {
-                resourceLoadingSuccess();
-            } else {
-                _read_position = end_pos;
+            var start_time : int = getTimer();
+            var decode_completed : Boolean = false;
+            // dont spend more than 20ms base64 decoding to avoid fps drop
+            while ((!decode_completed) && ((getTimer() - start_time) < 20)) {
+                var start_pos : uint = _read_position,end_pos : uint;
+                if (_base64_resource.length <= _read_position + CHUNK_SIZE) {
+                    end_pos = _base64_resource.length;
+                    decode_completed = true;
+                } else {
+                    end_pos = _read_position + CHUNK_SIZE;
+                }
+                var tmpString : String = _base64_resource.substring(start_pos, end_pos);
+                try {
+                    _resource.writeBytes(Base64.decode(tmpString));
+                } catch (error:Error) {
+                    resourceLoadingError();
+                }
+                if (decode_completed) {
+                    resourceLoadingSuccess();
+                } else {
+                    _read_position = end_pos;
+                }
             }
         }
     }
