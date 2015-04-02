@@ -23,8 +23,10 @@ package org.mangui.chromeless {
         private var _resource : ByteArray = new ByteArray();
         /** Timer for decode packets **/
         private var _timer : Timer;
-        /** read position **/
+        /** base64 read position **/
         private var _read_position : uint;
+        /** final length **/
+        private var _final_length : uint;
         /** read position **/
         private var _base64_resource : String;
         /* callback names */
@@ -45,10 +47,10 @@ package org.mangui.chromeless {
                 _callback_loaded = "resourceLoaded" + _instance_count;
                 _callback_failure = "resourceLoadingError" + _instance_count;
                 // dynamically register callbacks
-                this[_callback_loaded] = function(res): void { resourceLoaded(res)};
+                this[_callback_loaded] = function(res,len): void { resourceLoaded(res,len)};
                 this[_callback_failure] = function() : void { resourceLoadingError()};
-                ExternalInterface.addCallback(_callback_loaded, resourceLoaded);
-                ExternalInterface.addCallback(_callback_failure, resourceLoadingError);
+                ExternalInterface.addCallback(_callback_loaded, this[_callback_loaded]);
+                ExternalInterface.addCallback(_callback_failure, this[_callback_failure]);
                 _instance_count++;
             }
         }
@@ -92,12 +94,13 @@ package org.mangui.chromeless {
             _connected = true;
         }
 
-        protected function resourceLoaded(base64Resource : String) : void {
+        protected function resourceLoaded(base64Resource : String, len : uint) : void {
             CONFIG::LOGGING {
               Log.debug("resourceLoaded");
             }
             _resource = new ByteArray();
             _read_position = 0;
+            _final_length = len;
             _timer = new Timer(20, 0);
             _timer.addEventListener(TimerEvent.TIMER, _decodeData);
             _timer.start();
@@ -117,8 +120,6 @@ package org.mangui.chromeless {
             Log.debug("resourceLoaded and decoded");
             }
 	     _timer.stop();
-	     _resource.position = 0;
-	     this.dispatchEvent(new ProgressEvent(ProgressEvent.PROGRESS, false, false, _resource.bytesAvailable, _resource.bytesAvailable));
 	     this.dispatchEvent(new Event(Event.COMPLETE));
         }
 
@@ -127,25 +128,28 @@ package org.mangui.chromeless {
             var start_time : int = getTimer();
             var decode_completed : Boolean = false;
             // dont spend more than 20ms base64 decoding to avoid fps drop
-            while ((!decode_completed) && ((getTimer() - start_time) < 20)) {
+            while ((!decode_completed) && ((getTimer() - start_time) < 10)) {
                 var start_pos : uint = _read_position,end_pos : uint;
                 if (_base64_resource.length <= _read_position + CHUNK_SIZE) {
                     end_pos = _base64_resource.length;
                     decode_completed = true;
                 } else {
                     end_pos = _read_position + CHUNK_SIZE;
+                    _read_position = end_pos;
                 }
                 var tmpString : String = _base64_resource.substring(start_pos, end_pos);
+                var savePosition : uint = _resource.position;
                 try {
+                    _resource.position = _resource.length;
                     _resource.writeBytes(Base64.decode(tmpString));
+                    _resource.position = savePosition;
                 } catch (error:Error) {
                     resourceLoadingError();
                 }
-                if (decode_completed) {
-                    resourceLoadingSuccess();
-                } else {
-                    _read_position = end_pos;
-                }
+            }
+            this.dispatchEvent(new ProgressEvent(ProgressEvent.PROGRESS, false, false, _resource.length, _final_length));
+            if (decode_completed) {
+                resourceLoadingSuccess();
             }
         }
     }

@@ -27,8 +27,9 @@ var JSURLStream = {
   },
   xhrReadBytes : function(event) {
     //console.log("fragment loaded");
+    var len = event.currentTarget.response.byteLength;
     var res = this.binding.base64ArrayBuffer(event.currentTarget.response);
-    this.binding.flashObject[this.resourceLoadedFlashCallback](res);
+    this.binding.flashObject[this.resourceLoadedFlashCallback](res,len);
   },
   xhrTransferFailed : function(oEvent) {
     console.log("An error occurred while transferring the file :" + oEvent.target.status);
