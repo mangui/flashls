@@ -58,6 +58,7 @@ var Y_USEHWDECODER = 3;
 
 </script>
 
+<script type="text/javascript" src="flashlsAPI.js"></script>
 <script type="text/javascript" src="../libs/ParsedQueryString.js"></script>
 <script type="text/javascript" src="../libs/UrlLoader.js"></script>
 <script type="text/javascript" src="../libs/canvas.js"></script>
@@ -117,10 +118,10 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
 
 <table border id="mediaControl0">
   <tr>
-    <th colspan="1"><button onclick="play()">Play</button></th>
-    <th colspan="1"><button onclick="pause()">Pause</button></th>
-    <th colspan="1"><button onclick="resume()">Resume</button></th>
-    <th colspan="1"><button onclick="stop()">Stop</button></th>
+    <th colspan="1"><button onclick="api.play(-1)">Play</button></th>
+    <th colspan="1"><button onclick="api.pause()">Pause</button></th>
+    <th colspan="1"><button onclick="api.resume()">Resume</button></th>
+    <th colspan="1"><button onclick="api.stop()">Stop</button></th>
   </tr>
 </table>
 <div>
@@ -182,15 +183,15 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
 
 <table border id="mediaControl">
   <tr>
-    <th><button onclick="seek(document.getElementById('mediaControl').rows[0].cells[1].children[0].value)">Seek to</button></th>
+    <th><button onclick="api.seek(document.getElementById('mediaControl').rows[0].cells[1].children[0].value)">Seek to</button></th>
     <td><input type="text" name="seek_position"></td>
   </tr>
   <tr>
-    <th><button onclick="volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)">Set Volume</button></th>
+    <th><button onclick="api.volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)">Set Volume</button></th>
     <td><input type="text" name="volume_level"></td>
   </tr>
   <tr>
-    <th><button onclick="setlevel(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set Level</button></th>
+    <th><button onclick="api.setLevel(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set Level</button></th>
     <td><input type="text" name="quality_level"></td>
   </tr>
   <tr>
@@ -242,10 +243,11 @@ var events;
 var startDate;
 var player_id = "mymoviename";
 var lastSeekingIdx;
+var api;
 hideCanvas();
 
 function loadStream(url) {
-  stop();
+  api.stop();
   current_url = url;
   load(url);
   document.getElementById("playbackLink").href= window.location.href.split('?')[0] + "?src=" + encodeURIComponent(url);
@@ -274,231 +276,86 @@ function appendLog(txt)
 }
 
 function load(url) {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    startDate = new Date();
-    obj.playerLoad(url);
-    appendLog("load URL " + url);
-    document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML =  0;
-    document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  0;
-  }
-}
-
-function play(url) {
-  if (url && current_url != url) {
-    loadStream(url);
-  }
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.playerPlay(-1);
-  }
-}
-
-function pause() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.playerPause();
-  }
-}
-
-function resume() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.playerResume();
-  }
-}
-
-function stop() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.playerStop();
-  }
-}
-
-function setlevel(level) {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.playerSetLevel(level);
-    appendLog("force level to :" + level);
-  }
-}
-
-function seek(position) {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.playerSeek(position);
-    appendLog("seek to :"+ position);
-  }
-}
-
-function volume(percent) {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.playerVolume(percent);
-    appendLog("set volume to :"+ percent + "%");
-  }
-}
-
-function getDuration() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    return obj.getDuration();
-  }
-}
-
-function getbufferLength() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    return obj.getbufferLength();
-  }
-}
-
-function getLowBufferLength() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    return obj.getlowBufferLength();
-  }
-}
-
-function getMinBufferLength() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    return obj.getminBufferLength();
-  }
-}
-
-function getMaxBufferLength() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    return obj.getmaxBufferLength();
-  }
-}
-
-function getMaxBackBufferLength() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    return obj.getmaxBackBufferLength();
-  }
+  startDate = new Date();
+  api.load(url);
+  appendLog("load URL " + url);
+  document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML =  0;
+  document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  0;
 }
 
 function toggleDebugLogs() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    var state = obj.getLogDebug();
-    state = !state;
-    document.getElementById('mediaInfo').rows[Y_LOGDEBUG].cells[X_LOGDEBUG].innerHTML =  state;
-    obj.playerSetLogDebug(state);
-  }
+  var state = api.getLogDebug();
+  state = !state;
+  document.getElementById('mediaInfo').rows[Y_LOGDEBUG].cells[X_LOGDEBUG].innerHTML =  state;
+  api.playerSetLogDebug(state);
 }
 
 function toggleDebug2Logs() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    var state = obj.getLogDebug2();
-    state = !state;
-    document.getElementById('mediaInfo').rows[Y_LOGDEBUG2].cells[X_LOGDEBUG2].innerHTML =  state;
-    obj.playerSetLogDebug2(state);
-  }
+  var state = api.getLogDebug2();
+  state = !state;
+  document.getElementById('mediaInfo').rows[Y_LOGDEBUG2].cells[X_LOGDEBUG2].innerHTML =  state;
+  api.playerSetLogDebug2(state);
 }
 
 function toggleUseHardwareVideoDecoder() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    var state = obj.getUseHardwareVideoDecoder();
-    state = !state;
-    document.getElementById('mediaInfo').rows[Y_USEHWDECODER].cells[X_USEHWDECODER].innerHTML =  state;
-    obj.playerSetUseHardwareVideoDecoder(state);
-  }
+  var state = api.getUseHardwareVideoDecoder();
+  state = !state;
+  document.getElementById('mediaInfo').rows[Y_USEHWDECODER].cells[X_USEHWDECODER].innerHTML =  state;
+  api.playerSetUseHardwareVideoDecoder(state);
 }
 
-
 function toggleFlushLiveURLCache() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    var state = obj.getflushLiveURLCache();
-    state = !state;
-    document.getElementById('mediaInfo').rows[Y_FLUSHLIVEURL].cells[X_FLUSHLIVEURL].innerHTML =  state;
-    obj.playerSetflushLiveURLCache(state);
-  }
+  var state = api.getflushLiveURLCache();
+  state = !state;
+  document.getElementById('mediaInfo').rows[Y_FLUSHLIVEURL].cells[X_FLUSHLIVEURL].innerHTML =  state;
+  api.playerSetflushLiveURLCache(state);
 }
 
 function toggleJSURLStream() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    var state = obj.getJSURLStream();
-    state = !state;
-    document.getElementById('mediaInfo').rows[Y_JSURLLOADER].cells[X_JSURLLOADER].innerHTML =  state;
-    obj.playerSetJSURLStream(state);
-  }
+  var state = api.getJSURLStream();
+  state = !state;
+  document.getElementById('mediaInfo').rows[Y_JSURLLOADER].cells[X_JSURLLOADER].innerHTML =  state;
+  api.playerSetJSURLStream(state);
 }
 
 function toggleCapLeveltoStage() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    var state = obj.getCapLeveltoStage();
-    state = !state;
-    document.getElementById('mediaInfo').rows[Y_CAPLEVEL].cells[X_CAPLEVEL].innerHTML =  state;
-    obj.playerCapLeveltoStage(state);
-  }
-}
-
-
-function getAudioTrackList() {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    var ret = obj.getAudioTrackList();
-    return ret;
-  }
-}
-
-function setAudioTrack(val) {
-  var obj = getFlashMovieObject(player_id);
-  if(obj != null) {
-    obj.playerSetAudioTrack(val);
-  }
+  var state = api.getCapLeveltoStage();
+  state = !state;
+  document.getElementById('mediaInfo').rows[Y_CAPLEVEL].cells[X_CAPLEVEL].innerHTML =  state;
+  api.playerCapLeveltoStage(state);
 }
 
 var flashlsEvents = {
    onHLSReady: function(instanceId) {
-    listStreams(teststreams,"streamlist");
     appendLog("onHLSReady()");
-
-    // warn about old swf file
-    var obj = getFlashMovieObject(player_id);
-    if (obj != null) {
-      if (!obj.getPlayerVersion || obj.getPlayerVersion() < 2) {
-        alert('You are using an old swf player file, or perhaps your browser is using a cached version of the swf file.');
-      }
-      document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML = getLowBufferLength().toFixed(2);
-      document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = getMinBufferLength().toFixed(2);
-      document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = getMaxBufferLength().toFixed(2);
-    }
+    api = new flashlsAPI(getFlashMovieObject(instanceId));
+    toggleJSURLStream();
+    listStreams(teststreams,"streamlist");
+    document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML = api.getLowBufferLength().toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = api.getMinBufferLength().toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = api.getMaxBufferLength().toFixed(2);
   },
   onVideoSize: function(instanceId, width, height) {
-    var obj = getFlashMovieObject(player_id);
-    if (obj != null) {
-      var state = obj.getCapLeveltoStage();
-      if(!state) {
-        var ratio = width / height;
-        if (height > 720) {
-          height = 720;
-          width = height * ratio;
-        }
-        //appendLog("onVideoSize(),resize stage to " + width + "x" + height);
-        obj.width = width;
-        obj.height = height;
-        var canvas = document.getElementById('buffered_c');
-        canvas.width = width;
-        var event = {time : new Date() - startDate, type : "reize", name : width + 'x' + height};
-        events.video.push(event);
+    var state = api.getCapLeveltoStage();
+    if(!state) {
+      var ratio = width / height;
+      if (height > 720) {
+        height = 720;
+        width = height * ratio;
       }
+      api.flashObject.width = width;
+      api.flashObject.height = height;
+      var canvas = document.getElementById('buffered_c');
+      canvas.width = width;
+      var event = {time : new Date() - startDate, type : "reize", name : width + 'x' + height};
+      events.video.push(event);
     }
   },
   onComplete: function(instanceId) {
@@ -512,7 +369,7 @@ var flashlsEvents = {
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
     showCanvas();
     events = { url : current_url, date : new Date()-startDate, load : [], buffer : [], video : []};
-    play();
+    api.play(-1);
     var event = {
                 type : "manifest",
                 name : "",
@@ -615,7 +472,7 @@ var flashlsEvents = {
     appendLog("new track list");
     for (var t in trackList) {
       appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
-      html += '<button onclick="setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
+      html += '<button onclick="api.setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
     }
     d.innerHTML = html;
   },
@@ -640,8 +497,8 @@ function hideCanvas()  {
 
 function buffered_seek(event) {
   var canvas = document.getElementById('buffered_c');
-  var position = (event.clientX - canvas.offsetLeft) / canvas.width * getDuration();
-  seek(position);
+  var position = (event.clientX - canvas.offsetLeft) / canvas.width * api.getDuration();
+  api.seek(position);
 }
 
 function updateBufferCanvas(position,duration,buffer, backbuffer) {
