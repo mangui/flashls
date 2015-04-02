@@ -441,7 +441,24 @@ var flashlsEvents = {
     document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
     document.getElementById('mediaInfo').rows[Y_BACK_BUFFER].cells[X_BACK_BUFFER].innerHTML =  timemetrics.backbuffer.toFixed(2);
     document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding_main.toFixed(2);
-    events.buffer.push({ time : new Date() - startDate, buffer : Math.round(1000*timemetrics.buffer), pos: Math.round(1000*timemetrics.position)});
+
+    var event = { time : new Date() - startDate, buffer : Math.round(1000*timemetrics.buffer), pos: Math.round(1000*timemetrics.position)};
+    var bufEvents = events.buffer, bufEventLen = bufEvents.length;
+    if(bufEventLen > 1) {
+      var event0 = bufEvents[bufEventLen-2],event1 = bufEvents[bufEventLen-1];
+      var slopeBuf0 = (event0.buffer - event1.buffer)/(event0.time-event1.time);
+      var slopeBuf1 = (event1.buffer - event.buffer)/(event1.time-event.time);
+
+      var slopePos0 = (event0.pos - event1.pos)/(event0.time-event1.time);
+      var slopePos1 = (event1.pos - event.pos)/(event1.time-event.time);
+      // compute slopes. if less than 30% difference, remove event1
+      if((slopeBuf0 === slopeBuf1 || Math.abs(slopeBuf0/slopeBuf1 -1) <= 0.3) &&
+         (slopePos0 === slopePos1 || Math.abs(slopePos0/slopePos1 -1) <= 0.3))
+       {
+        bufEvents.pop();
+      }
+    }
+    events.buffer.push(event);
     updateBufferCanvas(timemetrics.position,timemetrics.duration,timemetrics.buffer, timemetrics.backbuffer);
     refreshCanvas();
   },
