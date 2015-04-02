@@ -63,6 +63,7 @@ var Y_USEHWDECODER = 3;
 <script type="text/javascript" src="../libs/JSURLStream.js"></script>
 <script type="text/javascript" src="../libs/canvas.js"></script>
 <script type="text/javascript" src="../libs/metrics.js"></script>
+<script type="text/javascript" src="../libs/jsonpack.js"></script>
 
 <style type="text/css">
 a:link {
@@ -215,6 +216,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
 <input type="text" id='windowStart' defaultValue="0" size="8" onkeydown="if(event.keyCode=='13'){windowStart=document.getElementById('windowStart').value;}">
 <button type="button" class="btn btn-xs btn-primary" onclick="windowEnd=document.getElementById('windowEnd').value">fixed window end(ms)</button>
 <input type="text" id='windowEnd' defaultValue="10000" size="8" onkeydown="if(event.keyCode=='13'){windowEnd=document.getElementById('windowEnd').value;}"><br>
+<button type="button" class="btn btn-xs btn-success" onclick="exportmetrics()" style="font-size:18px">metrics permalink</button>
 <canvas id="bufferTimerange_c" width="640" height="100" style="border:1px solid #000000" onmousedown="timeRangeCanvasonMouseDown(event)" onmousemove="timeRangeCanvasonMouseMove(event)" onmouseup="timeRangeCanvasonMouseUp(event)" onmouseout="timeRangeCanvasonMouseOut(event)";></canvas>
 <canvas id="bufferWindow_c" width="640" height="100" style="border:1px solid #000000" onmousemove="windowCanvasonMouseMove(event)";></canvas>
 <canvas id="videoEvent_c" width="640" height="15" style="border:1px solid #000000";></canvas>
@@ -277,6 +279,7 @@ function appendLog(txt)
 
 function load(url) {
   startDate = new Date();
+  current_url = url;
   api.load(url);
   appendLog("load URL " + url);
   document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  0;
@@ -336,7 +339,6 @@ var flashlsEvents = {
    onHLSReady: function(instanceId) {
     appendLog("onHLSReady()");
     api = new flashlsAPI(getFlashMovieObject(instanceId));
-    toggleJSURLStream();
     listStreams(teststreams,"streamlist");
     document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML = api.getLowBufferLength().toFixed(2);
     document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = api.getMinBufferLength().toFixed(2);
@@ -368,7 +370,7 @@ var flashlsEvents = {
     appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
     showCanvas();
-    events = { url : current_url, date : new Date()-startDate, load : [], buffer : [], video : []};
+    events = { url : current_url, date : new Date(), load : [], buffer : [], video : []};
     api.play(-1);
     var event = {
                 type : "manifest",
@@ -511,6 +513,17 @@ function hideCanvas()  {
     document.getElementById('buffered_c').style.display="none";
 }
 
+function exportmetrics() {
+  var url = document.URL;
+  var json = JSON.stringify(events);
+  var jsonpacked = jsonpack.pack(json);
+  //console.log(jsonpacked);
+  var b64 = btoa(jsonpacked);
+  console.log("packing JSON from " + json.length + " to " + jsonpacked.length + " bytes");
+  url = url.substr(0,url.lastIndexOf("/")+1) + 'metrics.html?data=' + b64;
+  console.log(url);
+  window.open(url,'_blank');
+}
 
 function buffered_seek(event) {
   var canvas = document.getElementById('buffered_c');
