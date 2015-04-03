@@ -5,6 +5,7 @@ package org.mangui.hls.playlist {
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
+    import flash.utils.Dictionary;
     import flash.utils.getTimer;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
@@ -306,6 +307,7 @@ package org.mangui.hls.playlist {
         /** Extract levels from manifest data. **/
         public static function extractLevels(data : String, base : String = '') : Vector.<Level> {
             var levels : Vector.<Level> = new Vector.<Level>();
+            var bitrateDictionary : Dictionary = new Dictionary();
             var level : Level;
             var lines : Array = data.split("\n");
             var level_found : Boolean = false;
@@ -347,9 +349,16 @@ package org.mangui.hls.playlist {
                         }
                     }
                 } else if (level_found == true) {
-                    level.url = _extractURL(line, base);
-                    level.manifest_index = levels.length;
-                    levels.push(level);
+                    if(!(level.bitrate in bitrateDictionary)) {
+                        level.url = _extractURL(line, base);
+                        level.manifest_index = levels.length;
+                        levels.push(level);
+                        bitrateDictionary[level.bitrate] = true;
+                    } else {
+                       CONFIG::LOGGING {
+                            Log.debug("discard failover level with bitrate " + level.bitrate);
+                        }
+                    }
                     level_found = false;
                 }
             }
