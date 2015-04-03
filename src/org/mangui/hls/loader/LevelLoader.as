@@ -12,9 +12,9 @@ package org.mangui.hls.loader {
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
+    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
@@ -161,8 +161,7 @@ package org.mangui.hls.loader {
             // successful loading, reset retry counter
             _retry_timeout = 1000;
             _retry_count = 0;
-            var loader : URLLoader = URLLoader(event.target);
-            _parseManifest(String(loader.data));
+            _parseManifest(String(_urlloader.data));
         };
 
         /** parse a playlist **/
