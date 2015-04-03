@@ -18,6 +18,7 @@ package org.mangui.chromeless {
     import org.mangui.hls.utils.Log;
     }
 
+    // Fragment Loader
     public dynamic class JSURLStream extends URLStream {
         private var _connected : Boolean;
         private var _resource : ByteArray = new ByteArray();
@@ -83,7 +84,7 @@ package org.mangui.chromeless {
             Log.debug("JSURLStream.load:" + request.url);
             }
             if (ExternalInterface.available) {
-                ExternalInterface.call("JSURLStream.onRequestResource",ExternalInterface.objectID, request.url,_callback_loaded,_callback_failure);
+                ExternalInterface.call("JSLoaderFragment.onRequestResource",ExternalInterface.objectID, request.url,_callback_loaded,_callback_failure);
                 this.dispatchEvent(new Event(Event.OPEN));
             } else {
                 super.load(request);

@@ -2,27 +2,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.chromeless {
-    import org.mangui.hls.utils.Log;
-    import org.mangui.hls.utils.ScaleVideo;
-    import org.mangui.hls.model.AudioTrack;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.event.HLSError;
-    import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.HLS;
-
-    import flash.net.URLStream;
-
-    import org.mangui.hls.model.Level;
-
     import flash.display.*;
     import flash.events.*;
     import flash.external.ExternalInterface;
     import flash.geom.Rectangle;
-    import flash.media.Video;
     import flash.media.SoundTransform;
     import flash.media.StageVideo;
     import flash.media.StageVideoAvailability;
+    import flash.media.Video;
+    import flash.net.URLLoader;
+    import flash.net.URLStream;
     import flash.utils.setTimeout;
+    import org.mangui.hls.event.HLSError;
+    import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.model.Level;
+    import org.mangui.hls.utils.Log;
+    import org.mangui.hls.utils.ScaleVideo;
 
     // import com.sociodox.theminer.*;
     public class ChromelessPlayer extends Sprite {
@@ -429,8 +427,10 @@ package org.mangui.chromeless {
         protected function _setJSURLStream(jsURLstream : Boolean) : void {
             if (jsURLstream) {
                 _hls.URLstream = JSURLStream as Class;
+                _hls.URLloader = JSURLLoader as Class;
             } else {
                 _hls.URLstream = URLStream as Class;
+                _hls.URLloader = URLLoader as Class;
             }
         };
 

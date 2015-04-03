@@ -2,20 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
+
     import flash.display.Stage;
+    import flash.events.Event;
+    import flash.events.EventDispatcher;
     import flash.net.NetConnection;
     import flash.net.NetStream;
+    import flash.net.URLLoader;
     import flash.net.URLStream;
-    import flash.events.EventDispatcher;
-    import flash.events.Event;
-
-    import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.controller.AudioTrackController;
+    import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.loader.AltAudioLevelLoader;
-    import org.mangui.hls.model.Level;
+    import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
@@ -32,8 +33,9 @@ package org.mangui.hls {
         private var _streamBuffer : StreamBuffer;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
-        /** HLS URLStream **/
+        /** HLS URLStream/URLLoader **/
         private var _hlsURLStream : Class;
+        private var _hlsURLLoader : Class;
         private var _client : Object = {};
         private var _stage : Stage;
         /* level handling */
@@ -51,6 +53,7 @@ package org.mangui.hls {
             _levelController = new LevelController(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
             _hlsURLStream = URLStream as Class;
+            _hlsURLLoader = URLLoader as Class;
             // default loader
             _hlsNetStream = new HLSNetStream(connection, this, _streamBuffer);
             this.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
@@ -212,6 +215,15 @@ package org.mangui.hls {
         public function get URLstream() : Class {
             return _hlsURLStream;
         }
+
+        /* set URL stream loader */
+        public function set URLloader(urlloader : Class) : void {
+            _hlsURLLoader = urlloader;
+        }
+
+        /* retrieve URL stream loader */
+        public function get URLloader() : Class {
+            return _hlsURLLoader;
+        }
     }
-    ;
 }

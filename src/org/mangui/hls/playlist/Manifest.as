@@ -67,11 +67,12 @@ package org.mangui.hls.playlist {
         private var _metrics : HLSLoadMetrics;
 
         /** Load a playlist M3U8 file. **/
-        public function loadPlaylist(url : String, success : Function, error : Function, index : int, type : String, flushLiveURLcache : Boolean) : void {
+        public function loadPlaylist(hls : HLS, url : String, success : Function, error : Function, index : int, type : String, flushLiveURLcache : Boolean) : void {
             _url = url;
             _success = success;
             _index = index;
-            _urlloader = new URLLoader();
+            var urlLoaderClass : Class = hls.URLloader as Class;
+            _urlloader = (new urlLoaderClass()) as URLLoader;
             _urlloader.addEventListener(Event.COMPLETE, _loadCompleteHandler);
             _urlloader.addEventListener(ProgressEvent.PROGRESS, _loadProgressHandler);
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR, error);

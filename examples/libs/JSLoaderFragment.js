@@ -1,4 +1,4 @@
-var JSURLStream = {
+var JSLoaderFragment = {
 
   onRequestResource : function(instanceId,url, resourceLoadedFlashCallback, resourceFailureFlashCallback) {
     //console.log("JSURLStream.onRequestResource");

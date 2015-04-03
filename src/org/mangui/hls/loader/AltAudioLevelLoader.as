@@ -5,7 +5,6 @@ package org.mangui.hls.loader {
     import flash.events.ErrorEvent;
     import flash.events.IOErrorEvent;
     import flash.events.SecurityErrorEvent;
-    import flash.net.URLLoader;
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
@@ -27,8 +26,6 @@ package org.mangui.hls.loader {
     public class AltAudioLevelLoader {
         /** Reference to the hls framework controller. **/
         private var _hls : HLS;
-        /** Object that fetches the manifest. **/
-        private var _urlloader : URLLoader;
         /** Link to the M3U8 file. **/
         private var _url : String;
         /** Timeout ID for reloading live playlists. **/
@@ -120,7 +117,7 @@ package org.mangui.hls.loader {
             _reload_playlists_timer = getTimer();
             var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[_hls.audioTracks[_current_track].id];
             _manifest_loading = new Manifest();
-            _manifest_loading.loadPlaylist(altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _current_track, _hls.type, HLSSettings.flushLiveURLCache);
+            _manifest_loading.loadPlaylist(_hls,altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _current_track, _hls.type, HLSSettings.flushLiveURLCache);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADING, _current_track));
         };
 
@@ -150,7 +147,6 @@ package org.mangui.hls.loader {
             _closed = true;
             clearTimeout(_timeoutID);
             try {
-                _urlloader.close();
                 if (_manifest_loading) {
                     _manifest_loading.close();
                 }
