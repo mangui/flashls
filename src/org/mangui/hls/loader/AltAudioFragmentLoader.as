@@ -81,7 +81,7 @@ package org.mangui.hls.loader {
         public function AltAudioFragmentLoader(hls : HLS, streamBuffer : StreamBuffer) : void {
             _hls = hls;
             _streamBuffer = streamBuffer;
-            _timer = new Timer(100, 0);
+            _timer = new Timer(20, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
             _loading_state = LOADING_IDLE;
             _keymap = new Object();
@@ -663,6 +663,8 @@ package org.mangui.hls.loader {
                 hlsError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, error.message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
+            // speed up loading of new fragment
+            _timer.start();
         }
     }
 }

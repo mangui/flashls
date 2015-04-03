@@ -104,7 +104,7 @@ package org.mangui.hls.loader {
             _streamBuffer = streamBuffer;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            _timer = new Timer(100, 0);
+            _timer = new Timer(20, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
             _loading_state = MANIFEST_LOADING;
             _manifest_just_loaded = false;
@@ -751,9 +751,9 @@ package org.mangui.hls.loader {
             _last_loaded_level = event.loadMetrics.level;
             if (_loading_state == LOADING_WAITING_LEVEL_UPDATE && _last_loaded_level == _hls.level) {
                 _loading_state = LOADING_IDLE;
-                // speed up loading of new fragment
-                _timer.start();
             }
+            // speed up loading of new fragment
+            _timer.start();
         };
 
         /** triggered by demux, it should return the audio track to be parsed */
@@ -892,6 +892,8 @@ package org.mangui.hls.loader {
                         _switchlevel = true;
                         _demux = null;
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _hls.level));
+                        // speed up loading of new playlist
+                        _timer.start();
                         return;
                     }
                 }
@@ -933,6 +935,8 @@ package org.mangui.hls.loader {
                 hlsError = new HLSError(HLSError.OTHER_ERROR, _frag_current.url, error.message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
+            // speed up loading of new fragment
+            _timer.start();
         }
     }
 }
