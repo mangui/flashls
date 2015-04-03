@@ -260,43 +260,57 @@ package org.mangui.hls.controller {
             return switch_to_level;
         }
 
+        // get level index of first level appearing in the manifest
+        public function get firstlevel() : int {
+            var levels : Vector.<Level> = _hls.levels;
+            for (var i : int = 0; i < levels.length; i++) {
+                if (levels[i].manifest_index == 0) {
+                    return i;
+                }
+            }
+            return 0;
+        }
+
         public function get startlevel() : int {
             var start_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (levels) {
-                if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1) {
+                if (HLSSettings.startFromLevel === -2) {
+                    // playback will start from the first level appearing in Manifest (not sorted by bitrate)
+                    return firstlevel;
+                } else if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1) {
                     /* if startFromLevel is set to -1, it means that effective startup level
                      * will be determined from first segment download bandwidth
                      * let's use lowest bitrate for this download bandwidth assessment
                      * this should speed up playback start time
                      */
                     return 0;
-                }
-
-                // set up start level as being the lowest non-audio level.
-                for (var i : int = 0; i < levels.length; i++) {
-                    if (!levels[i].audio) {
-                        start_level = i;
-                        break;
-                    }
-                }
-                // in case of audio only playlist, force startLevel to 0
-                if (start_level == -1) {
-                    CONFIG::LOGGING {
-                        Log.info("playlist is audio-only");
-                    }
-                    start_level = 0;
                 } else {
-                    if (HLSSettings.startFromBitrate > 0) {
-                        start_level = findIndexOfClosestLevel(HLSSettings.startFromBitrate);
-                    } else if (HLSSettings.startFromLevel > 0) {
-                        // adjust start level using a rule by 3
-                        start_level += Math.round(HLSSettings.startFromLevel * (levels.length - start_level - 1));
+                    // set up start level as being the lowest non-audio level.
+                    for (var i : int = 0; i < levels.length; i++) {
+                        if (!levels[i].audio) {
+                            start_level = i;
+                            break;
+                        }
+                    }
+                    // in case of audio only playlist, force startLevel to 0
+                    if (start_level == -1) {
+                        CONFIG::LOGGING {
+                            Log.info("playlist is audio-only");
+                        }
+                        start_level = 0;
+                    } else {
+                        if (HLSSettings.startFromBitrate > 0) {
+                            start_level = findIndexOfClosestLevel(HLSSettings.startFromBitrate);
+                        } else if (HLSSettings.startFromLevel > 0) {
+                            // adjust start level using a rule by 3
+                            start_level += Math.round(HLSSettings.startFromLevel * (levels.length - start_level - 1));
+                        }
                     }
                 }
-            }
-            CONFIG::LOGGING {
-                Log.debug("start level :" + start_level);
+                CONFIG::LOGGING {
+                    Log.debug("start level :" + start_level);
+                }
             }
             return start_level;
         }

@@ -348,12 +348,22 @@ package org.mangui.hls.playlist {
                     }
                 } else if (level_found == true) {
                     level.url = _extractURL(line, base);
+                    level.manifest_index = levels.length;
                     levels.push(level);
                     level_found = false;
                 }
             }
+            levels.sort(compareLevel);
+            for (i = 0; i < levels.length; i++) {
+                levels[i].index = i;
+            }
             return levels;
         };
+
+        /* compare level, smallest bitrate first */
+        private static function compareLevel(x : Level, y : Level) : Number {
+            return (x.bitrate - y.bitrate);
+        }
 
         /** Extract Alternate Audio Tracks from manifest data. **/
         public static function extractAltAudioTracks(data : String, base : String = '') : Vector.<AltAudioTrack> {

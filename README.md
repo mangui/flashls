@@ -27,7 +27,7 @@ The plugin is compatible with the following players:
   - AES-128 decryption
   - Buffer progress report
   - Error resilience
-    - Retry mechanism on I/O errors 
+    - Retry mechanism on I/O errors
     - Recovery mechanism on badly segmented TS streams
 
 ### Supported M3U8 tags
@@ -65,12 +65,13 @@ The plugin accepts several **optional** configuration options, such as:
      - if 1, highest bitrate is used,
      - if 0.5, the closest to the middle bitrate will be selected and used first.
    - -1 : automatic start level selection, playback will start from level matching download bandwidth (determined from download of first segment)
+   - -2 : playback will start from the first level appearing in Manifest (regardless of its bitrate)
   - `hls_seekfromlevel` (default -1) - If set to true, playback will start from lowest non-audio level after any seek operation. If set to false, playback will start from level used before seeking
    - from 0 to 1 : indicates the "normalized" preferred bitrate. As such,
      - if 0, lowest non-audio bitrate is used,
      - if 1, highest bitrate is used,
      - if 0.5, the closest to the middle bitrate will be selected and used first.
-   - -1 : automatic seek level selection, keep level before seek.   
+   - -1 : automatic seek level selection, keep level before seek.
   - `hls_live_flushurlcache` (default false) - If set to true, Live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player / IE version)
   - `hls_seekmode`
     - "ACCURATE" - Seek to exact position
@@ -124,7 +125,7 @@ The plugin accepts several **optional** configuration options, such as:
 #### Flowplayer
 
 FlowPlayer/flashls setup is described here : http://flash.flowplayer.org/plugins/streaming/flashls.html
-please also refer to example below if you want to use specific configuration options:  
+please also refer to example below if you want to use specific configuration options:
 
 
 ```javascript

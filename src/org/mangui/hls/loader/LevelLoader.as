@@ -248,11 +248,6 @@ package org.mangui.hls.loader {
                         hlsError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "No level found in Manifest");
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                     }
-                    var startBitrate : uint = _levels[0].bitrate;
-                    _levels.sort(compareLevel);
-                    for (var i : uint = 0; i < levelsLength; i++) {
-                        _levels[i].index = i;
-                    }
                     _metrics.parsing_end_time = getTimer();
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
                     // retrieve start level from helper function
@@ -276,11 +271,6 @@ package org.mangui.hls.loader {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         };
-
-        /* compare level, smallest bitrate first */
-        private function compareLevel(x : Level, y : Level) : Number {
-            return (x.bitrate - y.bitrate);
-        }
 
         /** load/reload active M3U8 playlist **/
         private function _loadActiveLevelPlaylist() : void {

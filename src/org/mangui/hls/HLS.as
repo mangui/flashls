@@ -92,6 +92,11 @@ package org.mangui.hls {
             _hlsNetStream = null;
         }
 
+        /** Return index of first quality level referenced in Manifest  **/
+        public function get firstlevel() : int {
+            return _levelController.firstlevel;
+        };
+
         /** Return the quality level used when starting a fresh playback **/
         public function get startlevel() : int {
             return _levelController.startlevel;
