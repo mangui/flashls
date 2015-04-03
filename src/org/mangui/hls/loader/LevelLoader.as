@@ -75,6 +75,7 @@ package org.mangui.hls.loader {
                 _urlloader.removeEventListener(ProgressEvent.PROGRESS, _loadProgressHandler);
                 _urlloader.removeEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
                 _urlloader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, _errorHandler);
+                _urlloader = null;
             }
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
