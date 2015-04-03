@@ -4,13 +4,13 @@
  package org.mangui.osmf.plugins {
     import flash.media.Video;
     import flash.net.NetStream;
-    
+
     import org.mangui.hls.HLS;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.osmf.plugins.loader.HLSNetLoader;
     import org.mangui.osmf.plugins.traits.*;
     import org.mangui.osmf.plugins.utils.ErrorManager;
-    
+
     import org.osmf.media.LoadableElementBase;
     import org.osmf.media.MediaElement;
     import org.osmf.media.MediaResourceBase;
@@ -30,7 +30,7 @@
     import org.osmf.utils.OSMFSettings;
     import org.osmf.events.MediaError;
     import org.osmf.events.MediaErrorEvent;
-    
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
@@ -136,9 +136,6 @@
             var displayObjectTrait : HLSDisplayObjectTrait = new HLSDisplayObjectTrait(_hls,videoSurface, NaN, NaN);
             addTrait(MediaTraitType.DISPLAY_OBJECT, displayObjectTrait);
 
-            var playTrait : PlayTrait = new HLSPlayTrait(_hls);
-            addTrait(MediaTraitType.PLAY, playTrait);
-
             // setup seek trait
             var seekTrait : SeekTrait = new HLSSeekTrait(_hls, timeTrait);
             addTrait(MediaTraitType.SEEK, seekTrait);
@@ -163,6 +160,9 @@
             // setup alternative audio trait
             var alternateAudioTrait : HLSAlternativeAudioTrait = new HLSAlternativeAudioTrait(_hls, this as MediaElement);
             addTrait(MediaTraitType.ALTERNATIVE_AUDIO, alternateAudioTrait);
+
+            var playTrait : PlayTrait = new HLSPlayTrait(_hls);
+            addTrait(MediaTraitType.PLAY, playTrait);
         }
 
         private function _errorHandler(event : HLSEvent) : void {
