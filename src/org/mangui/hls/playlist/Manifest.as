@@ -8,7 +8,6 @@ package org.mangui.hls.playlist {
     import flash.utils.getTimer;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.HLS;
@@ -305,8 +304,8 @@ package org.mangui.hls.playlist {
         };
 
         /** Extract levels from manifest data. **/
-        public static function extractLevels(hls : HLS, data : String, base : String = '') : Vector.<Level> {
-            var levels : Array = [];
+        public static function extractLevels(data : String, base : String = '') : Vector.<Level> {
+            var levels : Vector.<Level> = new Vector.<Level>();
             var level : Level;
             var lines : Array = data.split("\n");
             var level_found : Boolean = false;
@@ -324,7 +323,7 @@ package org.mangui.hls.playlist {
                     for (var j : int = 0; j < params.length; j++) {
                         var param : String = params[j];
                         if (param.indexOf('BANDWIDTH') > -1) {
-                            level.bitrate = param.split('=')[1];
+                            level.bitrate = parseInt(param.split('=')[1]);
                         } else if (param.indexOf('RESOLUTION') > -1) {
                             var res : String = param.split('=')[1] as String;
                             var dim : Array = res.split('x');
@@ -353,19 +352,7 @@ package org.mangui.hls.playlist {
                     level_found = false;
                 }
             }
-            var levelsLength : int = levels.length;
-            if (levelsLength == 0) {
-                var hlsError : HLSError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, base, "No level found in Manifest");
-                hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
-            }
-            levels.sortOn('bitrate', Array.NUMERIC);
-            var vectorLevels : Vector.<Level> = new Vector.<Level>();
-            for (i = 0; i < levelsLength; i++) {
-                level = levels[i];
-                level.index = i;
-                vectorLevels.push(level);
-            }
-            return vectorLevels;
+            return levels;
         };
 
         /** Extract Alternate Audio Tracks from manifest data. **/

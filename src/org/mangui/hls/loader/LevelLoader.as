@@ -241,11 +241,22 @@ package org.mangui.hls.loader {
                         Log.debug("adaptive playlist:\n" + string);
                     }
                     // adaptative playlist, extract levels from playlist, get them and parse them
-                    _levels = Manifest.extractLevels(_hls, string, _url);
-                    // retrieve start level from helper function
-                    _current_level = _hls.startlevel;
+                    _levels = Manifest.extractLevels(string, _url);
+
+                    var levelsLength : int = _levels.length;
+                    if (levelsLength == 0) {
+                        hlsError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "No level found in Manifest");
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                    }
+                    var startBitrate : uint = _levels[0].bitrate;
+                    _levels.sort(compareLevel);
+                    for (var i : uint = 0; i < levelsLength; i++) {
+                        _levels[i].index = i;
+                    }
                     _metrics.parsing_end_time = getTimer();
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
+                    // retrieve start level from helper function
+                    _current_level = _hls.startlevel;
                     _loadActiveLevelPlaylist();
                     if (string.indexOf(Manifest.ALTERNATE_AUDIO) > 0) {
                         CONFIG::LOGGING {
@@ -265,6 +276,11 @@ package org.mangui.hls.loader {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         };
+
+        /* compare level, smallest bitrate first */
+        private function compareLevel(x : Level, y : Level) : Number {
+            return (x.bitrate - y.bitrate);
+        }
 
         /** load/reload active M3U8 playlist **/
         private function _loadActiveLevelPlaylist() : void {

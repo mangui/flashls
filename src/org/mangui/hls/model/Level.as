@@ -18,7 +18,7 @@ package org.mangui.hls.model {
         /** H264 codec signaled ? **/
         public var codec_h264 : Boolean;
         /** Level Bitrate. **/
-        public var bitrate : Number;
+        public var bitrate : uint;
         /** Level Name. **/
         public var name : String;
         /** level index **/
