@@ -49,8 +49,8 @@ package org.mangui.hls.demux {
         private var _tags : Vector.<FLVTag>;
         /** Display Object used to schedule parsing **/
         private var _displayObject : DisplayObject;
-        /** Byte data to be read **/
-        private var _data : ByteArray;
+        /* Vector of buffer */
+        private var _dataVector : Vector.<ByteArray>;
         /* callback functions for audio selection, and parsing progress/complete */
         private var _callback_audioselect : Function;
         private var _callback_progress : Function;
@@ -116,15 +116,14 @@ package org.mangui.hls.demux {
 
         /** append new TS data */
         public function append(data : ByteArray) : void {
-            if (_data == null) {
-                _data = new ByteArray();
+            if (_dataVector == null) {
+                _dataVector = new Vector.<ByteArray>();
                 _data_complete = false;
                 _read_position = 0;
                 _avcc = null;
                 _displayObject.addEventListener(Event.ENTER_FRAME, _parseTimer);
             }
-            _data.position = _data.length;
-            _data.writeBytes(data, data.position);
+            _dataVector.push(data);
         }
 
         /** cancel demux operation */
@@ -132,7 +131,7 @@ package org.mangui.hls.demux {
             CONFIG::LOGGING {
                 Log.debug("TS: cancel demux");
             }
-            _data = null;
+            _dataVector = null;
             _curAudioPES = null;
             _curVideoPES = null;
             _curId3PES = null;
@@ -156,34 +155,66 @@ package org.mangui.hls.demux {
             return (_pmtParsed == false || _avcId != -1);
         }
 
+        private function getNextTSBuffer(start : int) : ByteArray {
+            // find element matching with start offset
+            for(var i : int = 0, offset : int = 0; i < _dataVector.length; i++) {
+                var buffer : ByteArray = _dataVector[i], bufferLength : int = buffer.length;
+                if(start >= offset && start <= offset + bufferLength) {
+                    buffer.position = start - offset;
+                    if(buffer.bytesAvailable >= 188) {
+                        return buffer;
+                    } else {
+                        // TS packet overlapping between 2 buffers
+                        if((i+1) < _dataVector.length) {
+                            var ba : ByteArray = new ByteArray();
+                            ba.writeBytes(buffer, buffer.position);
+                            buffer = _dataVector[i+1];
+                            buffer.position = 0;
+                            if(buffer.bytesAvailable + ba.length >=188) {
+                                ba.writeBytes(buffer,0,188-ba.position);
+                                ba.position = 0;
+                                return ba;
+                            }
+                        }
+                        // if TS overlapping but next buffer not available or next buffer not full enough, return null
+                        return null;
+                    }
+                }
+                offset += bufferLength;
+            }
+            return null;
+        }
+
         /** Parse a limited amount of packets each time to avoid blocking **/
         private function _parseTimer(e : Event) : void {
             var start_time : int = getTimer();
-            _data.position = _read_position;
+            /** Byte data to be read **/
+            var data : ByteArray = getNextTSBuffer(_read_position);
             // dont spend more than 20ms demuxing TS packets to avoid loosing frames
-            while ((_data.bytesAvailable >= 188) && ((getTimer() - start_time) < 20)) {
-                _parseTSPacket();
+            while(data  != null && ((getTimer() - start_time) < 20)) {
+                _parseTSPacket(data);
+                _read_position+=188;
+                if(data.bytesAvailable < 188) {
+                    data = getNextTSBuffer(_read_position);
+                }
             }
             if (_tags.length) {
                 _callback_progress(_tags);
                 _tags = new Vector.<FLVTag>();
             }
-            if (_data) {
-                _read_position = _data.position;
-                // finish reading TS fragment
-                if (_data_complete && _data.bytesAvailable < 188) {
-                    // free ByteArray
-                    _data = null;
-                    // first check if TS parsing was successful
-                    CONFIG::LOGGING {
-                        if (_pmtParsed == false) {
-                            Log.error("TS: no PMT found, report parsing complete");
-                        }
+            // finish reading TS fragment
+            if (_data_complete && getNextTSBuffer(_read_position) == null) {
+                // free ByteArray
+                _dataVector = null;
+                // first check if TS parsing was successful
+                CONFIG::LOGGING {
+                    if (_pmtParsed == false) {
+                        Log.error("TS: no PMT found, report parsing complete");
                     }
-                    _displayObject.removeEventListener(Event.ENTER_FRAME, _parseTimer);
-                    _flush();
-                    _callback_complete();
                 }
+                _displayObject.removeEventListener(Event.ENTER_FRAME, _parseTimer);
+                _flush();
+                _callback_complete();
             }
         }
 
@@ -380,7 +411,7 @@ package org.mangui.hls.demux {
             }
 
             /* first loop : look for AUD/SPS/PPS NAL unit :
-             * AUD (Access Unit Delimiter) are used to detect switch to new video tag 
+             * AUD (Access Unit Delimiter) are used to detect switch to new video tag
              * SPS/PPS are used to generate AVC HEADER
              */
 
@@ -436,7 +467,7 @@ package org.mangui.hls.demux {
                 }
             }
 
-            /* 
+            /*
              * second loop, handle other NAL units and push them in tags accordingly
              */
             for each (frame in frames) {
@@ -455,9 +486,9 @@ package org.mangui.hls.demux {
                         // +1 to skip NAL unit type
                         ba.position = frame.start + 1;
                         var eg : ExpGolomb = new ExpGolomb(ba);
-                        /* add a try/catch, 
-                         * as NALu might be partial here (in case NALu/slice header is splitted accross several PES packet ... we might end up 
-                         * with buffer overflow. prevent this and in case of overflow assume it is not a keyframe. should be fixed later on 
+                        /* add a try/catch,
+                         * as NALu might be partial here (in case NALu/slice header is splitted accross several PES packet ... we might end up
+                         * with buffer overflow. prevent this and in case of overflow assume it is not a keyframe. should be fixed later on
                          */
                         try {
                             // discard first_mb_in_slice
@@ -537,51 +568,51 @@ package org.mangui.hls.demux {
         }
 
         /** Parse TS packet. **/
-        private function _parseTSPacket() : void {
+        private function _parseTSPacket(data : ByteArray) : void {
             // Each packet is 188 bytes.
             var todo : uint = TSDemuxer.PACKETSIZE;
             // Sync byte.
-            if (_data.readByte() != TSDemuxer.SYNCBYTE) {
-                var pos_start : uint = _data.position - 1;
-                if (probe(_data) == true) {
-                    var pos_end : uint = _data.position;
+            if (data.readByte() != TSDemuxer.SYNCBYTE) {
+                var pos_start : uint = data.position - 1;
+                if (probe(data) == true) {
+                    var pos_end : uint = data.position;
                     CONFIG::LOGGING {
                         Log.warn("TS: lost sync between offsets:" + pos_start + "/" + pos_end);
                         if (HLSSettings.logDebug2) {
                             var ba : ByteArray = new ByteArray();
-                            _data.position = pos_start;
-                            _data.readBytes(ba, 0, pos_end - pos_start);
+                            data.position = pos_start;
+                            data.readBytes(ba, 0, pos_end - pos_start);
                             Log.debug2("TS: lost sync dump:" + Hex.fromArray(ba));
                         }
                     }
-                    _data.position = pos_end + 1;
+                    data.position = pos_end + 1;
                 } else {
-                    throw new Error("TS: Could not parse file: sync byte not found @ offset/len " + _data.position + "/" + _data.length);
+                    throw new Error("TS: Could not parse file: sync byte not found @ offset/len " + data.position + "/" + data.length);
                 }
             }
             todo--;
             // Payload unit start indicator.
-            var stt : uint = (_data.readUnsignedByte() & 64) >> 6;
-            _data.position--;
+            var stt : uint = (data.readUnsignedByte() & 64) >> 6;
+            data.position--;
 
             // Packet ID (last 13 bits of UI16).
-            var pid : uint = _data.readUnsignedShort() & 8191;
+            var pid : uint = data.readUnsignedShort() & 8191;
             // Check for adaptation field.
             todo -= 2;
-            var atf : uint = (_data.readByte() & 48) >> 4;
+            var atf : uint = (data.readByte() & 48) >> 4;
             todo--;
             // Read adaptation field if available.
             if (atf > 1) {
                 // Length of adaptation field.
-                var len : uint = _data.readUnsignedByte();
+                var len : uint = data.readUnsignedByte();
                 todo--;
                 // Random access indicator (keyframe).
                 // var rai:uint = data.readUnsignedByte() & 64;
-                _data.position += len;
+                data.position += len;
                 todo -= len;
                 // Return if there's only adaptation field.
                 if (atf == 2 || len == 183) {
-                    _data.position += todo;
+                    data.position += todo;
                     return;
                 }
             }
@@ -589,7 +620,7 @@ package org.mangui.hls.demux {
             // Parse the PES, split by Packet ID.
             switch (pid) {
                 case PAT_ID:
-                    todo -= _parsePAT(stt);
+                    todo -= _parsePAT(stt,data);
                     CONFIG::LOGGING {
                         if (_pmtParsed == false) {
                             Log.debug("TS: PAT found.PMT PID:" + _pmtId);
@@ -601,7 +632,7 @@ package org.mangui.hls.demux {
                         CONFIG::LOGGING {
                             Log.debug("TS: PMT found");
                         }
-                        todo -= _parsePMT(stt);
+                        todo -= _parsePMT(stt,data);
                         _pmtParsed = true;
                         // if PMT was not parsed before, and some unknown packets have been skipped in between,
                         // rewind to beginning of the stream, it helps recovering bad segmented content
@@ -610,7 +641,7 @@ package org.mangui.hls.demux {
                             CONFIG::LOGGING {
                                 Log.warn("TS: late PMT found, rewinding at beginning of TS");
                             }
-                            _data.position = 0;
+                            _read_position = 0;
                             return;
                         }
                     }
@@ -630,7 +661,7 @@ package org.mangui.hls.demux {
                         _curAudioPES = new ByteArray();
                     }
                     if (_curAudioPES) {
-                        _curAudioPES.writeBytes(_data, _data.position, todo);
+                        _curAudioPES.writeBytes(data, data.position, todo);
                     }
                     CONFIG::LOGGING {
                         if (!_curAudioPES) {
@@ -650,7 +681,7 @@ package org.mangui.hls.demux {
                     }
                     if (_curId3PES) {
                         // store data.  will normally be in a single TS
-                        _curId3PES.writeBytes(_data, _data.position, todo);
+                        _curId3PES.writeBytes(data, data.position, todo);
                         var pes : PES = new PES(_curId3PES);
                         if (pes.len && (pes.data.length - pes.payload - pes.payload_len) >= 0) {
                             CONFIG::LOGGING {
@@ -683,7 +714,7 @@ package org.mangui.hls.demux {
                         _curVideoPES = new ByteArray();
                     }
                     if (_curVideoPES) {
-                        _curVideoPES.writeBytes(_data, _data.position, todo);
+                        _curVideoPES.writeBytes(data, data.position, todo);
                     }
                     CONFIG::LOGGING {
                         if (!_curVideoPES) {
@@ -698,59 +729,59 @@ package org.mangui.hls.demux {
                     break;
             }
             // Jump to the next packet.
-            _data.position += todo;
+            data.position += todo;
         };
 
         /** Parse the Program Association Table. **/
-        private function _parsePAT(stt : uint) : int {
+        private function _parsePAT(stt : uint, data : ByteArray) : int {
             var pointerField : uint = 0;
             if (stt) {
-                pointerField = _data.readUnsignedByte();
+                pointerField = data.readUnsignedByte();
                 // skip alignment padding
-                _data.position += pointerField;
+                data.position += pointerField;
             }
             // skip table id
-            _data.position += 1;
+            data.position += 1;
             // get section length
-            var sectionLen : uint = _data.readUnsignedShort() & 0x3FF;
+            var sectionLen : uint = data.readUnsignedShort() & 0x3FF;
             // Check the section length for a single PMT.
             if (sectionLen > 13) {
                 throw new Error("TS: Multiple PMT entries are not supported.");
             }
             // Grab the PMT ID.
-            _data.position += 7;
-            _pmtId = _data.readUnsignedShort() & 8191;
+            data.position += 7;
+            _pmtId = data.readUnsignedShort() & 8191;
             return 13 + pointerField;
         };
 
         /** Read the Program Map Table. **/
-        private function _parsePMT(stt : uint) : int {
+        private function _parsePMT(stt : uint, data : ByteArray) : int {
             var pointerField : uint = 0;
 
             /** audio Track List */
             var audioList : Vector.<AudioTrack> = new Vector.<AudioTrack>();
 
             if (stt) {
-                pointerField = _data.readUnsignedByte();
+                pointerField = data.readUnsignedByte();
                 // skip alignment padding
-                _data.position += pointerField;
+                data.position += pointerField;
             }
             // skip table id
-            _data.position += 1;
+            data.position += 1;
             // Check the section length for a single PMT.
-            var len : uint = _data.readUnsignedShort() & 0x3FF;
+            var len : uint = data.readUnsignedShort() & 0x3FF;
             var read : uint = 13;
-            _data.position += 7;
+            data.position += 7;
             // skip program info
-            var pil : uint = _data.readUnsignedShort() & 0x3FF;
-            _data.position += pil;
+            var pil : uint = data.readUnsignedShort() & 0x3FF;
+            data.position += pil;
             read += pil;
             // Loop through the streams in the PMT.
             while (read < len) {
                 // stream type
-                var typ : uint = _data.readByte();
+                var typ : uint = data.readByte();
                 // stream pid
-                var sid : uint = _data.readUnsignedShort() & 0x1fff;
+                var sid : uint = data.readUnsignedShort() & 0x1fff;
                 if (typ == 0x0F) {
                     // ISO/IEC 13818-7 ADTS AAC (MPEG-2 lower bit-rate audio)
                     audioList.push(new AudioTrack('TS/AAC ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0), true));
@@ -772,8 +803,8 @@ package org.mangui.hls.demux {
                     }
                 }
                 // es_info_length
-                var sel : uint = _data.readUnsignedShort() & 0xFFF;
-                _data.position += sel;
+                var sel : uint = data.readUnsignedShort() & 0xFFF;
+                data.position += sel;
                 // loop to next stream
                 read += sel + 5;
             }
