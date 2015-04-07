@@ -43,7 +43,9 @@ package org.mangui.hls.loader {
         /** has manifest just being reloaded **/
         private var _manifest_just_loaded : Boolean;
         /** last loaded level. **/
-        private var _last_loaded_level : int;
+        private var _level_last_loaded : int;
+        /** next level (-1 if not defined yet) **/
+        private var _level_next : int;
         /** Reference to the manifest levels. **/
         private var _levels : Vector.<Level>;
         /** Util for loading the fragment. **/
@@ -58,8 +60,6 @@ package org.mangui.hls.loader {
         private var _hasDiscontinuity : Boolean;
         /** boolean to track whether PTS analysis is ongoing or not */
         private var _pts_analyzing : Boolean = false;
-        /** boolean to indicate that PTS has just been analyzed */
-        private var _pts_just_analyzed : Boolean = false;
         /** Timer used to monitor/schedule fragment download. **/
         private var _timer : Timer;
         /** requested seek position **/
@@ -153,7 +153,9 @@ package org.mangui.hls.loader {
                     // check if first fragment after seek has been already loaded
                     if (_fragment_first_loaded == false) {
                         // select level for first fragment load
-                        if (_hls.autolevel) {
+                        if(_level_next != -1) {
+                            level = _level_next;
+                        } else if (_hls.autolevel) {
                             if (_manifest_just_loaded) {
                                 level = _hls.startlevel;
                             } else {
@@ -169,12 +171,13 @@ package org.mangui.hls.loader {
                         _switchlevel = true;
 
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
-                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _level_last_loaded != level)) {
                             // playlist not yet received
                             CONFIG::LOGGING {
                                 Log.debug("_checkLoading : playlist not received for level:" + level);
                             }
                             _loading_state = LOADING_WAITING_LEVEL_UPDATE;
+                            _level_next = level;
                         } else {
                             // just after seek, load first fragment
                             _loading_state = _loadfirstfragment(_seek_pos, level);
@@ -185,13 +188,8 @@ package org.mangui.hls.loader {
                          */
                     } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
                         // select level for next fragment load
-                        // dont switch level after PTS analysis
-                        if (_pts_just_analyzed == true) {
-                            _pts_just_analyzed = false;
-                            level = _hls.level;
-                            /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
-                        } else if (_switchlevel == true) {
-                            level = _hls.level;
+                        if(_level_next != -1) {
+                            level = _level_next;
                         } else if (_hls.autolevel && _levels.length > 1 ) {
                             // select level from heuristics (current level / last fragment duration / buffer length)
                             level = _levelController.getnextlevel(_hls.level, _hls.stream.bufferLength);
@@ -207,12 +205,13 @@ package org.mangui.hls.loader {
                             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
                         }
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
-                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _last_loaded_level != level)) {
+                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _level_last_loaded != level)) {
                             // playlist not yet received
                             CONFIG::LOGGING {
                                 Log.debug("_checkLoading : playlist not received for level:" + level);
                             }
                             _loading_state = LOADING_WAITING_LEVEL_UPDATE;
+                            _level_next = level;
                         } else {
                             _loading_state = _loadnextfragment(level, _frag_previous);
                         }
@@ -748,8 +747,8 @@ package org.mangui.hls.loader {
 
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
-            _last_loaded_level = event.loadMetrics.level;
-            if (_loading_state == LOADING_WAITING_LEVEL_UPDATE && _last_loaded_level == _hls.level) {
+            _level_last_loaded = event.loadMetrics.level;
+            if (_loading_state == LOADING_WAITING_LEVEL_UPDATE && _level_last_loaded == _hls.level) {
                 _loading_state = LOADING_IDLE;
             }
             // speed up loading of new fragment
@@ -813,7 +812,8 @@ package org.mangui.hls.loader {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
                         // }
                         if (next_seqnum != _frag_current.seqnum) {
-                            _pts_just_analyzed = true;
+                            // stick to same level after PTS analysis
+                            _level_next = _hls.level;
                             CONFIG::LOGGING {
                                 Log.debug("PTS analysis done on " + _frag_current.seqnum + ", matching seqnum is " + next_seqnum + " of [" + (_levels[_hls.level].start_seqnum) + "," + (_levels[_hls.level].end_seqnum) + "],cancel loading and get new one");
                             }
@@ -887,7 +887,7 @@ package org.mangui.hls.loader {
                         // dispatch event for tracking purpose
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADED, _metrics));
                         // let's directly jump to the accurate level to improve quality at player start
-                        _hls.level = bestlevel;
+                        _level_next = bestlevel;
                         _loading_state = LOADING_IDLE;
                         _switchlevel = true;
                         _demux = null;
@@ -901,6 +901,7 @@ package org.mangui.hls.loader {
 
             try {
                 _switchlevel = false;
+                _level_next = -1;
                 CONFIG::LOGGING {
                     Log.debug("Loaded        " + _frag_current.seqnum + " of [" + (_levels[_hls.level].start_seqnum) + "," + (_levels[_hls.level].end_seqnum) + "],level " + _hls.level + " m/M PTS:" + fragData.pts_min + "/" + fragData.pts_max);
                 }
