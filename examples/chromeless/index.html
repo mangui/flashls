@@ -349,8 +349,8 @@ var flashlsEvents = {
     var state = api.getCapLeveltoStage();
     if(!state) {
       var ratio = width / height;
-      if (height > 720) {
-        height = 720;
+      if (height > window.innerHeight-30) {
+        height = window.innerHeight-30;
         width = height * ratio;
       }
       api.flashObject.width = width;
