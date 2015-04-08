@@ -644,6 +644,7 @@ package org.mangui.hls.loader {
                     }
                     _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _frag_current.continuity, _frag_current.start_time + fragData.tag_pts_start_offset / 1000);
                     _metrics.duration = fragData.pts_max + fragData.tag_duration - fragData.pts_min;
+                    _metrics.id2 = fragData.tags.length;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, _metrics));
                     fragData.shiftTags();
                 }

@@ -155,6 +155,13 @@ package org.mangui.chromeless {
             }
         };
 
+        protected function _tagsLoadedHandler(event : HLSEvent) : void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call("flashlsEvents.onTagsLoaded", ExternalInterface.objectID, event.loadMetrics);
+            }
+        };
+
+
         protected function _fragmentLoadedHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
                 ExternalInterface.call("flashlsEvents.onFragmentLoaded", ExternalInterface.objectID, event.loadMetrics);
@@ -458,6 +465,7 @@ package org.mangui.chromeless {
             _hls.stage = stage;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
+            _hls.addEventListener(HLSEvent.TAGS_LOADED, _tagsLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);

@@ -10,7 +10,7 @@
         public var level : int;
         /* id of loaded content : should be SN for fragment, startSN for playlist */
         public var id : int;
-        /* id2 of loaded content : endSN for playlist */
+        /* id2 of loaded content : endSN for playlist, nb tags for tags loaded */
         public var id2 : int;
         /** fragment/playlist size  **/
         public var size : int;
