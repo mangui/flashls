@@ -346,6 +346,8 @@ var flashlsEvents = {
     document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = api.getMaxBufferLength().toFixed(2);
   },
   onVideoSize: function(instanceId, width, height) {
+    var event = {time : new Date() - startDate, type : "resize", name : width + 'x' + height};
+    events.video.push(event);
     var state = api.getCapLeveltoStage();
     if(!state) {
       var ratio = width / height;
@@ -357,8 +359,6 @@ var flashlsEvents = {
       api.flashObject.height = height;
       var canvas = document.getElementById('buffered_c');
       canvas.width = width;
-      var event = {time : new Date() - startDate, type : "reize", name : width + 'x' + height};
-      events.video.push(event);
     }
   },
   onComplete: function(instanceId) {
@@ -446,7 +446,7 @@ var flashlsEvents = {
     refreshCanvas();
   },
   onFragmentPlaying: function(instanceId, playmetrics) {
-    var event = {time : new Date() - startDate, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level};
+    var event = {time : new Date() - startDate, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level, duration : playmetrics.duration*1000};
     events.video.push(event);
   },
   onPosition: function(instanceId, timemetrics) {

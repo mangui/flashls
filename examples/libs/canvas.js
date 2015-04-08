@@ -432,6 +432,9 @@
     //draw event rectangle
     x_start = networkChartStart + networkChartWidth*(event.time-minTime)/(maxTime-minTime);
     if(event.duration) {
+      if(event.type && event.type.indexOf("playing frag") !==-1) {
+        ctx.fillStyle = "green";
+      }
       x_w = networkChartWidth*event.duration/(maxTime-minTime);
     } else {
       x_w = 1;

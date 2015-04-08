@@ -23,9 +23,9 @@ package org.mangui.hls.stream {
         import org.mangui.hls.utils.Log;
     }
     /** Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
-     * 
+     *
      * play state transition :
-     * 				FROM								TO								condition 	
+     * 				FROM								TO								condition
      *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     play()/play2()/seek() called
      *  HLSPlayStates.PLAYING_BUFFERING  	HLSPlayStates.PLAYING  				buflen > minBufferLength
      *  HLSPlayStates.PAUSED_BUFFERING  	HLSPlayStates.PAUSED  				buflen > minBufferLength
@@ -67,7 +67,7 @@ package org.mangui.hls.stream {
             super.client = _client;
         };
 
-        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, audio_only : Boolean, program_date : Number, width : int, height : int, ... tags) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
@@ -79,7 +79,7 @@ package org.mangui.hls.stream {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, audio_only, program_date, width, height, tag_list)));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, tag_list)));
         }
 
         // function is called by SCRIPT in FLV
@@ -303,7 +303,7 @@ package org.mangui.hls.stream {
             }
             _streamBuffer.seek(position);
             _setSeekState(HLSSeekStates.SEEKING);
-            /* if HLS was in paused state before seeking, 
+            /* if HLS was in paused state before seeking,
              * switch to paused buffering state
              * otherwise, switch to playing buffering state
              */

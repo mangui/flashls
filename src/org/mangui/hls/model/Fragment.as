@@ -64,6 +64,7 @@ package org.mangui.hls.model {
             data.writeObject(this.level);
             data.writeObject(this.seqnum);
             data.writeObject(this.continuity);
+            data.writeObject(this.duration);
             data.writeObject(this.program_date);
             data.writeObject(!this.data.video_found);
             data.writeObject(this.data.video_width);
