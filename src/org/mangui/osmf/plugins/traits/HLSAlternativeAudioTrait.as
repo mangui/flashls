@@ -19,7 +19,6 @@ package org.mangui.osmf.plugins.traits {
         private var _media : MediaElement;
         private var _audioTrackList : Vector.<AudioTrack>;
         private var _numAlternativeAudioStreams : int;
-        private var _transitionInProgress : Boolean = false;
         private var _activeTransitionIndex : int = DEFAULT_TRANSITION_INDEX;
         private var _lastTransitionIndex : int = INVALID_TRANSITION_INDEX;
 
@@ -27,10 +26,10 @@ package org.mangui.osmf.plugins.traits {
             CONFIG::LOGGING {
             Log.debug("HLSAlternativeAudioTrait()");
             }
-            super(0);
             _hls = hls;
             _audioTrackList = _hls.audioTracks;
             _numAlternativeAudioStreams = _audioTrackList.length - 1;
+            super(_numAlternativeAudioStreams);
             _media = media;
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
@@ -85,7 +84,6 @@ package org.mangui.osmf.plugins.traits {
             }
             if (_lastTransitionIndex != indexToSwitchTo) {
                 _activeTransitionIndex = indexToSwitchTo;
-                _transitionInProgress = true;
                 _hls.audioTrack = indexToSwitchTo + 1;
             }
         }
@@ -94,8 +92,8 @@ package org.mangui.osmf.plugins.traits {
             CONFIG::LOGGING {
             Log.debug("HLSDynamicStreamTrait:_audioTrackChangedHandler");
             }
-            _transitionInProgress = false;
-            setSwitching(false, _lastTransitionIndex);
+            setSwitching(false, _activeTransitionIndex);
+            _lastTransitionIndex = _activeTransitionIndex;
         }
 
         private function _audioTrackListChangedHandler(event : HLSEvent) : void {
