@@ -2,16 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.demux {
-    import flash.utils.getTimer;
-    import flash.display.DisplayObject;
-
-    import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.model.AudioTrack;
-
     import flash.events.Event;
     import flash.events.EventDispatcher;
-    import flash.utils.ByteArray;
+    import flash.events.TimerEvent;
     import flash.net.ObjectEncoding;
+    import flash.utils.ByteArray;
+    import flash.utils.getTimer;
+    import flash.utils.Timer;
+    import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.model.AudioTrack;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -47,8 +46,6 @@ package org.mangui.hls.demux {
         private var _id3Id : int;
         /** Vector of audio/video tags **/
         private var _tags : Vector.<FLVTag>;
-        /** Display Object used to schedule parsing **/
-        private var _displayObject : DisplayObject;
         /* Vector of buffer */
         private var _dataVector : Vector.<ByteArray>;
         /* callback functions for audio selection, and parsing progress/complete */
@@ -72,6 +69,7 @@ package org.mangui.hls.demux {
         private var _adifTagInserted : Boolean = false;
         /* last AVCC byte Array */
         private var _avcc : ByteArray;
+        private var _timer : Timer;
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : uint = data.position;
@@ -95,7 +93,7 @@ package org.mangui.hls.demux {
         }
 
         /** Transmux the M2TS file into an FLV file. **/
-        public function TSDemuxer(displayObject : DisplayObject, callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function) {
+        public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function) {
             _curAudioPES = null;
             _curVideoPES = null;
             _curId3PES = null;
@@ -111,7 +109,7 @@ package org.mangui.hls.demux {
             _pmtId = _avcId = _audioId = _id3Id = -1;
             _audioIsAAC = false;
             _tags = new Vector.<FLVTag>();
-            _displayObject = displayObject;
+            _timer = new Timer(0, 0);
         };
 
         /** append new TS data */
@@ -121,9 +119,10 @@ package org.mangui.hls.demux {
                 _data_complete = false;
                 _read_position = 0;
                 _avcc = null;
-                _displayObject.addEventListener(Event.ENTER_FRAME, _parseTimer);
+                _timer.addEventListener(TimerEvent.TIMER, _parseTimer);
             }
             _dataVector.push(data);
+            _timer.start();
         }
 
         /** cancel demux operation */
@@ -140,7 +139,7 @@ package org.mangui.hls.demux {
             _adtsFrameOverflow = null;
             _avcc = null;
             _tags = new Vector.<FLVTag>();
-            _displayObject.removeEventListener(Event.ENTER_FRAME, _parseTimer);
+            _timer.stop();
         }
 
         public function notifycomplete() : void {
@@ -212,7 +211,7 @@ package org.mangui.hls.demux {
                         Log.error("TS: no PMT found, report parsing complete");
                     }
                 }
-                _displayObject.removeEventListener(Event.ENTER_FRAME, _parseTimer);
+                _timer.stop();
                 _flush();
                 _callback_complete();
             }

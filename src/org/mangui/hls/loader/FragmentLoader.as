@@ -464,7 +464,7 @@ package org.mangui.hls.loader {
                 bytes.position = bytes.length;
                 bytes.writeBytes(data);
                 data = bytes;
-                _demux = DemuxHelper.probe(data, _levels[_hls.level], _hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
+                _demux = DemuxHelper.probe(data, _levels[_hls.level], _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
             }
             if (_demux) {
                 _demux.append(data);
@@ -493,7 +493,7 @@ package org.mangui.hls.loader {
                 var bytes : ByteArray = new ByteArray();
                 fragData.bytes.position = _frag_current.byterange_start_offset;
                 fragData.bytes.readBytes(bytes, 0, _frag_current.byterange_end_offset - _frag_current.byterange_start_offset);
-                _demux = DemuxHelper.probe(bytes, _levels[_hls.level], _hls.stage, _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
+                _demux = DemuxHelper.probe(bytes, _levels[_hls.level], _fragParsingAudioSelectionHandler, _fragParsingProgressHandler, _fragParsingCompleteHandler, _fragParsingVideoMetadataHandler);
                 if (_demux) {
                     bytes.position = 0;
                     _demux.append(bytes);
@@ -685,15 +685,6 @@ package org.mangui.hls.loader {
         private function _loadfragment(frag : Fragment) : void {
             // postpone URLStream init before loading first fragment
             if (_fragstreamloader == null) {
-                if (_hls.stage == null) {
-                    var err : String = "hls.stage not set, cannot parse TS data !!!";
-                    CONFIG::LOGGING {
-                        Log.error(err);
-                    }
-                    var hlsError : HLSError = new HLSError(HLSError.OTHER_ERROR, frag.url, err);
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
-                    return;
-                }
                 var urlStreamClass : Class = _hls.URLstream as Class;
                 _fragstreamloader = (new urlStreamClass()) as URLStream;
                 _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragLoadErrorHandler);
@@ -733,7 +724,7 @@ package org.mangui.hls.loader {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, frag.url));
                 _fragstreamloader.load(new URLRequest(frag.url));
             } catch (error : Error) {
-                hlsError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
+                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, frag.url, error.message);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         }
