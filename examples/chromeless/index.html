@@ -351,7 +351,7 @@ var flashlsEvents = {
       var ratio = width / height;
       if (height > window.innerHeight-30) {
         height = window.innerHeight-30;
-        width = height * ratio;
+        width = Math.round(height * ratio);
       }
       api.flashObject.width = width;
       api.flashObject.height = height;
@@ -414,6 +414,17 @@ var flashlsEvents = {
     event.time = new Date() - startDate - (loadmetrics.loading_end_time - loadmetrics.loading_request_time);
     events.load.push(event);
     refreshCanvas();
+  },
+  onTagsLoaded: function(instanceId, loadmetrics) {
+    /*
+    var event = {
+                id : loadmetrics.id2,
+              };
+    event.time = new Date() - startDate;
+    event.type = 'tags';
+    events.load.push(event);
+    refreshCanvas();
+    */
   },
   onFragmentLoaded: function(instanceId, loadmetrics) {
     var event = {
