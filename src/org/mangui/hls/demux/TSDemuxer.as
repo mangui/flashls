@@ -48,6 +48,7 @@ package org.mangui.hls.demux {
         private var _tags : Vector.<FLVTag>;
         /* Vector of buffer */
         private var _dataVector : Vector.<ByteArray>;
+        private var _dataOffset : uint;
         /* callback functions for audio selection, and parsing progress/complete */
         private var _callback_audioselect : Function;
         private var _callback_progress : Function;
@@ -70,15 +71,16 @@ package org.mangui.hls.demux {
         /* last AVCC byte Array */
         private var _avcc : ByteArray;
         private var _timer : Timer;
+        private var _totalBytes : uint;
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : uint = data.position;
-            var len : uint = Math.min(data.bytesAvailable, 188 * 2);
+            var len : uint = Math.min(data.bytesAvailable, PACKETSIZE * 2);
             for (var i : int = 0; i < len; i++) {
                 if (data.readByte() == SYNCBYTE) {
                     // ensure that at least two consecutive TS start offset are found
-                    if (data.bytesAvailable > 188) {
-                        data.position = pos + i + 188;
+                    if (data.bytesAvailable > PACKETSIZE) {
+                        data.position = pos + i + PACKETSIZE;
                         if (data.readByte() == SYNCBYTE) {
                             data.position = pos + i;
                             return true;
@@ -118,10 +120,13 @@ package org.mangui.hls.demux {
                 _dataVector = new Vector.<ByteArray>();
                 _data_complete = false;
                 _read_position = 0;
+                _totalBytes = 0;
+                _dataOffset = 0;
                 _avcc = null;
                 _timer.addEventListener(TimerEvent.TIMER, _parseTimer);
             }
             _dataVector.push(data);
+            _totalBytes += data.length;
             _timer.start();
         }
 
@@ -155,31 +160,39 @@ package org.mangui.hls.demux {
         }
 
         private function getNextTSBuffer(start : int) : ByteArray {
-            // find element matching with start offset
-            for(var i : int = 0, offset : int = 0; i < _dataVector.length; i++) {
-                var buffer : ByteArray = _dataVector[i], bufferLength : int = buffer.length;
-                if(start >= offset && start <= offset + bufferLength) {
-                    buffer.position = start - offset;
-                    if(buffer.bytesAvailable >= 188) {
-                        return buffer;
-                    } else {
-                        // TS packet overlapping between 2 buffers
-                        if((i+1) < _dataVector.length) {
+            if(start + 188 <= _totalBytes) {
+                // find element matching with start offset
+                for(var i : int = 0, offset : int = _dataOffset; i < _dataVector.length; i++) {
+                    var buffer : ByteArray = _dataVector[i], bufferLength : int = buffer.length;
+                    if(start >= offset && start < offset + bufferLength) {
+                        buffer.position = start - offset;
+                        if(buffer.bytesAvailable >= PACKETSIZE) {
+                            if(_pmtParsed && i) {
+                                _dataVector.splice(0,i);
+                                _dataOffset = offset;
+                            }
+                            return buffer;
+                        } else {
+                            // TS packet overlapping between several buffers
                             var ba : ByteArray = new ByteArray();
                             ba.writeBytes(buffer, buffer.position);
-                            buffer = _dataVector[i+1];
-                            buffer.position = 0;
-                            if(buffer.bytesAvailable + ba.length >=188) {
-                                ba.writeBytes(buffer,0,188-ba.position);
+                            while(++i < _dataVector.length && ba.length < PACKETSIZE) {
+                                buffer = _dataVector[i];
+                                buffer.position = 0;
+                                ba.writeBytes(buffer,0,Math.min(PACKETSIZE-ba.position,buffer.length));
+                            }
+                            if(ba.length == PACKETSIZE) {
                                 ba.position = 0;
                                 return ba;
                             }
+                            // we should never reach this point
+                            // if TS overlapping but next buffer not available or next buffer not full enough, return null
+                            //Log.error("TS overlapping but next buffer not full enough:" + _read_position + "/" + _totalBytes + "/" + ba.length);
+                            return null;
                         }
-                        // if TS overlapping but next buffer not available or next buffer not full enough, return null
-                        return null;
                     }
+                    offset += bufferLength;
                 }
-                offset += bufferLength;
             }
             return null;
         }
@@ -192,8 +205,8 @@ package org.mangui.hls.demux {
             // dont spend more than 20ms demuxing TS packets to avoid loosing frames
             while(data  != null && ((getTimer() - start_time) < 20)) {
                 _parseTSPacket(data);
-                _read_position+=188;
-                if(data.bytesAvailable < 188) {
+                _read_position+=PACKETSIZE;
+                if(data.bytesAvailable < PACKETSIZE) {
                     data = getNextTSBuffer(_read_position);
                 }
             }
@@ -201,8 +214,8 @@ package org.mangui.hls.demux {
                 _callback_progress(_tags);
                 _tags = new Vector.<FLVTag>();
             }
-            // finish reading TS fragment
-            if (_data_complete && getNextTSBuffer(_read_position) == null) {
+            // check if we have finished with reading this TS fragment
+            if (_data_complete && _read_position == _totalBytes) {
                 // free ByteArray
                 _dataVector = null;
                 // first check if TS parsing was successful
@@ -569,9 +582,9 @@ package org.mangui.hls.demux {
         /** Parse TS packet. **/
         private function _parseTSPacket(data : ByteArray) : void {
             // Each packet is 188 bytes.
-            var todo : uint = TSDemuxer.PACKETSIZE;
+            var todo : uint = PACKETSIZE;
             // Sync byte.
-            if (data.readByte() != TSDemuxer.SYNCBYTE) {
+            if (data.readByte() != SYNCBYTE) {
                 var pos_start : uint = data.position - 1;
                 if (probe(data) == true) {
                     var pos_end : uint = data.position;
