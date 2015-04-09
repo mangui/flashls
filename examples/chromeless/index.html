@@ -91,6 +91,7 @@ a:visited {
 Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
 <input id="userInput" value="http://streambox.fr/playlists/test_001/stream.m3u8" size="80"> <button onclick="userSubmit()">Load</button><br>
 <a id="playbackLink" href="">playback link</a>
+<div id="customButtons"></div>
 <p>
 <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
  codebase="" id="mymoviename" width="640" height="360">
@@ -239,6 +240,7 @@ function userSubmit() {
 
 </p><div style="text-align: left;">
 <script type="text/javascript" src="../../../playlists/streams.js"></script>
+<script type="text/javascript" src="../../../streams.js"></script>
 <script type="text/javascript">
 
 var current_url;
@@ -255,19 +257,6 @@ function loadStream(url) {
   load(url);
   document.getElementById("playbackLink").href= window.location.href.split('?')[0] + "?src=" + encodeURIComponent(url);
   document.getElementById('userInput').value = url;
-}
-
-function listStreams(list, container) {
-  for(var i=0; i<list.length; i++) { var entry = document.createElement("li");
-    entry.innerHTML = "<a href='#' onclick='return loadStream(\""+list[i].file+"\")'>"+list[i].title+"</a>";
-    document.getElementById(container).appendChild(entry);
-  }
-  var pqs = new ParsedQueryString();
-  var url = pqs.param("src");
-  if(url == "") {
-    url = list[0].file;
-  }
-  loadStream(url);
 }
 
 function appendLog(txt)
@@ -340,7 +329,6 @@ var flashlsEvents = {
    onHLSReady: function(instanceId) {
     appendLog("onHLSReady()");
     api = new flashlsAPI(getFlashMovieObject(instanceId));
-    listStreams(teststreams,"streamlist");
     document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML = api.getLowBufferLength().toFixed(2);
     document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = api.getMinBufferLength().toFixed(2);
     document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = api.getMaxBufferLength().toFixed(2);
@@ -414,17 +402,6 @@ var flashlsEvents = {
     event.time = new Date() - startDate - (loadmetrics.loading_end_time - loadmetrics.loading_request_time);
     events.load.push(event);
     refreshCanvas();
-  },
-  onTagsLoaded: function(instanceId, loadmetrics) {
-    /*
-    var event = {
-                id : loadmetrics.id2,
-              };
-    event.time = new Date() - startDate;
-    event.type = 'tags';
-    events.load.push(event);
-    refreshCanvas();
-    */
   },
   onFragmentLoaded: function(instanceId, loadmetrics) {
     var event = {
