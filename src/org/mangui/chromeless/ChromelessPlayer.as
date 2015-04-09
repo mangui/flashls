@@ -66,6 +66,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getlowBufferLength", _getlowBufferLength);
             ExternalInterface.addCallback("getmaxBackBufferLength", _getmaxBackBufferLength);
             ExternalInterface.addCallback("getbufferLength", _getbufferLength);
+            ExternalInterface.addCallback("getbackBufferLength", _getbackBufferLength);
             ExternalInterface.addCallback("getLogDebug", _getLogDebug);
             ExternalInterface.addCallback("getLogDebug2", _getLogDebug2);
             ExternalInterface.addCallback("getUseHardwareVideoDecoder", _getUseHardwareVideoDecoder);
@@ -154,13 +155,6 @@ package org.mangui.chromeless {
                 ExternalInterface.call("flashlsEvents.onAudioLevelLoaded", ExternalInterface.objectID, event.loadMetrics);
             }
         };
-
-        protected function _tagsLoadedHandler(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("flashlsEvents.onTagsLoaded", ExternalInterface.objectID, event.loadMetrics);
-            }
-        };
-
 
         protected function _fragmentLoadedHandler(event : HLSEvent) : void {
             if (ExternalInterface.available) {
@@ -278,6 +272,10 @@ package org.mangui.chromeless {
 
         protected function _getbufferLength() : Number {
             return _hls.bufferLength;
+        };
+
+        protected function _getbackBufferLength() : Number {
+            return _hls.backBufferLength;
         };
 
         protected function _getmaxBufferLength() : Number {
@@ -465,7 +463,6 @@ package org.mangui.chromeless {
             _hls.stage = stage;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
-            _hls.addEventListener(HLSEvent.TAGS_LOADED, _tagsLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);

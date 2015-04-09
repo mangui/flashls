@@ -45,12 +45,20 @@ var flashlsAPI = function(flashObject) {
     this.flashObject.playerSetmaxBufferLength(len);
 	}
 
+	this.getPosition = function() {
+		return this.flashObject.getPosition();
+	}
+
 	this.getDuration = function() {
 		return this.flashObject.getDuration();
 	}
 
 	this.getbufferLength = function() {
 		return this.flashObject.getbufferLength();
+	}
+
+	this.getbackBufferLength = function() {
+		return this.flashObject.getbackBufferLength();
 	}
 
 	this.getLowBufferLength = function() {
