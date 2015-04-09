@@ -89,7 +89,7 @@ a:visited {
 </header>
 
 Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
-<input id="userInput" value="http://streambox.fr/playlists/test_001/stream.m3u8" size="80"> <button onclick="userSubmit()">Load</button><br>
+<input id="userInput" size="80"> <button onclick="userSubmit()">Load</button><br>
 <a id="playbackLink" href="">playback link</a>
 <div id="customButtons"></div>
 <p>
@@ -244,6 +244,13 @@ function userSubmit() {
 <script type="text/javascript">
 
 var current_url;
+
+var manifest = decodeURIComponent(location.search.split('src=')[1]);
+if(manifest === 'undefined') {
+  manifest = 'http://www.streambox.fr/playlists/test_001/stream.m3u8';
+}
+document.getElementById('userInput').value=manifest;
+
 var events;
 var startDate;
 var player_id = "mymoviename";
