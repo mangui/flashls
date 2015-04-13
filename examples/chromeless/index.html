@@ -102,6 +102,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
 <param name="bgcolor" value="#0" />
 <param name="allowFullScreen" value="true" />
 <param name="wmode" value="window" />
+<param name="FlashVars" value="callback=flashlsCallback" />
 
 <embed src="../../bin/debug/flashlsChromeless.swf?inline=1" width="640" height="360" name="mymoviename"
             quality="autohigh"
@@ -111,6 +112,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
             type="application/x-shockwave-flash"
             swliveconnect="true"
             wmode="window"
+            FlashVars="callback=flashlsCallback"
             pluginspage="http://www.macromedia.com/go/getflashplayer" >
 </embed>
 </object>
@@ -332,15 +334,21 @@ function toggleCapLeveltoStage() {
   api.playerCapLeveltoStage(state);
 }
 
+// Create a single global callback function and pass it's name
+// to the SWF with the name `callback` in the FlashVars parameter.
+window.flashlsCallback = function(eventName, args) {
+  flashlsEvents[eventName].apply(null, args);
+};
+
 var flashlsEvents = {
-   onHLSReady: function(instanceId) {
+   ready: function() {
     appendLog("onHLSReady()");
-    api = new flashlsAPI(getFlashMovieObject(instanceId));
+    api = new flashlsAPI(getFlashMovieObject(player_id));
     document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML = api.getLowBufferLength().toFixed(2);
     document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = api.getMinBufferLength().toFixed(2);
     document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = api.getMaxBufferLength().toFixed(2);
   },
-  onVideoSize: function(instanceId, width, height) {
+  videoSize: function(width, height) {
     var event = {time : new Date() - startDate, type : "resize", name : width + 'x' + height};
     events.video.push(event);
     var state = api.getCapLeveltoStage();
@@ -356,13 +364,13 @@ var flashlsEvents = {
       canvas.width = width;
     }
   },
-  onComplete: function(instanceId) {
+  complete: function() {
     appendLog("onComplete(), playback completed");
   },
-  onError: function(instanceId, code, url, message) {
+  error: function(code, url, message) {
     appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
   },
-  onManifest: function(instanceId, duration, loadmetrics) {
+  manifest: function(duration, loadmetrics) {
     appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
     showCanvas();
@@ -380,7 +388,7 @@ var flashlsEvents = {
     events.load.push(event);
     refreshCanvas();
   },
-   onAudioLevelLoaded: function(instanceId, loadmetrics) {
+  audioLevelLoaded: function(loadmetrics) {
     var event = {
                 type : "level audio",
                 id : loadmetrics.level,
@@ -395,7 +403,7 @@ var flashlsEvents = {
     events.load.push(event);
     refreshCanvas();
   },
-  onLevelLoaded: function(instanceId, loadmetrics) {
+  levelLoaded: function(loadmetrics) {
     var event = {
                 type : "level",
                 id : loadmetrics.level,
@@ -410,7 +418,7 @@ var flashlsEvents = {
     events.load.push(event);
     refreshCanvas();
   },
-  onFragmentLoaded: function(instanceId, loadmetrics) {
+  fragmentLoaded: function(loadmetrics) {
     var event = {
                 id : loadmetrics.level,
                 id2 : loadmetrics.id,
@@ -429,11 +437,11 @@ var flashlsEvents = {
     events.load.push(event);
     refreshCanvas();
   },
-  onFragmentPlaying: function(instanceId, playmetrics) {
+  fragmentPlaying: function(playmetrics) {
     var event = {time : new Date() - startDate, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level, duration : playmetrics.duration*1000};
     events.video.push(event);
   },
-  onPosition: function(instanceId, timemetrics) {
+  position: function(timemetrics) {
     document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
     document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
@@ -460,12 +468,12 @@ var flashlsEvents = {
     updateBufferCanvas(timemetrics.position,timemetrics.duration,timemetrics.buffer, timemetrics.backbuffer);
     refreshCanvas();
   },
-  onPlaybackState: function(instanceId, newState) {
+  playbackState: function(newState) {
     var event = {time : new Date() - startDate, type : newState.toLowerCase(), name : ''};
     events.video.push(event);
     document.getElementById('mediaInfo').rows[Y_STATE].cells[X_STATE].innerHTML =  newState;
   },
-  onSeekState: function(instanceId, newState) {
+  seekState: function(newState) {
     var event = {time : new Date() - startDate, type : newState.toLowerCase(), name : ''};
     events.video.push(event);
 
@@ -476,12 +484,12 @@ var flashlsEvents = {
       events.video[lastSeekingIdx].duration = event.time - events.video[lastSeekingIdx].time;
     }
   },
-  onSwitch: function(instanceId, newLevel) {
+  switch: function(newLevel) {
     var event = {time : new Date() - startDate, type : "levelSwitch", name : newLevel.toFixed()};
     events.video.push(event);
     document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  newLevel;
   },
-  onAudioTracksListChange: function(instanceId, trackList) {
+  audioTracksListChange: function(trackList) {
     var d = document.getElementById('audioControl');
     var html = '';
     appendLog("new track list");
@@ -491,7 +499,7 @@ var flashlsEvents = {
     }
     d.innerHTML = html;
   },
-  onAudioTrackChange: function(instanceId, trackId) {
+  audioTrackChange: function(trackId) {
     var event = {time : new Date() - startDate, type : "audioTrackChange", name : trackId.toFixed()};
     events.video.push(event);
     document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML = trackId;
