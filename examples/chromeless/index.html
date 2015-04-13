@@ -493,7 +493,7 @@ function setAudioTrack(val) {
 }
 
 function onHLSReady(message) {
-    listStreams(teststreams,"streamlist");
+    listStreams(window.teststreams || [], "streamlist");
     appendLog("onHLSReady()");
 
     // warn about old swf file
