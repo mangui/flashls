@@ -19,6 +19,8 @@ package org.mangui.chromeless {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.utils.JSURLLoader;
+    import org.mangui.hls.utils.JSURLStream;
     import org.mangui.hls.utils.Log;
     import org.mangui.hls.utils.ScaleVideo;
 

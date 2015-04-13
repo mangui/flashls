@@ -6,20 +6,24 @@ fi
 
 OPT_DEBUG="-use-network=false \
     -optimize=true \
+    -library-path+=../lib/blooddy_crypto.swc \
     -define=CONFIG::LOGGING,true \
     -define=CONFIG::FLASH_11_1,true"
 
 OPT_RELEASE="-use-network=false \
     -optimize=true \
+    -library-path+=../lib/blooddy_crypto.swc \
     -define=CONFIG::LOGGING,false \
     -define=CONFIG::FLASH_11_1,true"
 
 OPT_DEBUG_10_1="-use-network=false \
     -optimize=true \
+    -library-path+=../lib/blooddy_crypto.swc \
     -define=CONFIG::LOGGING,true \
     -define=CONFIG::FLASH_11_1,false"
 
 OPT_RELEASE_10_1="-use-network=false \
+    -library-path+=../lib/blooddy_crypto.swc \
     -optimize=true \
     -define=CONFIG::LOGGING,false \
     -define=CONFIG::FLASH_11_1,false"
@@ -43,7 +47,6 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
     -source-path ../src \
     -o ../bin/release/flashlsChromeless.swf \
     $OPT_RELEASE \
-    -library-path+=../lib/blooddy_crypto.swc \
     -target-player="11.1" \
     -default-size 480 270 \
     -default-background-color=0x000000
@@ -54,7 +57,6 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
     -source-path ../src \
     -o ../bin/debug/flashlsChromeless.swf \
     $OPT_DEBUG \
-    -library-path+=../lib/blooddy_crypto.swc \
     -target-player="11.1" \
     -default-size 480 270 \
     -default-background-color=0x000000
