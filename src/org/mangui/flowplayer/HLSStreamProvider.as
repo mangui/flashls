@@ -24,6 +24,8 @@ package org.mangui.flowplayer {
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.HLS;
+    import org.mangui.hls.utils.JSURLLoader;
+    import org.mangui.hls.utils.JSURLStream;
     import org.mangui.hls.utils.Params2Settings;
 
     CONFIG::LOGGING {
@@ -78,7 +80,14 @@ package org.mangui.flowplayer {
             for (var object : String in cfg) {
                 var subidx : int = object.indexOf("hls_");
                 if (subidx != -1) {
-                    Params2Settings.set(object.substr(4), cfg[object]);
+                    if(object.indexOf("jsloader")!=-1) {
+                            if(cfg[object] == true) {
+                            _hls.URLstream = JSURLStream as Class;
+                            _hls.URLloader = JSURLLoader as Class;
+                            }
+                        } else {
+                            Params2Settings.set(object.substr(4), cfg[object]);
+                        }
                 }
             }
 
