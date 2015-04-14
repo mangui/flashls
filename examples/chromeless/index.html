@@ -53,7 +53,7 @@ var Y_FLUSHLIVEURL = 3;
 var Y_JSURLLOADER = 3;
 var Y_CAPLEVEL  = 3;
 var Y_USEHWDECODER = 3;
-  
+
 </script>
 
 <script type="text/javascript" src="../libs/ParsedQueryString.js"></script>
@@ -93,6 +93,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
 <param name="bgcolor" value="#0" />
 <param name="allowFullScreen" value="true" />
 <param name="wmode" value="window" />
+<param name="FlashVars" value="callback=flashlsCallback" />
 
 <embed src="../../bin/debug/flashlsChromeless.swf?inline=1" width="640" height="360" name="mymoviename"
             quality="autohigh"
@@ -102,6 +103,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
             type="application/x-shockwave-flash"
             swliveconnect="true"
             wmode="window"
+            FlashVars="callback=flashlsCallback"
             pluginspage="http://www.macromedia.com/go/getflashplayer" >
 </embed>
 </object>
@@ -154,13 +156,13 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
     <td>-1</td>
     <td>-1</td>
   </tr>
-  <tr>  
+  <tr>
       <td colspan="2"><button onclick="toggleDebugLogs()">Toggle Debug1 Logs</button></td>
       <td colspan="2"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></td>
       <td colspan="2"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></td>
       <td colspan="2"><button onclick="toggleJSURLStream()"> JS URL Loader</button></td>
       <td colspan="2"><button onclick="toggleCapLeveltoStage()">Toggle Cap Level</button></td>
-      <td colspan="3"><button onclick="toggleUseHardwareVideoDecoder()">Toggle HW Decoder</button></td>  
+      <td colspan="3"><button onclick="toggleUseHardwareVideoDecoder()">Toggle HW Decoder</button></td>
   </tr>
   <tr>
       <td colspan="2">false</td>
@@ -188,7 +190,7 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   <tr>
     <th><button onclick="setseekfromlevel(document.getElementById('mediaControl').rows[3].cells[1].children[0].value)">Set Seek From Level</button></th>
     <td><input type="text" name="quality_level"></td>
-  </tr>  
+  </tr>
   <tr>
     <th><button onclick="setlevel(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set Level</button></th>
     <td><input type="text" name="quality_level"></td>
@@ -262,7 +264,7 @@ function load(url) {
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
     obj.playerLoad(url);
-    appendLog("load URL " + url);	
+    appendLog("load URL " + url);
     document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  0;
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  0;
     document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML =  0;
@@ -389,7 +391,7 @@ function setminBufferLength(new_len) {
   if(obj != null) {
     obj.playerSetminBufferLength(new_len);
     appendLog("force min buffer len to :" + new_len);
-    document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = getMinBufferLength().toFixed(2);    
+    document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = getMinBufferLength().toFixed(2);
   }
 }
 
@@ -405,7 +407,7 @@ function setmaxBufferLength(new_len) {
   if(obj != null) {
     obj.playerSetmaxBufferLength(new_len);
     appendLog("force max buffer len to :" + new_len);
-    document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = getMaxBufferLength().toFixed(2);    
+    document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = getMaxBufferLength().toFixed(2);
   }
 }
 
@@ -492,7 +494,15 @@ function setAudioTrack(val) {
   }
 }
 
-function onHLSReady(message) {
+// Create a single global callback function and pass it's name
+// to the SWF with the name `callback` in the FlashVars parameter.
+window.flashlsCallback = function(eventName, args) {
+  flashlsEvents[eventName].apply(null, args);
+};
+
+var flashlsEvents = {
+
+  ready: function(message) {
     listStreams(window.teststreams || [], "streamlist");
     appendLog("onHLSReady()");
 
@@ -506,101 +516,105 @@ function onHLSReady(message) {
       document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = getMinBufferLength().toFixed(2);
       document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = getMaxBufferLength().toFixed(2);
     }
-}
+  },
 
-function onVideoSize(width, height) {
-  appendLog("onVideoSize(), " + width + "x" + height);
-  var obj = getFlashMovieObject(player_id);
-  if (obj != null) {    
-    var state = obj.getCapLeveltoStage(); 
-    if(!state) {
-      var ratio = width / height;
-      if (height > 720) {
-        height = 720;
-        width = height * ratio;
+  videoSize: function(width, height) {
+    appendLog("onVideoSize(), " + width + "x" + height);
+    var obj = getFlashMovieObject(player_id);
+    if (obj != null) {
+      var state = obj.getCapLeveltoStage();
+      if(!state) {
+        var ratio = width / height;
+        if (height > 720) {
+          height = 720;
+          width = height * ratio;
+        }
+        appendLog("onVideoSize(),resize stage to " + width + "x" + height);
+        obj.width = width;
+        obj.height = height;
       }
-      appendLog("onVideoSize(),resize stage to " + width + "x" + height);
-      obj.width = width;
-      obj.height = height;
     }
+  },
+
+  complete: function(message) {
+    appendLog("onComplete(), playback completed");
+  },
+
+  error: function(code,url,message) {
+    appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
+  },
+
+  fragmentLoaded: function(loadmetrics) {
+    appendLog("onFragmentLoaded(): bandwidth:" + loadmetrics.bandwidth + " level:" + loadmetrics.level);
+  },
+
+  fragmentPlaying: function(playmetrics) {
+    appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " video_width:" + playmetrics.video_width + " video_height:" + playmetrics.video_height + " tags:" + playmetrics.tag_list);
+  },
+
+  manifest: function(duration) {
+    appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
+    document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
+  },
+
+  position: function(timemetrics) {
+    document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding.toFixed(2);
+    document.getElementById('mediaInfo').rows[Y_UTC_DATE].cells[X_UTC_DATE].innerHTML =  new Date(timemetrics.program_date).toUTCString();
+  },
+
+  state: function(newState) {
+    appendLog("switching state to "+ newState);
+    document.getElementById('mediaInfo').rows[Y_STATE].cells[X_STATE].innerHTML =  newState;
+  },
+
+  switch: function(newLevel) {
+    appendLog("switching level to "+ newLevel);
+    document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  newLevel;
+  },
+
+  audioTracksListChange: function(trackList) {
+    // update audio switcher
+    var d = document.getElementById('audioControl');
+    var html = '';
+    appendLog("new track list");
+    for (var t in trackList) {
+      appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
+      html += '<button onclick="setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
+    }
+    d.innerHTML = html;
+  },
+
+  audioTrackChange: function(trackId) {
+    appendLog("switching audio track to "+ trackId);
+    document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML = trackId;
+  },
+
+  id3Updated: function(id3Data) {
+    // id3 tag is passed in Hex encoded.
+    appendLog("id3 data " + id3Data);
+
+    // Simple conversion of hex to string for debugging.
+    // You will probably want to parse the id3 tag properly.
+    var id3DataDecoded = id3Data.replace(/([a-fA-F0-9]{2})/g, function(a, b) {
+      return String.fromCharCode(parseInt(b, 16));
+    }).split("\0");
+
+    appendLog("id3 data " + id3DataDecoded);
   }
-}
-
-function onComplete(message) {
-  appendLog("onComplete(), playback completed");
-}
-function onError(code,url,message) {
-  appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
-}
-
-function onFragmentLoaded(loadmetrics) {
-  appendLog("onFragmentLoaded(): bandwidth:" + loadmetrics.bandwidth + " level:" + loadmetrics.level);
-}
-function onFragmentPlaying(playmetrics) {
-  appendLog("onFragmentPlaying(): metrics:" + playmetrics.level + " sn:" + playmetrics.seqnum + " cc:" + playmetrics.continuity_counter + " video_width:" + playmetrics.video_width + " video_height:" + playmetrics.video_height + " tags:" + playmetrics.tag_list);
-}
-
-function onManifest(duration) {
-  appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
-  document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
-}
-
-function onPosition(timemetrics) {  
-  document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding.toFixed(2);
-  document.getElementById('mediaInfo').rows[Y_UTC_DATE].cells[X_UTC_DATE].innerHTML =  new Date(timemetrics.program_date).toUTCString();
-}
-
-function onState(newState) {
-  appendLog("switching state to "+ newState);
-  document.getElementById('mediaInfo').rows[Y_STATE].cells[X_STATE].innerHTML =  newState;
-}
-
-function onSwitch(newLevel) {
-  appendLog("switching level to "+ newLevel);
-  document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  newLevel;
-}
-
-function onAudioTracksListChange(trackList) {
-  // update audio switcher
-  var d = document.getElementById('audioControl');
-  var html = '';
-  appendLog("new track list");
-  for (var t in trackList) {
-    appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
-    html += '<button onclick="setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
-  }
-  d.innerHTML = html;
-}
-
-function onAudioTrackChange(trackId) {
-  appendLog("switching audio track to "+ trackId);
-  document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML = trackId;
-}
-
-function onId3Updated(id3Data) {
-  // id3 tag is passed in Hex encoded.
-  appendLog("id3 data " + id3Data);
-
-  // Simple conversion of hex to string for debugging.
-  // You will probably want to parse the id3 tag properly.
-  var id3DataDecoded = id3Data.replace(/([a-fA-F0-9]{2})/g, function(a, b) {
-    return String.fromCharCode(parseInt(b, 16));
-  }).split("\0");
-
-  appendLog("id3 data " + id3DataDecoded);
 };
+
 
 function onRequestResource0(URL) {
   appendLog("loading fragment "+ URL + " for instance 0");
-  URL_request(URL,URL_readBytes0, transferFailed0, "arraybuffer");  
+  URL_request(URL,URL_readBytes0, transferFailed0, "arraybuffer");
 }
 
 function onRequestResource1(URL) {
   appendLog("loading fragment "+ URL + " for instance 1");
-  URL_request(URL,URL_readBytes1,transferFailed1, "arraybuffer");  
+  URL_request(URL,URL_readBytes1,transferFailed1, "arraybuffer");
 }
 
 function URL_request(url, loadcallback, errorcallback,responseType) {
@@ -658,7 +672,7 @@ function resourceLoaded0(res) {
 function resourceLoaded1(res) {
   var obj = getFlashMovieObject(player_id);
   if(obj != null) {
-    obj.resourceLoaded1(res);    
+    obj.resourceLoaded1(res);
   }
 }
 

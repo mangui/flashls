@@ -43,12 +43,15 @@ package org.mangui.chromeless {
         /** URL autoload feature */
         protected var _autoLoad : Boolean = false;
 
+        protected var _callbackName : String;
+
         /** Initialization. **/
         public function ChromelessPlayer() {
             _setupStage();
             _setupSheet();
             _setupExternalGetters();
             _setupExternalCallers();
+            _setupExternalCallback();
 
             setTimeout(_pingJavascript, 50);
         };
@@ -104,6 +107,11 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetJSURLStream", _setJSURLStream);
         };
 
+        protected function _setupExternalCallback() : void {
+            // Pass in the JavaScript callback name in the `callback` FlashVars parameter.
+            _callbackName = LoaderInfo(this.root.loaderInfo).parameters.callback.toString();
+        };
+
         protected function _setupStage() : void {
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;
@@ -122,35 +130,33 @@ package org.mangui.chromeless {
             addChild(_sheet);
         }
 
+        protected function _trigger(event : String, ...args) : void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call(_callbackName, event, args);
+            }
+        };
+
         /** Notify javascript the framework is ready. **/
         protected function _pingJavascript() : void {
-            ExternalInterface.call("onHLSReady", ExternalInterface.objectID);
+            _trigger("ready");
         };
 
         /** Forward events from the framework. **/
         protected function _completeHandler(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onComplete");
-            }
+            _trigger("ready");
         };
 
         protected function _errorHandler(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                var hlsError : HLSError = event.error;
-                ExternalInterface.call("onError", hlsError.code, hlsError.url, hlsError.msg);
-            }
+            var hlsError : HLSError = event.error;
+            _trigger("error", hlsError.code, hlsError.url, hlsError.msg);
         };
 
         protected function _fragmentLoadedHandler(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onFragmentLoaded", event.loadMetrics);
-            }
+            _trigger("fragmentLoaded", event.loadMetrics);
         };
 
         protected function _fragmentPlayingHandler(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onFragmentPlaying", event.playMetrics);
-            }
+            _trigger("fragmentPlaying", event.playMetrics);
         };
 
         protected function _manifestHandler(event : HLSEvent) : void {
@@ -160,17 +166,13 @@ package org.mangui.chromeless {
                 _play(-1);
             }
 
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onManifest", _duration);
-            }
+            _trigger("manifest", _duration);
         };
 
         protected function _mediaTimeHandler(event : HLSEvent) : void {
             _duration = event.mediatime.duration;
             _media_position = event.mediatime.position;
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onPosition", event.mediatime);
-            }
+            _trigger("position", event.mediatime);
 
             var videoWidth : int = _video ? _video.videoWidth : _stageVideo.videoWidth;
             var videoHeight : int = _video ? _video.videoHeight : _stageVideo.videoHeight;
@@ -181,41 +183,29 @@ package org.mangui.chromeless {
                     _videoHeight = videoHeight;
                     _videoWidth = videoWidth;
                     _resize();
-                    if (ExternalInterface.available) {
-                        ExternalInterface.call("onVideoSize", _videoWidth, _videoHeight);
-                    }
+                    _trigger("videoSize", _videoWidth, _videoHeight);
                 }
             }
         };
 
         protected function _stateHandler(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onState", event.state);
-            }
+            _trigger("state", event.state);
         };
 
         protected function _levelSwitchHandler(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onSwitch", event.level);
-            }
+            _trigger("switch", event.level);
         };
 
         protected function _audioTracksListChange(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onAudioTracksListChange", _getAudioTrackList());
-            }
+            _trigger("audioTracksListChange", _getAudioTrackList());
         }
 
         protected function _audioTrackChange(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onAudioTrackChange", event.audioTrack);
-            }
+            _trigger("audioTrackChange", event.audioTrack);
         }
 
         protected function _id3Updated(event : HLSEvent) : void {
-            if (ExternalInterface.available) {
-                ExternalInterface.call("onId3Updated", event.ID3Data);
-            }
+            _trigger("id3Updated", event.ID3Data);
         }
 
         /** Javascript getters. **/
