@@ -296,6 +296,10 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.debug("(re)load Playlist");
                     }
+                    if(_manifest_loading) {
+                       _manifest_loading.close();
+                       _manifest_loading = null;
+                    }
                     clearTimeout(_timeoutID);
                     _timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
                 }
