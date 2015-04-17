@@ -143,7 +143,7 @@ package org.mangui.chromeless {
 
         /** Forward events from the framework. **/
         protected function _completeHandler(event : HLSEvent) : void {
-            _trigger("ready");
+            _trigger("complete");
         };
 
         protected function _errorHandler(event : HLSEvent) : void {
