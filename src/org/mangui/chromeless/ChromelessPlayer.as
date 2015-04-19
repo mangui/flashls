@@ -219,6 +219,10 @@ package org.mangui.chromeless {
             _trigger("audioTrackChange", event.audioTrack);
         }
 
+        protected function _id3Updated(event : HLSEvent) : void {
+            _trigger("id3Updated", event.ID3Data);
+        }
+
         /** Javascript getters. **/
         protected function _getLevel() : int {
             return _hls.level;
@@ -460,6 +464,7 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            _hls.addEventListener(HLSEvent.ID3_UPDATED, _id3Updated);
 
             if (available && stage.stageVideos.length > 0) {
                 _stageVideo = stage.stageVideos[0];

@@ -503,6 +503,10 @@ var flashlsEvents = {
     var event = {time : new Date() - startDate, type : "audioTrackChange", name : trackId.toFixed()};
     events.video.push(event);
     document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML = trackId;
+  },
+  id3Updated: function(ID3Data) {
+    var event = {time : new Date() - startDate, type : "ID3Data"};
+    events.video.push(event);
   }
 };
 
