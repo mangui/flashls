@@ -710,7 +710,7 @@ package org.mangui.hls.demux {
                         }
                     }
                     CONFIG::LOGGING {
-                        if (!_curId3PES) {
+                        if (!stt && !_curId3PES) {
                             Log.warn("TS: Discarding ID3 packet with id " + pid + " bad TS segmentation ?");
                         }
                     }
