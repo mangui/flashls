@@ -130,7 +130,7 @@ package org.mangui.hls {
          */
         public static var startFromBitrate : Number = -1;
         /** start level :
-         *  from 0 to 1 : indicates the "normalized" preferred bitrate. As such, if it is 0.5, the closest to the middle bitrate will be selected and used first.
+         *  from 0 to 1 : indicates the "normalized" preferred level. As such, if it is 0.5, the closest to the middle bitrate will be selected and used first.
          * -1 : automatic start level selection, playback will start from level matching download bandwidth (determined from download of first segment)
          * -2 : playback will start from the first level appearing in Manifest (not sorted by bitrate)
          */
