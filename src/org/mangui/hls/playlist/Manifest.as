@@ -515,8 +515,12 @@ package org.mangui.hls.playlist {
                     // suffix = domain/subdomain:1234/otherstuff
                     _prefix = base.substr(0, base.indexOf("//") + 2);
                     _suffix = base.substr(base.indexOf("//") + 2);
-                    // return http[s]://domain/subdomain:1234/path
-                    return _prefix + _suffix.substr(0, _suffix.indexOf("/")) + path;
+                    if(path.charAt(1) == '/') {
+                            return _prefix + path.substr(2);
+                        } else {
+                            // return http[s]://domain/subdomain:1234/path
+                            return _prefix + _suffix.substr(0, _suffix.indexOf("/")) + path;
+                        }
                 } else {
                     return base.substr(0, base.lastIndexOf('/') + 1) + path;
                 }
