@@ -3,6 +3,7 @@
 
 <script type="text/javascript" src="flowplayer-3.2.12.min.js"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="../libs/js2flash.js"></script>
 <script type="text/javascript" src="../libs/JSLoaderFragment.js"></script>
 <script type="text/javascript" src="../libs/JSLoaderPlaylist.js"></script>
 
@@ -14,24 +15,6 @@
 
   ga('create', 'UA-52843650-1', 'auto');
   ga('send', 'pageview');
-
-function getFlashMovieObject(movieName)
-{
-  if (window.document[movieName])
-  {
-      return window.document[movieName];
-  }
-  if (navigator.appName.indexOf("Microsoft Internet")==-1)
-  {
-    if (document.embeds && document.embeds[movieName])
-      return document.embeds[movieName];
-  }
-  else // if (navigator.appName.indexOf("Microsoft Internet")!=-1)
-  {
-    return document.getElementById(movieName);
-  }
-}
-
 </script>
 
 </head>

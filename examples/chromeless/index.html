@@ -62,6 +62,7 @@ var Y_USEHWDECODER = 3;
 <script type="text/javascript" src="../libs/ParsedQueryString.js"></script>
 <script type="text/javascript" src="../libs/JSLoaderFragment.js"></script>
 <script type="text/javascript" src="../libs/JSLoaderPlaylist.js"></script>
+<script type="text/javascript" src="../libs/js2flash.js"></script>
 <script type="text/javascript" src="../libs/canvas.js"></script>
 <script type="text/javascript" src="../libs/metrics.js"></script>
 <script type="text/javascript" src="../libs/jsonpack.js"></script>
@@ -553,23 +554,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
   ctx.fillRect(x, 0, 2, 15);
 }
 
-
-function getFlashMovieObject(movieName)
-{
-  if (window.document[movieName])
-  {
-      return window.document[movieName];
-  }
-  if (navigator.appName.indexOf("Microsoft Internet")==-1)
-  {
-    if (document.embeds && document.embeds[movieName])
-      return document.embeds[movieName];
-  }
-  else // if (navigator.appName.indexOf("Microsoft Internet")!=-1)
-  {
-    return document.getElementById(movieName);
-  }
-}
 </script>
 <div id="videoStatus">Video status messages<br /></div>
 </body>
