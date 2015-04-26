@@ -7,8 +7,15 @@ var JSLoaderFragment = {
     }
     this.xhrGET(url,this.xhrReadBytes, this.xhrTransferFailed, resourceLoadedFlashCallback, resourceFailureFlashCallback, "arraybuffer");
   },
+  onRequestAbort : function(instanceId) {
+    if(this.xhr &&this.xhr.readyState !== 4) {
+      console.log("JSLoaderFragment:abort XHR");
+      this.xhr.abort();
+    }
+  },
   xhrGET : function (url,loadcallback, errorcallback,resourceLoadedFlashCallback, resourceFailureFlashCallback, responseType) {
     var xhr = new XMLHttpRequest();
+    this.xhr = xhr;
     xhr.binding = this;
     xhr.resourceLoadedFlashCallback = resourceLoadedFlashCallback;
     xhr.resourceFailureFlashCallback = resourceFailureFlashCallback;

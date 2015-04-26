@@ -41,6 +41,11 @@ package org.mangui.hls.utils {
         }
 
         override public function close() : void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call("JSLoaderPlaylist.onRequestAbort",ExternalInterface.objectID);
+            } else {
+                super.close();
+            }
         }
 
         override public function load(request : URLRequest) : void {

@@ -7,9 +7,16 @@ var JSLoaderPlaylist = {
     }
     this.xhrGET(url,this.xhrReadBytes, this.xhrTransferFailed, resourceLoadedFlashCallback, resourceFailureFlashCallback);
   },
+  onRequestAbort : function(instanceId) {
+    if(this.xhr &&this.xhr.readyState !== 4) {
+      console.log("JSLoaderPlaylist:abort XHR");
+      this.xhr.abort();
+    }
+  },
   xhrGET : function (url,loadcallback, errorcallback,resourceLoadedFlashCallback, resourceFailureFlashCallback) {
     var xhr = new XMLHttpRequest();
     xhr.binding = this;
+    this.xhr = xhr;
     xhr.resourceLoadedFlashCallback = resourceLoadedFlashCallback;
     xhr.resourceFailureFlashCallback = resourceFailureFlashCallback;
     xhr.open("GET", url, loadcallback? true: false);
