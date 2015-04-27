@@ -211,7 +211,7 @@ package org.mangui.hls.controller {
 
             /* if audio track not defined, or audio from external source (playlist)
             return null (demux audio not selected) */
-            if (_audioTrackId == -1 || _audioTracks[_audioTrackId].source == AudioTrack.FROM_PLAYLIST) {
+            if (_audioTrackId == -1 ||  _audioTrackId >= _audioTracks.length || _audioTracks[_audioTrackId].source == AudioTrack.FROM_PLAYLIST) {
                 return null;
             } else {
                 // source is demux,return selected audio track
