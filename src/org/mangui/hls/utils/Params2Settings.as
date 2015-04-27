@@ -4,12 +4,13 @@
  package org.mangui.hls.utils {
     import org.mangui.hls.HLSSettings;
 
-    import flash.utils.getQualifiedClassName;
-    import flash.utils.getDefinitionByName;
+    import flash.utils.describeType;
     import flash.utils.Dictionary;
+    import flash.utils.getDefinitionByName;
+    import flash.utils.getQualifiedClassName;
 
     /**
-     * Params2Settings is an helper class that holds every legal external params names 
+     * Params2Settings is an helper class that holds every legal external params names
      * which can be used to customize HLSSettings and maps them to the relevant HLSSettings values
      */
     public class Params2Settings {
@@ -17,27 +18,34 @@
          * HLSSettings <-> params maping
          */
         private static var _paramMap : Dictionary = new Dictionary();
-        _paramMap["minbufferlength"] = "minBufferLength";
-        _paramMap["maxbufferlength"] = "maxBufferLength";
-        _paramMap["maxbackbufferlength"] = "maxBackBufferLength";
-        _paramMap["lowbufferlength"] = "lowBufferLength";
-        _paramMap["seekmode"] = "seekMode";
-        _paramMap["startfromlevel"] = "startFromLevel";
-        _paramMap["seekfromlevel"] = "seekFromLevel";
-        _paramMap["live_flushurlcache"] = "flushLiveURLCache";
-        _paramMap["manifestloadmaxretry"] = "manifestLoadMaxRetry";
-        _paramMap["manifestloadmaxretrytimeout"] = "manifestLoadMaxRetryTimeout";
-        _paramMap["fragmentloadmaxretry"] = "fragmentLoadMaxRetry";
-        _paramMap["fragmentloadmaxretrytimeout"] = "fragmentLoadMaxRetryTimeout";
-        _paramMap["fragmentloadskipaftermaxretry"] = "fragmentLoadSkipAfterMaxRetry";
-        _paramMap["capleveltostage"] = "capLevelToStage";
-        _paramMap["maxlevelcappingmode"] = "maxLevelCappingMode";
-        _paramMap["usehardwarevideodecoder"] = "useHardwareVideoDecoder";
-        _paramMap["info"] = "logInfo";
-        _paramMap["debug"] = "logDebug";
-        _paramMap["debug2"] = "logDebug2";
-        _paramMap["warn"] = "logWarn";
-        _paramMap["error"] = "logError";
+
+        // static initializer
+        {
+            _initParams();
+        }
+
+
+        /* build map between param name and HLSSettings property
+            this is done by enumerating properties : http://stackoverflow.com/questions/13294997/as3-iterating-through-class-variables
+        */
+        private static function _initParams() : void {
+            var description:XML = describeType(HLSSettings);
+            var variables:XMLList = description..variable;
+            for each(var variable:XML in variables) {
+                var name : String = variable.@name;
+                var param : String;
+                if(name.indexOf("log") == 0) {
+                    // loggers params don't need prefix
+                    param = name.substr(3);
+                } else {
+                    param = name;
+                }
+                // for historical (bad ?) reasons, param names are lowercase
+                param = param.toLowerCase();
+                _paramMap[param] = name;
+            }
+        }
+
         public static function set(key : String, value : Object) : void {
             var param : String = _paramMap[key];
             if (param) {
