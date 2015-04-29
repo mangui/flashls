@@ -7,6 +7,7 @@ package org.mangui.flowplayer {
     import flash.media.Video;
     import flash.net.NetConnection;
     import flash.net.NetStream;
+    import flash.system.Security;
     import flash.utils.Dictionary;
     import org.flowplayer.controller.StreamProvider;
     import org.flowplayer.controller.TimeProvider;
@@ -66,6 +67,7 @@ package org.mangui.flowplayer {
             CONFIG::LOGGING {
                 Log.info("onLoad()");
             }
+            Security.allowDomain("*");
             _player = player;
             _hls = new HLS();
             _hls.stage = player.screen.getDisplayObject().stage;
