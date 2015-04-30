@@ -118,6 +118,7 @@ package org.mangui.chromeless {
             stage.fullScreenSourceRect = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
             stage.addEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
             stage.addEventListener(Event.RESIZE, _onStageResize);
+            _setupKeyboardEvents();
         }
 
         protected function _setupSheet() : void {
@@ -125,10 +126,24 @@ package org.mangui.chromeless {
             _sheet = new Sprite();
             _sheet.graphics.beginFill(0x000000, 0);
             _sheet.graphics.drawRect(0, 0, stage.stageWidth, stage.stageHeight);
-            _sheet.addEventListener(MouseEvent.CLICK, _clickHandler);
             _sheet.buttonMode = true;
+            _setupMouseEvents();
             addChild(_sheet);
         }
+
+        protected function _setupMouseEvents() : void {
+            // We use the JavaScript mouse event names.
+            _sheet.doubleClickEnabled = true;
+            _sheet.addEventListener(MouseEvent.CLICK, function() : void { _sendMouseEvent('click'); });
+            _sheet.addEventListener(MouseEvent.DOUBLE_CLICK, function() : void { _sendMouseEvent('dblclick'); });
+            _sheet.addEventListener(MouseEvent.MOUSE_DOWN, function() : void { _sendMouseEvent('mousedown'); });
+            _sheet.addEventListener(MouseEvent.MOUSE_UP, function() : void { _sendMouseEvent('mouseup'); });
+        };
+
+        protected function _setupKeyboardEvents() : void {
+            stage.addEventListener(KeyboardEvent.KEY_DOWN, function(event : KeyboardEvent) : void { _sendKeyEvent('keydown', event) });
+            stage.addEventListener(KeyboardEvent.KEY_UP, function(event : KeyboardEvent) : void { _sendKeyEvent('keyup', event) });
+        };
 
         protected function _trigger(event : String, ...args) : void {
             if (ExternalInterface.available) {
@@ -408,14 +423,26 @@ package org.mangui.chromeless {
             }
         };
 
-        /** Mouse click handler. **/
-        protected function _clickHandler(event : MouseEvent) : void {
-            if (stage.displayState == StageDisplayState.FULL_SCREEN_INTERACTIVE || stage.displayState == StageDisplayState.FULL_SCREEN) {
-                stage.displayState = StageDisplayState.NORMAL;
-            } else {
-                stage.displayState = StageDisplayState.FULL_SCREEN;
-            }
+        /** Mouse event handler. **/
+        protected function _sendMouseEvent(eventName : String) : void {
+            // Set a timeout so that Flash completes it's event handling.
+            // This stops the video from stuttering due to the JS delaying the event completing.
+            setTimeout(function() : void {
+                _trigger(eventName);
+            }, 0);
         };
+
+        /** Keyboard event handler **/
+        protected function _sendKeyEvent(eventName : String, event : KeyboardEvent) : void {
+            // Set a timeout so that Flash completes it's event handling.
+            // This stops the video from stuttering due to the JS delaying the event completing.
+            setTimeout(function() : void {
+                _trigger(eventName, {
+                    keyCode: event.keyCode,
+                    charCode: event.charCode
+                });
+            }, 0);
+        }
 
         /** StageVideo detector. **/
         protected function _onStageVideoState(event : StageVideoAvailabilityEvent) : void {
