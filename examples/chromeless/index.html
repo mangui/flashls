@@ -603,6 +603,30 @@ var flashlsEvents = {
     }).split("\0");
 
     appendLog("id3 data " + id3DataDecoded);
+  },
+
+  click: function(event) {
+    appendLog('click');
+  },
+
+  dblclick: function(event) {
+    appendLog('double click');
+  },
+
+  mousedown: function(event) {
+    appendLog('mouse down');
+  },
+
+  mouseup: function(event) {
+    appendLog('mouse up');
+  },
+
+  keydown: function(event) {
+    appendLog('key down - key code: ' + event.keyCode + ' , char code: ' + event.charCode);
+  },
+
+  keyup: function(event) {
+    appendLog('key up - key code: ' + event.keyCode + ' , char code: ' + event.charCode);
   }
 };
 
