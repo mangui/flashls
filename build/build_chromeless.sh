@@ -6,6 +6,7 @@ fi
 
 OPT_DEBUG="-use-network=false \
     -optimize=true \
+    -debug=true \
     -define=CONFIG::LOGGING,true \
     -define=CONFIG::FLASH_11_1,true"
 
