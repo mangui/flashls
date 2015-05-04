@@ -131,6 +131,11 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   </tr>
 </table>
 <div>
+  selectable levels:
+  <div id="levelControl" style="display: inline;">
+  </div>
+</div>
+<div>
   selectable audio tracks:
   <div id="audioControl" style="display: inline;">
   </div>
@@ -195,10 +200,6 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   <tr>
     <th><button onclick="api.volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)">Set Volume</button></th>
     <td><input type="text" name="volume_level"></td>
-  </tr>
-  <tr>
-    <th><button onclick="api.setLevel(document.getElementById('mediaControl').rows[4].cells[1].children[0].value)">Set Level</button></th>
-    <td><input type="text" name="quality_level"></td>
   </tr>
   <tr>
   </table>
@@ -371,10 +372,15 @@ var flashlsEvents = {
   error: function(code, url, message) {
     appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
   },
-  manifest: function(duration, loadmetrics) {
+  manifest: function(duration, levels, loadmetrics) {
     appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
     showCanvas();
+    var html = '<button onclick="api.setLevel(-1)">auto</button>';
+    for (var i=0; i < levels.length; i++) {
+      html += '<button onclick="api.setLevel(' + i + ')">' + i + '</button>';
+    }
+    document.getElementById('levelControl').innerHTML = html;
     events = { url : current_url, date : new Date(), load : [], buffer : [], video : []};
     api.play(-1);
     var event = {

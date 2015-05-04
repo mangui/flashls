@@ -177,7 +177,7 @@ package org.mangui.chromeless {
                 _play(-1);
             }
 
-            _trigger("manifest", _duration, event.loadMetrics);
+            _trigger("manifest", _duration, event.levels, event.loadMetrics);
         };
 
         protected function _mediaTimeHandler(event : HLSEvent) : void {
@@ -365,6 +365,7 @@ package org.mangui.chromeless {
         protected function _setLevel(level : int) : void {
             _smoothSetLevel(level);
             if (!isNaN(_media_position) && level != -1) {
+                _hls.flushBuffer();
                 _hls.stream.seek(_media_position);
             }
         };
