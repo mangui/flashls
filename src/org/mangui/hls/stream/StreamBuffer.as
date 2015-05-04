@@ -63,7 +63,7 @@ package org.mangui.hls.stream {
             _hls = hls;
             _fragmentLoader = new FragmentLoader(hls, audioTrackController, levelController, this);
             _altaudiofragmentLoader = new AltAudioFragmentLoader(hls, this);
-            flushAll();
+            flushBuffer();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
@@ -72,7 +72,7 @@ package org.mangui.hls.stream {
         }
 
         public function dispose() : void {
-            flushAll();
+            flushBuffer();
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
@@ -88,7 +88,7 @@ package org.mangui.hls.stream {
         public function stop() : void {
             _fragmentLoader.stop();
             _altaudiofragmentLoader.stop();
-            flushAll();
+            flushBuffer();
         }
 
         /*
@@ -138,7 +138,7 @@ package org.mangui.hls.stream {
                 } else {
                     _use_altaudio = false;
                 }
-                flushAll();
+                flushBuffer();
             }
             _timer.start();
         }
@@ -225,7 +225,7 @@ package org.mangui.hls.stream {
             return _reached_vod_end;
         }
 
-        private function flushAll() : void {
+        public function flushBuffer() : void {
             _audioTags = new Vector.<FLVData>();
             _videoTags = new Vector.<FLVData>();
             _metaTags = new Vector.<FLVData>();
@@ -290,11 +290,6 @@ package org.mangui.hls.stream {
             }
         }
 
-        /*
-        private function flushAudio() : void {
-        _audioTags = new Vector.<FLVData>();
-        }
-         */
         private function get audio_expected() : Boolean {
             return (_fragmentLoader.audio_expected || _use_altaudio);
         }

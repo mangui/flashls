@@ -187,6 +187,11 @@ package org.mangui.hls {
             return _hlsNetStream.backBufferLength;
         };
 
+        /** flush stream buffer   **/
+        public function flushBuffer() : void {
+             _streamBuffer.flushBuffer();
+        };
+
         /** get audio tracks list**/
         public function get audioTracks() : Vector.<AudioTrack> {
             return _audioTrackController.audioTracks;
