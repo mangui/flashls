@@ -469,7 +469,7 @@ var flashlsEvents = {
     updateBufferCanvas(timemetrics.position,timemetrics.duration,timemetrics.buffer, timemetrics.backbuffer);
     refreshCanvas();
   },
-  playbackState: function(newState) {
+  state: function(newState) {
     var event = {time : new Date() - startDate, type : newState.toLowerCase(), name : ''};
     events.video.push(event);
     document.getElementById('mediaInfo').rows[Y_STATE].cells[X_STATE].innerHTML =  newState;
