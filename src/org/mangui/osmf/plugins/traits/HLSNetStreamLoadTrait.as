@@ -7,7 +7,7 @@
     import org.osmf.media.MediaResourceBase;
     import org.osmf.net.NetStreamLoadTrait;
     import org.osmf.traits.LoaderBase;
-    
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
@@ -43,6 +43,10 @@
 
         override public function get bytesTotal() : Number {
             return _time_total;
+        }
+
+        public function get hls() : HLS {
+            return _hls;
         }
 
         /**  **/
