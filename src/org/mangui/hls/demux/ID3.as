@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.demux {
     import flash.utils.ByteArray;
-    
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
@@ -12,6 +12,7 @@
         public var len : int;
         public var hasTimestamp : Boolean = false;
         public var timestamp : Number;
+        public var tags : Vector.<ID3Tag> = new Vector.<ID3Tag>();
 
         /* create ID3 object by parsing ByteArray, looking for ID3 tag length, and timestamp */
         public function ID3(data : ByteArray) {
@@ -24,7 +25,7 @@
                     if (header == 'ID3') {
                         // skip 24 bits
                         data.position += 3;
-                        // retrieve tag length
+                        // retrieve tag(s) length
                         var byte1 : uint = data.readUnsignedByte() & 0x7f;
                         var byte2 : uint = data.readUnsignedByte() & 0x7f;
                         var byte3 : uint = data.readUnsignedByte() & 0x7f;
@@ -34,8 +35,8 @@
                         CONFIG::LOGGING {
                         Log.debug2("ID3 tag found, size/end pos:" + tagSize + "/" + end_pos);
                         }
-                        // read tag
-                        _parseFrame(data, end_pos);
+                        // read ID3 tags
+                        _parseID3Frames(data, end_pos);
                         data.position = end_pos;
                     } else if (header == '3DI') {
                         // http://id3.org/id3v2.4.0-structure chapter 3.4.   ID3v2 footer
@@ -47,12 +48,12 @@
                         data.position -= 3;
                         len = data.position - pos;
                         CONFIG::LOGGING {
-                        if (len) {
-                            Log.debug2("ID3 len:" + len);
-                            if (!hasTimestamp) {
-                                Log.warn("ID3 tag found, but no timestamp");
+                            if (len) {
+                                Log.debug2("ID3 len:" + len);
+                                if (!hasTimestamp) {
+                                    Log.warn("ID3 tag found, but no timestamp");
+                                }
                             }
-                        }
                         }
                         return;
                     }
@@ -71,29 +72,59 @@
         expressed as a big-endian eight-octet number, with the upper 31
         bits set to zero.
          */
-        private function _parseFrame(data : ByteArray, end_pos : uint) : void {
-            if (data.readUTFBytes(4) == "PRIV") {
-                while (data.position + 53 <= end_pos) {
-                    // owner should be "com.apple.streaming.transportStreamTimestamp"
-                    if (data.readUTFBytes(44) == 'com.apple.streaming.transportStreamTimestamp') {
-                        // smelling even better ! we found the right descriptor
-                        // skip null character (string end) + 3 first bytes
-                        data.position += 4;
-                        // timestamp is 33 bit expressed as a big-endian eight-octet number, with the upper 31 bits set to zero.
-                        var pts_33_bit : int = data.readUnsignedByte() & 0x1;
-                        hasTimestamp = true;
-                        timestamp = (data.readUnsignedInt() / 90);
-                        if (pts_33_bit) {
-                            timestamp   += 47721858.84; // 2^32 / 90
+        private function _parseID3Frames(data : ByteArray, end_pos : uint) : void {
+            while(data.position + 8 <= end_pos) {
+                var tag_id : String = data.readUTFBytes(4);
+                var tag_len : int = data.readUnsignedInt();
+                var tag_flags : int = data.readUnsignedShort();
+
+                CONFIG::LOGGING {
+                    Log.debug("ID3 tag id:" + tag_id);
+                }
+                switch(tag_id) {
+                    case "PRIV":
+                        // owner should be "com.apple.streaming.transportStreamTimestamp"
+                        if (data.readUTFBytes(44) == 'com.apple.streaming.transportStreamTimestamp') {
+                            // smelling even better ! we found the right descriptor
+                            // skip null character (string end) + 3 first bytes
+                            data.position += 4;
+                            // timestamp is 33 bit expressed as a big-endian eight-octet number, with the upper 31 bits set to zero.
+                            var pts_33_bit : int = data.readUnsignedByte() & 0x1;
+                            hasTimestamp = true;
+                            timestamp = (data.readUnsignedInt() / 90);
+                            if (pts_33_bit) {
+                                timestamp   += 47721858.84; // 2^32 / 90
+                            }
+                            CONFIG::LOGGING {
+                                Log.debug("ID3 timestamp found:" + timestamp);
+                            }
                         }
-                        CONFIG::LOGGING {
-                        Log.debug("ID3 timestamp found:" + timestamp);
+                        break;
+                    default:
+                        var tag_data : *;
+                        var firstChar : String = tag_id.charAt(0);
+                        if(firstChar == 'T' || firstChar == 'W') {
+                            tag_data = new Array();
+                            var cur_tag_pos : int;
+                            var end_tag_pos : int = data.position + tag_len;
+                            // skip character encoding byte
+                            data.position++;
+                            while(data.position < end_tag_pos - 1) {
+                                cur_tag_pos = data.position;
+                                var text : String = data.readUTFBytes(end_tag_pos-cur_tag_pos);
+                                CONFIG::LOGGING {
+                                    Log.debug("text:" + text);
+                                }
+                                data.position = cur_tag_pos + text.length + 1;
+                                tag_data.push(text);
+                            }
+                            data.position = end_tag_pos;
+                        } else {
+                            tag_data = new ByteArray();
+                            data.readBytes(tag_data, 0, tag_len);
                         }
-                        return;
-                    } else {
-                        // rewind 44 read bytes + move to next byte
-                        data.position -= 43;
-                    }
+                        tags.push(new ID3Tag(tag_id,tag_flags,tag_data));
+                        break;
                 }
             }
         }
