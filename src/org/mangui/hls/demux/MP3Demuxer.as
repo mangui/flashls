@@ -36,11 +36,11 @@
             _data = null;
         }
 
-        public function get audio_expected() : Boolean {
+        public function get audioExpected() : Boolean {
             return true;
         }
 
-        public function get video_expected() : Boolean {
+        public function get videoExpected() : Boolean {
             return false;
         }
 

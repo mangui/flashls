@@ -25,17 +25,17 @@ package org.mangui.hls.utils {
         /** Timer for decode packets **/
         private var _timer : Timer;
         /** base64 read position **/
-        private var _read_position : uint;
+        private var _readPosition : uint;
         /** final length **/
-        private var _final_length : uint;
+        private var _finalLength : uint;
         /** read position **/
-        private var _base64_resource : String;
+        private var _base64Resource : String;
         /* callback names */
-        private var _callback_loaded : String;
-        private var _callback_failure : String;
+        private var _callbackLoaded : String;
+        private var _callbackFailure : String;
         /** chunk size to avoid blocking **/
         private static const CHUNK_SIZE : uint = 65536;
-        private static var _instance_count : int = 0;
+        private static var _instanceCount : int = 0;
 
         public function JSURLStream() {
             addEventListener(Event.OPEN, onOpen);
@@ -43,16 +43,16 @@ package org.mangui.hls.utils {
             // Connect calls to JS.
             if (ExternalInterface.available) {
                 CONFIG::LOGGING {
-                    Log.debug("add callback resourceLoaded, id:" + _instance_count);
+                    Log.debug("add callback resourceLoaded, id:" + _instanceCount);
                 }
-                _callback_loaded = "resourceLoaded" + _instance_count;
-                _callback_failure = "resourceLoadingError" + _instance_count;
+                _callbackLoaded = "resourceLoaded" + _instanceCount;
+                _callbackFailure = "resourceLoadingError" + _instanceCount;
                 // dynamically register callbacks
-                this[_callback_loaded] = function(res,len): void { resourceLoaded(res,len)};
-                this[_callback_failure] = function() : void { resourceLoadingError()};
-                ExternalInterface.addCallback(_callback_loaded, this[_callback_loaded]);
-                ExternalInterface.addCallback(_callback_failure, this[_callback_failure]);
-                _instance_count++;
+                this[_callbackLoaded] = function(res,len): void { resourceLoaded(res,len)};
+                this[_callbackFailure] = function() : void { resourceLoadingError()};
+                ExternalInterface.addCallback(_callbackLoaded, this[_callbackLoaded]);
+                ExternalInterface.addCallback(_callbackFailure, this[_callbackFailure]);
+                _instanceCount++;
             }
         }
 
@@ -89,7 +89,7 @@ package org.mangui.hls.utils {
             Log.debug("JSURLStream.load:" + request.url);
             }
             if (ExternalInterface.available) {
-                ExternalInterface.call("JSLoaderFragment.onRequestResource",ExternalInterface.objectID, request.url,_callback_loaded,_callback_failure);
+                ExternalInterface.call("JSLoaderFragment.onRequestResource",ExternalInterface.objectID, request.url,_callbackLoaded,_callbackFailure);
                 this.dispatchEvent(new Event(Event.OPEN));
             } else {
                 super.load(request);
@@ -105,12 +105,12 @@ package org.mangui.hls.utils {
               Log.debug("resourceLoaded");
             }
             _resource = new ByteArray();
-            _read_position = 0;
-            _final_length = len;
+            _readPosition = 0;
+            _finalLength = len;
             _timer = new Timer(20, 0);
             _timer.addEventListener(TimerEvent.TIMER, _decodeData);
             _timer.start();
-            _base64_resource = base64Resource;
+            _base64Resource = base64Resource;
         }
 
         protected function resourceLoadingError() : void {
@@ -131,19 +131,19 @@ package org.mangui.hls.utils {
 
         /** decrypt a small chunk of packets each time to avoid blocking **/
         private function _decodeData(e : Event) : void {
-            var start_time : int = getTimer();
-            var decode_completed : Boolean = false;
+            var startTime : int = getTimer();
+            var decodeCompleted : Boolean = false;
             // dont spend more than 20ms base64 decoding to avoid fps drop
-            while ((!decode_completed) && ((getTimer() - start_time) < 10)) {
-                var start_pos : uint = _read_position,end_pos : uint;
-                if (_base64_resource.length <= _read_position + CHUNK_SIZE) {
-                    end_pos = _base64_resource.length;
-                    decode_completed = true;
+            while ((!decodeCompleted) && ((getTimer() - startTime) < 10)) {
+                var startPos : uint = _readPosition,endPos : uint;
+                if (_base64Resource.length <= _readPosition + CHUNK_SIZE) {
+                    endPos = _base64Resource.length;
+                    decodeCompleted = true;
                 } else {
-                    end_pos = _read_position + CHUNK_SIZE;
-                    _read_position = end_pos;
+                    endPos = _readPosition + CHUNK_SIZE;
+                    _readPosition = endPos;
                 }
-                var tmpString : String = _base64_resource.substring(start_pos, end_pos);
+                var tmpString : String = _base64Resource.substring(startPos, endPos);
                 var savePosition : uint = _resource.position;
                 try {
                     _resource.position = _resource.length;
@@ -153,8 +153,8 @@ package org.mangui.hls.utils {
                     resourceLoadingError();
                 }
             }
-            this.dispatchEvent(new ProgressEvent(ProgressEvent.PROGRESS, false, false, _resource.length, _final_length));
-            if (decode_completed) {
+            this.dispatchEvent(new ProgressEvent(ProgressEvent.PROGRESS, false, false, _resource.length, _finalLength));
+            if (decodeCompleted) {
                 resourceLoadingSuccess();
             }
         }

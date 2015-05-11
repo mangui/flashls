@@ -31,16 +31,16 @@ package org.mangui.hls.loader {
         /** Timeout ID for reloading live playlists. **/
         private var _timeoutID : uint;
         /** last reload manifest time **/
-        private var _reload_playlists_timer : uint;
+        private var _reloadPlaylistTimer : uint;
         /** current audio level **/
-        private var _current_track : int;
+        private var _currentTrack : int;
         /** reference to manifest being loaded **/
-        private var _manifest_loading : Manifest;
+        private var _manifestLoading : Manifest;
         /** is this loader closed **/
         private var _closed : Boolean = false;
         /* playlist retry timeout */
-        private var _retry_timeout : Number;
-        private var _retry_count : int;
+        private var _retryTimeout : Number;
+        private var _retryCount : int;
 
         /** Setup the loader. **/
         public function AltAudioLevelLoader(hls : HLS) {
@@ -62,14 +62,14 @@ package org.mangui.hls.loader {
             if (event is SecurityErrorEvent) {
                 code = HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
                 txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
-            } else if (event is IOErrorEvent && (HLSSettings.manifestLoadMaxRetry == -1 || _retry_count < HLSSettings.manifestLoadMaxRetry)) {
+            } else if (event is IOErrorEvent && (HLSSettings.manifestLoadMaxRetry == -1 || _retryCount < HLSSettings.manifestLoadMaxRetry)) {
                 CONFIG::LOGGING {
-                    Log.warn("I/O Error while trying to load Playlist, retry in " + _retry_timeout + " ms");
+                    Log.warn("I/O Error while trying to load Playlist, retry in " + _retryTimeout + " ms");
                 }
-                _timeoutID = setTimeout(_loadAudioLevelPlaylist, _retry_timeout);
+                _timeoutID = setTimeout(_loadAudioLevelPlaylist, _retryTimeout);
                 /* exponential increase of retry timeout, capped to manifestLoadMaxRetryTimeout */
-                _retry_timeout = Math.min(HLSSettings.manifestLoadMaxRetryTimeout, 2 * _retry_timeout);
-                _retry_count++;
+                _retryTimeout = Math.min(HLSSettings.manifestLoadMaxRetryTimeout, 2 * _retryTimeout);
+                _retryCount++;
                 return;
             } else {
                 code = HLSError.MANIFEST_LOADING_IO_ERROR;
@@ -87,7 +87,7 @@ package org.mangui.hls.loader {
                 }
                 var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
                 // set fragment and update sequence number range
-                var audioTrack : AudioTrack = _hls.audioTracks[_current_track];
+                var audioTrack : AudioTrack = _hls.audioTracks[_currentTrack];
                 var audioLevel : Level = audioTrack.level;
                 if(audioLevel == null) {
                     audioLevel = audioTrack.level = new Level();
@@ -96,7 +96,7 @@ package org.mangui.hls.loader {
                 audioLevel.targetduration = Manifest.getTargetDuration(string);
                 // if stream is live, arm a timer to periodically reload playlist
                 if (!Manifest.hasEndlist(string)) {
-                    var timeout : Number = Math.max(100, _reload_playlists_timer + 1000 * audioLevel.averageduration - getTimer());
+                    var timeout : Number = Math.max(100, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer());
                     CONFIG::LOGGING {
                         Log.debug("Alt Audio Level Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
                     }
@@ -106,7 +106,7 @@ package org.mangui.hls.loader {
             metrics.id  = audioLevel.start_seqnum;
             metrics.id2 = audioLevel.end_seqnum;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADED, metrics));
-            _manifest_loading = null;
+            _manifestLoading = null;
         };
 
         /** load/reload active M3U8 playlist **/
@@ -114,29 +114,29 @@ package org.mangui.hls.loader {
             if (_closed) {
                 return;
             }
-            _reload_playlists_timer = getTimer();
-            var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[_hls.audioTracks[_current_track].id];
-            _manifest_loading = new Manifest();
-            _manifest_loading.loadPlaylist(_hls,altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _current_track, _hls.type, HLSSettings.flushLiveURLCache);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADING, _current_track));
+            _reloadPlaylistTimer = getTimer();
+            var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[_hls.audioTracks[_currentTrack].id];
+            _manifestLoading = new Manifest();
+            _manifestLoading.loadPlaylist(_hls,altAudioTrack.url, _parseAudioPlaylist, _errorHandler, _currentTrack, _hls.type, HLSSettings.flushLiveURLCache);
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.AUDIO_LEVEL_LOADING, _currentTrack));
         };
 
         /** When audio track switch occurs, assess the need of loading audio level playlist **/
         private function _audioTrackSwitchHandler(event : HLSEvent) : void {
-            _current_track = event.audioTrack;
-            var audioTrack : AudioTrack = _hls.audioTracks[_current_track];
+            _currentTrack = event.audioTrack;
+            var audioTrack : AudioTrack = _hls.audioTracks[_currentTrack];
             if (audioTrack.source == AudioTrack.FROM_PLAYLIST) {
                 var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[audioTrack.id];
                 if (altAudioTrack.url && audioTrack.level == null) {
                     CONFIG::LOGGING {
-                        Log.debug("switch to audio track " + _current_track + ", load Playlist");
+                        Log.debug("switch to audio track " + _currentTrack + ", load Playlist");
                     }
-                    _retry_timeout = 1000;
-                    _retry_count = 0;
+                    _retryTimeout = 1000;
+                    _retryCount = 0;
                     _closed = false;
-                    if(_manifest_loading) {
-                       _manifest_loading.close();
-                       _manifest_loading = null;
+                    if(_manifestLoading) {
+                       _manifestLoading.close();
+                       _manifestLoading = null;
                     }
                     clearTimeout(_timeoutID);
                     _timeoutID = setTimeout(_loadAudioLevelPlaylist, 0);
@@ -151,8 +151,8 @@ package org.mangui.hls.loader {
             _closed = true;
             clearTimeout(_timeoutID);
             try {
-                if (_manifest_loading) {
-                    _manifest_loading.close();
+                if (_manifestLoading) {
+                    _manifestLoading.close();
                 }
             } catch(e : Error) {
             }

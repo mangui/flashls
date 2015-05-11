@@ -31,13 +31,13 @@
                         var byte3 : uint = data.readUnsignedByte() & 0x7f;
                         var byte4 : uint = data.readUnsignedByte() & 0x7f;
                         tagSize = (byte1 << 21) + (byte2 << 14) + (byte3 << 7) + byte4;
-                        var end_pos : uint = data.position + tagSize;
+                        var endPos : uint = data.position + tagSize;
                         CONFIG::LOGGING {
-                        Log.debug2("ID3 tag found, size/end pos:" + tagSize + "/" + end_pos);
+                        Log.debug2("ID3 tag found, size/end pos:" + tagSize + "/" + endPos);
                         }
                         // read ID3 tags
-                        _parseID3Frames(data, end_pos);
-                        data.position = end_pos;
+                        _parseID3Frames(data, endPos);
+                        data.position = endPos;
                     } else if (header == '3DI') {
                         // http://id3.org/id3v2.4.0-structure chapter 3.4.   ID3v2 footer
                         data.position += 7;
@@ -72,8 +72,8 @@
         expressed as a big-endian eight-octet number, with the upper 31
         bits set to zero.
          */
-        private function _parseID3Frames(data : ByteArray, end_pos : uint) : void {
-            while(data.position + 8 <= end_pos) {
+        private function _parseID3Frames(data : ByteArray, endPos : uint) : void {
+            while(data.position + 8 <= endPos) {
                 var tag_id : String = data.readUTFBytes(4);
                 var tag_len : int = data.readUnsignedInt();
                 var tag_flags : int = data.readUnsignedShort();

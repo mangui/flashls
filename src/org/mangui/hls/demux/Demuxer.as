@@ -11,8 +11,8 @@
 
         function cancel() : void;
 
-        function  get audio_expected() : Boolean;
+        function  get audioExpected() : Boolean;
 
-        function  get video_expected() : Boolean;
+        function  get videoExpected() : Boolean;
     }
 }

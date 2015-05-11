@@ -31,9 +31,9 @@ package org.mangui.hls.controller {
         private var _maxUniqueLevels : Vector.<Level> = null;
         /** nb level **/
         private var _nbLevel : int = 0;
-        private var _last_segment_duration : Number;
-        private var _last_fetch_duration : Number;
-        private var  last_bandwidth : Number;
+        private var _lastSegmentDuration : Number;
+        private var _lastFetchDuration : Number;
+        private var  lastBandwidth : Number;
 
         /** Create the loader. **/
         public function LevelController(hls : HLS) : void {
@@ -52,9 +52,9 @@ package org.mangui.hls.controller {
             var metrics : HLSLoadMetrics = event.loadMetrics;
             // only monitor main fragment metrics for level switching
             if(metrics.type == HLSLoaderTypes.FRAGMENT_MAIN) {
-                last_bandwidth = metrics.bandwidth;
-                _last_segment_duration = metrics.duration;
-                _last_fetch_duration = metrics.processing_duration;
+                lastBandwidth = metrics.bandwidth;
+                _lastSegmentDuration = metrics.duration;
+                _lastFetchDuration = metrics.processing_duration;
             }
         }
 
@@ -67,9 +67,9 @@ package org.mangui.hls.controller {
             _bitrate = new Vector.<Number>(_nbLevel, true);
             _switchup = new Vector.<Number>(_nbLevel, true);
             _switchdown = new Vector.<Number>(_nbLevel, true);
-            _last_segment_duration = 0;
-            _last_fetch_duration = 0;
-            last_bandwidth = 0;
+            _lastSegmentDuration = 0;
+            _lastFetchDuration = 0;
+            lastBandwidth = 0;
 
             var i : int;
 
@@ -115,10 +115,10 @@ package org.mangui.hls.controller {
         }
         ;
 
-        public function getbestlevel(download_bandwidth : Number) : int {
-            var max_level : int = _max_level;
+        public function getbestlevel(downloadBandwidth : Number) : int {
+            var max_level : int = _maxLevel;
             for (var i : int = max_level; i >= 0; i--) {
-                if (_bitrate[i] <= download_bandwidth) {
+                if (_bitrate[i] <= downloadBandwidth) {
                     return i;
                 }
             }
@@ -143,7 +143,7 @@ package org.mangui.hls.controller {
             return _hls.levels.filter(filter);
         }
 
-        private function get _max_level() : int {
+        private function get _maxLevel() : int {
             if (HLSSettings.capLevelToStage) {
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
@@ -194,7 +194,7 @@ package org.mangui.hls.controller {
 
         /** Update the quality level for the next fragment load. **/
         public function getnextlevel(current_level : int, buffer : Number) : int {
-            if (_last_fetch_duration == 0 || _last_segment_duration == 0) {
+            if (_lastFetchDuration == 0 || _lastSegmentDuration == 0) {
                 return 0;
             }
 
@@ -204,9 +204,9 @@ package org.mangui.hls.controller {
             segment to the playback of the first media frame of a segment
             buffer is start time of next segment
             TBMT is the buffer size we need to ensure (we need at least 2 segments buffered */
-            var rsft : Number = 1000 * buffer - 2 * _last_fetch_duration;
-            var sftm : Number = Math.min(_last_segment_duration, rsft) / _last_fetch_duration;
-            var max_level : Number = _max_level;
+            var rsft : Number = 1000 * buffer - 2 * _lastFetchDuration;
+            var sftm : Number = Math.min(_lastSegmentDuration, rsft) / _lastFetchDuration;
+            var max_level : Number = _maxLevel;
             var switch_to_level : int = current_level;
             // CONFIG::LOGGING {
             // Log.info("rsft:" + rsft);
@@ -230,15 +230,15 @@ package org.mangui.hls.controller {
                 CONFIG::LOGGING {
                     Log.debug("sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
                 }
-                var bufferratio : Number = 1000 * buffer / _last_segment_duration;
+                var bufferratio : Number = 1000 * buffer / _lastSegmentDuration;
                 /* find suitable level matching current bandwidth, starting from current level
                 when switching level down, we also need to consider that we might need to load two fragments.
-                the condition (bufferratio > 2*_levels[j].bitrate/_last_bandwidth)
+                the condition (bufferratio > 2*_levels[j].bitrate/_lastBandwidth)
                 ensures that buffer time is bigger than than the time to download 2 fragments from level j, if we keep same bandwidth.
                  */
 
                 for (var j : int = current_level - 1; j >= 0; j--) {
-                    if (_bitrate[j] <= last_bandwidth && (bufferratio > 2 * _bitrate[j] / last_bandwidth)) {
+                    if (_bitrate[j] <= lastBandwidth && (bufferratio > 2 * _bitrate[j] / lastBandwidth)) {
                         switch_to_level = j;
                         break;
                     }

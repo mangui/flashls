@@ -19,7 +19,7 @@ package org.mangui.hls.controller {
         // max nb of samples used for bw checking. the bigger it is, the more conservative it is.
         private static const MAX_SAMPLES : int = 30;
         private var _bw : Vector.<Number>;
-        private var _nb_samples : uint;
+        private var _nbSamples : uint;
         private var _targetduration : Number;
         private var _minBufferLength : Number;
 
@@ -55,7 +55,7 @@ package org.mangui.hls.controller {
         }
 
         private function _manifestLoadedHandler(event : HLSEvent) : void {
-            _nb_samples = 0;
+            _nbSamples = 0;
             _targetduration = event.levels[_hls.startlevel].targetduration;
             _bw = new Vector.<Number>(MAX_SAMPLES);
             _minBufferLength = _targetduration;
@@ -66,18 +66,18 @@ package org.mangui.hls.controller {
             // only monitor main fragment metrics for buffer threshold computing
             if(metrics.type == HLSLoaderTypes.FRAGMENT_MAIN) {
                 var cur_bw : Number = metrics.bandwidth;
-                _bw[_nb_samples % MAX_SAMPLES] = cur_bw;
-                _nb_samples++;
+                _bw[_nbSamples % MAX_SAMPLES] = cur_bw;
+                _nbSamples++;
 
                 // compute min bw on MAX_SAMPLES
-                var min_bw : Number = Number.POSITIVE_INFINITY;
-                var samples_max : int = Math.min(_nb_samples, MAX_SAMPLES);
+                var minBw : Number = Number.POSITIVE_INFINITY;
+                var samples_max : int = Math.min(_nbSamples, MAX_SAMPLES);
                 for (var i : int = 0; i < samples_max; i++) {
-                    min_bw = Math.min(min_bw, _bw[i]);
+                    minBw = Math.min(minBw, _bw[i]);
                 }
 
                 // give more weight to current bandwidth
-                var bw_ratio : Number = 2 * cur_bw / (min_bw + cur_bw);
+                var bw_ratio : Number = 2 * cur_bw / (minBw + cur_bw);
 
                 /* predict time to dl next segment using a conservative approach.
                  *

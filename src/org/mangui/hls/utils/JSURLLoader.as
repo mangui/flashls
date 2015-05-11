@@ -18,25 +18,25 @@ package org.mangui.hls.utils {
     public dynamic class JSURLLoader extends URLLoader {
         private var _resource : String = new String();
         /* callback names */
-        private var _callback_loaded : String;
-        private var _callback_failure : String;
-        private static var _instance_count : int = 0;
+        private var _callbackLoaded : String;
+        private var _callbackFailure : String;
+        private static var _instanceCount : int = 0;
 
         public function JSURLLoader() {
             super();
             // Connect calls to JS.
             if (ExternalInterface.available) {
                 CONFIG::LOGGING {
-                    Log.debug("add callback resourceLoaded, id:" + _instance_count);
+                    Log.debug("add callback resourceLoaded, id:" + _instanceCount);
                 }
-                _callback_loaded = "textLoaded" + _instance_count;
-                _callback_failure = "textLoadingError" + _instance_count;
+                _callbackLoaded = "textLoaded" + _instanceCount;
+                _callbackFailure = "textLoadingError" + _instanceCount;
                 // dynamically register callbacks
-                this[_callback_loaded] = function(res): void { resourceLoaded(res)};
-                this[_callback_failure] = function() : void { resourceLoadingError()};
-                ExternalInterface.addCallback(_callback_loaded, this[_callback_loaded]);
-                ExternalInterface.addCallback(_callback_failure, this[_callback_failure]);
-                _instance_count++;
+                this[_callbackLoaded] = function(res): void { resourceLoaded(res)};
+                this[_callbackFailure] = function() : void { resourceLoadingError()};
+                ExternalInterface.addCallback(_callbackLoaded, this[_callbackLoaded]);
+                ExternalInterface.addCallback(_callbackFailure, this[_callbackFailure]);
+                _instanceCount++;
             }
         }
 
@@ -55,7 +55,7 @@ package org.mangui.hls.utils {
             bytesLoaded = bytesTotal = 0;
             data = null;
             if (ExternalInterface.available) {
-                ExternalInterface.call("JSLoaderPlaylist.onRequestResource",ExternalInterface.objectID, request.url,_callback_loaded,_callback_failure);
+                ExternalInterface.call("JSLoaderPlaylist.onRequestResource",ExternalInterface.objectID, request.url,_callbackLoaded,_callbackFailure);
                 this.dispatchEvent(new Event(Event.OPEN));
             } else {
                 super.load(request);

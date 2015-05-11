@@ -20,9 +20,9 @@ package org.mangui.hls.demux {
     /** Representation of an MPEG transport stream. **/
     public class TSDemuxer extends EventDispatcher implements Demuxer {
         /** read position **/
-        private var _read_position : uint;
+        private var _readPosition : uint;
         /** is bytearray full ? **/
-        private var _data_complete : Boolean;
+        private var _dataComplete : Boolean;
         /** TS Sync byte. **/
         private static const SYNCBYTE : uint = 0x47;
         /** TS Packet size in byte. **/
@@ -118,8 +118,8 @@ package org.mangui.hls.demux {
         public function append(data : ByteArray) : void {
             if (_dataVector == null) {
                 _dataVector = new Vector.<ByteArray>();
-                _data_complete = false;
-                _read_position = 0;
+                _dataComplete = false;
+                _readPosition = 0;
                 _totalBytes = 0;
                 _dataOffset = 0;
                 _avcc = null;
@@ -148,14 +148,14 @@ package org.mangui.hls.demux {
         }
 
         public function notifycomplete() : void {
-            _data_complete = true;
+            _dataComplete = true;
         }
 
-        public function get audio_expected() : Boolean {
+        public function get audioExpected() : Boolean {
             return (_pmtParsed == false || _audioId != -1);
         }
 
-        public function get video_expected() : Boolean {
+        public function get videoExpected() : Boolean {
             return (_pmtParsed == false || _avcId != -1);
         }
 
@@ -187,7 +187,7 @@ package org.mangui.hls.demux {
                             }
                             // we should never reach this point
                             // if TS overlapping but next buffer not available or next buffer not full enough, return null
-                            //Log.error("TS overlapping but next buffer not full enough:" + _read_position + "/" + _totalBytes + "/" + ba.length);
+                            //Log.error("TS overlapping but next buffer not full enough:" + _readPosition + "/" + _totalBytes + "/" + ba.length);
                             return null;
                         }
                     }
@@ -201,13 +201,13 @@ package org.mangui.hls.demux {
         private function _parseTimer(e : Event) : void {
             var start_time : int = getTimer();
             /** Byte data to be read **/
-            var data : ByteArray = getNextTSBuffer(_read_position);
+            var data : ByteArray = getNextTSBuffer(_readPosition);
             // dont spend more than 20ms demuxing TS packets to avoid loosing frames
             while(data  != null && ((getTimer() - start_time) < 20)) {
                 _parseTSPacket(data);
-                _read_position+=PACKETSIZE;
+                _readPosition+=PACKETSIZE;
                 if(data.bytesAvailable < PACKETSIZE) {
-                    data = getNextTSBuffer(_read_position);
+                    data = getNextTSBuffer(_readPosition);
                 }
             }
             if (_tags.length) {
@@ -215,7 +215,7 @@ package org.mangui.hls.demux {
                 _tags = new Vector.<FLVTag>();
             }
             // check if we have finished with reading this TS fragment
-            if (_data_complete && _read_position == _totalBytes) {
+            if (_dataComplete && _readPosition == _totalBytes) {
                 // free ByteArray
                 _dataVector = null;
                 // first check if TS parsing was successful
@@ -653,7 +653,7 @@ package org.mangui.hls.demux {
                             CONFIG::LOGGING {
                                 Log.warn("TS: late PMT found, rewinding at beginning of TS");
                             }
-                            _read_position = 0;
+                            _readPosition = 0;
                             return;
                         }
                     }

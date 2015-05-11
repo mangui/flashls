@@ -5,7 +5,7 @@
     import org.mangui.hls.HLS;
     import org.mangui.hls.event.HLSEvent;
     import org.osmf.traits.TimeTrait;
-    
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
@@ -35,10 +35,10 @@
 
         /** Update playback position/duration **/
         private function _mediaTimeHandler(event : HLSEvent) : void {
-            var new_duration : Number = event.mediatime.duration;
-            var new_position : Number = Math.max(0, event.mediatime.position);
-            setDuration(new_duration);
-            setCurrentTime(new_position);
+            var newDuration : Number = event.mediatime.duration;
+            var newPosition : Number = Math.max(0, event.mediatime.position);
+            setDuration(newDuration);
+            setCurrentTime(newPosition);
         };
 
         /** playback complete handler **/

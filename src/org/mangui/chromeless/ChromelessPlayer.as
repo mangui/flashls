@@ -38,7 +38,7 @@ package org.mangui.chromeless {
         protected var _videoWidth : int = 0;
         protected var _videoHeight : int = 0;
         /** current media position */
-        protected var _media_position : Number;
+        protected var _mediaPosition : Number;
         protected var _duration : Number;
         /** URL autoload feature */
         protected var _autoLoad : Boolean = false;
@@ -182,7 +182,7 @@ package org.mangui.chromeless {
 
         protected function _mediaTimeHandler(event : HLSEvent) : void {
             _duration = event.mediatime.duration;
-            _media_position = event.mediatime.position;
+            _mediaPosition = event.mediatime.position;
             _trigger("position", event.mediatime);
 
             var videoWidth : int = _video ? _video.videoWidth : _stageVideo.videoWidth;
@@ -364,9 +364,9 @@ package org.mangui.chromeless {
 
         protected function _setLevel(level : int) : void {
             _smoothSetLevel(level);
-            if (!isNaN(_media_position) && level != -1) {
+            if (!isNaN(_mediaPosition) && level != -1) {
                 _hls.flushBuffer();
-                _hls.stream.seek(_media_position);
+                _hls.stream.seek(_mediaPosition);
             }
         };
 
@@ -376,20 +376,20 @@ package org.mangui.chromeless {
             }
         };
 
-        protected function _setmaxBufferLength(new_len : Number) : void {
-            HLSSettings.maxBufferLength = new_len;
+        protected function _setmaxBufferLength(newLen : Number) : void {
+            HLSSettings.maxBufferLength = newLen;
         };
 
-        protected function _setminBufferLength(new_len : Number) : void {
-            HLSSettings.minBufferLength = new_len;
+        protected function _setminBufferLength(newLen : Number) : void {
+            HLSSettings.minBufferLength = newLen;
         };
 
-        protected function _setlowBufferLength(new_len : Number) : void {
-            HLSSettings.lowBufferLength = new_len;
+        protected function _setlowBufferLength(newLen : Number) : void {
+            HLSSettings.lowBufferLength = newLen;
         };
 
-        protected function _setbackBufferLength(new_len : Number) : void {
-            HLSSettings.maxBackBufferLength = new_len;
+        protected function _setbackBufferLength(newLen : Number) : void {
+            HLSSettings.maxBackBufferLength = newLen;
         };
 
         protected function _setflushLiveURLCache(flushLiveURLCache : Boolean) : void {
@@ -433,8 +433,8 @@ package org.mangui.chromeless {
         protected function _setAudioTrack(val : int) : void {
             if (val == _hls.audioTrack) return;
             _hls.audioTrack = val;
-            if (!isNaN(_media_position)) {
-                _hls.stream.seek(_media_position);
+            if (!isNaN(_mediaPosition)) {
+                _hls.stream.seek(_mediaPosition);
             }
         };
 

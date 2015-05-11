@@ -24,13 +24,13 @@
         /** Byte data to be decrypt **/
         private var _data : ByteArray;
         /** read position **/
-        private var _read_position : uint;
+        private var _readPosition : uint;
         /** write position **/
-        private var _write_position : uint;
+        private var _writePosition : uint;
         /** chunk size to avoid blocking **/
         private static const CHUNK_SIZE : uint = 2048;
         /** is bytearray full ? **/
-        private var _data_complete : Boolean;
+        private var _dataComplete : Boolean;
         /** display object used for ENTER_FRAME listener */
         private var _displayObject : DisplayObject;
 
@@ -43,11 +43,11 @@
             iv2 = iv.readUnsignedInt();
             iv3 = iv.readUnsignedInt();
             _data = new ByteArray();
-            _data_complete = false;
+            _dataComplete = false;
             _progress = notifyprogress;
             _complete = notifycomplete;
-            _read_position = 0;
-            _write_position = 0;
+            _readPosition = 0;
+            _writePosition = 0;
             _displayObject = displayObject;
         }
 
@@ -55,19 +55,19 @@
             // CONFIG::LOGGING {
             // Log.info("notify append");
             // }
-            _data.position = _write_position;
+            _data.position = _writePosition;
             _data.writeBytes(data);
-            if (_write_position == 0) {
+            if (_writePosition == 0) {
                 _displayObject.addEventListener(Event.ENTER_FRAME, _decryptTimer);
             }
-            _write_position += data.length;
+            _writePosition += data.length;
         }
 
         public function notifycomplete() : void {
             // CONFIG::LOGGING {
             // Log.info("notify complete");
             // }
-            _data_complete = true;
+            _dataComplete = true;
         }
 
         public function cancel() : void {
@@ -85,15 +85,15 @@
 
         /** decrypt a small chunk of packets each time to avoid blocking **/
         private function _decryptChunk() : Boolean {
-            _data.position = _read_position;
+            _data.position = _readPosition;
             var decryptdata : ByteArray;
             if (_data.bytesAvailable) {
                 if (_data.bytesAvailable <= CHUNK_SIZE) {
-                    if (_data_complete) {
+                    if (_dataComplete) {
                         // CONFIG::LOGGING {
                         // Log.info("data complete, last chunk");
                         // }
-                        _read_position += _data.bytesAvailable;
+                        _readPosition += _data.bytesAvailable;
                         decryptdata = _decryptCBC(_data, _data.bytesAvailable);
                         unpad(decryptdata);
                     } else {
@@ -101,13 +101,13 @@
                         return false;
                     }
                 } else {
-                    _read_position += CHUNK_SIZE;
+                    _readPosition += CHUNK_SIZE;
                     decryptdata = _decryptCBC(_data, CHUNK_SIZE);
                 }
                 _progress(decryptdata);
                 return true;
             } else {
-                if (_data_complete) {
+                if (_dataComplete) {
                     CONFIG::LOGGING {
                         Log.debug("AES:data+decrypt completed, callback");
                     }
@@ -119,7 +119,7 @@
             }
         }
 
-        /* Cypher Block Chaining Decryption, refer to 
+        /* Cypher Block Chaining Decryption, refer to
          * http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher-block_chaining_
          * for algorithm description
          */

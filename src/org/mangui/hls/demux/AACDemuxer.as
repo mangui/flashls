@@ -10,7 +10,7 @@ package org.mangui.hls.demux {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-    /** Constants and utilities for the AAC audio format, refer to 
+    /** Constants and utilities for the AAC audio format, refer to
      *  http://wiki.multimedia.cx/index.php?title=ADTS
      **/
     public class AACDemuxer implements Demuxer {
@@ -44,11 +44,11 @@ package org.mangui.hls.demux {
             _data = null;
         }
 
-        public function get audio_expected() : Boolean {
+        public function get audioExpected() : Boolean {
             return true;
         }
 
-        public function get video_expected() : Boolean {
+        public function get videoExpected() : Boolean {
             return false;
         }
 
