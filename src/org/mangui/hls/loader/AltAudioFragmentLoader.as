@@ -139,7 +139,7 @@ package org.mangui.hls.loader {
                         Log.warn("audio loading stalled: restart playback???");
                     }
                     /* seek to force a restart of the playback session  */
-                    _streamBuffer.seek(-1);
+                    _hls.stream.seek(-1);
                     break;
                 // if key loading failed
                 case  LOADING_KEY_IO_ERROR:
