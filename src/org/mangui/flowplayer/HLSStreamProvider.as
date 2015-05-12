@@ -51,6 +51,7 @@ package org.mangui.flowplayer {
         private var _isManifestLoaded : Boolean = false;
         private var _pauseAfterStart : Boolean;
         private var _seekable : Boolean = false;
+        private var _streamAttached : Boolean = false;
 
         public function getDefaultConfig() : Object {
             return null;
@@ -267,7 +268,10 @@ package org.mangui.flowplayer {
             CONFIG::LOGGING {
                 Log.debug("attachStream()");
             }
-            Video(video).attachNetStream(_hls.stream);
+            if(_streamAttached == false) {
+                Video(video).attachNetStream(_hls.stream);
+                _streamAttached = true;
+            }
             return;
         }
 
