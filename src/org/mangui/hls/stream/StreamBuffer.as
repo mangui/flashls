@@ -105,7 +105,7 @@ package org.mangui.hls.stream {
                 order at the nominal playback rate), the client SHOULD NOT
                 choose a segment which starts less than three target durations from
                 the end of the Playlist file */
-                var maxLivePosition : Number = Math.max(0, _hls.levels[_hls.level].duration - 3 * _hls.levels[_hls.level].averageduration);
+                var maxLivePosition : Number = Math.max(0, _hls.levels[_hls.loadLevel].duration - 3 * _hls.levels[_hls.loadLevel].averageduration);
                 if (position == -1) {
                     // seek 3 fragments from end
                     _seekPositionRequested = maxLivePosition;
@@ -333,6 +333,22 @@ package org.mangui.hls.stream {
                 return 0;
             }
         }
+
+        /** Return the quality level of the next played fragment **/
+        public function get nextLevel() : int {
+            CONFIG::LOGGING {
+                Log.error("StreamBuffer:get nextLevel() not implemented");
+            }
+            //return _streamBuffer.nextLevel;
+            return 0;
+        };
+
+        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
+        public function set nextLevel(level : int) : void {
+            CONFIG::LOGGING {
+                Log.error("StreamBuffer:set nextLevel() not implemented");
+            }
+        };
 
         /**  StreamBuffer Timer, responsible of
          * reporting media time event

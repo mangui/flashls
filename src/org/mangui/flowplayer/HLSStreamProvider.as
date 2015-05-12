@@ -111,7 +111,7 @@ package org.mangui.flowplayer {
         };
 
         private function _manifestLoadedHandler(event : HLSEvent) : void {
-            _duration = event.levels[_hls.startlevel].duration - _clipStart;
+            _duration = event.levels[_hls.startLevel].duration - _clipStart;
             _isManifestLoaded = true;
             // only update duration if not capped
             if (!_durationCapped) {
@@ -132,7 +132,7 @@ package org.mangui.flowplayer {
             info.url = level.url;
             info.width = level.width;
             info.height = level.height;
-            info.isDefault = (i == _hls.startlevel);
+            info.isDefault = (i == _hls.startLevel);
             bitrates.push(info);
             }
             _clip.setCustomProperty("bitrates", bitrates);

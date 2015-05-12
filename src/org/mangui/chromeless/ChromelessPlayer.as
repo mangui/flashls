@@ -57,8 +57,9 @@ package org.mangui.chromeless {
         };
 
         protected function _setupExternalGetters() : void {
-            ExternalInterface.addCallback("getLevel", _getLevel);
-            ExternalInterface.addCallback("getPlaybackLevel", _getPlaybackLevel);
+            ExternalInterface.addCallback("getCurrentLevel", _getCurrentLevel);
+            ExternalInterface.addCallback("getNextLevel", _getNextLevel);
+            ExternalInterface.addCallback("getLoadLevel", _getLoadLevel);
             ExternalInterface.addCallback("getLevels", _getLevels);
             ExternalInterface.addCallback("getAutoLevel", _getAutoLevel);
             ExternalInterface.addCallback("getDuration", _getDuration);
@@ -93,8 +94,9 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSeek", _seek);
             ExternalInterface.addCallback("playerStop", _stop);
             ExternalInterface.addCallback("playerVolume", _volume);
-            ExternalInterface.addCallback("playerSetLevel", _setLevel);
-            ExternalInterface.addCallback("playerSmoothSetLevel", _smoothSetLevel);
+            ExternalInterface.addCallback("playerSetCurrentLevel", _setCurrentLevel);
+            ExternalInterface.addCallback("playerSetNextLevel", _setNextLevel);
+            ExternalInterface.addCallback("playerSetLoadLevel", _setLoadLevel);
             ExternalInterface.addCallback("playerSetmaxBufferLength", _setmaxBufferLength);
             ExternalInterface.addCallback("playerSetminBufferLength", _setminBufferLength);
             ExternalInterface.addCallback("playerSetlowBufferLength", _setlowBufferLength);
@@ -171,7 +173,7 @@ package org.mangui.chromeless {
         };
 
         protected function _manifestLoadedHandler(event : HLSEvent) : void {
-            _duration = event.levels[_hls.startlevel].duration;
+            _duration = event.levels[_hls.startLevel].duration;
 
             if (_autoLoad) {
                 _play(-1);
@@ -224,12 +226,16 @@ package org.mangui.chromeless {
         }
 
         /** Javascript getters. **/
-        protected function _getLevel() : int {
-            return _hls.level;
+        protected function _getCurrentLevel() : int {
+            return _hls.currentLevel;
         };
 
-        protected function _getPlaybackLevel() : int {
-            return _hls.playbacklevel;
+        protected function _getNextLevel() : int {
+            return _hls.nextLevel;
+        };
+
+        protected function _getLoadLevel() : int {
+            return _hls.loadLevel;
         };
 
         protected function _getLevels() : Vector.<Level> {
@@ -237,7 +243,7 @@ package org.mangui.chromeless {
         };
 
         protected function _getAutoLevel() : Boolean {
-            return _hls.autolevel;
+            return _hls.autoLevel;
         };
 
         protected function _getDuration() : Number {
@@ -317,7 +323,7 @@ package org.mangui.chromeless {
         };
 
         protected function _getPlayerVersion() : Number {
-            return 2;
+            return 3;
         };
 
         protected function _getAudioTrackList() : Array {
@@ -362,18 +368,16 @@ package org.mangui.chromeless {
             _hls.stream.soundTransform = new SoundTransform(percent / 100);
         };
 
-        protected function _setLevel(level : int) : void {
-            _smoothSetLevel(level);
-            if (!isNaN(_mediaPosition) && level != -1) {
-                _hls.flushBuffer();
-                _hls.stream.seek(_mediaPosition);
-            }
+        protected function _setCurrentLevel(level : int) : void {
+            _hls.currentLevel = level;
         };
 
-        protected function _smoothSetLevel(level : int) : void {
-            if (level != _hls.level) {
-                _hls.level = level;
-            }
+        protected function _setNextLevel(level : int) : void {
+            _hls.nextLevel = level;
+        };
+
+        protected function _setLoadLevel(level : int) : void {
+            _hls.loadLevel = level;
         };
 
         protected function _setmaxBufferLength(newLen : Number) : void {

@@ -105,10 +105,10 @@ package org.mangui.hls.controller {
                 _maxUniqueLevels = _maxLevelsWithUniqueDimensions;
             }
             var level : int;
-            if (_hls.autolevel) {
-                level = _hls.startlevel;
+            if (_hls.autoLevel) {
+                level = _hls.startLevel;
             } else {
-                level = _hls.manuallevel;
+                level = _hls.manualLevel;
             }
             // always dispatch level after manifest load
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
@@ -261,7 +261,7 @@ package org.mangui.hls.controller {
         }
 
         // get level index of first level appearing in the manifest
-        public function get firstlevel() : int {
+        public function get firstLevel() : int {
             var levels : Vector.<Level> = _hls.levels;
             for (var i : int = 0; i < levels.length; i++) {
                 if (levels[i].manifest_index == 0) {
@@ -271,13 +271,13 @@ package org.mangui.hls.controller {
             return 0;
         }
 
-        public function get startlevel() : int {
+        public function get startLevel() : int {
             var start_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (levels) {
                 if (HLSSettings.startFromLevel === -2) {
                     // playback will start from the first level appearing in Manifest (not sorted by bitrate)
-                    return firstlevel;
+                    return firstLevel;
                 } else if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1) {
                     /* if startFromLevel is set to -1, it means that effective startup level
                      * will be determined from first segment download bandwidth
@@ -337,12 +337,12 @@ package org.mangui.hls.controller {
             return levelIndex;
         }
 
-        public function get seeklevel() : int {
+        public function get seekLevel() : int {
             var seek_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (HLSSettings.seekFromLevel == -1) {
                 // keep last level
-                return _hls.level;
+                return _hls.loadLevel;
             }
 
             // set up seek level as being the lowest non-audio level.

@@ -131,9 +131,16 @@ Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.ht
   </tr>
 </table>
 <div>
-  selectable levels:
-  <div id="levelControl" style="display: inline;">
-  </div>
+current level: <div id="currentLevelControl" style="display: inline;"></div>
+</div>
+<div>
+next level: <div id="nextLevelControl" style="display: inline;"></div>
+</div>
+<div>
+load level: <div id="loadLevelControl" style="display: inline;"></div>
+</div>
+<div>
+cap level: <div id="levelCappingControl" style="display: inline;"></div>
 </div>
 <div>
   selectable audio tracks:
@@ -376,11 +383,7 @@ var flashlsEvents = {
     appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
     showCanvas();
-    var html = '<button onclick="api.setLevel(-1)">auto</button>';
-    for (var i=0; i < levels.length; i++) {
-      html += '<button onclick="api.setLevel(' + i + ')">' + i + '</button>';
-    }
-    document.getElementById('levelControl').innerHTML = html;
+    updateLevelInfo();
     events = { url : current_url, date : new Date(), load : [], buffer : [], video : []};
     api.play(-1);
     var event = {
@@ -443,6 +446,7 @@ var flashlsEvents = {
     }
     events.load.push(event);
     refreshCanvas();
+    updateLevelInfo();
   },
   fragmentPlaying: function(playmetrics) {
     var event = {time : new Date() - startDate, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level, duration : playmetrics.duration*1000};
@@ -559,6 +563,86 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
   var x = position / duration * canvas.width;
   ctx.fillRect(x, 0, 2, 15);
 }
+
+  function updateLevelInfo() {
+    var button_template = '<button type="button" class="btn btn-sm ';
+    var button_enabled  = 'btn-primary" ';
+    var button_disabled = 'btn-success" ';
+
+    var html1 = button_template;
+    if(api.getAutoLevel()) {
+      html1 += button_enabled;
+    } else {
+      html1 += button_disabled;
+    }
+    html1 += 'onclick="api.setCurrentLevel(-1)">auto</button>';
+
+
+    var html2 = button_template;
+    if(api.getAutoLevel()) {
+      html2 += button_enabled;
+    } else {
+      html2 += button_disabled;
+    }
+    html2 += 'onclick="api.setLoadLevel(-1)">auto</button>';
+
+    var html3 = button_template;
+    if(api.getCapLeveltoStage() === true) {
+      html3 += button_enabled;
+    } else {
+      html3 += button_disabled;
+    }
+    html3 += 'onclick="api.playerCapLeveltoStage(true);updateLevelInfo()">cap to stage</button>';
+    html3 += button_template;
+
+    if(api.getCapLeveltoStage() === false) {
+      html3 += button_enabled;
+    } else {
+      html3 += button_disabled;
+    }
+    html3 += 'onclick="api.playerCapLeveltoStage(false);updateLevelInfo()">no capping</button>';
+
+    var html4 = button_template;
+    if(api.getAutoLevel()) {
+      html4 += button_enabled;
+    } else {
+      html4 += button_disabled;
+    }
+    html4 += 'onclick="api.setNextLevel(-1)">auto</button>';
+
+    for (var i=0; i < api.getLevels().length; i++) {
+      html1 += button_template;
+      if(api.getCurrentLevel() === i) {
+        html1 += button_enabled;
+      } else {
+        html1 += button_disabled;
+      }
+      html1 += 'onclick="api.setCurrentLevel(' + i + ')">' + i + '</button>';
+
+
+      html2 += button_template;
+      if(api.getLoadLevel() === i) {
+        html2 += button_enabled;
+      } else {
+        html2 += button_disabled;
+      }
+      html2 += 'onclick="api.setLoadLevel(' + i + ')">' + i + '</button>';
+
+      html4 += button_template;
+      if(api.getNextLevel() === i) {
+        html4 += button_enabled;
+      } else {
+        html4 += button_disabled;
+      }
+      html4 += 'onclick="api.setNextLevel(' + i + ')">' + i + '</button>';
+    }
+    document.getElementById('currentLevelControl').innerHTML = html1;
+    document.getElementById('loadLevelControl').innerHTML = html2;
+    document.getElementById('levelCappingControl').innerHTML = html3;
+    document.getElementById('nextLevelControl').innerHTML = html4;
+  }
+
+
 
 </script>
 <div id="videoStatus">Video status messages<br /></div>
