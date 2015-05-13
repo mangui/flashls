@@ -386,6 +386,7 @@ var flashlsEvents = {
     updateLevelInfo();
     events = { url : current_url, date : new Date(), load : [], buffer : [], video : []};
     api.play(-1);
+    api.volume(10);
     var event = {
                 type : "manifest",
                 name : "",
@@ -446,11 +447,11 @@ var flashlsEvents = {
     }
     events.load.push(event);
     refreshCanvas();
-    updateLevelInfo();
   },
   fragmentPlaying: function(playmetrics) {
     var event = {time : new Date() - startDate, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level, duration : playmetrics.duration*1000};
     events.video.push(event);
+    updateLevelInfo();
   },
   position: function(timemetrics) {
     document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);

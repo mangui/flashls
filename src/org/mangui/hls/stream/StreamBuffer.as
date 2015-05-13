@@ -21,6 +21,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.model.AudioTrack;
+    import org.mangui.hls.model.Fragment;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -38,6 +39,9 @@ package org.mangui.hls.stream {
         private var _timer : Timer;
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
         private var _audioIdx : uint,  _videoIdx : uint,  _metaIdx : uint, _headerIdx : uint;
+        private var _fragMainLevel : int, _fragMainSN : int;
+        private var _fragAltAudioLevel : int, _fragAltAudioSN : int;
+        private var _fragMainIdx : uint,  _fragAltAudioIdx : uint;
         /** playlist duration **/
         private var _playlistDuration : Number = 0;
         /** requested start position **/
@@ -143,7 +147,7 @@ package org.mangui.hls.stream {
             _timer.start();
         }
 
-        public function appendTags(fragmentType : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
+        public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
             var sliding:Number = 0, _nextRelativeStartPos: Number = startPosition + (max_pts - min_pts) / 1000, headerAppended : Boolean = false, metaAppended : Boolean = false;
             if(_hls.type == HLSTypes.LIVE) {
@@ -161,12 +165,36 @@ package org.mangui.hls.stream {
                     _nextExpectedAbsoluteStartPosAltAudio = _nextRelativeStartPos + sliding;
                 }
             }
+
+            var fragIdx : int;
+            if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
+                if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
+                    _fragMainLevel = fragLevel;
+                    _fragMainSN = fragSN;
+                    _fragMainIdx++;
+                    CONFIG::LOGGING {
+                        Log.debug('new main frag,start/sliding/idx:' + startPosition + '/' + sliding + '/' + _fragMainIdx);
+                    }
+                }
+                fragIdx = _fragMainIdx;
+            } else {
+                if(fragLevel != _fragAltAudioLevel || fragSN != _fragAltAudioSN) {
+                    _fragAltAudioLevel = fragLevel;
+                    _fragAltAudioSN = fragSN;
+                    _fragAltAudioIdx++;
+                    CONFIG::LOGGING {
+                        Log.debug('new altaudio frag,start/sliding/idx:' + startPosition + '/' + sliding + '/' + _fragAltAudioIdx);
+                    }
+                }
+                fragIdx = _fragAltAudioIdx;
+            }
+
             for each (var tag : FLVTag in tags) {
 //                CONFIG::LOGGING {
 //                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
 //                }
                 var pos : Number = startPosition + (tag.pts - min_pts) / 1000;
-                var tagData : FLVData = new FLVData(tag, pos, sliding, continuity, fragmentType);
+                var tagData : FLVData = new FLVData(tag, pos, sliding, continuity, fragmentType, fragIdx, fragLevel);
                 switch(tag.type) {
                     case FLVTag.DISCONTINUITY:
                     case FLVTag.AAC_HEADER:
@@ -230,8 +258,11 @@ package org.mangui.hls.stream {
             _videoTags = new Vector.<FLVData>();
             _metaTags = new Vector.<FLVData>();
             _headerTags = new Vector.<FLVData>();
+            _fragMainLevel = _fragAltAudioLevel = -1;
+            _fragMainSN = _fragAltAudioSN = 0;
             FLVData.refPTSMain = FLVData.refPTSAltAudio = NaN;
             _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
+            _fragMainIdx = _fragAltAudioIdx = 0;
             _seekPositionReached = false;
             _reachedEnd = false;
             _playlistSlidingMain = _playlistSlidingAltAudio = 0;
@@ -336,17 +367,36 @@ package org.mangui.hls.stream {
 
         /** Return the quality level of the next played fragment **/
         public function get nextLevel() : int {
-            CONFIG::LOGGING {
-                Log.error("StreamBuffer:get nextLevel() not implemented");
+            if(_videoIdx < _videoTags.length) {
+                return _audioTags[_audioIdx].fragLevel;
+            } else {
+                return _hls.currentLevel;
             }
-            //return _streamBuffer.nextLevel;
-            return 0;
         };
 
         /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set nextLevel(level : int) : void {
-            CONFIG::LOGGING {
-                Log.error("StreamBuffer:set nextLevel() not implemented");
+            /* remove tags not injected into NetStream.
+                as tags are injected on fragment boundary, we know that flushing this way will work
+            */
+            _metaTags.splice(_metaIdx, _metaTags.length-_metaIdx);
+            _headerTags.splice(_headerIdx, _headerTags.length-_headerIdx);
+            _audioTags.splice(_audioIdx, _audioTags.length-_audioIdx);
+            _videoTags.splice(_videoIdx, _videoTags.length-_videoIdx);
+
+            // determine position within next fragment (add 1s to be sure that we are inside next frag)
+            var pos : Number = position + (_hls.stream as HLSNetStream).netStreamBufferLength + 1;
+            // stop any load in progress ...
+            _fragmentLoader.stop();
+            _altaudiofragmentLoader.stop();
+            // seek position is out of buffer : load from fragment
+            _fragmentLoader.seek(pos);
+            // check if we need to use alt audio fragment loader
+            if (_useAltAudio) {
+                CONFIG::LOGGING {
+                    Log.info("seek : need to load alt audio track");
+                }
+                _altaudiofragmentLoader.seek(pos);
             }
         };
 
@@ -402,7 +452,7 @@ package org.mangui.hls.stream {
                     CONFIG::LOGGING {
                         var t0 : Number = data[0].positionAbsolute - _playlistSlidingMain;
                         var t1 : Number = data[data.length - 1].positionAbsolute - _playlistSlidingMain;
-                        Log.debug2("appending " + tags.length + " tags, start/end :" + t0.toFixed(2) + "/" + t1.toFixed(2));
+                        Log.debug("appending " + tags.length + " tags, start/end :" + t0.toFixed(2) + "/" + t1.toFixed(2));
                     }
                     (_hls.stream as HLSNetStream).appendTags(tags);
                 }
@@ -480,7 +530,7 @@ package org.mangui.hls.stream {
                 data = tags[i];
                 var tagclone : FLVTag = data.tag.clone();
                 tagclone.pts = tagclone.dts = first_pts;
-                var dataclone : FLVData = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType);
+                var dataclone : FLVData = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType, data.fragIdx, data.fragLevel);
                 filteredTags.push(dataclone);
             }
 
@@ -493,7 +543,7 @@ package org.mangui.hls.stream {
                     if (data.tag.type == FLVTag.AVC_NALU) {
                         tagclone = data.tag.clone();
                         tagclone.pts = tagclone.dts = first_pts;
-                        dataclone = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType);
+                        dataclone = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType, data.fragIdx, data.fragLevel);
                         filteredTags.push(dataclone);
                     }
                 } else {
@@ -693,10 +743,11 @@ package org.mangui.hls.stream {
             var tag : FLVData = shiftnexttag();
             if (tag) {
                 var minOffset : Number = tag.positionAbsolute;
+                var fragIdx : int = tag.fragIdx;
                 do {
                     tags.push(tag);
                     var tagOffset : Number = tag.positionAbsolute;
-                    if (tagOffset - minOffset > maxDuration) {
+                    if ((tagOffset - minOffset) > maxDuration && tag.fragIdx != fragIdx) {
                         break;
                     }
                 } while ((tag = shiftnexttag()) != null);
@@ -790,15 +841,20 @@ class FLVData {
     public var sliding : Number;
     public var continuity : int;
     public var loaderType : int;
+    public var fragIdx : int;
+    public var fragLevel : int;
     public static var refPTSMain : Number;
     public static var refPTSAltAudio : Number;
 
-    public function FLVData(tag : FLVTag, position : Number, sliding : Number, continuity : int, loaderType : int) {
+    public function FLVData(tag : FLVTag, position : Number, sliding : Number, continuity : int, loaderType : int, fragIdx : int, fragLevel : int) {
         this.tag = tag;
+        // relative position
         this.position = position;
         this.sliding = sliding;
         this.continuity = continuity;
         this.loaderType = loaderType;
+        this.fragIdx = fragIdx;
+        this.fragLevel = fragLevel;
         switch(loaderType) {
             case HLSLoaderTypes.FRAGMENT_MAIN:
                 if(isNaN(refPTSMain)) {

@@ -139,7 +139,7 @@ package org.mangui.hls.loader {
                         Log.warn("audio loading stalled: restart playback???");
                     }
                     /* seek to force a restart of the playback session  */
-                    _streamBuffer.seek(-1);
+                    _hls.stream.seek(-1);
                     break;
                 // if key loading failed
                 case  LOADING_KEY_IO_ERROR:
@@ -605,7 +605,7 @@ package org.mangui.hls.loader {
                 fragData.metadata_tag_injected = true;
             }
             // provide tags to HLSNetStream
-            _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
+            _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,_fragCurrent.level,_fragCurrent.seqnum ,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
             fragData.shiftTags();
         }
 
@@ -642,7 +642,7 @@ package org.mangui.hls.loader {
                         fragData.tags.unshift(_fragCurrent.metadataTag);
                         fragData.metadata_tag_injected = true;
                     }
-                    _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
+                    _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,_fragCurrent.level,_fragCurrent.seqnum , fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
                     _metrics.duration = fragData.pts_max + fragData.tag_duration - fragData.pts_min;
                     _metrics.id2 = fragData.tags.length;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, _metrics));
