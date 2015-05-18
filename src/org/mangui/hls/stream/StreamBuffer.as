@@ -368,36 +368,50 @@ package org.mangui.hls.stream {
         /** Return the quality level of the next played fragment **/
         public function get nextLevel() : int {
             if(_videoIdx < _videoTags.length) {
-                return _audioTags[_audioIdx].fragLevel;
+                return _videoTags[_videoIdx].fragLevel;
             } else {
                 return _hls.currentLevel;
             }
         };
 
+        // remove tags coming from main fragment loader, only keep tags coming from alt audio frag loader
+        private function filterMainFragmentTags(tags : Vector.<FLVData>, startIndex : int) : void {
+            for (var i : int = startIndex; i < tags.length; i++) {
+                if(tags[i].loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
+                    // splice FLV tag from main fragment loader
+                    tags.splice(i,1);
+                }
+            }
+        }
+
         /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set nextLevel(level : int) : void {
             /* remove tags not injected into NetStream.
-                as tags are injected on fragment boundary, we know that flushing this way will work
+                as tags are injected on fragment boundary, tags not injected in NetStream corresponds
+                with next fragment tags
             */
-            _metaTags.splice(_metaIdx, _metaTags.length-_metaIdx);
-            _headerTags.splice(_headerIdx, _headerTags.length-_headerIdx);
-            _audioTags.splice(_audioIdx, _audioTags.length-_audioIdx);
+            // flush all video tags not injected into NetStream
             _videoTags.splice(_videoIdx, _videoTags.length-_videoIdx);
+
+            // if we are not using alt audio, we can flush all other "not buffered" tags as well
+            if(_useAltAudio == false) {
+                _audioTags.splice(_audioIdx, _audioTags.length-_audioIdx);
+                _headerTags.splice(_headerIdx, _headerTags.length-_headerIdx);
+                _metaTags.splice(_metaIdx, _metaTags.length-_metaIdx);
+            } else {
+                // we keep audio tags, no need to flush them
+                // keep alt audio header tags located after _headerIdx
+                filterMainFragmentTags(_headerTags,_headerIdx);
+                // keep alt audio metadata located after _metaIdx
+                filterMainFragmentTags(_metaTags,_metaIdx);
+            }
 
             // determine position within next fragment (add 1s to be sure that we are inside next frag)
             var pos : Number = position + (_hls.stream as HLSNetStream).netStreamBufferLength + 1;
             // stop any load in progress ...
             _fragmentLoader.stop();
-            _altaudiofragmentLoader.stop();
             // seek position is out of buffer : load from fragment
             _fragmentLoader.seek(pos);
-            // check if we need to use alt audio fragment loader
-            if (_useAltAudio) {
-                CONFIG::LOGGING {
-                    Log.info("seek : need to load alt audio track");
-                }
-                _altaudiofragmentLoader.seek(pos);
-            }
         };
 
         /**  StreamBuffer Timer, responsible of
