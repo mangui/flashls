@@ -117,7 +117,9 @@ package org.mangui.hls.utils {
             CONFIG::LOGGING {
             Log.debug("resourceLoadingError");
             }
-            _timer.stop();
+            if(_timer) {
+                _timer.stop();
+            }
             this.dispatchEvent(new IOErrorEvent(IOErrorEvent.IO_ERROR));
         }
 
