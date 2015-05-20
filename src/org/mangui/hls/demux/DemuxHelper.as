@@ -9,7 +9,7 @@
         import org.mangui.hls.utils.Log;
     }
     public class DemuxHelper {
-        public static function probe(data : ByteArray, level : Level, audioselect : Function, progress : Function, complete : Function, videometadata : Function) : Demuxer {
+        public static function probe(data : ByteArray, level : Level, audioselect : Function, progress : Function, complete : Function, videometadata : Function, audioOnly : Boolean) : Demuxer {
             data.position = 0;
             CONFIG::LOGGING {
                 Log.debug("probe fragment type");
@@ -30,7 +30,7 @@
                 CONFIG::LOGGING {
                     Log.debug("TS match + H264 signaled in Manifest, use TS demuxer");
                 }
-                return new TSDemuxer(audioselect, progress, complete, videometadata);
+                return new TSDemuxer(audioselect, progress, complete, videometadata, audioOnly);
             } else if (aac_match && level.codec_aac) {
                 CONFIG::LOGGING {
                     Log.debug("AAC match + AAC signaled in Manifest, use AAC demuxer");
@@ -46,7 +46,7 @@
             } else if (mp3_match) {
                 return new MP3Demuxer(audioselect, progress, complete);
             } else if (ts_match) {
-                return new TSDemuxer(audioselect, progress, complete, videometadata);
+                return new TSDemuxer(audioselect, progress, complete, videometadata, audioOnly);
             } else {
                 CONFIG::LOGGING {
                     Log.debug("probe fails");

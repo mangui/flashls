@@ -72,6 +72,7 @@ package org.mangui.hls.demux {
         private var _avcc : ByteArray;
         private var _timer : Timer;
         private var _totalBytes : uint;
+        private var _audioOnly : Boolean;
 
         public static function probe(data : ByteArray) : Boolean {
             var pos : uint = data.position;
@@ -95,7 +96,7 @@ package org.mangui.hls.demux {
         }
 
         /** Transmux the M2TS file into an FLV file. **/
-        public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function) {
+        public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function, audioOnly : Boolean) {
             _curAudioPES = null;
             _curVideoPES = null;
             _curId3PES = null;
@@ -112,6 +113,7 @@ package org.mangui.hls.demux {
             _audioIsAAC = false;
             _tags = new Vector.<FLVTag>();
             _timer = new Timer(0, 0);
+            _audioOnly = audioOnly;
         };
 
         /** append new TS data */
@@ -799,9 +801,15 @@ package org.mangui.hls.demux {
                     audioList.push(new AudioTrack('TS/AAC ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0), true));
                 } else if (typ == 0x1B) {
                     // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
-                    _avcId = sid;
-                    CONFIG::LOGGING {
-                        Log.debug("TS: Selected video PID: " + _avcId);
+                    if(_audioOnly == false) {
+                        _avcId = sid;
+                        CONFIG::LOGGING {
+                            Log.debug("TS: Selected video PID: " + _avcId);
+                        }
+                    } else {
+                        CONFIG::LOGGING {
+                            Log.warn("TS: discarding video PID found in altaudio Fragment: " + _avcId);
+                        }
                     }
                 } else if (typ == 0x03 || typ == 0x04) {
                     // ISO/IEC 11172-3 (MPEG-1 audio)
