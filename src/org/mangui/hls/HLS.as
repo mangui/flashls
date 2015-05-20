@@ -150,6 +150,16 @@ package org.mangui.hls {
             return _manual_level;
         };
 
+        /** Return the capping/max level value that could be used by automatic level selection algorithm **/
+        public function get autoLevelCapping() : int {
+            return _levelController.autoLevelCapping;
+        }
+
+        /** set the capping/max level value that could be used by automatic level selection algorithm **/
+        public function set autoLevelCapping(newLevel : int) : void {
+            _levelController.autoLevelCapping = newLevel;
+        }
+
         /** Return a Vector of quality level **/
         public function get levels() : Vector.<Level> {
             return _levelLoader.levels;

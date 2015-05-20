@@ -152,5 +152,14 @@ var flashlsAPI = function(flashObject) {
 	this.getCapLeveltoStage = function() {
 		return this.flashObject.getCapLeveltoStage();
 	}
+
+	this.playerSetAutoLevelCapping = function(level) {
+    	this.flashObject.playerSetAutoLevelCapping(level);
+	}
+
+	this.getAutoLevelCapping = function() {
+		return this.flashObject.getAutoLevelCapping();
+	}
+
 }
 

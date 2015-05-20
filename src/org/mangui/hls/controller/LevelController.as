@@ -34,6 +34,8 @@ package org.mangui.hls.controller {
         private var _lastSegmentDuration : Number;
         private var _lastFetchDuration : Number;
         private var  lastBandwidth : Number;
+        private var  _autoLevelCapping : int = -1;
+
 
         /** Create the loader. **/
         public function LevelController(hls : HLS) : void {
@@ -143,8 +145,21 @@ package org.mangui.hls.controller {
             return _hls.levels.filter(filter);
         }
 
+
+        /** Return the capping/max level value that could be used by automatic level selection algorithm **/
+        public function get autoLevelCapping() : int {
+            return _autoLevelCapping;
+        }
+
+        /** set the capping/max level value that could be used by automatic level selection algorithm **/
+        public function set autoLevelCapping(newLevel : int) : void {
+            _autoLevelCapping = newLevel;
+        }
+
         private function get _maxLevel() : int {
-            if (HLSSettings.capLevelToStage) {
+            if(_autoLevelCapping >= 0) {
+                return Math.min(_nbLevel - 1, _autoLevelCapping);
+            } else if (HLSSettings.capLevelToStage) {
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
                 if (_hls.stage && maxLevelsCount) {

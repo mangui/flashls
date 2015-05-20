@@ -77,6 +77,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getLogDebug2", _getLogDebug2);
             ExternalInterface.addCallback("getUseHardwareVideoDecoder", _getUseHardwareVideoDecoder);
             ExternalInterface.addCallback("getCapLeveltoStage", _getCapLeveltoStage);
+            ExternalInterface.addCallback("getAutoLevelCapping", _getAutoLevelCapping);
             ExternalInterface.addCallback("getflushLiveURLCache", _getflushLiveURLCache);
             ExternalInterface.addCallback("getstartFromLevel", _getstartFromLevel);
             ExternalInterface.addCallback("getseekFromLowestLevel", _getseekFromLevel);
@@ -107,6 +108,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("playerSetLogDebug", _setLogDebug);
             ExternalInterface.addCallback("playerSetLogDebug2", _setLogDebug2);
             ExternalInterface.addCallback("playerSetUseHardwareVideoDecoder", _setUseHardwareVideoDecoder);
+            ExternalInterface.addCallback("playerSetAutoLevelCapping", _setAutoLevelCapping);
             ExternalInterface.addCallback("playerCapLeveltoStage", _setCapLeveltoStage);
             ExternalInterface.addCallback("playerSetAudioTrack", _setAudioTrack);
             ExternalInterface.addCallback("playerSetJSURLStream", _setJSURLStream);
@@ -318,6 +320,10 @@ package org.mangui.chromeless {
             return HLSSettings.capLevelToStage;
         };
 
+        protected function _getAutoLevelCapping() : int {
+            return _hls.autoLevelCapping;
+        };
+
         protected function _getJSURLStream() : Boolean {
             return (_hls.URLstream is JSURLStream);
         };
@@ -422,6 +428,10 @@ package org.mangui.chromeless {
 
         protected function _setCapLeveltoStage(value : Boolean) : void {
             HLSSettings.capLevelToStage = value;
+        };
+
+        protected function _setAutoLevelCapping(value : int) : void {
+            _hls.autoLevelCapping = value;
         };
 
         protected function _setJSURLStream(jsURLstream : Boolean) : void {
