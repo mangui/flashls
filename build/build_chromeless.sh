@@ -10,6 +10,12 @@ OPT_DEBUG="-use-network=false \
     -define=CONFIG::LOGGING,true \
     -define=CONFIG::FLASH_11_1,true"
 
+OPT_RELEASE="-use-network=false \
+    -optimize=true \
+    -debug=false \
+    -define=CONFIG::LOGGING,false \
+    -define=CONFIG::FLASH_11_1,true"
+
 echo "Compiling bin/debug/flashlsChromeless.swf"
 $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
     -source-path ../src \
@@ -20,3 +26,13 @@ $FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
     -default-size 480 270 \
     -default-background-color=0x000000
 ./add-opt-in.py ../bin/debug/flashlsChromeless.swf
+
+$FLEXPATH/bin/mxmlc ../src/org/mangui/chromeless/ChromelessPlayer.as \
+    -source-path ../src \
+    -o ../bin/release/flashlsChromeless.swf \
+    $OPT_RELEASE \
+    -library-path+=../lib/blooddy_crypto.swc \
+    -target-player="11.1" \
+    -default-size 480 270 \
+    -default-background-color=0x000000
+./add-opt-in.py ../bin/release/flashlsChromeless.swf

@@ -424,6 +424,8 @@ package org.mangui.chromeless {
             if (jsURLstream) {
                 _hls.URLstream = JSURLStream as Class;
                 _hls.URLloader = JSURLLoader as Class;
+                _hls.URLstream.externalCallback = _callbackName;
+                _hls.URLloader.externalCallback = _callbackName;
             } else {
                 _hls.URLstream = URLStream as Class;
                 _hls.URLloader = URLLoader as Class;
