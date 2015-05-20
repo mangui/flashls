@@ -45,7 +45,7 @@ package org.mangui.hls.loader {
         /** last loaded level. **/
         private var _levelLastLoaded : int;
         /** next level (-1 if not defined yet) **/
-        private var _levelNext : int;
+        private var _levelNext : int = -1;
         /** Reference to the manifest levels. **/
         private var _levels : Vector.<Level>;
         /** Util for loading the fragment. **/
