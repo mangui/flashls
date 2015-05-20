@@ -125,7 +125,7 @@ package org.mangui.hls {
         /*  instant quality level switch (-1 for automatic level selection) */
         public function set currentLevel(level : int) : void {
             _manual_level = level;
-            flushBuffer();
+            _streamBuffer.flushBuffer();
             _hlsNetStream.seek(position);
         };
 
@@ -203,11 +203,6 @@ package org.mangui.hls {
         /** get current back buffer Length  **/
         public function get backBufferLength() : Number {
             return _hlsNetStream.backBufferLength;
-        };
-
-        /** flush stream buffer   **/
-        public function flushBuffer() : void {
-             _streamBuffer.flushBuffer();
         };
 
         /** get audio tracks list**/
