@@ -37,7 +37,7 @@ package org.mangui.hls.utils {
         private static const CHUNK_SIZE : uint = 65536;
         private static var _instanceCount : int = 0;
         /** JS callbacks prefix */
-        protected static var _callbackName : String;
+        protected static var _callbackName : String = 'JSLoaderFragment';
 
         public function JSURLStream() {
             addEventListener(Event.OPEN, onOpen);

@@ -23,7 +23,7 @@ package org.mangui.hls.utils {
         private var _callbackFailure : String;
         private static var _instanceCount : int = 0;
         /** JS callbacks prefix */
-        protected static var _callbackName : String;
+        protected static var _callbackName : String = 'JSLoaderPlaylist';
 
         public function JSURLLoader() {
             super();

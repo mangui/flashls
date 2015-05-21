@@ -1,13 +1,13 @@
 var JSLoaderFragment = {
 
-  onRequestResource : function(instanceId,url, resourceLoadedFlashCallback, resourceFailureFlashCallback) {
+  requestFragment : function(instanceId,url, resourceLoadedFlashCallback, resourceFailureFlashCallback) {
     //console.log("JSURLStream.onRequestResource");
     if(!this.flashObject) {
       this.flashObject = getFlashMovieObject(instanceId);
     }
     this.xhrGET(url,this.xhrReadBytes, this.xhrTransferFailed, resourceLoadedFlashCallback, resourceFailureFlashCallback, "arraybuffer");
   },
-  onRequestAbort : function(instanceId) {
+  abortFragment : function(instanceId) {
     if(this.xhr &&this.xhr.readyState !== 4) {
       console.log("JSLoaderFragment:abort XHR");
       this.xhr.abort();
