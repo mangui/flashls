@@ -26,6 +26,7 @@ package org.mangui.hls.utils {
         protected static var _callbackName : String = 'JSLoaderPlaylist';
 
         public function JSURLLoader() {
+            ExternalInterface.marshallExceptions = true;
             super();
 
             // Connect calls to JS.
