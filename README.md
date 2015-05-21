@@ -15,7 +15,11 @@ The plugin is compatible with the following players:
   - VoD & Live playlists
     - Sliding window (aka DVR) support on Live playlists
   - Adaptive streaming
-    - Manual & Auto switching
+    - Manual & Auto quality switching
+    - 3 switching modes are available:
+      - instant switching : playback will be paused, whole buffer will be flushed, and fragments matching with new quality level and current playback position will be fetched, then playback will resume.
+      - smooth switching : buffer will be flushed on next fragment boundary, and fragments matching with new quality level and next fragment position will be fetched. this allows a smooth (and still fast) quality switch, usually without interrupting the playback.
+      - bandwidth conservative switching : buffer will not be flushed, but next fragment to be buffered will use the newly selected quality level.
     - Serial segment fetching method from http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
   - Alternate Audio Track Rendition
     - Master Playlist with alternative Audio
@@ -100,6 +104,8 @@ The plugin accepts several **optional** configuration options, such as:
     - "upscale" - max capped level should be the one with the dimensions equal or lower than the stage dimensions (so the video will be upscaled)
   - `hls_usehardwarevideodecoder` (default true) : enable/disable hardware video decoding. it could be useful to workaround hardware video decoding issues.
 
+## hls API
+hls API and events are described [here](API.md)
 
 ## Examples :
 
