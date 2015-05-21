@@ -46,8 +46,8 @@ package org.mangui.hls.loader {
         private var _type : String;
         /** last reload manifest time **/
         private var _reloadPlaylistTimer : uint;
-        /** current level **/
-        private var _currentLevel : int;
+        /** current load level **/
+        private var _loadLevel : int;
         /** reference to manifest being loaded **/
         private var _manifestLoading : Manifest;
         /** is this loader closed **/
@@ -233,7 +233,7 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.debug("1 Level Playlist, load it");
                     }
-                    _currentLevel = 0;
+                    _loadLevel = 0;
                     _metrics.type = HLSLoaderTypes.LEVEL_MAIN;
                     _parseLevelPlaylist(string, _url, 0,_metrics);
                 } else if (string.indexOf(Manifest.LEVEL) > 0) {
@@ -249,10 +249,8 @@ package org.mangui.hls.loader {
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                     }
                     _metrics.parsing_end_time = getTimer();
+                    _loadLevel = -1;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
-                    // retrieve start level from helper function
-                    _currentLevel = _hls.startlevel;
-                    _loadActiveLevelPlaylist();
                     if (string.indexOf(Manifest.ALTERNATE_AUDIO) > 0) {
                         CONFIG::LOGGING {
                             Log.debug("alternate audio level found");
@@ -280,18 +278,18 @@ package org.mangui.hls.loader {
             _reloadPlaylistTimer = getTimer();
             // load active M3U8 playlist only
             _manifestLoading = new Manifest();
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, _currentLevel));
-            _manifestLoading.loadPlaylist(_hls,_levels[_currentLevel].url, _parseLevelPlaylist, _errorHandler, _currentLevel, _type, HLSSettings.flushLiveURLCache);
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, _loadLevel));
+            _manifestLoading.loadPlaylist(_hls,_levels[_loadLevel].url, _parseLevelPlaylist, _errorHandler, _loadLevel, _type, HLSSettings.flushLiveURLCache);
         };
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
         private function _levelSwitchHandler(event : HLSEvent) : void {
-            if (_currentLevel != event.level) {
-                _currentLevel = event.level;
+            if (_loadLevel != event.level) {
+                _loadLevel = event.level;
                 CONFIG::LOGGING {
-                    Log.debug("switch to level " + _currentLevel);
+                    Log.debug("switch to level " + _loadLevel);
                 }
-                if (_type == HLSTypes.LIVE || _levels[_currentLevel].fragments.length == 0) {
+                if (_type == HLSTypes.LIVE || _levels[_loadLevel].fragments.length == 0) {
                     _closed = false;
                     CONFIG::LOGGING {
                         Log.debug("(re)load Playlist");

@@ -6,7 +6,7 @@
     import org.mangui.hls.event.HLSEvent;
     import org.osmf.traits.DynamicStreamTrait;
     import org.osmf.utils.OSMFStrings;
-    
+
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
     }
@@ -20,7 +20,7 @@
             }
             _hls = hls;
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
-            super(true, _hls.startlevel, hls.levels.length);
+            super(true, _hls.startLevel, hls.levels.length);
         }
 
         override public function dispose() : void {
@@ -59,8 +59,8 @@
             CONFIG::LOGGING {
             Log.debug("HLSDynamicStreamTrait:autoSwitchChangeStart:" + value);
             }
-            if (value == true && _hls.autolevel == false) {
-                _hls.level = -1;
+            if (value == true && _hls.autoLevel == false) {
+                _hls.loadLevel = -1;
                 // only seek if position is set
                 if (!isNaN(_hls.position)) {
                     _hls.stream.seek(_hls.position);
@@ -73,7 +73,7 @@
             Log.debug("HLSDynamicStreamTrait:switchingChangeStart(newSwitching/index):" + newSwitching + "/" + index);
             }
             if (newSwitching) {
-                _hls.level = index;
+                _hls.loadLevel = index;
             }
         }
 

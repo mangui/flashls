@@ -33,12 +33,16 @@ var flashlsAPI = function(flashObject) {
     this.flashObject.playerVolume(volume);
 	}
 
-	this.setLevel = function(level) {
-    this.flashObject.playerSetLevel(level);
+	this.setCurrentLevel = function(level) {
+    this.flashObject.playerSetCurrentLevel(level);
 	}
 
-	this.smoothSetLevel = function(level) {
-    this.flashObject.playerSmoothSetLevel(level);
+	this.setNextLevel = function(level) {
+    this.flashObject.playerSetNextLevel(level);
+	}
+
+	this.setLoadLevel = function(level) {
+    this.flashObject.playerSetLoadLevel(level);
 	}
 
 	this.setMaxBufferLength = function(len) {
@@ -71,6 +75,26 @@ var flashlsAPI = function(flashObject) {
 
 	this.getMaxBufferLength = function() {
 		return this.flashObject.getMaxBufferLength();
+	}
+
+	this.getLevels = function() {
+		return this.flashObject.getLevels();
+	}
+
+	this.getAutoLevel = function() {
+		return this.flashObject.getAutoLevel();
+	}
+
+	this.getCurrentLevel = function() {
+		return this.flashObject.getCurrentLevel();
+	}
+
+	this.getNextLevel = function() {
+		return this.flashObject.getNextLevel();
+	}
+
+	this.getLoadLevel = function() {
+		return this.flashObject.getLoadLevel();
 	}
 
 	this.getAudioTrackList = function() {
@@ -128,5 +152,14 @@ var flashlsAPI = function(flashObject) {
 	this.getCapLeveltoStage = function() {
 		return this.flashObject.getCapLeveltoStage();
 	}
+
+	this.playerSetAutoLevelCapping = function(level) {
+    	this.flashObject.playerSetAutoLevelCapping(level);
+	}
+
+	this.getAutoLevelCapping = function() {
+		return this.flashObject.getAutoLevelCapping();
+	}
+
 }
 

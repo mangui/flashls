@@ -61,14 +61,14 @@ package org.mangui.hls.controller {
             _audioTrackId = -1;
             _audioTracksfromDemux = new Vector.<AudioTrack>();
             _audioTracksfromManifest = new Vector.<AudioTrack>();
-            _updateAudioTrackforLevel(_hls.level);
+            _updateAudioTrackforLevel(_hls.loadLevel);
             _audioTracksMerge();
         };
 
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
             var level : int = event.loadMetrics.level;
-            if (level == _hls.level) {
+            if (level == _hls.loadLevel) {
                 _updateAudioTrackforLevel(level);
             }
         };

@@ -115,13 +115,13 @@
                 }
             }
             dynamicRes.streamItems = streamItems;
-            dynamicRes.initialIndex = _hls.startlevel;
+            dynamicRes.initialIndex = _hls.startLevel;
             resource = dynamicRes;
             // set Stream Type
             var streamUrlRes : StreamingURLResource = resource as StreamingURLResource;
             streamUrlRes.streamType = streamType;
             try {
-                var loadedElem : MediaElement = new HLSMediaElement(resource, _hls, event.levels[_hls.startlevel].duration);
+                var loadedElem : MediaElement = new HLSMediaElement(resource, _hls, event.levels[_hls.startLevel].duration);
                 LoadFromDocumentLoadTrait(_loadTrait).mediaElement = loadedElem;
                 updateLoadTrait(_loadTrait, LoadState.READY);
             } catch(e : Error) {

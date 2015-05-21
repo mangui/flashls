@@ -40,6 +40,8 @@ package org.mangui.hls.loader {
         private var _keystreamloader : URLStream;
         /** key map **/
         private var _keymap : Object;
+        /** Did a discontinuity occurs in the stream **/
+        private var _hasDiscontinuity : Boolean;
         /** Timer used to monitor/schedule fragment download. **/
         private var _timer : Timer;
         /** requested seek position **/
@@ -494,6 +496,7 @@ package org.mangui.hls.loader {
                 Log.debug("loadfirstaudiofragment(" + position + ")");
             }
             var frag : Fragment = _level.getFragmentBeforePosition(position);
+            _hasDiscontinuity = true;
             CONFIG::LOGGING {
                 Log.debug("Loading       " + frag.seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
             }
@@ -535,6 +538,8 @@ package org.mangui.hls.loader {
                 }
                 return LOADING_WAITING_LEVEL_UPDATE;
             } else {
+              // check whether there is a discontinuity between last segment and new segment
+              _hasDiscontinuity = (frag.continuity != frag_previous.continuity);
                 CONFIG::LOGGING {
                     Log.debug("Loading audio " + new_seqnum + " of [" + (_level.start_seqnum) + "," + (_level.end_seqnum) + "]");
                 }
@@ -558,6 +563,9 @@ package org.mangui.hls.loader {
                 _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyLoadErrorHandler);
                 _keystreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _keyLoadHTTPStatusHandler);
                 _keystreamloader.addEventListener(Event.COMPLETE, _keyLoadCompleteHandler);
+            }
+            if (_hasDiscontinuity) {
+                _demux = null;
             }
             _metrics = new HLSLoadMetrics(HLSLoaderTypes.FRAGMENT_ALTAUDIO);
             _metrics.level = _level.index;
@@ -602,10 +610,13 @@ package org.mangui.hls.loader {
 
             if (fragData.metadata_tag_injected == false) {
                 fragData.tags.unshift(_fragCurrent.metadataTag);
+                if (_hasDiscontinuity) {
+                  fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.dts_min, fragData.dts_min, false));
+                }
                 fragData.metadata_tag_injected = true;
             }
             // provide tags to HLSNetStream
-            _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
+            _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,_fragCurrent.level,_fragCurrent.seqnum ,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
             fragData.shiftTags();
         }
 
@@ -640,9 +651,12 @@ package org.mangui.hls.loader {
                 if (fragData.tags.length) {
                     if (fragData.metadata_tag_injected == false) {
                         fragData.tags.unshift(_fragCurrent.metadataTag);
+                        if (_hasDiscontinuity) {
+                            fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.dts_min, fragData.dts_min, false));
+                        }
                         fragData.metadata_tag_injected = true;
                     }
-                    _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
+                    _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,_fragCurrent.level,_fragCurrent.seqnum , fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
                     _metrics.duration = fragData.pts_max + fragData.tag_duration - fragData.pts_min;
                     _metrics.id2 = fragData.tags.length;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.TAGS_LOADED, _metrics));

@@ -34,16 +34,20 @@ package org.mangui.hls.controller {
         private var _lastSegmentDuration : Number;
         private var _lastFetchDuration : Number;
         private var  lastBandwidth : Number;
+        private var  _autoLevelCapping : int = -1;
+        private var  _startLevel : int = -1;
 
         /** Create the loader. **/
         public function LevelController(hls : HLS) : void {
             _hls = hls;
+            _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
         ;
 
         public function dispose() : void {
+            _hls.removeEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
@@ -58,7 +62,11 @@ package org.mangui.hls.controller {
             }
         }
 
-        /** Store the manifest data. **/
+        private function _manifestParsedHandler(event : HLSEvent) : void {
+            // upon manifest parsed event, trigger a level switch to load startLevel playlist
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _hls.startLevel));
+        }
+
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             var levels : Vector.<Level> = event.levels;
             var maxswitchup : Number = 0;
@@ -104,14 +112,6 @@ package org.mangui.hls.controller {
             if (HLSSettings.capLevelToStage) {
                 _maxUniqueLevels = _maxLevelsWithUniqueDimensions;
             }
-            var level : int;
-            if (_hls.autolevel) {
-                level = _hls.startlevel;
-            } else {
-                level = _hls.manuallevel;
-            }
-            // always dispatch level after manifest load
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
         }
         ;
 
@@ -143,8 +143,22 @@ package org.mangui.hls.controller {
             return _hls.levels.filter(filter);
         }
 
+
+        /** Return the capping/max level value that could be used by automatic level selection algorithm **/
+        public function get autoLevelCapping() : int {
+            return _autoLevelCapping;
+        }
+
+        /** set the capping/max level value that could be used by automatic level selection algorithm **/
+        public function set autoLevelCapping(newLevel : int) : void {
+            _autoLevelCapping = newLevel;
+        }
+
         private function get _maxLevel() : int {
-            if (HLSSettings.capLevelToStage) {
+            // if set, _autoLevelCapping takes precedence
+            if(_autoLevelCapping >= 0) {
+                return Math.min(_nbLevel - 1, _autoLevelCapping);
+            } else if (HLSSettings.capLevelToStage) {
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
                 if (_hls.stage && maxLevelsCount) {
@@ -261,7 +275,7 @@ package org.mangui.hls.controller {
         }
 
         // get level index of first level appearing in the manifest
-        public function get firstlevel() : int {
+        public function get firstLevel() : int {
             var levels : Vector.<Level> = _hls.levels;
             for (var i : int = 0; i < levels.length; i++) {
                 if (levels[i].manifest_index == 0) {
@@ -271,13 +285,22 @@ package org.mangui.hls.controller {
             return 0;
         }
 
-        public function get startlevel() : int {
+
+        /*  set the quality level used when starting a fresh playback */
+        public function set startLevel(level : int) : void {
+            _startLevel = level;
+        };
+
+        public function get startLevel() : int {
             var start_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (levels) {
-                if (HLSSettings.startFromLevel === -2) {
+                // if set, _startLevel takes precedence
+                if(_startLevel >=0) {
+                    return Math.min(levels.length-1,_startLevel);
+                } else if (HLSSettings.startFromLevel === -2) {
                     // playback will start from the first level appearing in Manifest (not sorted by bitrate)
-                    return firstlevel;
+                    return firstLevel;
                 } else if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1) {
                     /* if startFromLevel is set to -1, it means that effective startup level
                      * will be determined from first segment download bandwidth
@@ -337,12 +360,12 @@ package org.mangui.hls.controller {
             return levelIndex;
         }
 
-        public function get seeklevel() : int {
+        public function get seekLevel() : int {
             var seek_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (HLSSettings.seekFromLevel == -1) {
                 // keep last level
-                return _hls.level;
+                return _hls.loadLevel;
             }
 
             // set up seek level as being the lowest non-audio level.

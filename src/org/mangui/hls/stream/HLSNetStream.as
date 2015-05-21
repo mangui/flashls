@@ -46,7 +46,7 @@ package org.mangui.hls.stream {
         /** Current seek state. **/
         private var _seekState : String;
         /** current playback level **/
-        private var _playbackLevel : int;
+        private var _currentLevel : int;
         /** Netstream client proxy */
         private var _client : HLSNetStreamClient;
 
@@ -71,7 +71,7 @@ package org.mangui.hls.stream {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
-            _playbackLevel = level;
+            _currentLevel = level;
             var tag_list : Array = new Array();
             for (var i : uint = 0; i < tags.length; i++) {
                 tag_list.push(tags[i]);
@@ -158,8 +158,8 @@ package org.mangui.hls.stream {
         };
 
         /** Return the current playback quality level **/
-        public function get playbackLevel() : int {
-            return _playbackLevel;
+        public function get currentLevel() : int {
+            return _currentLevel;
         };
 
         /** append tags to NetStream **/

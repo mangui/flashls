@@ -93,44 +93,77 @@ package org.mangui.hls {
         }
 
         /** Return index of first quality level referenced in Manifest  **/
-        public function get firstlevel() : int {
-            return _levelController.firstlevel;
+        public function get firstLevel() : int {
+            return _levelController.firstLevel;
         };
 
         /** Return the quality level used when starting a fresh playback **/
-        public function get startlevel() : int {
-            return _levelController.startlevel;
+        public function get startLevel() : int {
+            return _levelController.startLevel;
+        };
+
+        /*  set the quality level used when starting a fresh playback */
+        public function set startLevel(level : int) : void {
+            _levelController.startLevel = level;
         };
 
         /** Return the quality level used after a seek operation **/
-        public function get seeklevel() : int {
-            return _levelController.seeklevel;
+        public function get seekLevel() : int {
+            return _levelController.seekLevel;
         };
 
         /** Return the quality level of the currently played fragment **/
-        public function get playbacklevel() : int {
-            return _hlsNetStream.playbackLevel;
+        public function get currentLevel() : int {
+            return _hlsNetStream.currentLevel;
+        };
+
+        /** Return the quality level of the next played fragment **/
+        public function get nextLevel() : int {
+            return _streamBuffer.nextLevel;
         };
 
         /** Return the quality level of last loaded fragment **/
-        public function get level() : int {
+        public function get loadLevel() : int {
             return _level;
         };
 
+        /*  instant quality level switch (-1 for automatic level selection) */
+        public function set currentLevel(level : int) : void {
+            _manual_level = level;
+            _streamBuffer.flushBuffer();
+            _hlsNetStream.seek(position);
+        };
+
         /*  set quality level for next loaded fragment (-1 for automatic level selection) */
-        public function set level(level : int) : void {
+        public function set nextLevel(level : int) : void {
+            _manual_level = level;
+            _streamBuffer.nextLevel = level;
+        };
+
+        /*  set quality level for last loaded fragment (-1 for automatic level selection) */
+        public function set loadLevel(level : int) : void {
             _manual_level = level;
         };
 
         /* check if we are in automatic level selection mode */
-        public function get autolevel() : Boolean {
+        public function get autoLevel() : Boolean {
             return (_manual_level == -1);
         };
 
         /* return manual level */
-        public function get manuallevel() : int {
+        public function get manualLevel() : int {
             return _manual_level;
         };
+
+        /** Return the capping/max level value that could be used by automatic level selection algorithm **/
+        public function get autoLevelCapping() : int {
+            return _levelController.autoLevelCapping;
+        }
+
+        /** set the capping/max level value that could be used by automatic level selection algorithm **/
+        public function set autoLevelCapping(newLevel : int) : void {
+            _levelController.autoLevelCapping = newLevel;
+        }
 
         /** Return a Vector of quality level **/
         public function get levels() : Vector.<Level> {
@@ -185,11 +218,6 @@ package org.mangui.hls {
         /** get current back buffer Length  **/
         public function get backBufferLength() : Number {
             return _hlsNetStream.backBufferLength;
-        };
-
-        /** flush stream buffer   **/
-        public function flushBuffer() : void {
-             _streamBuffer.flushBuffer();
         };
 
         /** get audio tracks list**/
