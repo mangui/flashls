@@ -210,16 +210,6 @@ package org.mangui.hls {
             _client = value;
         }
 
-        /** get current Buffer Length  **/
-        public function get bufferLength() : Number {
-            return _hlsNetStream.bufferLength;
-        };
-
-        /** get current back buffer Length  **/
-        public function get backBufferLength() : Number {
-            return _hlsNetStream.backBufferLength;
-        };
-
         /** get audio tracks list**/
         public function get audioTracks() : Vector.<AudioTrack> {
             return _audioTrackController.audioTracks;

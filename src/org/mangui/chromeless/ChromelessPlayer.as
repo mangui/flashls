@@ -273,11 +273,11 @@ package org.mangui.chromeless {
         };
 
         protected function _getbufferLength() : Number {
-            return _hls.bufferLength;
+            return _hls.stream.bufferLength;
         };
 
         protected function _getbackBufferLength() : Number {
-            return _hls.backBufferLength;
+            return _hls.stream.backBufferLength;
         };
 
         protected function _getmaxBufferLength() : Number {
