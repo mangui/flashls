@@ -1,13 +1,13 @@
 var JSLoaderPlaylist = {
 
-  onRequestResource : function(instanceId,url, resourceLoadedFlashCallback, resourceFailureFlashCallback) {
+  requestPlaylist : function(instanceId,url, resourceLoadedFlashCallback, resourceFailureFlashCallback) {
     //console.log("JSURLLoader.onRequestResource");
     if(!this.flashObject) {
       this.flashObject = getFlashMovieObject(instanceId);
     }
     this.xhrGET(url,this.xhrReadBytes, this.xhrTransferFailed, resourceLoadedFlashCallback, resourceFailureFlashCallback);
   },
-  onRequestAbort : function(instanceId) {
+  abortPlaylist : function(instanceId) {
     if(this.xhr &&this.xhr.readyState !== 4) {
       console.log("JSLoaderPlaylist:abort XHR");
       this.xhr.abort();

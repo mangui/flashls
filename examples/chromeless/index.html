@@ -524,7 +524,11 @@ var flashlsEvents = {
   id3Updated: function(ID3Data) {
     var event = {time : new Date() - startDate, type : "ID3Data"};
     events.video.push(event);
-  }
+  },
+  requestPlaylist: JSLoaderPlaylist.requestPlaylist.bind(JSLoaderPlaylist),
+  abortPlaylist: JSLoaderPlaylist.abortPlaylist.bind(JSLoaderPlaylist),
+  requestFragment: JSLoaderFragment.requestFragment.bind(JSLoaderFragment),
+  abortFragment: JSLoaderFragment.abortFragment.bind(JSLoaderFragment)
 };
 
 

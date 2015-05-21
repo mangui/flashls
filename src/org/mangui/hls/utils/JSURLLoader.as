@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.utils {
+    import org.mangui.hls.HLS;
     import flash.events.Event;
     import flash.events.IOErrorEvent;
     import flash.events.ProgressEvent;
@@ -21,13 +22,16 @@ package org.mangui.hls.utils {
         private var _callbackLoaded : String;
         private var _callbackFailure : String;
         private static var _instanceCount : int = 0;
+        /** JS callbacks prefix */
+        protected static var _callbackName : String = 'JSLoaderPlaylist';
 
         public function JSURLLoader() {
             super();
+
             // Connect calls to JS.
             if (ExternalInterface.available) {
                 CONFIG::LOGGING {
-                    Log.debug("add callback resourceLoaded, id:" + _instanceCount);
+                    Log.debug("add callback textLoaded, id:" + _instanceCount);
                 }
                 _callbackLoaded = "textLoaded" + _instanceCount;
                 _callbackFailure = "textLoadingError" + _instanceCount;
@@ -40,9 +44,19 @@ package org.mangui.hls.utils {
             }
         }
 
+        public static function set externalCallback(callbackName: String) : void {
+            _callbackName = callbackName;
+        }
+
+        protected function _trigger(event : String, ...args) : void {
+            if (ExternalInterface.available) {
+                ExternalInterface.call(_callbackName, event, args);
+            }
+        }
+
         override public function close() : void {
             if (ExternalInterface.available) {
-                ExternalInterface.call("JSLoaderPlaylist.onRequestAbort",ExternalInterface.objectID);
+                _trigger('abortPlaylist', ExternalInterface.objectID);
             } else {
                 super.close();
             }
@@ -55,7 +69,7 @@ package org.mangui.hls.utils {
             bytesLoaded = bytesTotal = 0;
             data = null;
             if (ExternalInterface.available) {
-                ExternalInterface.call("JSLoaderPlaylist.onRequestResource",ExternalInterface.objectID, request.url,_callbackLoaded,_callbackFailure);
+                _trigger('requestPlaylist', ExternalInterface.objectID, request.url, _callbackLoaded, _callbackFailure);
                 this.dispatchEvent(new Event(Event.OPEN));
             } else {
                 super.load(request);
