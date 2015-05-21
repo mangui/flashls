@@ -41,6 +41,7 @@ package org.mangui.hls.utils {
 
         public function JSURLStream() {
             addEventListener(Event.OPEN, onOpen);
+            ExternalInterface.marshallExceptions = true;
             super();
 
             // Connect calls to JS.

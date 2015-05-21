@@ -12,6 +12,7 @@ package org.mangui.chromeless {
     import flash.media.Video;
     import flash.net.URLLoader;
     import flash.net.URLStream;
+    import flash.system.Security;
     import flash.utils.setTimeout;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
@@ -47,6 +48,9 @@ package org.mangui.chromeless {
 
         /** Initialization. **/
         public function ChromelessPlayer() {
+            Security.allowDomain("*");
+            Security.allowInsecureDomain("*");
+            ExternalInterface.marshallExceptions = true;
             _setupStage();
             _setupSheet();
             _setupExternalGetters();
