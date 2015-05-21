@@ -70,7 +70,9 @@ there are 2 ways to retrieve playback state :
   - asynchronously
 
 by monitoring the below event, that will be triggered for every playback state change.
-```HLSEvent.PLAYBACK_STATE```
+```
+HLSEvent.PLAYBACK_STATE
+```
 
 ### seek state
 
@@ -83,8 +85,9 @@ there are 2 ways to retrieve seek state :
   - asynchronously
 
 by monitoring the below event, that will be triggered for every seek state change.
-```HLSEvent.SEEK_STATE```
-
+```
+HLSEvent.SEEK_STATE
+```
 
 ## Controlling Quality Switch
 
