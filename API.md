@@ -4,7 +4,7 @@ first thing you need to do to integrate HLS playback into your application is to
 
 see example below
 
-```
+```as3
 	import org.mangui.hls.HLS;
     import flash.media.Video;
 
@@ -26,12 +26,12 @@ you can also refer to [Basic] (src/org/mangui/basic/Player.as) or [Chromeless](s
 loading is peformed asynchronously.
 below API should be used
 
-```
+```as3
 hls.load(url)
 ```
 flashls will fire below upon completion of manifest loading:
 
-```
+```as3
 HLSEvent.MANIFEST_PARSED
 HLSEvent.MANIFEST_LOADED
 ```
@@ -39,7 +39,7 @@ see [events below](##Events)
 
 ## retrieving playlist type
 
-```
+```as3
 	hls.type (VOD/LIVE)
 ```
 
@@ -48,7 +48,7 @@ see [events below](##Events)
 playback control should be performed through a [flash.net.NetStream](http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/NetStream.html) instance, which can be retrieved using hls.stream getter
 
 
-```
+```as3
 	hls.stream.play(null, -1);
 	hls.stream.seek(50);
 	hls.stream.pause();
@@ -64,13 +64,13 @@ playback control should be performed through a [flash.net.NetStream](http://help
 there are 2 ways to retrieve playback state :
 
   - synchronously, using a getter
-```
+```as3
 	hls.playbackState (IDLE/PLAYING/PAUSED/PLAYING_BUFFERING/PAUSED_BUFFERING)
 ```
   - asynchronously
 
 by monitoring the below event, that will be triggered for every playback state change.
-```
+```as3
 HLSEvent.PLAYBACK_STATE
 ```
 
@@ -79,13 +79,13 @@ HLSEvent.PLAYBACK_STATE
 there are 2 ways to retrieve seek state :
 
   - synchronously, using a getter
-```
+```as3
 	hls.seekState (IDLE/SEEKING/SEEKED)
 ```
   - asynchronously
 
 by monitoring the below event, that will be triggered for every seek state change.
-```
+```as3
 HLSEvent.SEEK_STATE
 ```
 
@@ -143,7 +143,7 @@ default value is -1 (no level capping)
 
 flashls fires a bunch of events, that could be registered as highlighted below:
 
-```
+```as3
 	hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
 
 
