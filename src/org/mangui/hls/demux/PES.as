@@ -8,6 +8,8 @@ package org.mangui.hls.demux {
     public class PES {
         /** The PES data (including headers). **/
         public var data : ByteArray;
+        /** PES prefix **/
+        public var prefix : uint;
         /** Start of the payload. **/
         public var payload : uint;
         /** Timestamp from the PTS header. **/
@@ -29,10 +31,7 @@ package org.mangui.hls.demux {
         private function parse() : void {
             data.position = 0;
             // Start code prefix and packet ID.
-            var prefix : uint = data.readUnsignedInt();
-            if (prefix >> 8 != 0x1) {
-                throw new Error("PES start code not found:" + prefix);
-            }
+            prefix = data.readUnsignedInt();
             // read len
             len = data.readUnsignedShort();
             // Ignore marker bits.
