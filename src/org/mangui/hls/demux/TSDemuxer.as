@@ -642,22 +642,27 @@ package org.mangui.hls.demux {
                     }
                     break;
                 case _pmtId:
-                    if (_pmtParsed == false) {
+                    if (_pmtParsed == false || _packetsBeforePMT == true) {
                         CONFIG::LOGGING {
-                            Log.debug("TS: PMT found");
+                            if(_pmtParsed == false) {
+                                Log.debug("TS: PMT found");
+                            } else {
+                                Log.warn("TS: reparsing PMT, unknown PID found");
+                            }
                         }
                         todo -= _parsePMT(stt,data);
-                        _pmtParsed = true;
                         // if PMT was not parsed before, and some unknown packets have been skipped in between,
                         // rewind to beginning of the stream, it helps recovering bad segmented content
                         // in theory there should be no A/V packets before PAT/PMT)
-                        if (_packetsBeforePMT) {
+                        if (_pmtParsed == false && _packetsBeforePMT == true) {
                             CONFIG::LOGGING {
                                 Log.warn("TS: late PMT found, rewinding at beginning of TS");
                             }
+                            _pmtParsed = true;
                             _readPosition = 0;
                             return;
                         }
+                        _pmtParsed = true;
                     }
                     break;
                 case _audioId:
