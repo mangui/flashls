@@ -102,6 +102,11 @@ package org.mangui.hls {
             return _levelController.startLevel;
         };
 
+        /*  set the quality level used when starting a fresh playback */
+        public function set startLevel(level : int) : void {
+            _levelController.startLevel = level;
+        };
+
         /** Return the quality level used after a seek operation **/
         public function get seekLevel() : int {
             return _levelController.seekLevel;

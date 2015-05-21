@@ -35,17 +35,19 @@ package org.mangui.hls.controller {
         private var _lastFetchDuration : Number;
         private var  lastBandwidth : Number;
         private var  _autoLevelCapping : int = -1;
-
+        private var  _startLevel : int = -1;
 
         /** Create the loader. **/
         public function LevelController(hls : HLS) : void {
             _hls = hls;
+            _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
         ;
 
         public function dispose() : void {
+            _hls.removeEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
         }
@@ -60,7 +62,11 @@ package org.mangui.hls.controller {
             }
         }
 
-        /** Store the manifest data. **/
+        private function _manifestParsedHandler(event : HLSEvent) : void {
+            // upon manifest parsed event, trigger a level switch to load startLevel playlist
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _hls.startLevel));
+        }
+
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             var levels : Vector.<Level> = event.levels;
             var maxswitchup : Number = 0;
@@ -106,14 +112,6 @@ package org.mangui.hls.controller {
             if (HLSSettings.capLevelToStage) {
                 _maxUniqueLevels = _maxLevelsWithUniqueDimensions;
             }
-            var level : int;
-            if (_hls.autoLevel) {
-                level = _hls.startLevel;
-            } else {
-                level = _hls.manualLevel;
-            }
-            // always dispatch level after manifest load
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, level));
         }
         ;
 
@@ -157,6 +155,7 @@ package org.mangui.hls.controller {
         }
 
         private function get _maxLevel() : int {
+            // if set, _autoLevelCapping takes precedence
             if(_autoLevelCapping >= 0) {
                 return Math.min(_nbLevel - 1, _autoLevelCapping);
             } else if (HLSSettings.capLevelToStage) {
@@ -286,11 +285,20 @@ package org.mangui.hls.controller {
             return 0;
         }
 
+
+        /*  set the quality level used when starting a fresh playback */
+        public function set startLevel(level : int) : void {
+            _startLevel = level;
+        };
+
         public function get startLevel() : int {
             var start_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (levels) {
-                if (HLSSettings.startFromLevel === -2) {
+                // if set, _startLevel takes precedence
+                if(_startLevel >=0) {
+                    return Math.min(levels.length-1,_startLevel);
+                } else if (HLSSettings.startFromLevel === -2) {
                     // playback will start from the first level appearing in Manifest (not sorted by bitrate)
                     return firstLevel;
                 } else if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1) {

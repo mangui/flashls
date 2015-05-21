@@ -249,10 +249,8 @@ package org.mangui.hls.loader {
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                     }
                     _metrics.parsing_end_time = getTimer();
+                    _loadLevel = -1;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
-                    // retrieve start level from helper function
-                    _loadLevel = _hls.startLevel;
-                    _loadActiveLevelPlaylist();
                     if (string.indexOf(Manifest.ALTERNATE_AUDIO) > 0) {
                         CONFIG::LOGGING {
                             Log.debug("alternate audio level found");
