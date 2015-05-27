@@ -13,6 +13,7 @@ package org.mangui.chromeless {
     import flash.net.URLLoader;
     import flash.net.URLStream;
     import flash.system.Security;
+    import flash.utils.getTimer;
     import flash.utils.setTimeout;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
@@ -149,7 +150,7 @@ package org.mangui.chromeless {
 
         /** Notify javascript the framework is ready. **/
         protected function _pingJavascript() : void {
-            _trigger("ready");
+            _trigger("ready", getTimer());
         };
 
         /** Forward events from the framework. **/
