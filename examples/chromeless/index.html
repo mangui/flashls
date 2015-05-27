@@ -292,6 +292,7 @@ function appendLog(txt)
 
 function load(url) {
   startDate = new Date();
+  events = { url : current_url, date : new Date(), load : [], buffer : [], video : []};
   current_url = url;
   api.load(url);
   appendLog("load URL " + url);
@@ -389,7 +390,6 @@ var flashlsEvents = {
     document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
     showCanvas();
     updateLevelInfo();
-    events = { url : current_url, date : new Date(), load : [], buffer : [], video : []};
     api.play(-1);
     api.volume(10);
     var event = {
@@ -400,7 +400,7 @@ var flashlsEvents = {
                 duration : loadmetrics.loading_end_time - loadmetrics.loading_begin_time,
                 bw : Math.round(loadmetrics.bandwidth/1000)
               };
-    event.time = new Date() - startDate - (loadmetrics.loading_end_time - loadmetrics.loading_request_time);
+    event.time = new Date() - startDate - (loadmetrics.parsing_end_time - loadmetrics.loading_request_time);
     events.load.push(event);
     refreshCanvas();
   },
