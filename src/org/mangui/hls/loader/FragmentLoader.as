@@ -2,31 +2,30 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.loader {
-    import flash.utils.getTimer;
 
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.controller.AudioTrackController;
-    import org.mangui.hls.controller.LevelController;
+    import flash.events.*;
+    import flash.net.*;
+    import flash.utils.ByteArray;
+    import flash.utils.getTimer;
+    import flash.utils.Timer;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
+    import org.mangui.hls.controller.AudioTrackController;
+    import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.demux.DemuxHelper;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.stream.StreamBuffer;
     import org.mangui.hls.utils.AES;
-
-    import flash.events.*;
-    import flash.net.*;
-    import flash.utils.ByteArray;
-    import flash.utils.Timer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -355,13 +354,27 @@ package org.mangui.hls.loader {
                 _fragRetryTimeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _fragRetryTimeout);
             } else {
                 if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
-                    CONFIG::LOGGING {
-                        Log.warn("max fragment load retry reached, skip fragment and load next one");
+                    /* check if loaded fragment is not the last one of a live playlist.
+                        if it is the case, don't skip to next, as there is no next fragment :-)
+                    */
+                    if(_hls.type == HLSTypes.LIVE && _fragCurrent.seqnum == _levels[_fragCurrent.level].end_seqnum) {
+                        _loadingState = LOADING_FRAGMENT_IO_ERROR;
+                        _fragLoadErrorDate = getTimer() + _fragRetryTimeout;
+                        CONFIG::LOGGING {
+                            Log.warn("max load retry reached on last fragment of live playlist, retrying loading this one...");
+                        }
+                        /* exponential increase of retry timeout, capped to fragmentLoadMaxRetryTimeout */
+                        _fragRetryCount++;
+                        _fragRetryTimeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _fragRetryTimeout);
+                    } else {
+                        CONFIG::LOGGING {
+                            Log.warn("max fragment load retry reached, skip fragment and load next one");
+                        }
+                        _fragPrevious = _fragCurrent;
+                        // set fragment first loaded to be true to ensure that we can skip first fragment as well
+                        _fragmentFirstLoaded = true;
+                        _loadingState = LOADING_IDLE;
                     }
-                    _fragPrevious = _fragCurrent;
-                    // set fragment first loaded to be true to ensure that we can skip first fragment as well
-                    _fragmentFirstLoaded = true;
-                    _loadingState = LOADING_IDLE;
                 } else {
                     var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _fragCurrent.url, "I/O Error :" + message);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
