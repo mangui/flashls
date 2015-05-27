@@ -86,7 +86,7 @@ package org.mangui.hls.loader {
         private var _loadingState : int;
         /* loading metrics */
         private var _metrics : HLSLoadMetrics;
-        private static const MANIFEST_LOADING : int = -1;
+        private static const LOADING_STOPPED : int = -1;
         private static const LOADING_IDLE : int = 0;
         private static const LOADING_IN_PROGRESS : int = 1;
         private static const LOADING_WAITING_LEVEL_UPDATE : int = 2;
@@ -105,7 +105,7 @@ package org.mangui.hls.loader {
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             _timer = new Timer(20, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
-            _loadingState = MANIFEST_LOADING;
+            _loadingState = LOADING_STOPPED;
             _manifestJustLoaded = false;
             _keymap = new Object();
         };
@@ -114,7 +114,7 @@ package org.mangui.hls.loader {
             stop();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            _loadingState = MANIFEST_LOADING;
+            _loadingState = LOADING_STOPPED;
             _keymap = new Object();
         }
 
@@ -139,8 +139,8 @@ package org.mangui.hls.loader {
         /**  fragment loading Timer **/
         private function _checkLoading(e : Event) : void {
             switch(_loadingState) {
-                // nothing to load until manifest is retrieved
-                case MANIFEST_LOADING:
+                // nothing to load
+                case LOADING_STOPPED:
                 // nothing to load until level is retrieved
                 case LOADING_WAITING_LEVEL_UPDATE:
                 // loading already in progress
@@ -537,7 +537,7 @@ package org.mangui.hls.loader {
         public function stop() : void {
             _stop_load();
             _timer.stop();
-            _loadingState = LOADING_IDLE;
+            _loadingState = LOADING_STOPPED;
         }
 
         private function _stop_load() : void {
@@ -745,7 +745,6 @@ package org.mangui.hls.loader {
         /** Store the manifest data. **/
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _levels = event.levels;
-            _loadingState = LOADING_IDLE;
             _manifestJustLoaded = true;
         };
 

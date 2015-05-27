@@ -70,6 +70,7 @@ package org.mangui.hls.loader {
         private var _loadingState : int;
         /* loading metrics */
         private var _metrics : HLSLoadMetrics;
+        private static const LOADING_STOPPED : int = -1;
         private static const LOADING_IDLE : int = 0;
         private static const LOADING_IN_PROGRESS : int = 1;
         private static const LOADING_WAITING_LEVEL_UPDATE : int = 2;
@@ -84,13 +85,13 @@ package org.mangui.hls.loader {
             _streamBuffer = streamBuffer;
             _timer = new Timer(20, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
-            _loadingState = LOADING_IDLE;
+            _loadingState = LOADING_STOPPED;
             _keymap = new Object();
         };
 
         public function dispose() : void {
             stop();
-            _loadingState = LOADING_IDLE;
+            _loadingState = LOADING_STOPPED;
             _keymap = new Object();
         }
 
@@ -107,6 +108,8 @@ package org.mangui.hls.loader {
         /**  fragment loading Timer **/
         private function _checkLoading(e : Event) : void {
             switch(_loadingState) {
+                // nothing to load
+                case LOADING_STOPPED:
                 // nothing to load until level is retrieved
                 case LOADING_WAITING_LEVEL_UPDATE:
                 // loading already in progress
@@ -455,7 +458,7 @@ package org.mangui.hls.loader {
             _stop_load();
             _hls.removeEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _timer.stop();
-            _loadingState = LOADING_IDLE;
+            _loadingState = LOADING_STOPPED;
         }
 
         private function _stop_load() : void {
