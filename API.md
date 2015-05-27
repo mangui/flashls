@@ -130,9 +130,8 @@ set : set quality level for next loaded fragment
 set to -1 for automatic level selection
 
 
-#### hls.autoLevelEnabled
-
-tell whether auto level selection is enabled or not
+#### hls.autoLevel
+getter : tell whether auto level selection is enabled or not
 
 #### hls.autoLevelCapping
 get/set : capping/max level value that could be used by automatic level selection algorithm
