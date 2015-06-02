@@ -427,7 +427,7 @@ package org.mangui.hls.stream {
              * this is to ensure that accurate seeking will work appropriately
              */
             CONFIG::LOGGING {
-                Log.debug2("position/audio/video bufferLength:" + position.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2));
+                Log.debug2("position/audio/video/NetStream bufferLength:" + position.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + (_hls.stream as HLSNetStream).netStreamBufferLength.toFixed(2));
             }
 
             var duration : Number = 0;
