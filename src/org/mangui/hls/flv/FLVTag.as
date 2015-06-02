@@ -45,8 +45,11 @@ package org.mangui.hls.flv {
             flv.writeByte(0x56);
             // File version (1)
             flv.writeByte(1);
-            // Audio + Video tags.
-            flv.writeByte(1);
+            /*
+                Signal that both Audio and Video tags are present. this is needed as getHeader() is used when injecting discontinuity
+                if we don't signal both, there will be issues while switching between AV stream to Video Only or vice versa
+            */
+            flv.writeByte(5);
             // Length of the header.
             flv.writeUnsignedInt(9);
             // PreviousTagSize0
