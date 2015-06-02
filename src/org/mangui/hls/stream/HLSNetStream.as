@@ -179,15 +179,12 @@ package org.mangui.hls.stream {
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                 // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
                 super.pause();
-
-//                for each (var tag : FLVTag in tags) {
-//                    CONFIG::LOGGING {
-//                        Log.debug2('inject type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
-//                    }
-//                }
             }
             // append all tags
             for each (var tagBuffer : FLVTag in tags) {
+                // CONFIG::LOGGING {
+                //     Log.debug2('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
+                // }
                 try {
                     if (tagBuffer.type == FLVTag.DISCONTINUITY) {
                         super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
