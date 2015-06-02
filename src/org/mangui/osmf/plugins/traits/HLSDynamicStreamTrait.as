@@ -60,11 +60,7 @@
             Log.debug("HLSDynamicStreamTrait:autoSwitchChangeStart:" + value);
             }
             if (value == true && _hls.autoLevel == false) {
-                _hls.loadLevel = -1;
-                // only seek if position is set
-                if (!isNaN(_hls.position)) {
-                    _hls.stream.seek(_hls.position);
-                }
+                _hls.nextLevel = -1;
             }
         }
 
@@ -73,7 +69,7 @@
             Log.debug("HLSDynamicStreamTrait:switchingChangeStart(newSwitching/index):" + newSwitching + "/" + index);
             }
             if (newSwitching) {
-                _hls.loadLevel = index;
+                _hls.currentLevel = index;
             }
         }
 
