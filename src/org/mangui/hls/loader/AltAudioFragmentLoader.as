@@ -290,6 +290,8 @@ package org.mangui.hls.loader {
                         CONFIG::LOGGING {
                             Log.warn("max fragment load retry reached, skip fragment and load next one");
                         }
+                        _fragRetryCount = 0;
+                        _fragRetryTimeout = 1000;
                         _fragPrevious = _fragCurrent;
                         // set fragment first loaded to be true to ensure that we can skip first fragment as well
                         _fragmentFirstLoaded = true;
