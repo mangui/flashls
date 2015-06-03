@@ -79,6 +79,7 @@ package org.mangui.hls.loader {
         private var _fragRetryTimeout : Number;
         private var _fragRetryCount : int;
         private var _fragLoadStatus : int;
+        private var _fragSkipping : Boolean;
         /** reference to previous/current fragment */
         private var _fragPrevious : Fragment;
         private var _fragCurrent : Fragment;
@@ -267,6 +268,7 @@ package org.mangui.hls.loader {
             _seekPosition = position;
             _fragmentFirstLoaded = false;
             _fragPrevious = null;
+            _fragSkipping = false;
             _timer.start();
         }
 
@@ -373,6 +375,7 @@ package org.mangui.hls.loader {
                         _fragRetryCount = 0;
                         _fragRetryTimeout = 1000;
                         _fragPrevious = _fragCurrent;
+                        _fragSkipping = true;
                         // set fragment first loaded to be true to ensure that we can skip first fragment as well
                         _fragmentFirstLoaded = true;
                         _loadingState = LOADING_IDLE;
@@ -440,6 +443,7 @@ package org.mangui.hls.loader {
             CONFIG::LOGGING {
                 Log.debug("loading completed");
             }
+            _fragSkipping = false;
             _metrics.loading_end_time = getTimer();
             _metrics.size = fragData.bytesLoaded;
 
@@ -684,7 +688,7 @@ package org.mangui.hls.loader {
                         return LOADING_WAITING_LEVEL_UPDATE;
                     }
                     // check whether there is a discontinuity between last segment and new segment
-                    _hasDiscontinuity = (frag.continuity != frag_previous.continuity);
+                    _hasDiscontinuity = ((frag.continuity != frag_previous.continuity) || _fragSkipping);
                     ;
                     log_prefix = "Loading       ";
                 }
