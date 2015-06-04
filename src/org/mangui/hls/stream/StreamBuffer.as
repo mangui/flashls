@@ -133,7 +133,7 @@ package org.mangui.hls.stream {
                 // seek position is out of buffer : load from fragment
                 _fragmentLoader.seek(_seekPositionRequested);
                 // check if we need to use alt audio fragment loader
-                if (_hls.audioTracks.length && _hls.audioTrack >= 0 && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
+                if (_hls.audioTracks && _hls.audioTracks.length && _hls.audioTrack >= 0 && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
                     CONFIG::LOGGING {
                         Log.info("seek : need to load alt audio track");
                     }
