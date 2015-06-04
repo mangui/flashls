@@ -8,6 +8,8 @@
     import org.mangui.hls.model.Level;
     import org.mangui.hls.event.HLSEvent;
 
+    import flash.events.Event;
+
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
