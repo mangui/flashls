@@ -61,6 +61,8 @@
         private var _keymap : Object;
         /** Did the stream switch quality levels. **/
         private var _switchlevel : Boolean;
+        /** Did the stage resize. **/
+        private var _stageResized : Boolean;
         /** Did a discontinuity occurs in the stream **/
         private var _hasDiscontinuity : Boolean;
         /** boolean to track whether PTS analysis is ongoing or not */
@@ -100,10 +102,11 @@
         /** Create the loader. **/
         public function FragmentLoader(hls : HLS, audioTrackController : AudioTrackController) : void {
             _hls = hls;
-            _autoLevelManager = new AutoLevelController(hls);
-            _audioTrackController = audioTrackController;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.addEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
+            _autoLevelManager = new AutoLevelController(hls);
+            _audioTrackController = audioTrackController;
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
             _loading_state = LOADING_IDLE;
@@ -117,6 +120,7 @@
             _autoLevelManager.dispose();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.removeEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
             _manifest_loaded = false;
             _keymap = new Object();
         }
@@ -127,6 +131,7 @@
             if (_manifest_loaded == false) {
                 return;
             }
+
             switch(_loading_state) {
                 // nothing to load until level is retrieved
                 case LOADING_WAITING_LEVEL_UPDATE:
@@ -169,10 +174,12 @@
                         /* first fragment already loaded
                          * check if we need to load next fragment, do it only if buffer is NOT full
                          */
-                    } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
+                    } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength || _stageResized) {
                         // select level for next fragment load
                         // dont switch level after PTS analysis
-                        if (_pts_just_analyzed == true) {
+                        if (_stageResized && _manual_level === -1 && _levels.length > 1) {
+                            level = _autoLevelManager.getnextlevel(_level, _hls.stream.bufferLength);
+                        } else if (_pts_just_analyzed == true) {
                             _pts_just_analyzed = false;
                             level = _level;
                             /* in case we are switching levels (waiting for playlist to reload) or seeking , stick to same level */
@@ -201,6 +208,7 @@
                             _loading_state = LOADING_WAITING_LEVEL_UPDATE;
                         } else {
                             _loading_state = _loadnextfragment(_level, _frag_previous);
+                            _stageResized = false;
                         }
                     }
                     if (_loading_state == LOADING_STALLED) {
@@ -752,6 +760,32 @@
                 _timer.start();
             }
         };
+
+        private function _stageSetHandler(event:HLSEvent) : void {
+            if (!HLSSettings.capLevelToStage) {
+                return;
+            }
+
+            if (!HLSSettings.refreshLevelsOnResize) {
+                return;
+            }
+
+            _hls.stage.addEventListener(Event.RESIZE, _resizeHandler);
+        }
+
+        private function _resizeHandler(event:Event) : void {
+            if (!HLSSettings.capLevelToStage) {
+                return;
+            }
+
+            if (!HLSSettings.refreshLevelsOnResize) {
+                return;
+            }
+
+            _stageResized = true;
+            _loading_state = LOADING_IDLE;
+            _timer.start();
+        }
 
         /** triggered by demux, it should return the audio track to be parsed */
         private function _fragParsingAudioSelectionHandler(audioTrackList : Vector.<AudioTrack>) : AudioTrack {
