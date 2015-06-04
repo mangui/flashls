@@ -10,9 +10,9 @@
     public class HLSEvent extends Event {
         /** Identifier for a manifest loading event, triggered after a call to hls.load(url) **/
         public static const MANIFEST_LOADING : String = "hlsEventManifestLoading";
-        /** Identifier for a manifest parsed event, 
+        /** Identifier for a manifest parsed event,
          * triggered after main manifest has been retrieved and parsed.
-         * hls playlist may not be playable yet, in case of adaptive streaming, start level playlist is not downloaded yet at that stage */ 
+         * hls playlist may not be playable yet, in case of adaptive streaming, start level playlist is not downloaded yet at that stage */
         public static const MANIFEST_PARSED : String = "hlsEventManifestParsed";
         /** Identifier for a manifest loaded event, when this event is received, main manifest and start level has been retrieved */
         public static const MANIFEST_LOADED : String = "hlsEventManifestLoaded";
@@ -44,7 +44,7 @@
         public static const TAGS_LOADED : String = "hlsEventTagsLoaded";
         /** Identifier when last fragment of playlist has been loaded **/
         public static const LAST_VOD_FRAGMENT_LOADED : String = "hlsEventLastFragmentLoaded";
-        
+
         /** Identifier for a playback error event. **/
         public static const ERROR : String = "hlsEventError";
 
@@ -60,6 +60,8 @@
         public static const PLAYLIST_DURATION_UPDATED : String = "hlsPlayListDurationUpdated";
         /** Identifier for a ID3 updated event **/
         public static const ID3_UPDATED : String = "hlsID3Updated";
+        /** Identifier for a Stage set event **/
+        public static const STAGE_SET : String = "hlsStageSet";
 
         /** The current url **/
         public var url : String;

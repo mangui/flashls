@@ -173,6 +173,8 @@
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;
+
+            this.dispatchEvent(new HLSEvent(HLSEvent.STAGE_SET));
         }
 
         /* get stage */
