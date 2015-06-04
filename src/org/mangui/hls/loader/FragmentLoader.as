@@ -109,7 +109,7 @@ package org.mangui.hls.loader {
             _loadingState = LOADING_STOPPED;
             _manifestJustLoaded = false;
             _keymap = new Object();
-        }
+        };
 
         public function dispose() : void {
             stop();
@@ -219,12 +219,12 @@ package org.mangui.hls.loader {
                     break;
                 case LOADING_STALLED:
                     /* next consecutive fragment not found:
-                     it could happen on live playlist :
-                     - if bandwidth available is lower than lowest quality needed bandwidth
-                     - after long pause */
-                CONFIG::LOGGING {
-                    Log.warn("loading stalled: restart playback");
-                }
+                    it could happen on live playlist :
+                    - if bandwidth available is lower than lowest quality needed bandwidth
+                    - after long pause */
+                    CONFIG::LOGGING {
+                        Log.warn("loading stalled: restart playback");
+                    }
                     /* seek to force a restart of the playback session  */
                     _hls.stream.seek(-1);
                     break;
@@ -233,7 +233,7 @@ package org.mangui.hls.loader {
                     // compare current date and next retry date.
                     if (getTimer() >= _keyLoadErrorDate) {
                         /* try to reload the key ...
-                         calling _loadfragment will also reload key */
+                        calling _loadfragment will also reload key */
                         _loadfragment(_fragCurrent);
                         _loadingState = LOADING_IN_PROGRESS;
                     }
@@ -253,9 +253,9 @@ package org.mangui.hls.loader {
                     _timer.stop();
                     break;
                 default:
-                CONFIG::LOGGING {
-                    Log.error("invalid loading state:" + _loadingState);
-                }
+                    CONFIG::LOGGING {
+                        Log.error("invalid loading state:" + _loadingState);
+                    }
                     break;
             }
         }
@@ -304,7 +304,7 @@ package org.mangui.hls.loader {
                 hlsError = new HLSError(HLSError.KEY_PARSING_ERROR, _fragCurrent.decrypt_url, "invalid key size: received " + _keystreamloader.bytesAvailable + " / expected 16 bytes");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
-        }
+        };
 
         private function _keyLoadHTTPStatusHandler(event : HTTPStatusEvent) : void {
             _keyLoadStatus = event.status;
@@ -331,16 +331,16 @@ package org.mangui.hls.loader {
 
         private function _fraghandleIOError(message : String) : void {
             /* usually, errors happen in two situations :
-             - bad networks  : in that case, the second or third reload of URL should fix the issue
-             - live playlist : when we are trying to load an out of bound fragments : for example,
-             the playlist on webserver is from SN [51-61]
-             the one in memory is from SN [50-60], and we are trying to load SN50.
-             we will keep getting 404 error if the HLS server does not follow HLS spec,
-             which states that the server should keep SN50 during EXT-X-TARGETDURATION period
-             after it is removed from playlist
-             in the meantime, ManifestLoader will keep refreshing the playlist in the background ...
-             so if the error still happens after EXT-X-TARGETDURATION, it means that there is something wrong
-             we need to report it.
+            - bad networks  : in that case, the second or third reload of URL should fix the issue
+            - live playlist : when we are trying to load an out of bound fragments : for example,
+            the playlist on webserver is from SN [51-61]
+            the one in memory is from SN [50-60], and we are trying to load SN50.
+            we will keep getting 404 error if the HLS server does not follow HLS spec,
+            which states that the server should keep SN50 during EXT-X-TARGETDURATION period
+            after it is removed from playlist
+            in the meantime, ManifestLoader will keep refreshing the playlist in the background ...
+            so if the error still happens after EXT-X-TARGETDURATION, it means that there is something wrong
+            we need to report it.
              */
             CONFIG::LOGGING {
                 Log.error("I/O Error while loading fragment:" + message);
@@ -357,8 +357,8 @@ package org.mangui.hls.loader {
             } else {
                 if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
                     /* check if loaded fragment is not the last one of a live playlist.
-                     if it is the case, don't skip to next, as there is no next fragment :-)
-                     */
+                        if it is the case, don't skip to next, as there is no next fragment :-)
+                    */
                     if(_hls.type == HLSTypes.LIVE && _fragCurrent.seqnum == _levels[_fragCurrent.level].end_seqnum) {
                         _loadingState = LOADING_FRAGMENT_IO_ERROR;
                         _fragLoadErrorDate = getTimer() + _fragRetryTimeout;
@@ -579,7 +579,7 @@ package org.mangui.hls.loader {
             } else {
                 _keyhandleIOError("HTTP status:" + _keyLoadStatus + ",msg:" + event.text);
             }
-        }
+        };
 
         /** Catch IO and security errors. **/
         private function _fragLoadErrorHandler(event : ErrorEvent) : void {
@@ -590,7 +590,7 @@ package org.mangui.hls.loader {
             } else {
                 _fraghandleIOError("HTTP status:" + _fragLoadStatus + ",msg:" + event.text);
             }
-        }
+        };
 
         private function _loadfirstfragment(position : Number, level : int) : int {
             CONFIG::LOGGING {
@@ -642,7 +642,7 @@ package org.mangui.hls.loader {
                     } else if (last_seqnum == -1) {
                         // if we are here, it means that we have no PTS info for this continuity index, we need to do some PTS probing to find the right seqnum
                         /* we need to perform PTS analysis on fragments from same continuity range
-                         get first fragment from playlist matching with criteria and load pts */
+                        get first fragment from playlist matching with criteria and load pts */
                         last_seqnum = _levels[level].getFirstSeqNumfromContinuity(frag_previous.continuity);
                         CONFIG::LOGGING {
                             Log.debug("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:" + level + "," + frag_previous.continuity + ")=" + last_seqnum);
@@ -689,7 +689,7 @@ package org.mangui.hls.loader {
                     }
                     // check whether there is a discontinuity between last segment and new segment
                     _hasDiscontinuity = ((frag.continuity != frag_previous.continuity) || _fragSkipping);
-
+                    ;
                     log_prefix = "Loading       ";
                 }
             }
@@ -699,7 +699,7 @@ package org.mangui.hls.loader {
             }
             _loadfragment(frag);
             return LOADING_IN_PROGRESS;
-        }
+        };
 
         private function _loadfragment(frag : Fragment) : void {
             // postpone URLStream init before loading first fragment
@@ -752,7 +752,7 @@ package org.mangui.hls.loader {
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _levels = event.levels;
             _manifestJustLoaded = true;
-        }
+        };
 
         /** Store the manifest data. **/
         private function _levelLoadedHandler(event : HLSEvent) : void {
@@ -762,7 +762,7 @@ package org.mangui.hls.loader {
             }
             // speed up loading of new fragment
             _timer.start();
-        }
+        };
 
         /** triggered by demux, it should return the audio track to be parsed */
         private function _fragParsingAudioSelectionHandler(audioTrackList : Vector.<AudioTrack>) : AudioTrack {
@@ -810,8 +810,8 @@ package org.mangui.hls.loader {
                             Log.debug("analyzed  PTS " + _fragCurrent.seqnum + " of [" + (_levels[_hls.loadLevel].start_seqnum) + "," + (_levels[_hls.loadLevel].end_seqnum) + "],level " + _hls.loadLevel + " m PTS:" + fragData.pts_min);
                         }
                         /* check if fragment loaded for PTS analysis is the next one
-                         if this is the expected one, then continue
-                         if not, then cancel current fragment loading, next call to loadnextfragment() will load the right seqnum
+                        if this is the expected one, then continue
+                        if not, then cancel current fragment loading, next call to loadnextfragment() will load the right seqnum
                          */
                         var next_seqnum : Number = _levels[_hls.loadLevel].getSeqNumNearestPTS(_fragPrevious.data.pts_start, _fragCurrent.continuity) + 1;
                         CONFIG::LOGGING {
