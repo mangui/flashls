@@ -126,7 +126,11 @@ package org.mangui.hls {
         public function get loadLevel() : int {
             return _level;
         };
-
+		
+		/** Return the quality level of last played fragment **/
+		public function get lastPlayedLevel() : int {
+			return _hlsNetStream.lastPlayedLevel;
+		};
         /*  instant quality level switch (-1 for automatic level selection) */
         public function set currentLevel(level : int) : void {
             _manual_level = level;
@@ -144,6 +148,11 @@ package org.mangui.hls {
         public function set loadLevel(level : int) : void {
             _manual_level = level;
         };
+		
+		/*  set quality level for last played fragment  */
+		public function set lastPlayedLevel(level : int) : void {
+			_hlsNetStream.lastPlayedLevel = level;
+		};
 
         /* check if we are in automatic level selection mode */
         public function get autoLevel() : Boolean {
