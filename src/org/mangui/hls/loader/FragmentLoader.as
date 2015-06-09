@@ -809,7 +809,7 @@ package org.mangui.hls.loader {
             }
 
             _stageResized = true;
-            _loading_state = LOADING_IDLE;
+            _loadingState = LOADING_IDLE;
             _timer.start();
         }
 
