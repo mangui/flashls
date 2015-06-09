@@ -56,6 +56,9 @@ package org.mangui.hls.event {
         public static const PLAYLIST_DURATION_UPDATED : String = "hlsPlayListDurationUpdated";
         /** Identifier for a ID3 updated event **/
         public static const ID3_UPDATED : String = "hlsID3Updated";
+        /** Identifier for a Stage set event **/
+        public static const STAGE_SET : String = "hlsStageSet";
+
         /** The current url **/
         public var url : String;
         /** The current quality level. **/
