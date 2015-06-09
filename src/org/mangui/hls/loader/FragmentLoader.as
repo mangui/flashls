@@ -225,6 +225,8 @@ package org.mangui.hls.loader {
                     CONFIG::LOGGING {
                         Log.warn("loading stalled: restart playback");
                     }
+                    // flush whole buffer before seeking
+                    _streamBuffer.flushBuffer();
                     /* seek to force a restart of the playback session  */
                     _hls.stream.seek(-1);
                     break;

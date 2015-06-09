@@ -140,8 +140,10 @@ package org.mangui.hls.loader {
                     - if bandwidth available is lower than lowest quality needed bandwidth
                     - after long pause */
                     CONFIG::LOGGING {
-                        Log.warn("audio loading stalled: restart playback???");
+                        Log.warn("audio loading stalled: restart playback");
                     }
+                    // flush whole buffer before seeking
+                    _streamBuffer.flushBuffer();
                     /* seek to force a restart of the playback session  */
                     _hls.stream.seek(-1);
                     break;
