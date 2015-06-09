@@ -55,6 +55,8 @@ package org.mangui.hls.loader {
         private var _keymap : Object;
         /** Did the stream switch quality levels. **/
         private var _switchLevel : Boolean;
+        /** Did the stage resize. **/
+        private var _stageResized : Boolean;
         /** Did a discontinuity occurs in the stream **/
         private var _hasDiscontinuity : Boolean;
         /** boolean to track whether PTS analysis is ongoing or not */
@@ -104,6 +106,7 @@ package org.mangui.hls.loader {
             _streamBuffer = streamBuffer;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.addEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
             _timer = new Timer(20, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
             _loadingState = LOADING_STOPPED;
@@ -115,6 +118,7 @@ package org.mangui.hls.loader {
             stop();
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.removeEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
             _loadingState = LOADING_STOPPED;
             _keymap = new Object();
         }
@@ -186,15 +190,15 @@ package org.mangui.hls.loader {
                         /* first fragment already loaded
                          * check if we need to load next fragment, do it only if buffer is NOT full
                          */
-                    } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
+                    } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength || _stageResized) {
                         // select level for next fragment load
-                        if(_levelNext != -1) {
-                            level = _levelNext;
-                        } else if (_hls.autoLevel && _levels.length > 1 ) {
+                        if (_hls.autoLevel && _levels.length > 1 ) {
                             // select level from heuristics (current level / last fragment duration / buffer length)
                             level = _levelController.getnextlevel(_hls.loadLevel, _hls.stream.bufferLength);
                         } else if (_hls.autoLevel && _levels.length == 1 ) {
                             level = 0;
+                        } else if(_levelNext != -1) {
+                            level = _levelNext;
                         } else {
                             level = _hls.manualLevel;
                         }
@@ -214,6 +218,7 @@ package org.mangui.hls.loader {
                             _levelNext = level;
                         } else {
                             _loadingState = _loadnextfragment(level, _fragPrevious);
+                            _stageResized = false;
                         }
                     }
                     break;
@@ -765,6 +770,48 @@ package org.mangui.hls.loader {
             // speed up loading of new fragment
             _timer.start();
         };
+
+        /**
+         * Stage set on HLS object handler. Add RESIZE listener if the proper
+         * settings are set in the HLSSettings.
+         *
+         * @param event : HLSEvent
+         * @return void
+         */
+        private function _stageSetHandler(event:HLSEvent) : void {
+            if (!HLSSettings.capLevelToStage) {
+                return;
+            }
+
+            if (!HLSSettings.refreshLevelsOnResize) {
+                return;
+            }
+
+            _hls.stage.addEventListener(Event.RESIZE, _resizeHandler);
+        }
+
+        /**
+         * Stage resize handler.
+         * Sets stageResized flag, sets the loading to LOADING_IDLE
+         * in order to update the _level used for new fragment loads, and
+         * restarts the _timer in the event it was stopped.
+         *
+         * @param event : Event
+         * @return void
+         */
+        private function _resizeHandler(event:Event) : void {
+            if (!HLSSettings.capLevelToStage) {
+                return;
+            }
+
+            if (!HLSSettings.refreshLevelsOnResize) {
+                return;
+            }
+
+            _stageResized = true;
+            _loading_state = LOADING_IDLE;
+            _timer.start();
+        }
 
         /** triggered by demux, it should return the audio track to be parsed */
         private function _fragParsingAudioSelectionHandler(audioTrackList : Vector.<AudioTrack>) : AudioTrack {
