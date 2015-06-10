@@ -95,6 +95,7 @@
                             if (pts_33_bit) {
                                 timestamp   += 47721858.84; // 2^32 / 90
                             }
+                            timestamp = Math.round(timestamp);
                             CONFIG::LOGGING {
                                 Log.debug("ID3 timestamp found:" + timestamp);
                             }
