@@ -150,7 +150,8 @@ package org.mangui.hls.stream {
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
             var sliding:Number = 0, _nextRelativeStartPos: Number = startPosition + (max_pts - min_pts) / 1000, headerAppended : Boolean = false, metaAppended : Boolean = false;
-            if(_hls.type == HLSTypes.LIVE) {
+            // compute sliding in case of live playlist, or in case of VoD playlist that slided in the past (live sliding ended playlist)
+            if(_hls.type == HLSTypes.LIVE  || _playlistSlidingMain || _playlistSlidingAltAudio) {
                 if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
                     // if -1 : it is not the first appending for this fragment type : we can compute playlist sliding
                     if(_nextExpectedAbsoluteStartPosMain !=-1) {
