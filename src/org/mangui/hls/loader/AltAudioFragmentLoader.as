@@ -635,7 +635,7 @@ package org.mangui.hls.loader {
                 }
                 fragData.metadata_tag_injected = true;
             }
-            // provide tags to HLSNetStream
+            // provide tags to StreamBuffer
             _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_ALTAUDIO,_fragCurrent.level,_fragCurrent.seqnum ,fragData.tags, fragData.tag_pts_min, fragData.tag_pts_max + fragData.tag_duration, _fragCurrent.continuity, _fragCurrent.start_time + fragData.tag_pts_start_offset / 1000);
             fragData.shiftTags();
         }
