@@ -49,6 +49,8 @@ package org.mangui.hls.stream {
         private var _currentLevel : int;
         /** Netstream client proxy */
         private var _client : HLSNetStreamClient;
+	/** last played level */
+	private var _lastPlayedLevel : int;
 
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
@@ -79,6 +81,12 @@ package org.mangui.hls.stream {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
+		if( _hls.lastPlayedLevel  && _hls.lastPlayedLevel != level)
+			{
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCHED));
+			}
+			_hls.lastPlayedLevel = level;
+
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, tag_list)));
         }
 
@@ -161,7 +169,15 @@ package org.mangui.hls.stream {
         public function get currentLevel() : int {
             return _currentLevel;
         };
-
+	/** Return the last played fragment quality level **/
+	public function get lastPlayedLevel() : int {
+		 return _lastPlayedLevel ;
+	};
+		
+	/**  set quality level for last played fragment  **/
+	public function set lastPlayedLevel(level : int) : void {
+		_lastPlayedLevel = level;
+	};
         /** append tags to NetStream **/
         public function appendTags(tags : Vector.<FLVTag>) : void {
             if (_seekState == HLSSeekStates.SEEKING) {
