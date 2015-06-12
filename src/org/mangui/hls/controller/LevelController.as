@@ -134,10 +134,6 @@ package org.mangui.hls.controller {
                 return;
             }
 
-            if (!HLSSettings.refreshLevelsOnResize) {
-                return;
-            }
-
             _hls.stage.addEventListener(Event.RESIZE, _resizeHandler);
         }
 
@@ -150,10 +146,6 @@ package org.mangui.hls.controller {
          */
         private function _resizeHandler(event:Event) : void {
             if (!HLSSettings.capLevelToStage) {
-                return;
-            }
-
-            if (!HLSSettings.refreshLevelsOnResize) {
                 return;
             }
 

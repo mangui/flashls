@@ -26,17 +26,6 @@ package org.mangui.hls {
          */
         public static var maxLevelCappingMode : String = HLSMaxLevelCappingMode.DOWNSCALE;
 
-        /**
-         * Resets the available levels when the stage has been resized to reflect the max based on the current dimensions.
-         *      true - levels will be updated when an Event.RESIZE is fired from the stage
-         *      false - levels will not be updated when an Event.RESIZE is fired from the stage
-         *
-         * Note: this is dependent on the capLevelToStage settings being set to true.
-         *
-         * Default is false
-         */
-        public static var refreshLevelsOnResize : Boolean = false;
-
         // // // // // // /////////////////////////////////
         //
         // org.mangui.hls.stream.HLSNetStream
