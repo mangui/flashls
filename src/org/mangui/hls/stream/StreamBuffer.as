@@ -268,6 +268,9 @@ package org.mangui.hls.stream {
             _reachedEnd = false;
             _playlistSlidingMain = _playlistSlidingAltAudio = 0;
             _nextExpectedAbsoluteStartPosMain = _nextExpectedAbsoluteStartPosAltAudio = -1;
+            CONFIG::LOGGING {
+                Log.debug("StreamBuffer flushed");
+            }
         }
 
         private function flushAudio() : void {
