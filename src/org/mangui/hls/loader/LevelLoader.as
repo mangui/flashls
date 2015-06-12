@@ -175,6 +175,9 @@ package org.mangui.hls.loader {
         /** parse a playlist **/
         private function _parseLevelPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
             if (string != null && string.length != 0) {
+                // successful loading, reset retry counter
+                _retryTimeout = 1000;
+                _retryCount = 0;
                 CONFIG::LOGGING {
                     Log.debug("level " + level + " playlist:\n" + string);
                 }
