@@ -224,6 +224,7 @@ package org.mangui.hls.loader {
 
         /** Parse First Level Playlist **/
         private function _parseManifest(string : String) : void {
+            var hlsError : HLSError;
             // Check for M3U8 playlist or manifest.
             if (string.indexOf(Manifest.HEADER) == 0) {
                 // 1 level playlist, create unique level and parse playlist
@@ -267,9 +268,13 @@ package org.mangui.hls.loader {
                             }
                         }
                     }
+                } else {
+                    // manifest start with correct header, but it does not contain any fragment or level info ...
+                    hlsError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "empty Manifest");
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
                 }
             } else {
-                var hlsError : HLSError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "Manifest is not a valid M3U8 file");
+                hlsError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "Manifest is not a valid M3U8 file");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             }
         };
