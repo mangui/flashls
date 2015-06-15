@@ -175,19 +175,35 @@ package org.mangui.hls.loader {
         /** parse a playlist **/
         private function _parseLevelPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
             if (string != null && string.length != 0) {
-                // successful loading, reset retry counter
-                _retryTimeout = 1000;
-                _retryCount = 0;
                 CONFIG::LOGGING {
                     Log.debug("level " + level + " playlist:\n" + string);
                 }
                 var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
-                // set fragment and update sequence number range
-                _levels[level].updateFragments(frags);
-                _levels[level].targetduration = Manifest.getTargetDuration(string);
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[level].duration));
+                if(frags.length) {
+                    // successful loading, reset retry counter
+                    _retryTimeout = 1000;
+                    _retryCount = 0;
+                    // set fragment and update sequence number range
+                    _levels[level].updateFragments(frags);
+                    _levels[level].targetduration = Manifest.getTargetDuration(string);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[level].duration));
+                } else {
+                    if(HLSSettings.manifestLoadMaxRetry == -1 || _retryCount < HLSSettings.manifestLoadMaxRetry) {
+                        CONFIG::LOGGING {
+                            Log.warn("empty level Playlist, retry in " + _retryTimeout + " ms");
+                        }
+                        _timeoutID = setTimeout(_loadActiveLevelPlaylist, _retryTimeout);
+                        /* exponential increase of retry timeout, capped to manifestLoadMaxRetryTimeout */
+                        _retryTimeout = Math.min(HLSSettings.manifestLoadMaxRetryTimeout, 2 * _retryTimeout);
+                        _retryCount++;
+                        return;
+                    } else {
+                        var hlsError : HLSError = new HLSError(HLSError.MANIFEST_LOADING_IO_ERROR, _url, "no fragments in playlist");
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                        return;
+                    }
+                }
             }
-
             // Check whether the stream is live or not finished yet
             if (Manifest.hasEndlist(string)) {
                 _type = HLSTypes.VOD;
