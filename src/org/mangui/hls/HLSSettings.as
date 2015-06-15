@@ -19,7 +19,7 @@ package org.mangui.hls {
          * Default is false
          */
         public static var capLevelToStage : Boolean = false;
-        
+
         /**
          * maxLevelCappingMode
          *
@@ -30,7 +30,7 @@ package org.mangui.hls {
          * Default is HLSMaxLevelCappingMode.DOWNSCALE
          */
         public static var maxLevelCappingMode : String = HLSMaxLevelCappingMode.DOWNSCALE;
-        
+
         // // // // // // /////////////////////////////////
         //
         // org.mangui.hls.stream.HLSNetStream
@@ -44,7 +44,7 @@ package org.mangui.hls {
          * Default is -1 = auto
          */
         public static var minBufferLength : Number = -1;
-        
+
         /**
          * maxBufferLength
          *
@@ -54,7 +54,7 @@ package org.mangui.hls {
          * Default is 120
          */
         public static var maxBufferLength : Number = 120;
-        
+
         /**
          * maxBackBufferLength
          *
@@ -64,7 +64,7 @@ package org.mangui.hls {
          * Default is 30
          */
         public static var maxBackBufferLength : Number = 30;
-        
+
         /**
          * lowBufferLength
          *
@@ -74,7 +74,7 @@ package org.mangui.hls {
          * Default is 3
          */
         public static var lowBufferLength : Number = 3;
-        
+
         /**
          * seekMode
          *
@@ -85,8 +85,8 @@ package org.mangui.hls {
          * Default is HLSSeekMode.KEYFRAME_SEEK
          */
         public static var seekMode : String = HLSSeekMode.KEYFRAME_SEEK;
-        
-        /** 
+
+        /**
          * keyLoadMaxRetry
          *
          * Max nb of retries for Key Loading in case I/O errors are met,
@@ -96,8 +96,8 @@ package org.mangui.hls {
          * Default is 3
          */
         public static var keyLoadMaxRetry : int = 3;
-        
-        /** 
+
+        /**
          * keyLoadMaxRetryTimeout
          *
          * Maximum key retry timeout (in milliseconds) in case I/O errors are met.
@@ -107,10 +107,10 @@ package org.mangui.hls {
          * Default is 64000.
          */
         public static var keyLoadMaxRetryTimeout : Number = 64000;
-        
-        /** 
+
+        /**
          * fragmentLoadMaxRetry
-         * 
+         *
          * Max number of retries for Fragment Loading in case I/O errors are met,
          *      0, means no retry, error will be triggered automatically
          *     -1 means infinite retry
@@ -118,8 +118,8 @@ package org.mangui.hls {
          * Default is 3
          */
         public static var fragmentLoadMaxRetry : int = 3;
-        
-        /** 
+
+        /**
          * fragmentLoadMaxRetryTimeout
          *
          * Maximum Fragment retry timeout (in milliseconds) in case I/O errors are met.
@@ -129,8 +129,8 @@ package org.mangui.hls {
          * Default is 4000
          */
         public static var fragmentLoadMaxRetryTimeout : Number = 4000
-        
-        /** 
+
+        /**
          * fragmentLoadSkipAfterMaxRetry
          *
          * control behaviour in case fragment load still fails after max retry timeout
@@ -140,7 +140,7 @@ package org.mangui.hls {
          * Default is true.
          */
         public static var fragmentLoadSkipAfterMaxRetry : Boolean = true;
-        
+
         /**
          * flushLiveURLCache
          *
@@ -150,7 +150,7 @@ package org.mangui.hls {
          * Default is false
          */
         public static var flushLiveURLCache : Boolean = false;
-        
+
         /**
          * manifestLoadMaxRetry
          *
@@ -158,9 +158,9 @@ package org.mangui.hls {
          *      0, means no retry, error will be triggered automatically
          *     -1 means infinite retry
          */
-        public static var manifestLoadMaxRetry : int = -1;
-        
-        /** 
+        public static var manifestLoadMaxRetry : int = 3;
+
+        /**
          * manifestLoadMaxRetryTimeout
          *
          * Maximum Manifest retry timeout (in milliseconds) in case I/O errors are met.
@@ -170,7 +170,7 @@ package org.mangui.hls {
          * Default is 64000
          */
         public static var manifestLoadMaxRetryTimeout : Number = 64000;
-        
+
         /**
          * startFromBitrate
          *
@@ -181,8 +181,8 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var startFromBitrate : Number = -1;
-        
-        /** 
+
+        /**
          * startFromLevel
          *
          * start level :
@@ -193,8 +193,8 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var startFromLevel : Number = -1;
-        
-        /** 
+
+        /**
          * seekFromLevel
          *
          * Seek level:
@@ -204,8 +204,8 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var seekFromLevel : Number = -1;
-        
-        /** 
+
+        /**
          * useHardwareVideoDecoder
          *
          * Use hardware video decoder:
@@ -215,7 +215,7 @@ package org.mangui.hls {
          * Default is false
          */
         public static var useHardwareVideoDecoder : Boolean = false;
-        
+
         /**
          * logInfo
          *
@@ -224,7 +224,7 @@ package org.mangui.hls {
          * Default is true
          */
         public static var logInfo : Boolean = true;
-        
+
         /**
          * logDebug
          *
@@ -233,7 +233,7 @@ package org.mangui.hls {
          * Default is false
          */
         public static var logDebug : Boolean = false;
-        
+
         /**
          * logDebug2
          *
@@ -242,7 +242,7 @@ package org.mangui.hls {
          * Default is false
          */
         public static var logDebug2 : Boolean = false;
-        
+
         /**
          * logWarn
          *
@@ -251,7 +251,7 @@ package org.mangui.hls {
          * Default is true
          */
         public static var logWarn : Boolean = true;
-        
+
         /**
          * logError
          *
