@@ -224,7 +224,7 @@ package org.mangui.hls.loader {
 
         /** Parse First Level Playlist **/
         private function _parseManifest(string : String) : void {
-            var hlsError : HLSError;
+            var errorTxt : String = null;
             // Check for M3U8 playlist or manifest.
             if (string.indexOf(Manifest.HEADER) == 0) {
                 // 1 level playlist, create unique level and parse playlist
@@ -247,35 +247,34 @@ package org.mangui.hls.loader {
                     }
                     // adaptative playlist, extract levels from playlist, get them and parse them
                     _levels = Manifest.extractLevels(string, _url);
-
-                    var levelsLength : int = _levels.length;
-                    if (levelsLength == 0) {
-                        hlsError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "No level found in Manifest");
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
-                    }
-                    _metrics.parsing_end_time = getTimer();
-                    _loadLevel = -1;
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
-                    if (string.indexOf(Manifest.ALTERNATE_AUDIO) > 0) {
-                        CONFIG::LOGGING {
-                            Log.debug("alternate audio level found");
-                        }
-                        // parse alternate audio tracks
-                        _altAudioTracks = Manifest.extractAltAudioTracks(string, _url);
-                        CONFIG::LOGGING {
-                            if (_altAudioTracks.length > 0) {
-                                Log.debug(_altAudioTracks.length + " alternate audio tracks found");
+                    if (_levels.length) {
+                        _metrics.parsing_end_time = getTimer();
+                        _loadLevel = -1;
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
+                        if (string.indexOf(Manifest.ALTERNATE_AUDIO) > 0) {
+                            CONFIG::LOGGING {
+                                Log.debug("alternate audio level found");
+                            }
+                            // parse alternate audio tracks
+                            _altAudioTracks = Manifest.extractAltAudioTracks(string, _url);
+                            CONFIG::LOGGING {
+                                if (_altAudioTracks.length > 0) {
+                                    Log.debug(_altAudioTracks.length + " alternate audio tracks found");
+                                }
                             }
                         }
+                    } else {
+                        errorTxt = "No level found in Manifest";
                     }
                 } else {
                     // manifest start with correct header, but it does not contain any fragment or level info ...
-                    hlsError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "empty Manifest");
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                    errorTxt = "empty Manifest";
                 }
             } else {
-                hlsError = new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, "Manifest is not a valid M3U8 file");
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                errorTxt = "Manifest is not a valid M3U8 file";
+            }
+            if(errorTxt) {
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, errorTxt)));
             }
         };
 
