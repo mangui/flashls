@@ -101,6 +101,10 @@ var flashlsAPI = function(flashObject) {
 		return this.flashObject.getAudioTrackList();
 	}
 
+	this.getStats = function() {
+		return this.flashObject.getStats();
+	}
+
 	this.setAudioTrack = function(trackId) {
     	this.flashObject.playerSetAudioTrack(trackId);
 	}

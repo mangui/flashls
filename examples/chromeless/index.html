@@ -214,6 +214,8 @@ cap level: <div id="levelCappingControl" style="display: inline;"></div>
   </table>
 
 <h3 class="title">real time metrics</h1>
+    <button type="button" class="btn btn-xs btn-success" onclick="toggleMetricsDisplay()">toggle metrics display</button><br>
+    <div id="metricsButton">
 <button type="button" class="btn btn-xs btn-primary" onclick="windowSliding=!windowSliding; refreshCanvas()">toggle sliding/fixed window</button><br>
 <button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(0)">window ALL</button>
 <button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(2000)">2s</button>
@@ -228,14 +230,16 @@ cap level: <div id="levelCappingControl" style="display: inline;"></div>
 <button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSlideLeft()"> <<< Window Slide </button>
 <button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSlideRight()">Window Slide >>> </button><br>
 <button type="button" class="btn btn-xs btn-primary" onclick="windowStart=document.getElementById('windowStart').value">fixed window start(ms)</button>
-<input type="text" id='windowStart' defaultValue="0" size="8" onkeydown="if(event.keyCode=='13'){windowStart=document.getElementById('windowStart').value;}">
+    <input type="text" id='windowStart' defaultValue="0" size="8" onkeydown="if(window.event.keyCode=='13'){windowStart=document.getElementById('windowStart').value;}">
 <button type="button" class="btn btn-xs btn-primary" onclick="windowEnd=document.getElementById('windowEnd').value">fixed window end(ms)</button>
-<input type="text" id='windowEnd' defaultValue="10000" size="8" onkeydown="if(event.keyCode=='13'){windowEnd=document.getElementById('windowEnd').value;}"><br>
+    <input type="text" id='windowEnd' defaultValue="10000" size="8" onkeydown="if(window.event.keyCode=='13'){windowEnd=document.getElementById('windowEnd').value;}"><br>
 <button type="button" class="btn btn-xs btn-success" onclick="exportmetrics()" style="font-size:18px">metrics permalink</button>
 <canvas id="bufferTimerange_c" width="640" height="100" style="border:1px solid #000000" onmousedown="timeRangeCanvasonMouseDown(event)" onmousemove="timeRangeCanvasonMouseMove(event)" onmouseup="timeRangeCanvasonMouseUp(event)" onmouseout="timeRangeCanvasonMouseOut(event)";></canvas>
 <canvas id="bufferWindow_c" width="640" height="100" style="border:1px solid #000000" onmousemove="windowCanvasonMouseMove(event)";></canvas>
 <canvas id="videoEvent_c" width="640" height="15" style="border:1px solid #000000";></canvas>
 <canvas id="loadEvent_c" width="640" height="15" style="border:1px solid #000000";></canvas><br>
+  </div>
+  <pre id='HlsStats'></pre>
 <h3> Test Videos </h3>
 <div> The following videos should stream correctly. Each time an
 issue is reported with a sample playlist, it will be added in the list
@@ -451,6 +455,7 @@ var flashlsEvents = {
       event.type =  'fragment main'
     }
     events.load.push(event);
+    document.getElementById("HlsStats").innerHTML = JSON.stringify(api.getStats(),null,"\t");
     refreshCanvas();
   },
   fragmentPlaying: function(playmetrics) {

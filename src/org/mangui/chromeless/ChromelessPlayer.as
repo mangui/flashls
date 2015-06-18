@@ -21,6 +21,7 @@ package org.mangui.chromeless {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.model.Stats;
     import org.mangui.hls.utils.JSURLLoader;
     import org.mangui.hls.utils.JSURLStream;
     import org.mangui.hls.utils.Log;
@@ -90,6 +91,7 @@ package org.mangui.chromeless {
             ExternalInterface.addCallback("getPlayerVersion", _getPlayerVersion);
             ExternalInterface.addCallback("getAudioTrackList", _getAudioTrackList);
             ExternalInterface.addCallback("getAudioTrackId", _getAudioTrackId);
+            ExternalInterface.addCallback("getStats", _getStats);
         };
 
         protected function _setupExternalCallers() : void {
@@ -348,6 +350,10 @@ package org.mangui.chromeless {
 
         protected function _getAudioTrackId() : int {
             return _hls.audioTrack;
+        };
+
+        protected function _getStats() : Stats {
+            return _hls.stats;
         };
 
         /** Javascript calls. **/

@@ -138,6 +138,40 @@ get/set : capping/max level value that could be used by automatic level selectio
 
 default value is -1 (no level capping)
 
+
+#### hls.stats
+get : return playback session stats
+
+```js
+{
+  tech : 'flashls',
+  levelNb : total nb of quality level referenced in Manifest
+  levelStart : first quality level experienced by End User
+  autoLevelMin : min quality level experienced by End User (in auto mode)
+  autoLevelMax : max quality level experienced by End User (in auto mode)
+  autoLevelAvg : avg quality level experienced by End User (in auto mode)
+  autoLevelLast : last quality level experienced by End User (in auto mode)
+  autoLevelSwitch : nb of quality level switch in auto mode
+  autoLevelCappingMin : min auto quality level capping value
+  autoLevelCappingMax : max auto quality level capping value
+  autoLevelCappingLast : last auto quality level capping value
+  manualLevelMin : min quality level experienced by End User (in manual mode)
+  manualLevelMax : max quality level experienced by End User (in manual mode)
+  manualLevelLast : last quality level experienced by End User (in manual mode)
+  manualLevelSwitch : nb of quality level switch in manual mode
+  fragMinKbps : min fragment load bitrate
+  fragMaxKbps : max fragment load bitrate
+  fragAvgKbps : avg fragment load bitrate
+  fragMinLatency : min fragment load latency
+  fragMaxLatency : max fragment load latency
+  fragAvgLatency : avg fragment load latency
+  fragBuffered : total nb of buffered fragments
+  fragBufferedBytes : total nb of buffered bytes
+  fragChangedAuto : nb of frag played (loaded in auto mode)
+  fragChangedManual : nb of frag played (loaded in manual mode)
+}
+```
+
 ##Events
 
 flashls fires a bunch of events, that could be registered as highlighted below:

@@ -67,7 +67,7 @@ package org.mangui.hls.stream {
             super.client = _client;
         };
 
-        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, ... tags) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
@@ -79,7 +79,7 @@ package org.mangui.hls.stream {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, tag_list)));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, tag_list)));
         }
 
         // function is called by SCRIPT in FLV

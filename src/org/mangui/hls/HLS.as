@@ -13,10 +13,12 @@ package org.mangui.hls {
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.event.HLSEvent;
+    import org.mangui.hls.handler.StatsHandler;
     import org.mangui.hls.loader.AltAudioLevelLoader;
     import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.model.Stats;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
@@ -31,6 +33,7 @@ package org.mangui.hls {
         private var _audioTrackController : AudioTrackController;
         private var _levelController : LevelController;
         private var _streamBuffer : StreamBuffer;
+        private var _statsHandler : StatsHandler;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
         /** HLS URLStream/URLLoader **/
@@ -49,6 +52,7 @@ package org.mangui.hls {
             _altAudioLevelLoader = new AltAudioLevelLoader(this);
             _audioTrackController = new AudioTrackController(this);
             _levelController = new LevelController(this);
+            _statsHandler = new StatsHandler(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
             _hlsURLStream = URLStream as Class;
             _hlsURLLoader = URLLoader as Class;
@@ -81,6 +85,7 @@ package org.mangui.hls {
             _audioTrackController.dispose();
             _levelController.dispose();
             _hlsNetStream.dispose_();
+            _statsHandler.dispose();
             _streamBuffer.dispose();
             _levelLoader = null;
             _altAudioLevelLoader = null;
@@ -258,6 +263,10 @@ package org.mangui.hls {
         /* retrieve URL stream loader */
         public function get URLloader() : Class {
             return _hlsURLLoader;
+        }
+        /* retrieve playback session stats */
+        public function get stats() : Stats {
+            return _statsHandler.stats;
         }
     }
 }

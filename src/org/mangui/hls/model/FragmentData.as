@@ -43,6 +43,8 @@ package org.mangui.hls.model {
         /* video dimension */
         public var video_width : int;
         public var video_height : int;
+        /* is fragment loaded selected by autolevel algo */
+        public var auto_level : Boolean;
 
         /**  tag duration */
         private var audio_tag_duration : Number;

@@ -727,6 +727,7 @@ package org.mangui.hls.loader {
             _metrics.id = frag.seqnum;
             _metrics.loading_request_time = getTimer();
             _fragCurrent = frag;
+            frag.data.auto_level = _hls.autoLevel;
             if (frag.decrypt_url != null) {
                 if (_keymap[frag.decrypt_url] == undefined) {
                     // load key

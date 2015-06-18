@@ -69,6 +69,7 @@ package org.mangui.hls.model {
             data.writeObject(this.program_date);
             data.writeObject(this.data.video_width);
             data.writeObject(this.data.video_height);
+            data.writeObject(this.data.auto_level);
             for each (var custom_tag : String in this.tag_list) {
                 data.writeObject(custom_tag);
             }
