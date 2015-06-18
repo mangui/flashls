@@ -52,7 +52,7 @@ package org.mangui.hls.utils {
                 _callbackLoaded = "resourceLoaded" + _instanceCount;
                 _callbackFailure = "resourceLoadingError" + _instanceCount;
                 // dynamically register callbacks
-                this[_callbackLoaded] = function(res,len): void { resourceLoaded(res,len)};
+                this[_callbackLoaded] = function(res:String,len:uint): void { resourceLoaded(res,len)};
                 this[_callbackFailure] = function() : void { resourceLoadingError()};
                 ExternalInterface.addCallback(_callbackLoaded, this[_callbackLoaded]);
                 ExternalInterface.addCallback(_callbackFailure, this[_callbackFailure]);
