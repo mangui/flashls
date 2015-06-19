@@ -57,7 +57,7 @@ package org.mangui.hls.controller {
         private function _manifestLoadedHandler(event : HLSEvent) : void {
             _nbSamples = 0;
             _targetduration = event.levels[_hls.startLevel].targetduration;
-            _bw = new Vector.<Number>(MAX_SAMPLES);
+            _bw = new Vector.<Number>(MAX_SAMPLES,true);
             _minBufferLength = _targetduration;
         };
 
