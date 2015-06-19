@@ -3,27 +3,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.demux {
 
-    import org.mangui.hls.HLSSettings;
     import flash.utils.ByteArray;
     CONFIG::LOGGING {
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.utils.Log;
     }
 
     /** Constants and utilities for the H264 video format. **/
     public class Nalu {
         /** H264 NAL unit names. **/
-        private static const NAMES : Array = ['Unspecified',                  // 0 
-        'NDR',                          // 1 
-        'Partition A',                  // 2 
-        'Partition B',                  // 3 
-        'Partition C',                  // 4 
-        'IDR',                          // 5 
-        'SEI',                          // 6 
-        'SPS',                          // 7 
-        'PPS',                          // 8 
-        'AUD',                          // 9 
-        'End of Sequence',              // 10 
-        'End of Stream',                // 11 
+        private static const NAMES : Array = ['Unspecified',                  // 0
+        'NDR',                          // 1
+        'Partition A',                  // 2
+        'Partition B',                  // 3
+        'Partition C',                  // 4
+        'IDR',                          // 5
+        'SEI',                          // 6
+        'SPS',                          // 7
+        'PPS',                          // 8
+        'AUD',                          // 9
+        'End of Sequence',              // 10
+        'End of Stream',                // 11
         'Filler Data'// 12
         ];
 
