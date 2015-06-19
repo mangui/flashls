@@ -77,6 +77,18 @@ package org.mangui.hls.model {
             return tag;
         }
 
+        public function get skippedTag() : FLVTag {
+            var tag : FLVTag = new FLVTag(FLVTag.METADATA, this.data.pts_start_computed, this.data.pts_start_computed, false);
+            var data : ByteArray = new ByteArray();
+            data.objectEncoding = ObjectEncoding.AMF0;
+            data.writeObject("onHLSFragmentSkipped");
+            data.writeObject(this.level);
+            data.writeObject(this.seqnum);
+            data.writeObject(this.duration);
+            tag.push(data, 0, data.length);
+            return tag;
+        }
+
         public function toString() : String {
             return "Fragment (seqnum: " + seqnum + ", start_time:" + start_time + ", duration:" + duration + ")";
         }

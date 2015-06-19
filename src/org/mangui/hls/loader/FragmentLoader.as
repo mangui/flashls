@@ -374,6 +374,10 @@ package org.mangui.hls.loader {
                         CONFIG::LOGGING {
                             Log.warn("max fragment load retry reached, skip fragment and load next one");
                         }
+                        var tags : Vector.<FLVTag> = tags = new Vector.<FLVTag>();
+                        tags.push(_fragCurrent.skippedTag);
+                        // send skipped FLV tag to StreamBuffer
+                        _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,_fragCurrent.level,_fragCurrent.seqnum ,tags,_fragCurrent.data.pts_start_computed, _fragCurrent.data.pts_start_computed + 1000*_fragCurrent.duration, _fragCurrent.continuity, _fragCurrent.start_time);
                         _fragRetryCount = 0;
                         _fragRetryTimeout = 1000;
                         _fragPrevious = _fragCurrent;
