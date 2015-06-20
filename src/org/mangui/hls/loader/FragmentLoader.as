@@ -188,13 +188,13 @@ package org.mangui.hls.loader {
                          */
                     } else if (HLSSettings.maxBufferLength == 0 || _hls.stream.bufferLength < HLSSettings.maxBufferLength) {
                         // select level for next fragment load
-                        if(_levelNext != -1) {
-                            level = _levelNext;
-                        } else if (_hls.autoLevel && _levels.length > 1 ) {
+                        if (_hls.autoLevel && _levels.length > 1 ) {
                             // select level from heuristics (current level / last fragment duration / buffer length)
                             level = _levelController.getnextlevel(_hls.loadLevel, _hls.stream.bufferLength);
                         } else if (_hls.autoLevel && _levels.length == 1 ) {
                             level = 0;
+                        } else if(_levelNext != -1) {
+                            level = _levelNext;
                         } else {
                             level = _hls.manualLevel;
                         }
