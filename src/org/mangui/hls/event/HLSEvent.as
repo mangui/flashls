@@ -56,6 +56,8 @@ package org.mangui.hls.event {
         public static const PLAYLIST_DURATION_UPDATED : String = "hlsPlayListDurationUpdated";
         /** Identifier for a ID3 updated event **/
         public static const ID3_UPDATED : String = "hlsID3Updated";
+        /** Identifier for a fps drop event **/
+        public static const FPS_DROP : String = "hlsFPSDrop";
         /** The current url **/
         public var url : String;
         /** The current quality level. **/
@@ -122,6 +124,9 @@ package org.mangui.hls.event {
                     break;
                 case HLSEvent.FRAGMENT_PLAYING:
                     playMetrics = parameter as HLSPlayMetrics;
+                    break;
+                case HLSEvent.FPS_DROP:
+                    level = parameter as int;
                     break;
             }
             super(type, false, false);

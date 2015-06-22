@@ -36,10 +36,12 @@ package org.mangui.hls.controller {
         private var  lastBandwidth : Number;
         private var  _autoLevelCapping : int = -1;
         private var  _startLevel : int = -1;
+        private var  _fpsController : FPSController;
 
         /** Create the loader. **/
         public function LevelController(hls : HLS) : void {
             _hls = hls;
+            _fpsController = new FPSController(hls);
             _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
@@ -47,6 +49,8 @@ package org.mangui.hls.controller {
         ;
 
         public function dispose() : void {
+            _fpsController.dispose();
+            _fpsController = null;
             _hls.removeEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
