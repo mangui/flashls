@@ -60,6 +60,10 @@
         var newTimer : int = getTimer();
         if(_lastTimer) {
           var delta:int = newTimer - _lastTimer;
+          /* according to http://www.kaourantin.net/2010/03/timing-it-right.html, when player is hidden, Flash timer only runs at 8Hz.
+             here we armed our timer to 50ms, if delta time between 2 runs is more than 100ms, consider that our player is hidden ...
+          */
+          the idea here is
           if(delta && delta < 100) {
             if(_hiddenVideo == false) {
               var deltaDroppedFrames : int = _hls.stream.info.droppedFrames - _lastdroppedFrames;
