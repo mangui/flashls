@@ -58,6 +58,9 @@ package org.mangui.hls.event {
         public static const ID3_UPDATED : String = "hlsID3Updated";
         /** Identifier for a fps drop event **/
         public static const FPS_DROP : String = "hlsFPSDrop";
+        /** Identifier for a Stage set event **/
+        public static const STAGE_SET : String = "hlsStageSet";
+
         /** The current url **/
         public var url : String;
         /** The current quality level. **/
