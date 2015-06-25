@@ -2,8 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.controller {
+    // import flash.events.ThrottleEvent;
+    // import flash.events.ThrottleType;
     import flash.events.Event;
     import flash.events.TimerEvent;
+    import flash.system.Capabilities;
     import flash.utils.getTimer;
     import flash.utils.Timer;
     import org.mangui.hls.constant.HLSPlayStates;
@@ -19,77 +22,117 @@
       /** Reference to the HLS controller. **/
       private var _hls : HLS;
       private var _timer : Timer;
-      private var _lastTimer : int;
-      private var _lastdroppedFrames : int;
-      private var _hiddenVideo : Boolean;
+      private var _throttling : Boolean;
+      private var _playing : Boolean;
+      private var _lastTime : int;
+      private var _lastDroppedFrames : int;
+      // hardcode event name and state to avoid compilation issue with target player < 11.2
+      private static const THROTTLE : String = "throttle";
+      private static const RESUME : String = "resume";
 
       public function FPSController(hls : HLS) {
           _hls = hls;
-          _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
-          _timer = new Timer(50,0);
-          _timer.addEventListener(TimerEvent.TIMER, _checkFPS);
+          _throttling = false;
+          _playing = false;
+          _lastTime = 0;
+          /** Check that Flash Player version is sufficient (11.2 or above) to use throttling event **/
+          if(_checkVersion() >= 11.2) {
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
+            _hls.addEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
+          }
+      }
+
+      private function _checkVersion() : Number {
+          var verArray : Array = Capabilities.version.split(/\s|,/);
+          return Number(String(verArray[1] + "." + verArray[2]));
       }
 
       public function dispose() : void {
-          _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
+        if(_checkVersion() >= 11.2) {
+            _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
+            _hls.removeEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
+            if(_timer) {
+              _timer.stop();
+            }
+            if(_hls.stage) {
+              _hls.stage.removeEventListener(THROTTLE, onThrottle);
+            }
+          }
+      }
+
+      private function _stageSetHandler(event : HLSEvent) : void {
+        CONFIG::LOGGING {
+          Log.debug("FPSController:stage defined, listen to throttle event");
+        }
+        _timer = new Timer(2000,0);
+        _timer.addEventListener(TimerEvent.TIMER, _checkFPS);
+        _timer.start();
+        _hls.stage.addEventListener(THROTTLE, onThrottle);
       }
 
       private function _playbackStateHandler(event : HLSEvent) : void {
         switch(event.state) {
           case HLSPlayStates.PLAYING:
-            // start fps check timer when switching to playing state
-            _lastTimer = 0;
-            _hiddenVideo = true;
-            _timer.start();
+            // start fps monitoring when switching to playing state
+            _playing = true;
+            _lastTime = 0;
+            CONFIG::LOGGING {
+              Log.debug("FPSController:playback starting, start monitoring FPS");
+            }
             break;
           default:
-            if(_timer.running)  {
-              // stop it in all other cases
-              _lastTimer = 0;
-              _hiddenVideo = true;
-              _timer.stop();
-                CONFIG::LOGGING {
-                  Log.info("video not playing, stop monitoring dropped FPS");
-                }
+            _playing = false;
+            // stop fps monitoring in all other cases
+            CONFIG::LOGGING {
+              Log.debug("FPSController:playback stopped, stop monitoring FPS");
             }
             break;
         }
       };
 
+      private function onThrottle(e : Object) : void {
+        CONFIG::LOGGING {
+             Log.debug("FPSController:onThrottle:" + e.state + ',fps:' + e.targetFrameRate);
+        }
+        switch(e.state) {
+          case RESUME:
+            _throttling=false;
+            _lastTime = 0;
+            break;
+          default:
+            _throttling=true;
+            break;
+        }
+      }
+
       private function _checkFPS(e : Event) : void {
-        var newTimer : int = getTimer();
-        if(_lastTimer) {
-          var delta:int = newTimer - _lastTimer;
-          /* according to http://www.kaourantin.net/2010/03/timing-it-right.html, when player is hidden, Flash timer only runs at 8Hz.
-             here we armed our timer to 50ms, if delta time between 2 runs is more than 100ms, consider that our player is hidden ...
-          */
-          if(delta && delta < 100) {
-            if(_hiddenVideo == false) {
-              var deltaDroppedFrames : int = _hls.stream.info.droppedFrames - _lastdroppedFrames;
-              var dropFPS : Number = 1000*deltaDroppedFrames/delta;
-              if(dropFPS > 1) {
-                CONFIG::LOGGING {
-                  Log.warn("!!! display/dropped FPS > 1, dispatch event:" + _hls.stream.currentFPS.toFixed(2) + "/" + dropFPS.toFixed(2));
-                  _hls.dispatchEvent(new HLSEvent(HLSEvent.FPS_DROP, _hls.currentLevel));
-                }
-              }
-            } else {
-                CONFIG::LOGGING {
-                  Log.info("video displayed,start monitoring dropped FPS");
-                }
-              _hiddenVideo = false;
+        var currentTime : int = getTimer();
+        var droppedFrames : int = _hls.stream.info.droppedFrames;
+        // monitor only if not throttling AND playing AND we hold a time reference with nb of dropped frames
+        if(_throttling == false && _playing == true && _lastTime) {
+          var currentPeriod : int = currentTime-_lastTime;
+          var currentDropped : int = droppedFrames - _lastDroppedFrames;
+          var currentDropFPS : Number = 1000*currentDropped/currentPeriod;
+          var currentFPS : Number = _hls.stream.currentFPS;
+          CONFIG::LOGGING {
+            Log.debug2("currentDropped,currentPeriod,currentDropFPS," + currentDropped +',' + currentPeriod +',' + currentDropFPS.toFixed(1));
+          }
+          if(currentDropFPS > 0.3*currentFPS) {
+            CONFIG::LOGGING {
+              Log.warn("!!! drop vs currentFPS > 30%,"+currentDropFPS.toFixed(1)+","+currentFPS.toFixed(1));
             }
-          } else {
-            if(_hiddenVideo == false) {
-              _hiddenVideo = true;
-              CONFIG::LOGGING {
-                Log.info("video hidden,stop monitoring dropped FPS,delta:"+delta);
-              }
-            }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FPS_DROP, _hls.currentLevel));
+            // if(_hls.autoLevel == true) {
+            //   CONFIG::LOGGING {
+            //     Log.warn("cap level and force auto level switch!!!");
+            //   }
+            //   _hls.autoLevelCapping = Math.max(0,_hls.currentLevel-1);
+            //   _hls.nextLevel = -1;
+            // }
           }
         }
-        _lastTimer = newTimer;
-        _lastdroppedFrames = _hls.stream.info.droppedFrames;
+        _lastTime = currentTime;
+        _lastDroppedFrames = droppedFrames;
       }
   }
 }
