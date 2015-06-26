@@ -31,6 +31,8 @@ package org.mangui.hls.demux {
         private static const PAT_ID : int = 0;
         /** Packet ID of the SDT (is always 17). **/
         private static const SDT_ID : int = 17;
+        /** Null Packet PID **/
+        private static const NULL_PID : int = 0x1fff;
         /** has PMT been parsed ? **/
         private var _pmtParsed : Boolean;
         /** any TS packets before PMT ? **/
@@ -742,6 +744,7 @@ package org.mangui.hls.demux {
                     }
                     break;
                 case SDT_ID:
+                case NULL_PID:
                     break;
                 default:
                     _packetsBeforePMT = true;
