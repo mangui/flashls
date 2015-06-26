@@ -29,9 +29,10 @@ package org.mangui.hls.model {
         public var fragBufferedBytes : int;
         public var fragChangedAuto : int;
         public var fragChangedManual : int;
+        public var fpsDropEvent : int;
+        public var fpsDropLevelCappingMin : int;
+        public var fpsDropSmoothLevelSwitch : int;
         public function Stats() {
-            tech = "flashls";
-            fragBuffered = fragChangedAuto = fragChangedManual = 0;
         }
     }
 }

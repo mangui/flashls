@@ -58,6 +58,10 @@ package org.mangui.hls.event {
         public static const ID3_UPDATED : String = "hlsID3Updated";
         /** Identifier for a fps drop event **/
         public static const FPS_DROP : String = "hlsFPSDrop";
+        /** Identifier for a fps drop level capping event **/
+        public static const FPS_DROP_LEVEL_CAPPING : String = "hlsFPSDropLevelCapping";
+        /** Identifier for a fps drop smooth level switch event **/
+        public static const FPS_DROP_SMOOTH_LEVEL_SWITCH : String = "hlsFPSDropSmoothLevelSwitch";
         /** Identifier for a Stage set event **/
         public static const STAGE_SET : String = "hlsStageSet";
 
@@ -87,49 +91,50 @@ package org.mangui.hls.event {
         /** Assign event parameter and dispatch. **/
         public function HLSEvent(type : String, parameter : *=null, parameter2 : *=null) {
             switch(type) {
-                case HLSEvent.MANIFEST_LOADING:
-                case HLSEvent.FRAGMENT_LOADING:
+                case MANIFEST_LOADING:
+                case FRAGMENT_LOADING:
                     url = parameter as String;
                     break;
-                case HLSEvent.ERROR:
+                case ERROR:
                     error = parameter as HLSError;
                     break;
-                case HLSEvent.TAGS_LOADED:
-                case HLSEvent.FRAGMENT_LOADED:
-                case HLSEvent.LEVEL_LOADED:
-                case HLSEvent.AUDIO_LEVEL_LOADED:
+                case TAGS_LOADED:
+                case FRAGMENT_LOADED:
+                case LEVEL_LOADED:
+                case AUDIO_LEVEL_LOADED:
                     loadMetrics = parameter as HLSLoadMetrics;
                     break;
-                case HLSEvent.MANIFEST_PARSED:
-                case HLSEvent.MANIFEST_LOADED:
+                case MANIFEST_PARSED:
+                case MANIFEST_LOADED:
                     levels = parameter as Vector.<Level>;
                     if(parameter2) {
                         loadMetrics = parameter2 as HLSLoadMetrics;
                     }
                     break;
-                case HLSEvent.MEDIA_TIME:
+                case MEDIA_TIME:
                     mediatime = parameter as HLSMediatime;
                     break;
-                case HLSEvent.PLAYBACK_STATE:
-                case HLSEvent.SEEK_STATE:
+                case PLAYBACK_STATE:
+                case SEEK_STATE:
                     state = parameter as String;
                     break;
-                case HLSEvent.LEVEL_LOADING:
-                case HLSEvent.LEVEL_SWITCH:
-                case HLSEvent.AUDIO_LEVEL_LOADING:
+                case LEVEL_LOADING:
+                case LEVEL_SWITCH:
+                case AUDIO_LEVEL_LOADING:
+                case FPS_DROP:
+                case FPS_DROP_LEVEL_CAPPING:
                     level = parameter as int;
                     break;
-                case HLSEvent.PLAYLIST_DURATION_UPDATED:
+                case PLAYLIST_DURATION_UPDATED:
                     duration = parameter as Number;
                     break;
-                case HLSEvent.ID3_UPDATED:
+                case ID3_UPDATED:
                     ID3Data = parameter as String;
                     break;
-                case HLSEvent.FRAGMENT_PLAYING:
+                case FRAGMENT_PLAYING:
                     playMetrics = parameter as HLSPlayMetrics;
                     break;
-                case HLSEvent.FPS_DROP:
-                    level = parameter as int;
+                default:
                     break;
             }
             super(type, false, false);

@@ -233,3 +233,11 @@ full list of Events is described below :
   	-  data: { duration : new duration}
   - `HLSEvent.ID3_UPDATED` - triggered when new ID3 tag is available (fired during playback at the right playback timestamp)
   	-  data: { ID3Data : Hex String of ID3 representation }
+  - `HLSEvent.STAGE_SET` - triggered when Stage object has been attached to hls instance
+    -  data: none
+  - `HLSEvent.FPS_DROP` - triggered when FPS drop in last monitoring period is higher than given threshold
+    -  data: { level : current playback quality level}
+  - `HLSEvent.FPS_DROP_LEVEL_CAPPING` - triggered when FPS drop triggers auto level capping
+    -  data: { level : max autolevel }
+  - `HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH` - triggered when FPS drop triggers a smooth auto level down switching
+    -  data: none

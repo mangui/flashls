@@ -76,6 +76,56 @@ package org.mangui.hls {
         public static var lowBufferLength : Number = 3;
 
         /**
+         * fpsDroppedMonitoringPeriod
+         *
+         * dropped FPS Monitor Period in ms
+         * period at which nb dropped FPS will be checked
+         * Default is 5000 ms
+         */
+        public static var fpsDroppedMonitoringPeriod : int = 5000;
+
+        /**
+         * fpsDroppedMonitoringThreshold
+         *
+         * dropped FPS Threshold
+         * every fpsDroppedMonitoringPeriod, dropped FPS will be compared to displayed FPS.
+         * if during that period, ratio of (dropped FPS/displayed FPS) is greater or equal
+         * than fpsDroppedMonitoringThreshold, HLSEvent.FPS_DROP event will be fired
+         * Default is 0.3 (30%)
+         */
+        public static var fpsDroppedMonitoringThreshold : Number = 0.2;
+
+
+        /**
+         * capLevelonFPSDrop
+         *
+         * Limit levels usable in auto-quality when FPS drop is detected
+         * i.e. if frame drop is detected on level 5, auto level will be capped to level 4 a
+         *      true -  enabled
+         *      false - disabled
+         *
+         * Note: this setting is ignored in manual mode so all the levels could be selected manually.
+         *
+         * Default is true
+         */
+        public static var capLevelonFPSDrop : Boolean = true;
+
+        /**
+         * smoothAutoSwitchonFPSDrop
+         *
+         * force a smooth level switch Limit when FPS drop is detected in auto-quality
+         * i.e. if frame drop is detected on level 5, it will trigger an auto quality level switch
+         * to level 4 for next fragment
+         *      true -  enabled
+         *      false - disabled
+         *
+         * Note: this setting is active only if capLevelonFPSDrop==true
+         *
+         * Default is true
+         */
+        public static var smoothAutoSwitchonFPSDrop : Boolean = true;
+
+        /**
          * seekMode
          *
          * Defines seek mode to one form available in HLSSeekMode class:

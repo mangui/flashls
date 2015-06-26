@@ -12,6 +12,7 @@
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
@@ -64,7 +65,7 @@
         CONFIG::LOGGING {
           Log.debug("FPSController:stage defined, listen to throttle event");
         }
-        _timer = new Timer(2000,0);
+        _timer = new Timer(HLSSettings.fpsDroppedMonitoringPeriod,0);
         _timer.addEventListener(TimerEvent.TIMER, _checkFPS);
         _timer.start();
         _hls.stage.addEventListener(THROTTLE, onThrottle);
@@ -115,20 +116,33 @@
           var currentDropFPS : Number = 1000*currentDropped/currentPeriod;
           var currentFPS : Number = _hls.stream.currentFPS;
           CONFIG::LOGGING {
-            Log.debug2("currentDropped,currentPeriod,currentDropFPS," + currentDropped +',' + currentPeriod +',' + currentDropFPS.toFixed(1));
+            Log.debug2("FPSController:currentDropped,currentPeriod,currentDropFPS," + currentDropped +',' + currentPeriod +',' + currentDropFPS.toFixed(1));
           }
-          if(currentDropFPS > 0.3*currentFPS) {
+          if(currentDropFPS > HLSSettings.fpsDroppedMonitoringThreshold*currentFPS) {
             CONFIG::LOGGING {
-              Log.warn("!!! drop vs currentFPS > 30%,"+currentDropFPS.toFixed(1)+","+currentFPS.toFixed(1));
+              Log.warn("FPSController:drop FPS ratio >" + HLSSettings.fpsDroppedMonitoringThreshold + ',drop/displayed:' +currentDropFPS.toFixed(1)+","+currentFPS.toFixed(1) + " in the last " + HLSSettings.fpsDroppedMonitoringPeriod + "ms");
             }
             _hls.dispatchEvent(new HLSEvent(HLSEvent.FPS_DROP, _hls.currentLevel));
-            // if(_hls.autoLevel == true) {
-            //   CONFIG::LOGGING {
-            //     Log.warn("cap level and force auto level switch!!!");
-            //   }
-            //   _hls.autoLevelCapping = Math.max(0,_hls.currentLevel-1);
-            //   _hls.nextLevel = -1;
-            // }
+            if(HLSSettings.capLevelonFPSDrop) {
+              var currentLevel : int = _hls.currentLevel;
+              if(currentLevel > 0 && (_hls.autoLevelCapping == -1 || _hls.autoLevelCapping >= _hls.currentLevel)) {
+                var capLevel : int = currentLevel-1;
+                CONFIG::LOGGING {
+                  Log.warn("FPSController:cap level on FPS drop to " + capLevel);
+                }
+                _hls.autoLevelCapping = capLevel;
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.FPS_DROP_LEVEL_CAPPING, capLevel));
+                if(HLSSettings.smoothAutoSwitchonFPSDrop) {
+                  if(_hls.autoLevel == true) {
+                    CONFIG::LOGGING {
+                      Log.warn("FPSController:trigger smooth level switch on frame drop");
+                    }
+                    _hls.nextLevel = -1;
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH));
+                  }
+                }
+              }
+            }
           }
         }
         _lastTime = currentTime;
