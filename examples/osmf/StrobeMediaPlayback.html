@@ -16,15 +16,11 @@
   ga('send', 'pageview');
 
 </script>
-
-        <script type="text/javascript" src="../libs/swfobject.js">
-        </script>
-        <script type="text/javascript" src="../libs/ParsedQueryString.js">
-        </script>
-        <script type="text/javascript" src="../../../playlists/streams.js">
-        </script>
-        <script type="text/javascript">
-
+</head>
+<body>
+<script type="text/javascript" src="../libs/swfobject.js"></script>
+<script type="text/javascript" src="../libs/ParsedQueryString.js"></script>
+<script type="text/javascript">
 var player = null;
 
 function loadStream(url) {
@@ -131,8 +127,7 @@ function listStreams(list, container) {
             );
 
         </script>
-    </head>
-    <body>
+        <div id="customButtons"></div>
         <table width="100%" border="0" cellspacing="5">
             <tr>
                 <td width="43">
@@ -162,7 +157,8 @@ function listStreams(list, container) {
 Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
 <input id="userInput" value="http://184.72.239.149/vod/smil:BigBuckBunny.smil/playlist.m3u8" size="80"> <button onclick="userSubmit()">Play</button><br>
 <p>
-
+<script type="text/javascript" src="../../../playlists/streams.js"></script>
+<script type="text/javascript" src="../../../streams.js"></script>
 <script type="text/javascript">
 function userSubmit() {
   window.location = getlink(document.getElementById('userInput').value);
