@@ -91,7 +91,7 @@ package org.mangui.hls {
          * every fpsDroppedMonitoringPeriod, dropped FPS will be compared to displayed FPS.
          * if during that period, ratio of (dropped FPS/displayed FPS) is greater or equal
          * than fpsDroppedMonitoringThreshold, HLSEvent.FPS_DROP event will be fired
-         * Default is 0.3 (30%)
+         * Default is 0.2 (20%)
          */
         public static var fpsDroppedMonitoringThreshold : Number = 0.2;
 
