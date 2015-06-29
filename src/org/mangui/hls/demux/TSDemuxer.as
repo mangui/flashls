@@ -446,7 +446,7 @@ package org.mangui.hls.demux {
                     _curNalUnit = new ByteArray();
                     _curVideoTag = new FLVTag(FLVTag.AVC_NALU, pes.pts, pes.dts, false);
                     // push NAL unit 9 into TAG
-                    _curVideoTag.push(pes.data, frame.start, frame.length);
+                    _curVideoTag.push(Nalu.AUD, 0, 2);
                 } else if (frame.type == 7) {
                     sps_found = true;
                     sps = new ByteArray();
@@ -489,6 +489,11 @@ package org.mangui.hls.demux {
             for each (frame in frames) {
                 if (frame.type <= 6) {
                     if (_curNalUnit && _curNalUnit.length) {
+                        if(!_curVideoTag) {
+                            // in case AUD unit is missing ...
+                            _curVideoTag = new FLVTag(FLVTag.AVC_NALU, pes.pts, pes.dts, false);
+                            _curVideoTag.push(Nalu.AUD, 0, 2);
+                        }
                         _curVideoTag.push(_curNalUnit, 0, _curNalUnit.length);
                     }
                     _curNalUnit = new ByteArray();
@@ -512,7 +517,7 @@ package org.mangui.hls.demux {
                             var type : uint = eg.readUE();
                             if (type == 2 || type == 4 || type == 7 || type == 9) {
                                 CONFIG::LOGGING {
-                                    Log.debug("TS: frame_type:" + frame.type + ",keyframe slice_type:" + type);
+                                    Log.debug2("TS: frame_type:" + frame.type + ",keyframe slice_type:" + type);
                                 }
                                 _curVideoTag.keyframe = true;
                             }
