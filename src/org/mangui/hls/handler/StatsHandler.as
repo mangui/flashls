@@ -128,6 +128,7 @@
       }
       private function _fpsDropHandler(event : HLSEvent) : void {
         _stats.fpsDropEvent++;
+        _stats.fpsTotalDroppedFrames = _hls.stream.info.droppedFrames;
       };
       private function _fpsDropLevelCappingHandler(event : HLSEvent) : void {
          _stats.fpsDropLevelCappingMin=event.level;
