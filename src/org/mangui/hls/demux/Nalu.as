@@ -11,22 +11,6 @@
 
     /** Constants and utilities for the H264 video format. **/
     public class Nalu {
-        /** H264 NAL unit names. **/
-        private static const NAMES : Array = ['Unspecified',                  // 0
-        'NDR',                          // 1
-        'Partition A',                  // 2
-        'Partition B',                  // 3
-        'Partition C',                  // 4
-        'IDR',                          // 5
-        'SEI',                          // 6
-        'SPS',                          // 7
-        'PPS',                          // 8
-        'AUD',                          // 9
-        'End of Sequence',              // 10
-        'End of Stream',                // 11
-        'Filler Data'// 12
-        ];
-
         /** Return an array with NAL delimiter indexes. **/
         public static function getNALU(nalu : ByteArray, position : uint) : Vector.<VideoFrame> {
             var units : Vector.<VideoFrame> = new Vector.<VideoFrame>();
@@ -76,6 +60,21 @@
             // Reset position and return results.
             CONFIG::LOGGING {
             if (HLSSettings.logDebug2) {
+                /** H264 NAL unit names. **/
+                const NAMES : Array = ['Unspecified',// 0
+                'NDR',                          // 1
+                'Partition A',                  // 2
+                'Partition B',                  // 3
+                'Partition C',                  // 4
+                'IDR',                          // 5
+                'SEI',                          // 6
+                'SPS',                          // 7
+                'PPS',                          // 8
+                'AUD',                          // 9
+                'End of Sequence',              // 10
+                'End of Stream',                // 11
+                'Filler Data'// 12
+                ];
                 if (units.length) {
                     var txt : String = "AVC: ";
                     for (var i : int = 0; i < units.length; i++) {
