@@ -28,6 +28,7 @@
             var unit_start : int;
             var unit_type : int;
             var unit_header : int;
+            var aud_found : Boolean = false;
             // Loop through data to find NAL startcodes.
             var window : uint = 0;
             nalu.position = position;
@@ -42,8 +43,14 @@
                     unit_header = 4;
                     unit_start = nalu.position;
                     unit_type = nalu.readByte() & 0x1F;
-                    // NDR or IDR NAL unit
-                    if (unit_type == 1 || unit_type == 5) {
+                    if(unit_type ==9) {
+                        aud_found = true;
+                    }
+                    /* if AUD already found and newly found unit is NDR or IDR,
+                        stop parsing here and consider that this IDR/NDR is the last NAL unit
+                        breaking the loop here is done for optimization purpose, as NAL parsing is time consuming ...
+                     */
+                    if (aud_found && (unit_type == 1 || unit_type == 5)) {
                         break;
                     }
                     // Match three-byte startcodes
@@ -56,8 +63,14 @@
                     unit_header = 3;
                     unit_start = nalu.position;
                     unit_type = nalu.readByte() & 0x1F;
-                    // NDR or IDR NAL unit
-                    if (unit_type == 1 || unit_type == 5) {
+                    if(unit_type ==9) {
+                        aud_found = true;
+                    }
+                    /* if AUD already found and newly found unit is NDR or IDR,
+                        stop parsing here and consider that this IDR/NDR is the last NAL unit
+                        breaking the loop here is done for optimization purpose, as NAL parsing is time consuming ...
+                     */
+                    if (aud_found && (unit_type == 1 || unit_type == 5)) {
                         break;
                     }
                 } else {
@@ -89,7 +102,7 @@
                     if (units.length) {
                         var txt : String = "AVC: ";
                         for (var i : int = 0; i < units.length; i++) {
-                            txt += NAMES[units[i].type] + ":" + units[i].length + ",";
+                            txt += NAMES[units[i].type] + ","; //+ ":" + units[i].length
                         }
                         Log.debug2(txt.substr(0, txt.length - 2) + " slices");
                     } else {
