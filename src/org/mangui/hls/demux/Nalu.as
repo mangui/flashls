@@ -104,7 +104,7 @@
                         for (var i : int = 0; i < units.length; i++) {
                             txt += NAMES[units[i].type] + ","; //+ ":" + units[i].length
                         }
-                        Log.debug2(txt.substr(0, txt.length - 2) + " slices");
+                        Log.debug2(txt.substr(0,txt.length-1) + " slices");
                     } else {
                         Log.debug2('AVC: no NALU slices found');
                     }
