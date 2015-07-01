@@ -34,7 +34,7 @@ package org.mangui.hls.controller {
         private var _lastSegmentDuration : Number;
         private var _lastFetchDuration : Number;
         private var  lastBandwidth : Number;
-        private var  _autoLevelCapping : int = -1;
+        private var  _autoLevelCapping : int;
         private var  _startLevel : int = -1;
         private var  _fpsController : FPSController;
 
@@ -79,6 +79,7 @@ package org.mangui.hls.controller {
             _bitrate = new Vector.<Number>(_nbLevel, true);
             _switchup = new Vector.<Number>(_nbLevel, true);
             _switchdown = new Vector.<Number>(_nbLevel, true);
+            _autoLevelCapping = -1;
             _lastSegmentDuration = 0;
             _lastFetchDuration = 0;
             lastBandwidth = 0;
