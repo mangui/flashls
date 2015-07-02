@@ -62,6 +62,8 @@ package org.mangui.hls.stream {
         // these 2 variables are used to compute main and altaudio live playlist sliding
         private var _nextExpectedAbsoluteStartPosMain : Number;
         private var _nextExpectedAbsoluteStartPosAltAudio : Number;
+        /** is live loading stalled **/
+        private var _liveLoadingStalled : Boolean;
 
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
             _hls = hls;
@@ -70,6 +72,7 @@ package org.mangui.hls.stream {
             flushBuffer();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
+            _hls.addEventListener(HLSEvent.LIVE_LOADING_STALLED, _liveLoadingStalledHandler);
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
@@ -77,6 +80,7 @@ package org.mangui.hls.stream {
 
         public function dispose() : void {
             flushBuffer();
+            _hls.removeEventListener(HLSEvent.LIVE_LOADING_STALLED, _liveLoadingStalledHandler);
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
@@ -131,6 +135,7 @@ package org.mangui.hls.stream {
                 _fragmentLoader.stop();
                 _altaudiofragmentLoader.stop();
                 // seek position is out of buffer : load from fragment
+                _liveLoadingStalled = false;
                 _fragmentLoader.seek(_seekPositionRequested);
                 // check if we need to use alt audio fragment loader
                 if (_hls.audioTracks && _hls.audioTracks.length && _hls.audioTrack >= 0 && _hls.audioTracks[_hls.audioTrack].source == AudioTrack.FROM_PLAYLIST) {
@@ -252,6 +257,10 @@ package org.mangui.hls.stream {
 
         public function get reachedEnd() : Boolean {
             return _reachedEnd;
+        }
+
+        public function get liveLoadingStalled() : Boolean {
+            return _liveLoadingStalled;
         }
 
         public function flushBuffer() : void {
@@ -427,16 +436,16 @@ package org.mangui.hls.stream {
             // dispatch media time event
             _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(position, _playlistDuration, _hls.stream.bufferLength, backBufferLength, _playlistSlidingMain, _playlistSlidingAltAudio)));
 
+            var netStreamBuffer : Number = (_hls.stream as HLSNetStream).netStreamBufferLength;
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
              * this is to ensure that accurate seeking will work appropriately
              */
             CONFIG::LOGGING {
-                Log.debug2("position/audio/video/NetStream bufferLength:" + position.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + (_hls.stream as HLSNetStream).netStreamBufferLength.toFixed(2));
+                Log.debug2("position/total/audio/video/NetStream bufferLength:" + position.toFixed(2) + "/" + _hls.stream.bufferLength.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + netStreamBuffer.toFixed(2));
             }
 
             var duration : Number = 0;
             if (_seekPositionReached) {
-                var netStreamBuffer : Number = (_hls.stream as HLSNetStream).netStreamBufferLength;
                 if (netStreamBuffer < MIN_NETSTREAM_BUFFER_SIZE && _hls.playbackState != HLSPlayStates.IDLE) {
                     duration = MAX_NETSTREAM_BUFFER_SIZE - netStreamBuffer;
                 }
@@ -846,6 +855,11 @@ package org.mangui.hls.stream {
             }
             flushAudio();
         }
+
+        /** monitor fragment loader stall events, arm a boolean  **/
+        private function _liveLoadingStalledHandler(event : HLSEvent) : void {
+            _liveLoadingStalled = true;
+        };
     }
 }
 

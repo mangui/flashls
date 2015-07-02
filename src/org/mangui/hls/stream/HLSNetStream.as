@@ -114,19 +114,30 @@ package org.mangui.hls.stream {
             if (_seekState != HLSSeekStates.SEEKING) {
                 // check low buffer condition
                 if (buffer <= 0.1) {
-                    if (_streamBuffer.reachedEnd) {
+                    if (_streamBuffer.reachedEnd || _streamBuffer.liveLoadingStalled) {
                         // Last tag done? Then append sequence end.
                         super.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         super.appendBytes(new ByteArray());
                         // reach end of playlist + playback complete (as buffer is empty).
                         // stop timer, report event and switch to IDLE mode.
-                        _timer.stop();
-                        CONFIG::LOGGING {
-                            Log.debug("reached end of VOD playlist, notify playback complete");
+                        if(_streamBuffer.reachedEnd) {
+                            _timer.stop();
+                            CONFIG::LOGGING {
+                                Log.debug("reached end of VOD playlist, notify playback complete");
+                            }
+                            _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
+                            _setPlaybackState(HLSPlayStates.IDLE);
+                            _setSeekState(HLSSeekStates.IDLE);
+                        } else {
+                            // flush buffer and restart playback in case live loading stalled
+                            CONFIG::LOGGING {
+                                Log.warn("loading stalled: restart playback");
+                            }
+                            // flush whole buffer before seeking
+                            _streamBuffer.flushBuffer();
+                            /* seek to force a restart of the playback session  */
+                            seek(-1);
                         }
-                        _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYBACK_COMPLETE));
-                        _setPlaybackState(HLSPlayStates.IDLE);
-                        _setSeekState(HLSSeekStates.IDLE);
                         return;
                     } else {
                         // buffer <= 0.1 and not EOS, pause playback
@@ -134,7 +145,7 @@ package org.mangui.hls.stream {
                     }
                 }
                 // if buffer len is below lowBufferLength, get into buffering state
-                if (!_streamBuffer.reachedEnd && buffer < _bufferThresholdController.lowBufferLength) {
+                if (!_streamBuffer.reachedEnd && !_streamBuffer.liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
                     if (_playbackState == HLSPlayStates.PLAYING) {
                         // low buffer condition and play state. switch to play buffering state
                         _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
@@ -144,7 +155,7 @@ package org.mangui.hls.stream {
                     }
                 }
                 // if buffer len is above minBufferLength, get out of buffering state
-                if (buffer >= _bufferThresholdController.minBufferLength || _streamBuffer.reachedEnd) {
+                if (buffer >= _bufferThresholdController.minBufferLength || _streamBuffer.reachedEnd || _streamBuffer.liveLoadingStalled) {
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
                             Log.debug("resume playback");

@@ -62,6 +62,8 @@ package org.mangui.hls.event {
         public static const FPS_DROP_LEVEL_CAPPING : String = "hlsFPSDropLevelCapping";
         /** Identifier for a fps drop smooth level switch event **/
         public static const FPS_DROP_SMOOTH_LEVEL_SWITCH : String = "hlsFPSDropSmoothLevelSwitch";
+        /** Identifier for a live loading stalled event **/
+        public static const LIVE_LOADING_STALLED : String = "hlsLiveLoadingStalled";
         /** Identifier for a Stage set event **/
         public static const STAGE_SET : String = "hlsStageSet";
 

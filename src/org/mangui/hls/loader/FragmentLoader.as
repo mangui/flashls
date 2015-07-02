@@ -140,8 +140,10 @@ package org.mangui.hls.loader {
         /**  fragment loading Timer **/
         private function _checkLoading(e : Event) : void {
             switch(_loadingState) {
-                // nothing to load
+                // nothing to load, stop fragment loader.
                 case LOADING_STOPPED:
+                    stop();
+                    break;
                 // nothing to load until level is retrieved
                 case LOADING_WAITING_LEVEL_UPDATE:
                 // loading already in progress
@@ -221,14 +223,13 @@ package org.mangui.hls.loader {
                     /* next consecutive fragment not found:
                     it could happen on live playlist :
                     - if bandwidth available is lower than lowest quality needed bandwidth
-                    - after long pause */
+                    - after long pause
+                    */
                     CONFIG::LOGGING {
-                        Log.warn("loading stalled: restart playback");
+                        Log.warn("loading stalled:stop fragment loading");
                     }
-                    // flush whole buffer before seeking
-                    _streamBuffer.flushBuffer();
-                    /* seek to force a restart of the playback session  */
-                    _hls.stream.seek(-1);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.LIVE_LOADING_STALLED));
+                    stop();
                     break;
                 // if key loading failed
                 case  LOADING_KEY_IO_ERROR:
@@ -251,8 +252,8 @@ package org.mangui.hls.loader {
                     break;
                 case LOADING_COMPLETED:
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.LAST_VOD_FRAGMENT_LOADED));
-                    // stop loading timer as well, as no other fragments can be loaded
-                    _timer.stop();
+                    // stop fragment loader, as no other fragments can be loaded
+                    stop();
                     break;
                 default:
                     CONFIG::LOGGING {
