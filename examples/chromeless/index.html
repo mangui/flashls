@@ -66,6 +66,7 @@ var Y_USEHWDECODER = 3;
 <script type="text/javascript" src="../libs/canvas.js"></script>
 <script type="text/javascript" src="../libs/metrics.js"></script>
 <script type="text/javascript" src="../libs/jsonpack.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
@@ -527,7 +528,7 @@ var flashlsEvents = {
     document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML = trackId;
   },
   id3Updated: function(ID3Data) {
-    var event = {time : new Date() - jsLoadDate, type : "ID3Data"};
+    var event = {time : new Date() - jsLoadDate, type : "ID3Data", id3data: atob(ID3Data)};
     events.video.push(event);
   },
   requestPlaylist: JSLoaderPlaylist.requestPlaylist.bind(JSLoaderPlaylist),
