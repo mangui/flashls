@@ -56,6 +56,8 @@ package org.mangui.hls.event {
         public static const PLAYLIST_DURATION_UPDATED : String = "hlsPlayListDurationUpdated";
         /** Identifier for a ID3 updated event **/
         public static const ID3_UPDATED : String = "hlsID3Updated";
+        /** Identifier for Closed Caption Info event */
+        public static const CLOSED_CAPTION_INFO : String = "hlsClosedCaptionInfo";
         /** Identifier for a fps drop event **/
         public static const FPS_DROP : String = "hlsFPSDrop";
         /** Identifier for a fps drop level capping event **/
@@ -89,6 +91,8 @@ package org.mangui.hls.event {
         public var audioTrack : int;
         /** a complete ID3 payload from PES, as a hex dump **/
         public var ID3Data : String;
+        /** Complete Closed Caption object, encoded as Base64 **/
+        public var ccData : String;
 
         /** Assign event parameter and dispatch. **/
         public function HLSEvent(type : String, parameter : *=null, parameter2 : *=null) {
@@ -133,6 +137,9 @@ package org.mangui.hls.event {
                 case ID3_UPDATED:
                     ID3Data = parameter as String;
                     break;
+                case CLOSED_CAPTION_INFO:
+                    ccData = parameter as String;
+                    break;
                 case FRAGMENT_PLAYING:
                     playMetrics = parameter as HLSPlayMetrics;
                     break;
@@ -140,6 +147,6 @@ package org.mangui.hls.event {
                     break;
             }
             super(type, false, false);
-        };
+        }
     }
 }

@@ -7,10 +7,14 @@ package org.mangui.hls.demux {
     import flash.events.TimerEvent;
     import flash.net.ObjectEncoding;
     import flash.utils.ByteArray;
+    import flash.utils.Dictionary;
+    import flash.utils.setTimeout;
     import flash.utils.getTimer;
     import flash.utils.Timer;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
+
+    import by.blooddy.crypto.Base64;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -33,6 +37,8 @@ package org.mangui.hls.demux {
         private static const SDT_ID : int = 17;
         /** Null Packet PID **/
         private static const NULL_PID : int = 0x1fff;
+        /** Packet ID of the SCTE 128 Captions (is always 21). **/
+        private static const SCTE_ID : int = 21;
         /** has PMT been parsed ? **/
         private var _pmtParsed : Boolean;
         /** any unknown PID found ? **/
@@ -397,6 +403,22 @@ package org.mangui.hls.demux {
             _tags.push(tag);
         };
 
+        private static const NAMES : Array = ['Unspecified',                  // 0
+            'NDR',                          // 1
+            'Partition A',                  // 2
+            'Partition B',                  // 3
+            'Partition C',                  // 4
+            'IDR',                          // 5
+            'SEI',                          // 6
+            'SPS',                          // 7
+            'PPS',                          // 8
+            'AUD',                          // 9
+            'End of Sequence',              // 10
+            'End of Stream',                // 11
+            'Filler Data'// 12
+        ];
+
+
         /** parse AVC PES packet **/
         private function _parseAVCPES(pes : PES) : void {
             var sps : ByteArray;
@@ -404,6 +426,18 @@ package org.mangui.hls.demux {
             var sps_found : Boolean = false;
             var pps_found : Boolean = false;
             var frames : Vector.<VideoFrame> = Nalu.getNALU(pes.data, pes.payload);
+
+            if (frames.length) {
+                var txt : String = "AVC: ";
+                for (var i : int = 0; i < frames.length; i++) {
+                    txt += NAMES[frames[i].type] + ", ";
+                }
+//                ExternalInterface.call("console.error", txt.substr(0, txt.length - 2) + " slices");
+            } else {
+//                ExternalInterface.call("console.error", 'AVC: no NALU slices found');
+            }
+
+
             // If there's no NAL unit, push all data in the previous tag, if any exists
             if (!frames.length) {
                 if (_curNalUnit) {
@@ -433,6 +467,9 @@ package org.mangui.hls.demux {
              * SPS/PPS are used to generate AVC HEADER
              */
 
+            var timestamp:Number = pes.pts;
+            var infos:Dictionary = new Dictionary();
+
             for each (var frame : VideoFrame in frames) {
                 if (frame.type == 9) {
                     if (_curVideoTag) {
@@ -449,6 +486,10 @@ package org.mangui.hls.demux {
                     _curVideoTag = new FLVTag(FLVTag.AVC_NALU, pes.pts, pes.dts, false);
                     // push NAL unit 9 into TAG
                     _curVideoTag.push(Nalu.AUD, 0, 2);
+
+                    // JL udate timestamp
+                    // TODO get real value for 24 (it's only in AudioFrame???)
+                    //timestamp += 1000 / 24;
                 } else if (frame.type == 7) {
                     sps_found = true;
                     sps = new ByteArray();
@@ -470,6 +511,132 @@ package org.mangui.hls.demux {
                     pes.data.position = frame.start;
                     pes.data.readBytes(pps, 0, frame.length);
                     ppsvect.push(pps);
+                } else if (frame.type == 6) {
+                    pes.data.position = frame.start;
+
+                    // skip header
+                    pes.data.position += 3;
+
+                    var country_code : uint = pes.data.readUnsignedByte();
+                    //pes.data.position += 1;
+
+                    var provider_code : uint = pes.data.readUnsignedShort();
+//                    pes.data.position += 2;
+
+                    var user_structure : uint = pes.data.readUnsignedInt();
+//                    pes.data.position += 4;
+
+                    if (country_code == 0xB5 && provider_code == 0x0031 && user_structure == 0x47413934)
+                    {
+                        var user_data_type : uint = pes.data.readUnsignedByte();
+//                        pes.data.position += 1;
+
+                        if (user_data_type == 3)
+                        {
+                            // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
+                            var byte:uint = pes.data.readUnsignedByte();
+
+                            // supposedly:
+                            //   first bit is always 1...
+                            //   second bit is boolean for whether or not to process CCs
+                            //   third bit is always 0
+                            // but i'm not seeing this, so i'll just test for it, and subtract
+                            // but still process evei if they're not set
+                            var count:uint = 31 & byte;
+                            var process:Boolean = !((64 & byte) == 0);
+
+                            var size:uint = 2 + count * 3;
+
+                            // back up to include the first byte we just peeked at
+                            pes.data.position = pes.data.position - 1;
+                            //pes.data.position = pes.data.position + 18;
+
+                            if (process && pes.data.bytesAvailable >= size)
+                            {
+                                //ExternalInterface.call("console.error", "potential 608 packet");
+                                //ExternalInterface.call("console.error", "country: " + country_code);
+                                //ExternalInterface.call("console.error", "provider: " + provider_code);
+                                //ExternalInterface.call("console.error", "structure: " + user_structure);
+                                //ExternalInterface.call("console.error", "SEI headers match CC");
+                                //ExternalInterface.call("console.error", "SCTE: " + byte);
+                                //ExternalInterface.call("console.error", "it's a valid cc_data");                            ExternalInterface.call("console.error", "count: " + count + ", size: " + size);
+
+                                var sei : ByteArray = new ByteArray();
+
+                                sei.writeUnsignedInt(size);
+
+                                pes.data.readBytes(sei, 4, size);
+
+                                //processCCData(sei);
+
+                                //ExternalInterface.call("console.error", "read bytes...");
+
+                                // TODO: what do we do with the CC_Data now?
+
+//                                _base64Encoder.reset();
+//                                _base64Encoder.insertNewLines = false;
+//                                _base64Encoder.encodeBytes(sei);
+
+                                //ExternalInterface.call("console.error", "encoded to base64");
+
+//                                var sei_data:String = _base64Encoder.toString(); //.replace("=", "");
+                                var sei_data:String = Base64.encode(sei);
+
+                                var padding:uint = sei_data.length % 4;
+
+                                for (i=0; i<padding; i++)
+                                {
+                                    sei_data += "=";
+                                }
+
+                                //ExternalInterface.call("console.error", "Base64: " + sei_data);
+
+                                var cc_data:Object = {
+                                    type: "708",
+                                    data: sei_data
+                                };
+
+                                var byteStr:String = "";
+
+                                for (var bi:int=0; bi<sei.length; bi++)
+                                {
+                                    byteStr += sei[bi] + " ";
+                                }
+
+                                //ExternalInterface.call("console.error", "build cc_data w/ " + size + " bytes and " + count + " CCs");
+                                //ExternalInterface.call("console.error", "bytes: " + byteStr);
+                                //ExternalInterface.call("console.error", "base64: " + sei_data);
+
+                                var metaTag:FLVTag = new FLVTag(FLVTag.METADATA, timestamp, timestamp, false);
+
+                                //ExternalInterface.call("console.error", "new FLVTag");
+
+                                var data : ByteArray = new ByteArray();
+                                data.objectEncoding = ObjectEncoding.AMF0;
+                                data.writeObject("onCaptionInfo");
+                                //ExternalInterface.call("console.error", "writing onCaptionInfo");
+                                // TODO: do we need this?
+                                //data.writeByte(0x11);
+                                data.writeObject(cc_data);
+                                metaTag.push(data, 0, data.length);
+                                _tags.push(metaTag);
+
+                                infos[metaTag] = cc_data;
+
+                                //ExternalInterface.call("console.error", "done\n\n");
+                            }
+                            else
+                            {
+                                //ExternalInterface.call("console.error", "not enough bytes!");
+                            }
+
+                        }
+                        else if (user_data_type == 6)
+                        {
+                            // bar - ignore...
+
+                        }
+                    }
                 }
             }
             // if both SPS and PPS have been found, build AVCC and push tag if needed
@@ -532,6 +699,115 @@ package org.mangui.hls.demux {
                     }
                 }
             }
+
+            //ExternalInterface.call("console.error", "about to start");
+
+            var j:Number = 1;
+
+            for each (var tag : FLVTag in _tags)
+            {
+                if (tag.type == FLVTag.METADATA)
+                {
+                    setTimeout(function() : void
+                    {
+                        //ExternalInterface.call("console.error", infos[tag]);
+                        //TPCCDecoder.instance.setCaptionInfo(infos[tag]);
+                    }, 1000 * j);
+
+                    j++;
+                }
+            }
+
+            //ExternalInterface.call("console.error", "done");
+        }
+
+/*
+
+        protected processCCData(data:ByteArray):void
+        {
+            ExternalInterface.call("console.error", data);
+
+            var byte:uint = data.readUnsignedByte();
+            var count:uint = 31 & byte;
+
+            data.readUnsignedByte();
+
+            for (var i:Number=0; i<count; i++)
+            {
+                var byte2:uint = data.readUnsignedByte();
+                var cc_data_1:uint = data.readUnsignedByte();
+                var cc_data_2:uint = data.readUnsignedByte();
+                var field:uint = 0;
+                var ccValid:uint = !((4 & byte2) == 0);
+                var ccType:uint = 3 & byte2;
+
+                if (ccValid)
+                {
+                    if (ccType != 0)
+                    {
+                        if (ccType != 1)
+                        {
+                            ExternalInterface.call("console.error", "skipping remaining tuples because ccType was not 00 or 01");
+                            break;
+                        }
+                        else
+                        {
+                            if (i >= 2)
+                            {
+                                ExternalInterface.call("console.error", "extra field 2 byte-pairs");
+                            }
+                            field = 2;
+                        }
+                    }
+                    else
+                    {
+                        if (i >= 2)
+                        {
+                            ExternalInterface.call("console.error", "extra field 1 byte-pairs");
+                        }
+                        field = 1;
+                    }
+                    this.decodeBytePairFirstTime(new BytePair(field, ccData1, ccData2));
+                }
+
+
+            }
+        }
+*/
+        public static function readBytes(ba:ByteArray):String
+        {
+            var hex:String = "";
+            ba.position = 0;
+            var len:uint = ba.length;
+            trace("readBytes. len: " + len);
+            for (var i:uint = 0; i < len; ++i)
+            {
+                var byte:uint = ba.readUnsignedByte();
+                var byteStr:String = byte.toString(16).substr(-2);
+                if (byteStr.length == 1)
+                {
+                    byteStr = "0" + byteStr;
+                }
+
+                //trace("readBytes. byte " + i + ": " + byte + " -- " + byte.toString(16));
+                hex += byteStr;
+            }
+            return hex;
+        }
+
+        public static function readBytesUInt(ba:ByteArray):Array
+        {
+            var arr:Array = [];
+            ba.position = 0;
+            var len:uint = ba.length;
+            trace("readBytes. len: " + len);
+            for (var i:uint = 0; i < len; ++i)
+            {
+                var byte:uint = ba.readUnsignedByte();
+                //trace("readBytes. byte " + i + ": " + byte + " -- " + byte.toString(16));
+                arr.push(byte);
+            }
+            return arr;
         }
 
         // return true if same Byte Array
@@ -751,6 +1027,10 @@ package org.mangui.hls.demux {
                         }
                     }
                     break;
+                case SCTE_ID:
+                    todo -= _parseSCTE(stt);
+                    break;
+
                 case SDT_ID:
                 case NULL_PID:
                     break;
@@ -791,6 +1071,11 @@ package org.mangui.hls.demux {
             return 13 + pointerField;
         };
 
+        /** Parse the Program Association Table. **/
+        private function _parseSCTE(stt : uint) : int {
+
+            return 0;
+        };
         /** Read the Program Map Table. **/
         private function _parsePMT(stt : uint, data : ByteArray) : int {
             var pointerField : uint = 0;
