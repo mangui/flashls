@@ -109,8 +109,7 @@ package org.mangui.hls.stream {
 
         public function onCaptionInfo(info:Object):void
         {
-//            ExternalInterface.call("console.error", "onCaptionInfo: " + info.type + " " + info.data);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.CLOSED_CAPTION_INFO, info.data));
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.CLOSED_CAPTION_INFO, info));
         }
 
         /** timer function, check/update NetStream state, and append tags if needed **/
@@ -220,10 +219,6 @@ package org.mangui.hls.stream {
                     if (tagBuffer.type == FLVTag.DISCONTINUITY) {
                         super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
                         super.appendBytes(FLVTag.getHeader());
-                    }
-                    else if (tagBuffer.type == FLVTag.METADATA) {
-                        //ExternalInterface.call("console.error", tagBuffer.data.toString());
-                        //super.appendBytes(FLVTag.getHeader());
                     }
                     super.appendBytes(tagBuffer.data);
                 } catch (error : Error) {
