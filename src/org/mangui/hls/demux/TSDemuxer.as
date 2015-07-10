@@ -11,6 +11,7 @@ package org.mangui.hls.demux {
     import flash.utils.Timer;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
+    import by.blooddy.crypto.Base64;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -470,6 +471,187 @@ package org.mangui.hls.demux {
                     pes.data.position = frame.start;
                     pes.data.readBytes(pps, 0, frame.length);
                     ppsvect.push(pps);
+                } else if (frame.type == 6) { // TODO: do we need to support 39 for H.265?
+                    var workerbyte1:uint;
+                    
+                    // We already know it's 6, so skip first byte
+                    pes.data.position = frame.start + 1;
+
+                    // get the SEI payload type
+                    var payload_type : uint = workerbyte1 = pes.data.readUnsignedByte();
+
+                    if (payload_type == 4)
+                    {
+                        var payload_size : uint = pes.data.readUnsignedByte();
+                        
+                        CONFIG::LOGGING {
+                            Log.debug("Picture User Data: payload_type: " + payload_type);
+                            Log.debug("Picture User Data: payload_size: " + payload_size);
+                        }
+
+                        var country_code : uint = pes.data.readUnsignedByte();
+
+                        if (country_code == 181)
+                        {
+                            var provider_code : uint = pes.data.readUnsignedShort();
+
+                            if (provider_code == 49)
+                            {
+                                var user_structure : uint = pes.data.readUnsignedInt();
+
+                                if (user_structure == 0x47413934)
+                                {
+                                    var user_data_type : uint = pes.data.readUnsignedByte();                                    
+
+                                    if (user_data_type == 3)
+                                    {
+                                        // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
+                                        var byte:uint = pes.data.readUnsignedByte();
+                                    
+                                        // get the total number of cc_datas
+                                        var total:uint = 31 & byte;
+                                        var count:uint = 0;
+
+                                        // supposedly a flag to process the cc_datas or not
+                                        // isn't working for me, so i don't use it yet
+                                        var process:Boolean = !((64 & byte) == 0);
+
+                                        var size:uint = total * 3;
+
+                                        // em_data, do we need? It's not used for anything, but it's there, so i need to pull it out
+                                        var otherByte:uint = pes.data.readUnsignedByte();
+
+                                        if (pes.data.bytesAvailable >= size)
+                                        {
+                                            // ByteArray for onCaptionInfo event
+                                            var sei : ByteArray = new ByteArray();
+
+                                            // onCaptionInfo payloads need to know the size of the binary data
+                                            // there's two two bytes we just read, plus the cc_datas, which are 3 bytes each
+                                            sei.writeUnsignedInt(2+3*total);
+
+                                            // write those two bytes
+                                            sei.writeByte(byte);
+                                            sei.writeByte(otherByte);
+
+                                            // write the cc_datas
+                                            pes.data.readBytes(sei, 6, 3*total);
+
+                                            pes.data.position -= total * 3;
+
+                                            // The following code is for debug logging...
+                                            var byte:uint;
+                                            var ccbyte1:int;
+                                            var ccbyte2:int;
+                                            var ccValid:Boolean = false;
+                                            var ccType:int;
+
+                                            var output:String = "";
+                                            for (var i=0; i<total; i++)
+                                            {
+                                                byte = pes.data.readUnsignedByte();
+
+                                                ccValid = !((4 & byte) == 0);
+                                                ccType = (3 & byte);
+
+                                                if (true)
+                                                {
+                                                    if (ccType == 0)
+                                                    {
+                                                        ccbyte1 = 0x7F && pes.data.readUnsignedByte();
+                                                        ccbyte2 = 0x7F && pes.data.readUnsignedByte();
+
+
+                                                        if (ccbyte1 == 0x11 || ccbyte1 == 0x19)
+                                                        {
+                                                            // Extended North American character...
+                                                            // todo: output these characters
+                                                        }
+                                                        if (ccbyte1 >= 0x12 && ccbyte1 <= 0x1A)
+                                                        {
+                                                            // Spanish / French character
+                                                            // todo: output these characters
+                                                        }
+                                                        if (ccbyte1 >= 0x13 && ccbyte1 <= 0x1B)
+                                                        {
+                                                            // Portugese / German / Danish character
+                                                            // todo: output these characters
+                                                        }
+                                                        else if (ccbyte1 >= 0x10 && ccbyte1 <= 0x17)
+                                                        {
+                                                            // channel 0 command
+                                                        }
+                                                        else if (ccbyte1 >= 0x18 && ccbyte1 <= 0x1F)
+                                                        {
+                                                            // channel 1 command
+                                                        }
+                                                        else
+                                                        {
+                                                            output += getCharacterFromByte(ccbyte1) + " " + getCharacterFromByte(ccbyte2) + " | ";
+                                                        }
+                                                    }
+                                                    else if (ccType == 1 || ccType == 2 || ccType == 3)
+                                                    {
+                                                        // just read them out to move foward
+                                                        ccbyte1 = pes.data.readUnsignedByte();
+                                                        ccbyte2 = pes.data.readUnsignedByte();
+                                                    }
+                                                }
+
+                                            }
+
+                                            CONFIG::LOGGING {
+                                                Log.info("the_cc_data: " + output);
+                                            }
+
+                                            // onCaptionInfo expects Base64 data...
+                                            var sei_data:String = Base64.encode(sei);
+
+                                            var cc_data:Object = {
+                                                type: "708",
+                                                data: sei_data
+                                            };
+
+                                            // add a new FLVTag with the onCaptionInfo call
+                                            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+
+                                            var data : ByteArray = new ByteArray();
+                                            data.objectEncoding = ObjectEncoding.AMF0;
+                                            data.writeObject("onCaptionInfo");
+                                            data.objectEncoding = ObjectEncoding.AMF3;
+                                            data.writeByte(0x11);
+                                            data.writeObject(cc_data);
+                                            tag.push(data, 0, data.length);
+
+                                            // insert in correct order
+                                            // if i don't do this, the captions get more mangled than they are...
+                                            if (_tags.length == 0)
+                                            {
+                                                _tags.push(tag);
+                                            }
+                                            else
+                                            {
+                                                for (var t:Number=0; t<_tags.length; t++)
+                                                {
+                                                    if (_tags[t].pts > tag.pts)
+                                                    {
+                                                        _tags.splice(t, 0, tag);
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            CONFIG::LOGGING {
+                                                Log.info("not enough bytes!");                                
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             // if both SPS and PPS have been found, build AVCC and push tag if needed
@@ -532,6 +714,11 @@ package org.mangui.hls.demux {
                     }
                 }
             }
+        }
+
+        public static function getCharacterFromByte(byte:uint):String
+        {
+            return String.fromCharCode(byte);
         }
 
         // return true if same Byte Array
