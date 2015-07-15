@@ -27,11 +27,19 @@ package org.mangui.hls.stream {
      *
      * play state transition :
      * 				FROM								TO								condition
-     *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     play()/play2()/seek() called
+     *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
+     *  HLSPlayStates.IDLE                  HLSPlayStates.PAUSED_BUFFERING      idle => seek() called
      *  HLSPlayStates.PLAYING_BUFFERING  	HLSPlayStates.PLAYING  				buflen > minBufferLength
      *  HLSPlayStates.PAUSED_BUFFERING  	HLSPlayStates.PAUSED  				buflen > minBufferLength
      *  HLSPlayStates.PLAYING  				HLSPlayStates.PLAYING_BUFFERING  	buflen < lowBufferLength
      *  HLSPlayStates.PAUSED  				HLSPlayStates.PAUSED_BUFFERING  	buflen < lowBufferLength
+     *
+     * seek state transition :
+     *
+     *              FROM                                TO                              condition
+     *  HLSSeekStates.IDLE/SEEKED           HLSSeekStates.SEEKING     play()/play2()/seek() called
+     *  HLSSeekStates.SEEKING               HLSSeekStates.SEEKED      upon first FLV tag appending after seek
+     *  HLSSeekStates.SEEKED                HLSSeekStates.IDLE        upon playback complete or stop() called
      */
     public class HLSNetStream extends NetStream {
         /** Reference to the framework controller. **/
@@ -329,16 +337,16 @@ package org.mangui.hls.stream {
             }
             _streamBuffer.seek(position);
             _setSeekState(HLSSeekStates.SEEKING);
-            /* if HLS was in paused state before seeking,
+            /* if HLS playback state was in PAUSED or IDLE state before seeking,
              * switch to paused buffering state
              * otherwise, switch to playing buffering state
              */
             switch(_playbackState) {
+                case HLSPlayStates.IDLE:
                 case HLSPlayStates.PAUSED:
                 case HLSPlayStates.PAUSED_BUFFERING:
                     _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                     break;
-                case HLSPlayStates.IDLE:
                 case HLSPlayStates.PLAYING:
                 case HLSPlayStates.PLAYING_BUFFERING:
                     _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
