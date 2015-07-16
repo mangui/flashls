@@ -96,9 +96,9 @@ package org.mangui.hls.loader {
                 audioLevel.targetduration = Manifest.getTargetDuration(string);
                 // if stream is live, arm a timer to periodically reload playlist
                 if (!Manifest.hasEndlist(string)) {
-                    var timeout : Number = Math.max(100, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer());
+                    var timeout : int = Math.max(100, _reloadPlaylistTimer + 1000 * audioLevel.averageduration - getTimer());
                     CONFIG::LOGGING {
-                        Log.debug("Alt Audio Level Live Playlist parsing finished: reload in " + timeout.toFixed(0) + " ms");
+                        Log.debug("Alt Audio Level Live Playlist parsing finished: reload in " + timeout + " ms");
                     }
                     _timeoutID = setTimeout(_loadAudioLevelPlaylist, timeout);
                 }
