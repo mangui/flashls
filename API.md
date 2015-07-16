@@ -162,9 +162,9 @@ get : return playback session stats
   manualLevelMax : max quality level experienced by End User (in manual mode)
   manualLevelLast : last quality level experienced by End User (in manual mode)
   manualLevelSwitch : nb of quality level switch in manual mode
-  fragMinKbps : min fragment load bitrate
-  fragMaxKbps : max fragment load bitrate
-  fragAvgKbps : avg fragment load bitrate
+  fragMinKbps : min fragment load bandwidth
+  fragMaxKbps : max fragment load bandwidth
+  fragAvgKbps : avg fragment load bandwidth
   fragMinLatency : min fragment load latency
   fragMaxLatency : max fragment load latency
   fragAvgLatency : avg fragment load latency

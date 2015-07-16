@@ -58,18 +58,18 @@
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
             var metrics : HLSLoadMetrics = event.loadMetrics;
             var latency : int = metrics.loading_begin_time-metrics.loading_request_time;
-            var bitrate : int = 8*metrics.size/(metrics.parsing_end_time-metrics.loading_begin_time);
+            var bandwidth : int = metrics.bandwidth/1000;
             if(_stats.fragBuffered) {
               _stats.fragMinLatency = Math.min(_stats.fragMinLatency,latency);
               _stats.fragMaxLatency = Math.max(_stats.fragMaxLatency,latency);
-              _stats.fragMinKbps = Math.min(_stats.fragMinKbps,bitrate);
-              _stats.fragMaxKbps = Math.max(_stats.fragMaxKbps,bitrate);
+              _stats.fragMinKbps = Math.min(_stats.fragMinKbps,bandwidth);
+              _stats.fragMaxKbps = Math.max(_stats.fragMaxKbps,bandwidth);
               _stats.autoLevelCappingMin = Math.min(_stats.autoLevelCappingMin,_hls.autoLevelCapping);
               _stats.autoLevelCappingMax = Math.max(_stats.autoLevelCappingMax,_hls.autoLevelCapping);
               _stats.fragBuffered++;
             } else {
                   _stats.fragMinLatency = _stats.fragMaxLatency = latency;
-                  _stats.fragMinKbps = _stats.fragMaxKbps = bitrate;
+                  _stats.fragMinKbps = _stats.fragMaxKbps = bandwidth;
                   _stats.fragBuffered = 1;
                   _stats.fragBufferedBytes = 0;
                   _stats.autoLevelCappingMin = _stats.autoLevelCappingMax = _hls.autoLevelCapping;
@@ -77,7 +77,7 @@
                   _sumKbps=0;
             }
             _sumLatency+=latency;
-            _sumKbps+=bitrate;
+            _sumKbps+=bandwidth;
             _stats.fragBufferedBytes+=metrics.size;
             _stats.fragAvgLatency = _sumLatency/_stats.fragBuffered;
             _stats.fragAvgKbps = _sumKbps/_stats.fragBuffered;
