@@ -65,7 +65,7 @@ package org.mangui.hls.controller {
             var metrics : HLSLoadMetrics = event.loadMetrics;
             // only monitor main fragment metrics for buffer threshold computing
             if(metrics.type == HLSLoaderTypes.FRAGMENT_MAIN) {
-                var cur_bw : Number = metrics.bandwidth;
+                var cur_bw : int = metrics.bandwidth;
                 _bw[_nbSamples % MAX_SAMPLES] = cur_bw;
                 _nbSamples++;
 
