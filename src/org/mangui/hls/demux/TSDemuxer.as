@@ -429,6 +429,14 @@ package org.mangui.hls.demux {
                 return;
             }
 
+
+//            CONFIG::LOGGING {
+//                var ba2 : ByteArray = new ByteArray();
+//                pes.data.position = pes.payload;
+//                pes.data.readBytes(ba2);
+//                Log.info("PES holding SEI data :" + Hex.fromArray(ba2));
+//            }
+
             /* first loop : look for AUD/SPS/PPS NAL unit :
              * AUD (Access Unit Delimiter) are used to detect switch to new video tag
              * SPS/PPS are used to generate AVC HEADER
@@ -472,6 +480,14 @@ package org.mangui.hls.demux {
                     pes.data.readBytes(pps, 0, frame.length);
                     ppsvect.push(pps);
                 } else if (frame.type == 6) { // TODO: do we need to support 39 for H.265?
+
+//                    CONFIG::LOGGING {
+//                        ba2 = new ByteArray();
+//                        pes.data.position = frame.start;
+//                        pes.data.readBytes(ba2, 0, frame.length);
+//                        Log.info("SEI data :" + Hex.fromArray(ba2));
+//                    }
+
                     var workerbyte1:uint;
                     
                     // We already know it's 6, so skip first byte
@@ -482,7 +498,12 @@ package org.mangui.hls.demux {
 
                     if (payload_type == 4)
                     {
-                        var payload_size : uint = pes.data.readUnsignedByte();
+                        var payload_size : uint = 0;
+
+                        do {
+                            payload_size = pes.data.readUnsignedByte();
+                        }
+                        while(payload_size === 255)
                         
                         CONFIG::LOGGING {
                             Log.debug("Picture User Data: payload_type: " + payload_type);
@@ -491,7 +512,7 @@ package org.mangui.hls.demux {
 
                         var country_code : uint = pes.data.readUnsignedByte();
 
-                        if (country_code == 181)
+                        if (country_code == 181) 
                         {
                             var provider_code : uint = pes.data.readUnsignedShort();
 
@@ -540,68 +561,94 @@ package org.mangui.hls.demux {
                                             pes.data.position -= total * 3;
 
                                             // The following code is for debug logging...
-                                            var byte:uint;
+                                            //var byte:uint;
                                             var ccbyte1:int;
                                             var ccbyte2:int;
                                             var ccValid:Boolean = false;
                                             var ccType:int;
+                                            var assembling:Boolean = false;
 
                                             var output:String = "";
-                                            for (var i=0; i<total; i++)
+                                            for (var i:int=0; i<total; i++)
                                             {
                                                 byte = pes.data.readUnsignedByte();
 
                                                 ccValid = !((4 & byte) == 0);
                                                 ccType = (3 & byte);
 
-                                                if (true)
-                                                {
-                                                    if (ccType == 0)
-                                                    {
-                                                        ccbyte1 = 0x7F && pes.data.readUnsignedByte();
-                                                        ccbyte2 = 0x7F && pes.data.readUnsignedByte();
+                                                ccbyte1 = 0x7F & pes.data.readUnsignedByte();
+                                                ccbyte2 = 0x7F & pes.data.readUnsignedByte();                                              
 
+                                                output += byte.toString(16) + " ";
+                                                output += (ccbyte1 < 0x10 ? "0" : "") + ccbyte1.toString(16) + " ";
+                                                output += (ccbyte2 < 0x10 ? "0" : "") + ccbyte2.toString(16) + " ";
+                                                output += " | type " + ccType + ": ";
+
+                                                if (ccValid)
+                                                {
+                                                    if (ccType == 0 || ccType == 1)
+                                                    {
 
                                                         if (ccbyte1 == 0x11 || ccbyte1 == 0x19)
                                                         {
                                                             // Extended North American character...
                                                             // todo: output these characters
+                                                            output += "Special North American Character";
                                                         }
-                                                        if (ccbyte1 >= 0x12 && ccbyte1 <= 0x1A)
+                                                        else if (ccbyte1 == 0x12 && ccbyte1 == 0x1A)
                                                         {
                                                             // Spanish / French character
                                                             // todo: output these characters
+                                                            output += "Spanish / French Extended Character";
                                                         }
-                                                        if (ccbyte1 >= 0x13 && ccbyte1 <= 0x1B)
+                                                        else if (ccbyte1 == 0x13 && ccbyte1 == 0x1B)
                                                         {
                                                             // Portugese / German / Danish character
                                                             // todo: output these characters
+                                                            output += "Port/Germ/Danish Extended Character";
                                                         }
-                                                        else if (ccbyte1 >= 0x10 && ccbyte1 <= 0x17)
+                                                        else if (ccbyte1 == 0x14 || ccbyte1 == 0x1C || ccbyte1 == 0x15 || ccbyte1 == 0x1D)
                                                         {
-                                                            // channel 0 command
+                                                            // command...
+                                                            output += "Command A";
                                                         }
-                                                        else if (ccbyte1 >= 0x18 && ccbyte1 <= 0x1F)
+                                                        else if (ccbyte1 == 0x17 || ccbyte1 == 0x1F)
                                                         {
-                                                            // channel 1 command
+                                                            // another command
+                                                            output += "Command B";
                                                         }
-                                                        else
+                                                        else if (ccbyte1 >= 32 || ccbyte2 > 32)
                                                         {
-                                                            output += getCharacterFromByte(ccbyte1) + " " + getCharacterFromByte(ccbyte2) + " | ";
+                                                            output += getCharacterFromByte(ccbyte1) + " " + getCharacterFromByte(ccbyte2);
                                                         }
                                                     }
-                                                    else if (ccType == 1 || ccType == 2 || ccType == 3)
+                                                    // TODO: assemble DTVCC packets.  not sure if needed...
+                                                    else if (ccType == 3)
                                                     {
-                                                        // just read them out to move foward
-                                                        ccbyte1 = pes.data.readUnsignedByte();
-                                                        ccbyte2 = pes.data.readUnsignedByte();
+                                                        if (assembling)
+                                                        {
+                                                            // close previous packet
+                                                            assembling = false;
+                                                        }
+                                                        // Start assembling packet
+                                                        assembling = true;
+                                                    }
+                                                    else if (ccType == 2)
+                                                    {
+                                                        if (ccValid == false && assembling)
+                                                        {
+                                                            // close previous packet
+                                                            assembling = false;
+                                                        }
+                                                        // append bytes to packet
                                                     }
                                                 }
 
+                                                output += "\n";
                                             }
 
                                             CONFIG::LOGGING {
-                                                Log.info("the_cc_data: " + output);
+                                                Log.info("cc_data: (" + pes.dts + ")\n" + output + "\n\n");
                                             }
 
                                             // onCaptionInfo expects Base64 data...
@@ -613,7 +660,7 @@ package org.mangui.hls.demux {
                                             };
 
                                             // add a new FLVTag with the onCaptionInfo call
-                                            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+                                            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.dts, false);
 
                                             var data : ByteArray = new ByteArray();
                                             data.objectEncoding = ObjectEncoding.AMF0;
@@ -623,22 +670,25 @@ package org.mangui.hls.demux {
                                             data.writeObject(cc_data);
                                             tag.push(data, 0, data.length);
 
+                                            //_tags.push(tag);
+
                                             // insert in correct order
                                             // if i don't do this, the captions get more mangled than they are...
-                                            if (_tags.length == 0)
+                                            var inserted:Boolean = false;
+
+                                            for (var t:Number=0; t<_tags.length; t++)
+//                                                for (var t:Number=0; t<_tags.length; t++)
+                                            {
+                                                if (_tags[t].pts > tag.pts)
+                                                {
+                                                    _tags.splice(t, 0, tag);
+                                                    inserted = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!inserted)
                                             {
                                                 _tags.push(tag);
-                                            }
-                                            else
-                                            {
-                                                for (var t:Number=0; t<_tags.length; t++)
-                                                {
-                                                    if (_tags[t].pts > tag.pts)
-                                                    {
-                                                        _tags.splice(t, 0, tag);
-                                                        break;
-                                                    }
-                                                }
                                             }
                                         }
                                         else
