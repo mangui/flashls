@@ -60,8 +60,10 @@
             var latency : int = metrics.loading_begin_time-metrics.loading_request_time;
             var bandwidth : int = metrics.bandwidth/1000;
             if(_stats.fragBuffered) {
+              _stats.fragLastLatency = latency;
               _stats.fragMinLatency = Math.min(_stats.fragMinLatency,latency);
               _stats.fragMaxLatency = Math.max(_stats.fragMaxLatency,latency);
+              _stats.fragLastKbps = bandwidth;
               _stats.fragMinKbps = Math.min(_stats.fragMinKbps,bandwidth);
               _stats.fragMaxKbps = Math.max(_stats.fragMaxKbps,bandwidth);
               _stats.autoLevelCappingMin = Math.min(_stats.autoLevelCappingMin,_hls.autoLevelCapping);

@@ -19,9 +19,11 @@ package org.mangui.hls.model {
         public var manualLevelMax : int;
         public var manualLevelLast : int;
         public var manualLevelSwitch : int;
+        public var fragLastKbps : int;
         public var fragMinKbps : int;
         public var fragMaxKbps : int;
         public var fragAvgKbps : int;
+        public var fragLastLatency : int;
         public var fragMinLatency : int;
         public var fragMaxLatency : int;
         public var fragAvgLatency : int;
