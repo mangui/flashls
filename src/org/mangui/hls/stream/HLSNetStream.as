@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.stream {
+    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.controller.BufferThresholdController;
-    import org.mangui.hls.event.HLSPlayMetrics;
+    import org.mangui.hls.demux.ID3Tag;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.constant.HLSSeekStates;
-    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
@@ -80,19 +81,27 @@ package org.mangui.hls.stream {
             super.client = _client;
         }
 
-        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, ... tags) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
             _currentLevel = level;
-            var tag_list : Array = new Array();
-            for (var i : uint = 0; i < tags.length; i++) {
-                tag_list.push(tags[i]);
+            var customTagArray : Array = new Array();
+            var id3TagArray : Array = new Array();
+            for (var i : uint = 0; i < customTagNb; i++) {
+                customTagArray.push(tags[i]);
                 CONFIG::LOGGING {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, tag_list)));
+            for (i = customTagNb; i < tags.length; i+=4) {
+                var id3Tag : ID3Tag = new ID3Tag(tags[i],tags[i+1],tags[i+2],tags[i+3]);
+                id3TagArray.push(id3Tag);
+                CONFIG::LOGGING {
+                    Log.debug("id3 tag:" + id3Tag);
+                }
+            }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
         }
 
 

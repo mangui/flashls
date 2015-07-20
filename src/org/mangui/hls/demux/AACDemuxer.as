@@ -30,6 +30,7 @@ package org.mangui.hls.demux {
         private var _callback_audioselect : Function;
         private var _callback_progress : Function;
         private var _callback_complete : Function;
+        private var _callback_id3tag : Function;
 
         /** append new data */
         public function append(data : ByteArray) : void {
@@ -90,14 +91,18 @@ package org.mangui.hls.demux {
                 Log.debug("AAC: all tags extracted, callback demux");
             }
             _data = null;
+            if(id3.tags.length) {
+                _callback_id3tag(id3.tags);
+            }
             _callback_progress(audioTags);
             _callback_complete();
         }
 
-        public function AACDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function) : void {
+        public function AACDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_id3tag : Function) : void {
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
+            _callback_id3tag = callback_id3tag;
         };
 
         public static function probe(data : ByteArray) : Boolean {

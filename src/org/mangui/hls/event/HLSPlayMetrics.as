@@ -14,8 +14,9 @@ package org.mangui.hls.event {
         public var video_height : int;
         public var auto_level : Boolean;
         public var tag_list : Array;
+        public var id3tag_list : Array;
 
-        public function HLSPlayMetrics(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, video_width : int, video_height : int, auto_level : Boolean, tag_list : Array) {
+        public function HLSPlayMetrics(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, video_width : int, video_height : int, auto_level : Boolean, tag_list : Array, id3tag_list : Array) {
             this.level = level;
             this.seqnum = seqnum;
             this.continuity_counter = cc;
@@ -26,6 +27,7 @@ package org.mangui.hls.event {
             this.video_height = video_height;
             this.auto_level = auto_level;
             this.tag_list = tag_list;
+            this.id3tag_list = id3tag_list;
         }
     }
 }

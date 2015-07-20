@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.model {
-    import org.mangui.hls.utils.PTS;
-    import org.mangui.hls.utils.AES;
+    import org.mangui.hls.demux.ID3Tag;
     import org.mangui.hls.flv.FLVTag;
+    import org.mangui.hls.utils.AES;
+    import org.mangui.hls.utils.PTS;
 
     import flash.utils.ByteArray;
 
@@ -45,6 +46,8 @@ package org.mangui.hls.model {
         public var video_height : int;
         /* is fragment loaded selected by autolevel algo */
         public var auto_level : Boolean;
+        /* ID3 tags linked to this fragment */
+        public var id3_tags : Vector.<ID3Tag>;
 
         /**  tag duration */
         private var audio_tag_duration : Number;

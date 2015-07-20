@@ -6,12 +6,18 @@ package org.mangui.hls.demux {
     public class ID3Tag {
         public var id : String;
         public var flag : int;
-        public var value : *;
+        public var base64 : Boolean;
+        public var data : String;
 
-        public function ID3Tag(id : String, flag : int, value : *) {
+        public function ID3Tag(id : String, flag : int, base64: Boolean, data : String) {
             this.id = id;
             this.flag = flag;
-            this.value = value;
+            this.base64 = base64;
+            this.data = data;
+        }
+
+        public function toString(): String {
+            return  "id/flag/base64/data:" + id + '/' + flag + '/' + base64 + '/' + data;
         }
     }
 }
