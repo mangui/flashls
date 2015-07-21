@@ -560,97 +560,6 @@ package org.mangui.hls.demux {
 
                                             pes.data.position -= total * 3;
 
-                                            // The following code is for debug logging...
-                                            //var byte:uint;
-                                            var ccbyte1:int;
-                                            var ccbyte2:int;
-                                            var ccValid:Boolean = false;
-                                            var ccType:int;
-                                            var assembling:Boolean = false;
-
-                                            var output:String = "";
-                                            for (var i:int=0; i<total; i++)
-                                            {
-                                                byte = pes.data.readUnsignedByte();
-
-                                                ccValid = !((4 & byte) == 0);
-                                                ccType = (3 & byte);
-
-                                                ccbyte1 = 0x7F & pes.data.readUnsignedByte();
-                                                ccbyte2 = 0x7F & pes.data.readUnsignedByte();                                              
-
-                                                output += byte.toString(16) + " ";
-                                                output += (ccbyte1 < 0x10 ? "0" : "") + ccbyte1.toString(16) + " ";
-                                                output += (ccbyte2 < 0x10 ? "0" : "") + ccbyte2.toString(16) + " ";
-                                                output += " | type " + ccType + ": ";
-
-                                                if (ccValid)
-                                                {
-                                                    if (ccType == 0 || ccType == 1)
-                                                    {
-
-                                                        if (ccbyte1 == 0x11 || ccbyte1 == 0x19)
-                                                        {
-                                                            // Extended North American character...
-                                                            // todo: output these characters
-                                                            output += "Special North American Character";
-                                                        }
-                                                        else if (ccbyte1 == 0x12 && ccbyte1 == 0x1A)
-                                                        {
-                                                            // Spanish / French character
-                                                            // todo: output these characters
-                                                            output += "Spanish / French Extended Character";
-                                                        }
-                                                        else if (ccbyte1 == 0x13 && ccbyte1 == 0x1B)
-                                                        {
-                                                            // Portugese / German / Danish character
-                                                            // todo: output these characters
-                                                            output += "Port/Germ/Danish Extended Character";
-                                                        }
-                                                        else if (ccbyte1 == 0x14 || ccbyte1 == 0x1C || ccbyte1 == 0x15 || ccbyte1 == 0x1D)
-                                                        {
-                                                            // command...
-                                                            output += "Command A";
-                                                        }
-                                                        else if (ccbyte1 == 0x17 || ccbyte1 == 0x1F)
-                                                        {
-                                                            // another command
-                                                            output += "Command B";
-                                                        }
-                                                        else if (ccbyte1 >= 32 || ccbyte2 > 32)
-                                                        {
-                                                            output += getCharacterFromByte(ccbyte1) + " " + getCharacterFromByte(ccbyte2);
-                                                        }
-                                                    }
-                                                    // TODO: assemble DTVCC packets.  not sure if needed...
-                                                    else if (ccType == 3)
-                                                    {
-                                                        if (assembling)
-                                                        {
-                                                            // close previous packet
-                                                            assembling = false;
-                                                        }
-                                                        // Start assembling packet
-                                                        assembling = true;
-                                                    }
-                                                    else if (ccType == 2)
-                                                    {
-                                                        if (ccValid == false && assembling)
-                                                        {
-                                                            // close previous packet
-                                                            assembling = false;
-                                                        }
-                                                        // append bytes to packet
-                                                    }
-                                                }
-
-                                                output += "\n";
-                                            }
-
-                                            CONFIG::LOGGING {
-                                                Log.info("cc_data: (" + pes.dts + ")\n" + output + "\n\n");
-                                            }
-
                                             // onCaptionInfo expects Base64 data...
                                             var sei_data:String = Base64.encode(sei);
 
@@ -662,6 +571,8 @@ package org.mangui.hls.demux {
                                             // add a new FLVTag with the onCaptionInfo call
                                             var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.dts, false);
 
+                                            tag.isCC = true;
+
                                             var data : ByteArray = new ByteArray();
                                             data.objectEncoding = ObjectEncoding.AMF0;
                                             data.writeObject("onCaptionInfo");
@@ -670,26 +581,7 @@ package org.mangui.hls.demux {
                                             data.writeObject(cc_data);
                                             tag.push(data, 0, data.length);
 
-                                            //_tags.push(tag);
-
-                                            // insert in correct order
-                                            // if i don't do this, the captions get more mangled than they are...
-                                            var inserted:Boolean = false;
-
-                                            for (var t:Number=0; t<_tags.length; t++)
-//                                                for (var t:Number=0; t<_tags.length; t++)
-                                            {
-                                                if (_tags[t].pts > tag.pts)
-                                                {
-                                                    _tags.splice(t, 0, tag);
-                                                    inserted = true;
-                                                    break;
-                                                }
-                                            }
-                                            if (!inserted)
-                                            {
-                                                _tags.push(tag);
-                                            }
+                                            _tags.push(tag);
                                         }
                                         else
                                         {

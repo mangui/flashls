@@ -227,10 +227,12 @@ package org.mangui.hls.stream {
                 if(headerAppended) {
                     _headerTags = _headerTags.sort(compareTags);
                 }
-                if(metaAppended) {
-                    _metaTags = _metaTags.sort(compareTags);
-                }
             }
+
+            if(metaAppended) {
+                _metaTags = _metaTags.sort(compareTagsPTS);
+            }
+
 
             if (_hls.seekState == HLSSeekStates.SEEKING) {
                 /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
@@ -317,6 +319,17 @@ package org.mangui.hls.stream {
             }
         }
 
+        private function compareTagsPTS(x : FLVData, y : FLVData) : Number {
+            if (x.continuity != y.continuity) {
+                return (x.continuity - y.continuity);
+            } else {
+                if (x.tag.pts != y.tag.pts) {
+                    return (x.tag.pts - y.tag.pts);
+                } else {
+                    return (gettagrank(x.tag) - gettagrank(y.tag));
+                }
+            }
+        }
         /*
             helper function used to sort tags, lower values have highest priority
         */

@@ -35,6 +35,8 @@ package org.mangui.hls.flv {
         /** Type of FLV tag.**/
         public var type : int;
 
+        public var isCC : Boolean = false;
+
         /** Get the FLV file header. **/
         public static function getHeader() : ByteArray {
             var flv : ByteArray = new ByteArray();
