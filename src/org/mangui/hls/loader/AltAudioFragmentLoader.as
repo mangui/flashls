@@ -636,7 +636,7 @@ package org.mangui.hls.loader {
             fragData.appendTags(tags);
 
             if (fragData.metadata_tag_injected == false) {
-                fragData.tags.unshift(_fragCurrent.metadataTag);
+                fragData.tags.unshift(_fragCurrent.getMetadataTag());
                 if (_hasDiscontinuity) {
                   fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.dts_min, fragData.dts_min, false));
                 }
@@ -677,7 +677,7 @@ package org.mangui.hls.loader {
                 _loadingState = LOADING_IDLE;
                 if (fragData.tags.length) {
                     if (fragData.metadata_tag_injected == false) {
-                        fragData.tags.unshift(_fragCurrent.metadataTag);
+                        fragData.tags.unshift(_fragCurrent.getMetadataTag());
                         if (_hasDiscontinuity) {
                             fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.dts_min, fragData.dts_min, false));
                         }

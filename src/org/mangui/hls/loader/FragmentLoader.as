@@ -377,7 +377,7 @@ package org.mangui.hls.loader {
                             Log.warn("max fragment load retry reached, skip fragment and load next one");
                         }
                         var tags : Vector.<FLVTag> = tags = new Vector.<FLVTag>();
-                        tags.push(_fragCurrent.skippedTag);
+                        tags.push(_fragCurrent.getSkippedTag());
                         // send skipped FLV tag to StreamBuffer
                         _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,_fragCurrent.level,_fragCurrent.seqnum ,tags,_fragCurrent.data.pts_start_computed, _fragCurrent.data.pts_start_computed + 1000*_fragCurrent.duration, _fragCurrent.continuity, _fragCurrent.start_time);
                         _fragRetryCount = 0;
@@ -849,7 +849,7 @@ package org.mangui.hls.loader {
                         }
                     }
                     if (fragData.metadata_tag_injected == false) {
-                        fragData.tags.unshift(_fragCurrent.metadataTag);
+                        fragData.tags.unshift(_fragCurrent.getMetadataTag());
                         if (_hasDiscontinuity) {
                             fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.dts_min, fragData.dts_min, false));
                         }
@@ -935,7 +935,7 @@ package org.mangui.hls.loader {
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.PLAYLIST_DURATION_UPDATED, _levels[_hls.loadLevel].duration));
                     if (fragData.tags.length) {
                         if (fragData.metadata_tag_injected == false) {
-                            fragData.tags.unshift(_fragCurrent.metadataTag);
+                            fragData.tags.unshift(_fragCurrent.getMetadataTag());
                             if (_hasDiscontinuity) {
                                 fragData.tags.unshift(new FLVTag(FLVTag.DISCONTINUITY, fragData.dts_min, fragData.dts_min, false));
                             }
