@@ -451,15 +451,12 @@ package org.mangui.hls.stream {
                 }
             } else {
                 /* seek position not reached yet.
-                 * check if buffer max position is greater than requested seek position
+                 * check if buffer max absolute position is greater than requested seek position
                  * if it is the case, then we can start injecting tags in NetStream
+                 * max_pos is a relative max, here we need to compare against absolute max position, so
+                 * we need to add _playlistSlidingMain to convert from relative to absolute
                  */
-
-//                CONFIG::LOGGING {
-//                    Log.info("min_audio/max_audio/min_video/max_video:" + min_audio_pos.toFixed(2) + "/" + max_audio_pos.toFixed(2) + "/" + min_video_pos.toFixed(2) + "/" + max_video_pos.toFixed(2));
-//                }
-
-                if (max_pos >= _seekPositionRequested) {
+                if ((max_pos+_playlistSlidingMain) >= _seekPositionRequested) {
                     // inject enough tags to reach seek position
                     duration = _seekPositionRequested + MAX_NETSTREAM_BUFFER_SIZE - min_min_pos;
                 }
