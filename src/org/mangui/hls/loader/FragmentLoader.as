@@ -336,15 +336,12 @@ package org.mangui.hls.loader {
         private function _fraghandleIOError(message : String) : void {
             /* usually, errors happen in two situations :
             - bad networks  : in that case, the second or third reload of URL should fix the issue
+                               if loading retry still fails after HLSSettings.fragmentLoadMaxRetry, and
+                               if (a) redundant stream(s) is/are available for that level, then try to switch
+                               to that redundant stream instead.
             - live playlist : when we are trying to load an out of bound fragments : for example,
             the playlist on webserver is from SN [51-61]
             the one in memory is from SN [50-60], and we are trying to load SN50.
-            we will keep getting 404 error if the HLS server does not follow HLS spec,
-            which states that the server should keep SN50 during EXT-X-TARGETDURATION period
-            after it is removed from playlist
-            in the meantime, ManifestLoader will keep refreshing the playlist in the background ...
-            so if the error still happens after EXT-X-TARGETDURATION, it means that there is something wrong
-            we need to report it.
              */
             CONFIG::LOGGING {
                 Log.error("I/O Error while loading fragment:" + message);
@@ -359,11 +356,21 @@ package org.mangui.hls.loader {
                 _fragRetryCount++;
                 _fragRetryTimeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _fragRetryTimeout);
             } else {
-                if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
+                var level : Level = _levels[_fragCurrent.level];
+                // if we have redundant streams left for that level, switch to it
+                if(level.redundantStreamId < level.redundantStreamsNb) {
+                    CONFIG::LOGGING {
+                        Log.warn("max load retry reached, switch to redundant stream");
+                    }
+                    level.redundantStreamId++;
+                    _fragRetryCount = 0;
+                    _fragRetryTimeout = 1000;
+                    _loadingState = LOADING_IDLE;
+                } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
                     /* check if loaded fragment is not the last one of a live playlist.
                         if it is the case, don't skip to next, as there is no next fragment :-)
                     */
-                    if(_hls.type == HLSTypes.LIVE && _fragCurrent.seqnum == _levels[_fragCurrent.level].end_seqnum) {
+                    if(_hls.type == HLSTypes.LIVE && _fragCurrent.seqnum == level.end_seqnum) {
                         _loadingState = LOADING_FRAGMENT_IO_ERROR;
                         _fragLoadErrorDate = getTimer() + _fragRetryTimeout;
                         CONFIG::LOGGING {

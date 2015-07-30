@@ -32,7 +32,7 @@ package org.mangui.hls.model {
         /** URL of this bitrate level (for M3U8). (it is a vector so that we can store redundant streams in same level) **/
         public var urls : Vector.<String>;
         // index of used url (non 0 if we switch to a redundant stream)
-        public var urlIdx : int = 0;
+        private var _redundantStreamId : int = 0;
         /** Level fragments **/
         public var fragments : Vector.<Fragment>;
         /** min sequence number from M3U8. **/
@@ -54,7 +54,27 @@ package org.mangui.hls.model {
         };
 
         public function get url() : String {
-            return urls[urlIdx];
+            return urls[_redundantStreamId];
+        }
+
+        public function get redundantStreamsNb() : int {
+            if(urls && urls.length) {
+                return urls.length-1;
+            } else {
+                return 0;
+            }
+        }
+
+        public function get redundantStreamId() : int {
+            return _redundantStreamId;
+        }
+
+        // when switching to a redundant stream, reset fragments. they will be retrieved from new playlist
+        public function set redundantStreamId(id) : void {
+            if(id < urls.length && id != _redundantStreamId) {
+                _redundantStreamId = id;
+                fragments = new Vector.<Fragment>();
+            }
         }
 
         /** Return the Fragment before a given time position. **/
