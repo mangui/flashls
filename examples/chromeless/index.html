@@ -106,9 +106,10 @@ header {
       <button type="button" class="innerControlsRight" onclick="loadStream($('#streamURL').val());">load</button>
       <br>
       <div id="StreamPermalink" class="innerControls"></div>
+      <span id="currentResolution" style="float:left;font-size: 8pt;">-</span>
     </div>
 
-    <div class="center" >
+    <div class="center" id="video">
         <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
          codebase="" id="moviename" width="720" height="480">
         <param name="movie"  value="../../bin/debug/flashlsChromeless.swf?inline=1" />
@@ -420,18 +421,16 @@ var flashlsEvents = {
   videoSize: function(width, height) {
     var event = {time : new Date() - jsLoadDate, type : "resize", name : width + 'x' + height};
     events.video.push(event);
-    var state = api.getCapLeveltoStage();
-    if(!state) {
-      var ratio = width / height;
-      if (height > window.innerHeight-30) {
-        height = window.innerHeight-30;
-        width = Math.round(height * ratio);
-      }
-      api.flashObject.width = width;
-      api.flashObject.height = height;
-      var canvas = $('#buffered_c')[0];
-      canvas.width = width;
+    $("#currentResolution").html("video resolution:" + width + 'x' + height);
+    var ratio = width / height;
+    if (width > $('#video').innerWidth()-30) {
+        width = $('#video').innerWidth()-30;
+        height = Math.round(width / ratio);
     }
+   api.flashObject.width = width;
+   api.flashObject.height = height;
+   var canvas = $('#buffered_c')[0];
+   canvas.width = width;
   },
   complete: function() {
     appendLog("onComplete(), playback completed");
