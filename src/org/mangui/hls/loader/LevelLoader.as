@@ -98,13 +98,12 @@ package org.mangui.hls.loader {
                 _retryCount++;
                 return;
             } else {
-                var level : Level = _levels[_loadLevel];
                 // if we have redundant streams left for that level, switch to it
-                if(level.redundantStreamId < level.redundantStreamsNb) {
+                if(_loadLevel < _levels.length && _levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {
                     CONFIG::LOGGING {
                         Log.warn("max load retry reached, switch to redundant stream");
                     }
-                    level.redundantStreamId++;
+                    _levels[_loadLevel].redundantStreamId++;
                     _timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
                     _retryTimeout = 1000;
                     _retryCount = 0;
