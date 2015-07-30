@@ -350,13 +350,17 @@ package org.mangui.hls.playlist {
                     }
                 } else if (level_found == true) {
                     if(!(level.bitrate in bitrateDictionary)) {
-                        level.url = _extractURL(line, base);
+                        level.urls = new Vector.<String>();
+                        level.urls.push(_extractURL(line, base));
                         level.manifest_index = levels.length;
                         levels.push(level);
-                        bitrateDictionary[level.bitrate] = true;
+                        bitrateDictionary[level.bitrate] = level;
                     } else {
+                        level = bitrateDictionary[level.bitrate];
+                        var redundantURL:String = _extractURL(line, base);
+                        level.urls.push(redundantURL);
                        CONFIG::LOGGING {
-                            Log.debug("discard failover level with bitrate " + level.bitrate);
+                            Log.debug("found failover level with url " + redundantURL);
                         }
                     }
                     level_found = false;

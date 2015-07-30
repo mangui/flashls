@@ -29,8 +29,10 @@ package org.mangui.hls.model {
         public var width : int;
         /** video height (from playlist) **/
         public var height : int;
-        /** URL of this bitrate level (for M3U8). **/
-        public var url : String;
+        /** URL of this bitrate level (for M3U8). (it is a vector so that we can store redundant streams in same level) **/
+        public var urls : Vector.<String>;
+        // index of used url (non 0 if we switch to a redundant stream)
+        public var urlIdx : int = 0;
         /** Level fragments **/
         public var fragments : Vector.<Fragment>;
         /** min sequence number from M3U8. **/
@@ -50,6 +52,10 @@ package org.mangui.hls.model {
         public function Level() : void {
             this.fragments = new Vector.<Fragment>();
         };
+
+        public function get url() : String {
+            return urls[urlIdx];
+        }
 
         /** Return the Fragment before a given time position. **/
         public function getFragmentBeforePosition(position : Number) : Fragment {

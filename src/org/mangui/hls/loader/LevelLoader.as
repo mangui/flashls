@@ -248,7 +248,8 @@ package org.mangui.hls.loader {
                 // 1 level playlist, create unique level and parse playlist
                 if (string.indexOf(Manifest.FRAGMENT) > 0) {
                     var level : Level = new Level();
-                    level.url = _url;
+                    level.urls = new Vector.<String>();
+                    level.urls.push(_url);
                     _levels.push(level);
                     _metrics.parsing_end_time = getTimer();
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
