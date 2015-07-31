@@ -147,6 +147,7 @@ package org.mangui.hls.loader {
                     break;
                 // nothing to load until level is retrieved
                 case LOADING_WAITING_LEVEL_UPDATE:
+                    break;
                 // loading already in progress
                 case LOADING_IN_PROGRESS:
                     // monitor fragment load progress after half of expected fragment duration,to stabilize bitrate
@@ -162,7 +163,9 @@ package org.mangui.hls.loader {
                         var fragLoadedDelay : Number =(expected-loaded)/loadRate;
                         var fragLevel0LoadedDelay : Number = fragDuration*_levels[0].bitrate/(8*loadRate); //bps/Bps
                         var bufferLen : Number = _hls.stream.bufferLength;
-
+                        // CONFIG::LOGGING {
+                        //     Log.info("bufferLen/fragDuration/fragLoadedDelay/fragLevel0LoadedDelay:" + bufferLen.toFixed(1) + "/" + fragDuration.toFixed(1) + "/" + fragLoadedDelay.toFixed(1) + "/" + fragLevel0LoadedDelay.toFixed(1));
+                        // }
                         /* if we have less than 2 frag duration in buffer and if frag loaded delay is greater than buffer len
                           ... and also bigger than duration needed to load fragment at next level ...*/
                         if(bufferLen < 2*fragDuration && fragLoadedDelay > bufferLen && fragLoadedDelay > fragLevel0LoadedDelay) {
