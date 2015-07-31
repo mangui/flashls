@@ -45,6 +45,7 @@ package org.mangui.hls.controller {
             _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
         }
         ;
 
@@ -54,6 +55,7 @@ package org.mangui.hls.controller {
             _hls.removeEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.removeEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
         }
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
