@@ -576,6 +576,10 @@ var flashlsEvents = {
     var event = {time : new Date() - jsLoadDate, type : "ID3Data", id3data: atob(ID3Data)};
     events.video.push(event);
   },
+  closedCaptionInfo: function(ccData) {
+    var event = {time: new Date() - jsLoadDate, type: "closedCaptionInfo", ccData: ccData};
+    events.video.push(event);
+  },
   requestPlaylist: JSLoaderPlaylist.requestPlaylist.bind(JSLoaderPlaylist),
   abortPlaylist: JSLoaderPlaylist.abortPlaylist.bind(JSLoaderPlaylist),
   requestFragment: JSLoaderFragment.requestFragment.bind(JSLoaderFragment),

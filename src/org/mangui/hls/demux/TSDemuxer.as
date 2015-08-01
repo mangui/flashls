@@ -12,6 +12,8 @@ package org.mangui.hls.demux {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
 
+    import by.blooddy.crypto.Base64;
+
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
         import org.mangui.hls.HLSSettings;
@@ -33,6 +35,8 @@ package org.mangui.hls.demux {
         private static const SDT_ID : int = 17;
         /** Null Packet PID **/
         private static const NULL_PID : int = 0x1fff;
+        /** Packet ID of the SCTE 128 Captions (is always 21). **/
+        private static const SCTE_ID : int = 21;
         /** has PMT been parsed ? **/
         private var _pmtParsed : Boolean;
         /** any unknown PID found ? **/
@@ -118,7 +122,7 @@ package org.mangui.hls.demux {
             _timer = new Timer(0, 0);
             _audioOnly = audioOnly;
             _audioSelected = true;
-        };
+        }
 
         /** append new TS data */
         public function append(data : ByteArray) : void {
@@ -382,7 +386,7 @@ package org.mangui.hls.demux {
                     Log.debug("TS/AAC:ADTS frame overflow:" + _adtsFrameOverflow.length);
                 }
             }
-        };
+        }
 
         /** parse MPEG audio PES packet **/
         private function _parseMPEGPES(pes : PES) : void {
@@ -395,7 +399,7 @@ package org.mangui.hls.demux {
             var tag : FLVTag = new FLVTag(FLVTag.MP3_RAW, pes.pts, pes.dts, false);
             tag.push(pes.data, pes.payload, pes.data.length - pes.payload);
             _tags.push(tag);
-        };
+        }
 
         /** parse AVC PES packet **/
         private function _parseAVCPES(pes : PES) : void {
@@ -404,6 +408,7 @@ package org.mangui.hls.demux {
             var sps_found : Boolean = false;
             var pps_found : Boolean = false;
             var frames : Vector.<VideoFrame> = Nalu.getNALU(pes.data, pes.payload);
+
             // If there's no NAL unit, push all data in the previous tag, if any exists
             if (!frames.length) {
                 if (_curNalUnit) {
@@ -433,6 +438,8 @@ package org.mangui.hls.demux {
              * SPS/PPS are used to generate AVC HEADER
              */
 
+            var timestamp:Number = pes.pts;
+
             for each (var frame : VideoFrame in frames) {
                 if (frame.type == 9) {
                     if (_curVideoTag) {
@@ -449,6 +456,10 @@ package org.mangui.hls.demux {
                     _curVideoTag = new FLVTag(FLVTag.AVC_NALU, pes.pts, pes.dts, false);
                     // push NAL unit 9 into TAG
                     _curVideoTag.push(Nalu.AUD, 0, 2);
+
+                    // JL udate timestamp
+                    // TODO get real value for 24 (it's only in AudioFrame???)
+                    //timestamp += 1000 / 24;
                 } else if (frame.type == 7) {
                     sps_found = true;
                     sps = new ByteArray();
@@ -470,6 +481,91 @@ package org.mangui.hls.demux {
                     pes.data.position = frame.start;
                     pes.data.readBytes(pps, 0, frame.length);
                     ppsvect.push(pps);
+                } else if (frame.type == 6) {
+                    pes.data.position = frame.start;
+
+                    // skip header
+                    pes.data.position += 3;
+
+                    var country_code : uint = pes.data.readUnsignedByte();
+                    //pes.data.position += 1;
+
+                    var provider_code : uint = pes.data.readUnsignedShort();
+//                    pes.data.position += 2;
+
+                    var user_structure : uint = pes.data.readUnsignedInt();
+//                    pes.data.position += 4;
+
+                    if (country_code == 0xB5 && provider_code == 0x0031 && user_structure == 0x47413934)
+                    {
+                        var user_data_type : uint = pes.data.readUnsignedByte();
+//                        pes.data.position += 1;
+
+                        if (user_data_type == 3)
+                        {
+                            // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
+                            var byte:uint = pes.data.readUnsignedByte();
+
+                            // supposedly:
+                            //   first bit is always 1...
+                            //   second bit is boolean for whether or not to process CCs
+                            //   third bit is always 0
+                            // but i'm not seeing this, so i'll just test for it, and subtract
+                            // but still process evei if they're not set
+                            var count:uint = 31 & byte;
+                            var process:Boolean = !((64 & byte) == 0);
+
+                            var size:uint = 2 + count * 3;
+
+                            // back up to include the first byte we just peeked at
+                            pes.data.position = pes.data.position - 1;
+                            //pes.data.position = pes.data.position + 18;
+
+                            if (process && pes.data.bytesAvailable >= size)
+                            {
+                                var sei : ByteArray = new ByteArray();
+
+                                sei.writeUnsignedInt(size);
+
+                                pes.data.readBytes(sei, 4, size);
+
+                                var sei_data:String = Base64.encode(sei);
+
+                                var padding:uint = sei_data.length % 4;
+
+                                for (var i : int=0; i<padding; i++)
+                                {
+                                    sei_data += "=";
+                                }
+
+                                var metaTag:FLVTag = new FLVTag(FLVTag.METADATA, timestamp, timestamp, false);
+
+                                //ExternalInterface.call("console.error", "new FLVTag");
+
+                                var data : ByteArray = new ByteArray();
+                                data.objectEncoding = ObjectEncoding.AMF0;
+                                data.writeObject("onCaptionInfo");
+                                //ExternalInterface.call("console.error", "writing onCaptionInfo");
+                                // TODO: do we need this?
+                                //data.writeByte(0x11);
+                                data.writeObject(sei_data);
+                                metaTag.push(data, 0, data.length);
+                                _tags.push(metaTag);
+
+                                //ExternalInterface.call("console.error", "done\n\n");
+                            }
+                            else
+                            {
+                                //ExternalInterface.call("console.error", "not enough bytes!");
+                            }
+
+                        }
+                        else if (user_data_type == 6)
+                        {
+                            // bar - ignore...
+
+                        }
+                    }
                 }
             }
             // if both SPS and PPS have been found, build AVCC and push tag if needed
@@ -751,6 +847,7 @@ package org.mangui.hls.demux {
                         }
                     }
                     break;
+                case SCTE_ID:
                 case SDT_ID:
                 case NULL_PID:
                     break;
@@ -767,7 +864,7 @@ package org.mangui.hls.demux {
             }
             // Jump to the next packet.
             data.position += todo;
-        };
+        }
 
         /** Parse the Program Association Table. **/
         private function _parsePAT(stt : uint, data : ByteArray) : int {
@@ -789,7 +886,7 @@ package org.mangui.hls.demux {
             data.position += 7;
             _pmtId = data.readUnsignedShort() & 8191;
             return 13 + pointerField;
-        };
+        }
 
         /** Read the Program Map Table. **/
         private function _parsePMT(stt : uint, data : ByteArray) : int {

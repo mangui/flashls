@@ -234,6 +234,10 @@ package org.mangui.chromeless {
             _trigger("id3Updated", event.ID3Data);
         }
 
+        protected function _closedCaptionIfno(event : HLSEvent) : void {
+            _trigger("closedCaptionInfo", event.ccData);
+        }
+
         /** Javascript getters. **/
         protected function _getCurrentLevel() : int {
             return _hls.currentLevel;
@@ -495,6 +499,7 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
             _hls.addEventListener(HLSEvent.ID3_UPDATED, _id3Updated);
+            _hls.addEventListener(HLSEvent.CLOSED_CAPTION_INFO, _closedCaptionIfno);
 
             if (available && stage.stageVideos.length > 0) {
                 _stageVideo = stage.stageVideos[0];
