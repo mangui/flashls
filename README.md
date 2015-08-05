@@ -82,7 +82,7 @@ The plugin accepts several **optional** configuration options, such as:
      - if 0.5, the closest to the middle bitrate will be selected and used first.
    - -1 : automatic seek level selection, keep level before seek.
   - `hls_live_flushurlcache` (default false) - If set to true, Live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player / IE version)
-  - `hls_seekmode`
+  - `hls_seekmode` (default: "KEYFRAME")
     - "ACCURATE" - Seek to exact position
     - "KEYFRAME" - Seek to last keyframe before requested position
   - `hls_manifestloadmaxretry` (default -1): max number of Manifest load retries after I/O Error.
