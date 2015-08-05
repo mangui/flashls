@@ -178,6 +178,13 @@ swfobject.embedSWF('StrobeMediaPlayback.swf', 'player', 640, 360, '10.2', null, 
 });
 ```
 
+---
+
+#### VideoJS
+
+VideoJS/flashls setup is described here : https://github.com/tommyh/videojs-flashls
+
+
 ### Building
 ---
 
