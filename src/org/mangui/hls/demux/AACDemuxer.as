@@ -110,10 +110,14 @@ package org.mangui.hls.demux {
             var id3 : ID3 = new ID3(data);
             // AAC should contain ID3 tag filled with a timestamp
             if (id3.hasTimestamp) {
-                while (data.bytesAvailable > 1) {
+                var afterID3 : uint = data.position;
+                while (data.bytesAvailable > 1 && (data.position - afterID3) < 100) {
                     // Check for ADTS header
                     var short : uint = data.readUnsignedShort();
                     if (short == SYNCWORD || short == SYNCWORD_2 || short == SYNCWORD_3) {
+                        CONFIG::LOGGING {
+                            Log.debug2("AAC: found header " + short + "@ " + (data.position-2));
+                        }
                         data.position = pos;
                         return true;
                     } else {

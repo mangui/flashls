@@ -97,10 +97,14 @@
             var id3 : ID3 = new ID3(data);
             // MP3 should contain ID3 tag filled with a timestamp
             if (id3.hasTimestamp) {
-                while (data.bytesAvailable > 1) {
+                var afterID3 : uint = data.position;
+                while (data.bytesAvailable > 1 && (data.position - afterID3) < 100) {
                     // Check for MP3 header
                     var short : uint = data.readUnsignedShort();
                     if (short == SYNCWORD) {
+                        CONFIG::LOGGING {
+                            Log.debug2("MP3: found header " + short + "@ " + (data.position-2));
+                        }
                         data.position = pos;
                         return true;
                     } else {
