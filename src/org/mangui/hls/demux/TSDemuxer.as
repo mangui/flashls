@@ -41,9 +41,11 @@ package org.mangui.hls.demux {
         private var _pmtId : int;
         /** video PID **/
         private var _avcId : int;
+        private var _videoPESfound : Boolean;
         /** audio PID **/
         private var _audioId : int;
         private var _audioIsAAC : Boolean;
+        private var _audioPESfound : Boolean;
         /** ID3 PID **/
         private var _id3Id : int;
         /** Vector of audio/video tags **/
@@ -114,6 +116,7 @@ package org.mangui.hls.demux {
             _unknownPIDFound = false;
             _pmtId = _avcId = _audioId = _id3Id = -1;
             _audioIsAAC = false;
+            _audioPESfound = _videoPESfound = false;
             _tags = new Vector.<FLVTag>();
             _timer = new Timer(0, 0);
             _audioOnly = audioOnly;
@@ -315,6 +318,18 @@ package org.mangui.hls.demux {
                 _callback_progress(_tags);
                 _tags = new Vector.<FLVTag>();
             }
+            if(_avcId !=-1 && _videoPESfound == false) {
+                CONFIG::LOGGING {
+                    Log.warn("TS: dereference video PID, as no video found in this fragment");
+                }
+                _avcId = -1;
+            }
+            if(_audioId !=-1 && _audioPESfound == false) {
+                CONFIG::LOGGING {
+                    Log.warn("TS: dereference audio PID, as no audio found in this fragment");
+                }
+                _audioId = -1;
+            }
             CONFIG::LOGGING {
                 Log.debug("TS: parsing complete");
             }
@@ -323,6 +338,7 @@ package org.mangui.hls.demux {
         /** parse ADTS audio PES packet **/
         private function _parseADTSPES(pes : PES) : void {
             var stamp : int;
+            _audioPESfound=true;
             // check if previous ADTS frame was overflowing.
             if (_adtsFrameOverflow && _adtsFrameOverflow.length) {
                 // if overflowing, append remaining data from previous frame at the beginning of PES packet
@@ -392,6 +408,7 @@ package org.mangui.hls.demux {
                 }
                 return;
             }
+            _audioPESfound=true;
             var tag : FLVTag = new FLVTag(FLVTag.MP3_RAW, pes.pts, pes.dts, false);
             tag.push(pes.data, pes.payload, pes.data.length - pes.payload);
             _tags.push(tag);
@@ -404,6 +421,7 @@ package org.mangui.hls.demux {
             var sps_found : Boolean = false;
             var pps_found : Boolean = false;
             var frames : Vector.<VideoFrame> = Nalu.getNALU(pes.data, pes.payload);
+            _videoPESfound = true;
             // If there's no NAL unit, push all data in the previous tag, if any exists
             if (!frames.length) {
                 if (_curNalUnit) {
