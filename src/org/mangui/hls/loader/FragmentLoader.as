@@ -150,40 +150,43 @@ package org.mangui.hls.loader {
                     break;
                 // loading already in progress
                 case LOADING_IN_PROGRESS:
-                    // monitor fragment load progress after half of expected fragment duration,to stabilize bitrate
-                    var requestDelay : int = getTimer() - _metrics.loading_request_time;
-                    var fragDuration : Number = _fragCurrent.duration;
-                    if(requestDelay > 500*fragDuration) {
-                        var loaded : int = _fragCurrent.data.bytesLoaded;
-                        var expected : int = fragDuration*_levels[_fragCurrent.level].bitrate/8;
-                        if(expected < loaded) {
-                            expected = loaded;
-                        }
-                        var loadRate : int = loaded*1000/requestDelay; // byte/s
-                        var fragLoadedDelay : Number =(expected-loaded)/loadRate;
-                        var fragLevel0LoadedDelay : Number = fragDuration*_levels[0].bitrate/(8*loadRate); //bps/Bps
-                        var bufferLen : Number = _hls.stream.bufferLength;
-                        // CONFIG::LOGGING {
-                        //     Log.info("bufferLen/fragDuration/fragLoadedDelay/fragLevel0LoadedDelay:" + bufferLen.toFixed(1) + "/" + fragDuration.toFixed(1) + "/" + fragLoadedDelay.toFixed(1) + "/" + fragLevel0LoadedDelay.toFixed(1));
-                        // }
-                        /* if we have less than 2 frag duration in buffer and if frag loaded delay is greater than buffer len
-                          ... and also bigger than duration needed to load fragment at next level ...*/
-                        if(bufferLen < 2*fragDuration && fragLoadedDelay > bufferLen && fragLoadedDelay > fragLevel0LoadedDelay) {
-                            // abort fragment loading ...
-                            CONFIG::LOGGING {
-                                Log.warn("_checkLoading : loading too slow, abort fragment loading");
-                                Log.warn("fragLoadedDelay/bufferLen/fragLevel0LoadedDelay:" + fragLoadedDelay.toFixed(1) + "/" + bufferLen.toFixed(1) + "/" + fragLevel0LoadedDelay.toFixed(1));
+                    // only monitor fragment loading rate if in auto mode, and current level is not the lowest level
+                    if(_hls.autoLevel && _fragCurrent.level) {
+                        // monitor fragment load progress after half of expected fragment duration,to stabilize bitrate
+                        var requestDelay : int = getTimer() - _metrics.loading_request_time;
+                        var fragDuration : Number = _fragCurrent.duration;
+                        if(requestDelay > 500*fragDuration) {
+                            var loaded : int = _fragCurrent.data.bytesLoaded;
+                            var expected : int = fragDuration*_levels[_fragCurrent.level].bitrate/8;
+                            if(expected < loaded) {
+                                expected = loaded;
                             }
-                            //abort fragment loading
-                            _stop_load();
-                            // fill loadMetrics so please LevelController that will adjust bw for next fragment
-                            // fill theoritical value, assuming bw will remain as it is
-                            _metrics.size = expected;
-                            _metrics.duration = 1000*fragDuration;
-                            _metrics.loading_end_time = _metrics.parsing_end_time = _metrics.loading_request_time + 1000*expected/loadRate;
-                            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _metrics));
-                          // switch back to IDLE state to request new fragment at lowest level
-                          _loadingState = LOADING_IDLE;
+                            var loadRate : int = loaded*1000/requestDelay; // byte/s
+                            var fragLoadedDelay : Number =(expected-loaded)/loadRate;
+                            var fragLevel0LoadedDelay : Number = fragDuration*_levels[0].bitrate/(8*loadRate); //bps/Bps
+                            var bufferLen : Number = _hls.stream.bufferLength;
+                            // CONFIG::LOGGING {
+                            //     Log.info("bufferLen/fragDuration/fragLoadedDelay/fragLevel0LoadedDelay:" + bufferLen.toFixed(1) + "/" + fragDuration.toFixed(1) + "/" + fragLoadedDelay.toFixed(1) + "/" + fragLevel0LoadedDelay.toFixed(1));
+                            // }
+                            /* if we have less than 2 frag duration in buffer and if frag loaded delay is greater than buffer len
+                              ... and also bigger than duration needed to load fragment at next level ...*/
+                            if(bufferLen < 2*fragDuration && fragLoadedDelay > bufferLen && fragLoadedDelay > fragLevel0LoadedDelay) {
+                                // abort fragment loading ...
+                                CONFIG::LOGGING {
+                                    Log.warn("_checkLoading : loading too slow, abort fragment loading");
+                                    Log.warn("fragLoadedDelay/bufferLen/fragLevel0LoadedDelay:" + fragLoadedDelay.toFixed(1) + "/" + bufferLen.toFixed(1) + "/" + fragLevel0LoadedDelay.toFixed(1));
+                                }
+                                //abort fragment loading
+                                _stop_load();
+                                // fill loadMetrics so please LevelController that will adjust bw for next fragment
+                                // fill theoritical value, assuming bw will remain as it is
+                                _metrics.size = expected;
+                                _metrics.duration = 1000*fragDuration;
+                                _metrics.loading_end_time = _metrics.parsing_end_time = _metrics.loading_request_time + 1000*expected/loadRate;
+                                _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _metrics));
+                              // switch back to IDLE state to request new fragment at lowest level
+                              _loadingState = LOADING_IDLE;
+                            }
                         }
                     }
                     break;
@@ -302,6 +305,9 @@ package org.mangui.hls.loader {
         }
 
         public function seek(position : Number) : void {
+            CONFIG::LOGGING {
+                Log.debug("FragmentLoader:seek(" + position.toFixed(2) + ")");
+            }
             // reset IO Error when seeking
             _fragRetryCount = _keyRetryCount = 0;
             _fragRetryTimeout = _keyRetryTimeout = 1000;
