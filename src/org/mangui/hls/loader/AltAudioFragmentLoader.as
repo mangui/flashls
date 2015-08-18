@@ -325,7 +325,7 @@ package org.mangui.hls.loader {
                     _metrics.decryption_begin_time = getTimer();
                     fragData.decryptAES = new AES(_hls.stage, _keymap[_fragCurrent.decrypt_url], _fragCurrent.decrypt_iv, _fragDecryptProgressHandler, _fragDecryptCompleteHandler);
                     CONFIG::LOGGING {
-                        Log.debug("init AES context:" + fragData.decryptAES);
+                        Log.debug("init AES context");
                     }
                 } else {
                     fragData.decryptAES = null;
