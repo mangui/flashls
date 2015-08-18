@@ -102,6 +102,7 @@ package org.mangui.hls.demux {
 
         /** Transmux the M2TS file into an FLV file. **/
         public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function, audioOnly : Boolean) {
+            _avcc = null;
             _curAudioPES = null;
             _curVideoPES = null;
             _curId3PES = null;
@@ -131,7 +132,6 @@ package org.mangui.hls.demux {
                 _readPosition = 0;
                 _totalBytes = 0;
                 _dataOffset = 0;
-                _avcc = null;
                 _timer.addEventListener(TimerEvent.TIMER, _parseTimer);
             }
             _dataVector.push(data);
@@ -461,7 +461,15 @@ package org.mangui.hls.demux {
                             /* push current data into video tag, if any */
                             _curVideoTag.push(_curNalUnit, 0, _curNalUnit.length);
                         }
-                        _tags.push(_curVideoTag);
+                        // only push current tag if AVC HEADER has been pushed already
+                        if(_avcc) {
+                            _tags.push(_curVideoTag);
+                        }
+                        CONFIG::LOGGING {
+                            if(!_avcc) {
+                                Log.warn("TS: discarding video tag, as AVC HEADER not found yet, fragment not starting with I-Frame ?");
+                            }
+                        }
                     }
                     _curNalUnit = new ByteArray();
                     _curVideoTag = new FLVTag(FLVTag.AVC_NALU, pes.pts, pes.dts, false);
