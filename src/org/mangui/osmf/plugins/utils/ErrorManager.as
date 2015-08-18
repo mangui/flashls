@@ -13,12 +13,14 @@ package org.mangui.osmf.plugins.utils {
             if (event && event.error) {
                 switch (event.error.code) {
                     case HLSError.FRAGMENT_LOADING_ERROR:
-                    case HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR:
                     case HLSError.KEY_LOADING_ERROR:
-                    case HLSError.KEY_LOADING_CROSSDOMAIN_ERROR:
-                    case HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR:
                     case HLSError.MANIFEST_LOADING_IO_ERROR:
                         errorCode = MediaErrorCodes.IO_ERROR;
+                        break;
+                    case HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR:
+                    case HLSError.KEY_LOADING_CROSSDOMAIN_ERROR:
+                    case HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR:
+                        errorCode = MediaErrorCodes.SECURITY_ERROR
                         break;
                     case org.mangui.hls.event.HLSError.FRAGMENT_PARSING_ERROR:
                     case org.mangui.hls.event.HLSError.KEY_PARSING_ERROR:
