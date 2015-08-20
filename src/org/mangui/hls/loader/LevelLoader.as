@@ -88,11 +88,15 @@ package org.mangui.hls.loader {
             if (event is SecurityErrorEvent) {
                 code = HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
                 txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
-            } else if (event is IOErrorEvent && _levels.length && (HLSSettings.manifestLoadMaxRetry == -1 || _retryCount < HLSSettings.manifestLoadMaxRetry)) {
+            } else if (event is IOErrorEvent && (HLSSettings.manifestLoadMaxRetry == -1 || _retryCount < HLSSettings.manifestLoadMaxRetry)) {
                 CONFIG::LOGGING {
                     Log.warn("I/O Error while trying to load Playlist, retry in " + _retryTimeout + " ms");
                 }
-                _timeoutID = setTimeout(_loadActiveLevelPlaylist, _retryTimeout);
+                if(_levels.length) {
+                    _timeoutID = setTimeout(_loadActiveLevelPlaylist, _retryTimeout);
+                } else {
+                    _timeoutID = setTimeout(_loadManifest, _retryTimeout);
+                }
                 /* exponential increase of retry timeout, capped to manifestLoadMaxRetryTimeout */
                 _retryTimeout = Math.min(HLSSettings.manifestLoadMaxRetryTimeout, 2 * _retryTimeout);
                 _retryCount++;
@@ -151,20 +155,7 @@ package org.mangui.hls.loader {
             _retryTimeout = 1000;
             _retryCount = 0;
             _altAudioTracks = null;
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADING, url));
-            _metrics = new HLSLoadMetrics(HLSLoaderTypes.MANIFEST);
-            _metrics.loading_request_time = getTimer();
-            if (DataUri.isDataUri(url)) {
-                CONFIG::LOGGING {
-                    Log.debug("Identified main manifest <" + url + "> as a data URI.");
-                }
-                _metrics.loading_begin_time = getTimer();
-                var data : String = new DataUri(url).extractData();
-                _metrics.loading_end_time = getTimer();
-                _parseManifest(data || "");
-            } else {
-                _urlloader.load(new URLRequest(url));
-            }
+            _loadManifest();
         };
 
         /** loading progress handler, use to determine loading latency **/
@@ -308,6 +299,24 @@ package org.mangui.hls.loader {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, errorTxt)));
             }
         };
+
+        /** load/reload manifest **/
+        private function _loadManifest() : void {
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADING, _url));
+            _metrics = new HLSLoadMetrics(HLSLoaderTypes.MANIFEST);
+            _metrics.loading_request_time = getTimer();
+            if (DataUri.isDataUri(_url)) {
+                CONFIG::LOGGING {
+                    Log.debug("Identified manifest <" + _url + "> as a data URI.");
+                }
+                _metrics.loading_begin_time = getTimer();
+                var data : String = new DataUri(_url).extractData();
+                _metrics.loading_end_time = getTimer();
+                _parseManifest(data || "");
+            } else {
+                _urlloader.load(new URLRequest(_url));
+            }
+        }
 
         /** load/reload active M3U8 playlist **/
         private function _loadActiveLevelPlaylist() : void {
