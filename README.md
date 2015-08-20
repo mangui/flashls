@@ -21,6 +21,7 @@ The plugin is compatible with the following players:
       - smooth switching : buffer will be flushed on next fragment boundary, and fragments matching with new quality level and next fragment position will be fetched. this allows a smooth (and still fast) quality switch, usually without interrupting the playback.
       - bandwidth conservative switching : buffer will not be flushed, but next fragment to be buffered will use the newly selected quality level.
     - Serial segment fetching method from http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
+    - Emergency quality switch-down to avoid buffering in case of sudden bandwidth drop
   - Alternate Audio Track Rendition
     - Master Playlist with alternative Audio
   - Configurable seeking method on VoD & Live
@@ -33,6 +34,7 @@ The plugin is compatible with the following players:
   - Error resilience
     - Retry mechanism on I/O errors
     - Recovery mechanism on badly segmented TS streams
+    - Failover on [alternate redundant streams](https://developer.apple.com/library/ios/documentation/networkinginternet/conceptual/streamingmediaguide/UsingHTTPLiveStreaming/UsingHTTPLiveStreaming.html#//apple_ref/doc/uid/TP40008332-CH102-SW22)
   - frame drop detection
     -  if the device is not powerful enough to decode content, an event will be triggered.
   - max quality level selectable by auto switch algorithm could be capped
