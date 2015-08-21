@@ -109,7 +109,7 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_maxlevelcappingmode` (default downscale) : defines the max level capping mode to the one available in HLSMaxLevelCappingMode:
     - "downscale" - max capped level should be the one with the dimensions equal or greater than the stage dimensions (so the video will be downscaled)
     - "upscale" - max capped level should be the one with the dimensions equal or lower than the stage dimensions (so the video will be upscaled)
-  - `hls_usehardwarevideodecoder` (default true) : enable/disable hardware video decoding. it could be useful to workaround hardware video decoding issues.
+  - `hls_usehardwarevideodecoder` (default true) : enable/disable hardware video decoding. disabling it could be useful to workaround hardware video decoding issues.
   - `hls_fpsdroppedmonitoringperiod` (default 5000ms) : dropped FPS Monitor Period in ms. period at which number of dropped FPS will be checked.
   - `hls_fpsdroppedmonitoringthreshold` (default 0.2) : every fpsDroppedMonitoringPeriod, dropped FPS will be compared to displayed FPS. if during that period, ratio of (dropped FPS/displayed FPS) is greater or equal than hls_fpsdroppedmonitoringthreshold, HLSEvent.FPS_DROP event will be fired.
   - `hls_caplevelonfpsdrop` (default true) : Limit levels usable in auto-quality when FPS drop is detected.i.e. if frame drop is detected on level 5, auto level will be capped to level 4. Note: this setting is ignored in manual mode so all the levels could be selected manually.
