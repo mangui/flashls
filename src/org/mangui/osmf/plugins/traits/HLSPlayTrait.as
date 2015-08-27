@@ -12,14 +12,12 @@
     import org.mangui.hls.utils.Log;
     }
 
-    public class HLSPlayTrait extends PlayTrait
-    {
+    public class HLSPlayTrait extends PlayTrait {
         private var _hls : HLS;
 
         private var streamStarted : Boolean = false;
 
-        public function HLSPlayTrait(hls : HLS)
-        {
+        public function HLSPlayTrait(hls : HLS) {
             CONFIG::LOGGING {
             Log.debug("HLSPlayTrait()");
             }
@@ -29,8 +27,7 @@
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
         }
 
-        override public function dispose() : void
-        {
+        override public function dispose() : void {
             CONFIG::LOGGING {
             Log.debug("HLSPlayTrait:dispose");
             }
@@ -40,22 +37,17 @@
         }
 
 
-        override protected function playStateChangeStart(newPlayState:String):void
-        {
-            CONFIG::LOGGING
-            {
+        override protected function playStateChangeStart(newPlayState:String):void {
+            CONFIG::LOGGING {
                 Log.info("HLSPlayTrait:playStateChangeStart:" + newPlayState);
             }
-            switch (newPlayState)
-            {
+            switch (newPlayState) {
                 case PlayState.PLAYING:
-                    if (!streamStarted)
-                    {
+                    if (!streamStarted) {
                         _hls.stream.play();
                         streamStarted = true;
                     }
-                    else
-                    {
+                    else {
                         _hls.stream.resume();
 
                     }
