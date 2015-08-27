@@ -39,24 +39,6 @@
             super.dispose();
         }
 
-		/** state changed handler **/
-		private function _stateChangedHandler(event:HLSEvent):void
-		{
-			switch (event.state)
-			{
-				case HLSPlayStates.PLAYING:
-					CONFIG::LOGGING
-				{
-					Log.debug("HLSPlayTrait:_stateChangedHandler:setBuffering(true)");
-				}
-					if (!streamStarted)
-					{
-                        streamStarted = true;
-						play();
-					}
-				default:
-            }
-        }
 
         override protected function playStateChangeStart(newPlayState:String):void
         {
@@ -85,6 +67,25 @@
                     streamStarted = false;
                     _hls.stream.close();
                     break;
+            }
+        }
+
+        /** state changed handler **/
+        private function _stateChangedHandler(event:HLSEvent):void
+        {
+            switch (event.state)
+            {
+                case HLSPlayStates.PLAYING:
+                CONFIG::LOGGING
+                {
+                    Log.debug("HLSPlayTrait:_stateChangedHandler:setBuffering(true)");
+                }
+                    if (!streamStarted)
+                    {
+                        streamStarted = true;
+                        play();
+                    }
+                default:
             }
         }
 
