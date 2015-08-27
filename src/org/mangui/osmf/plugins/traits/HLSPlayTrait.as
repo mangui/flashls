@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.osmf.plugins.traits {
     import org.mangui.hls.HLS;
-	import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.event.HLSEvent;
     import org.osmf.traits.PlayState;
     import org.osmf.traits.PlayTrait;
@@ -25,7 +25,7 @@
             }
             super();
             _hls = hls;
-			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
         }
 
@@ -34,7 +34,7 @@
             CONFIG::LOGGING {
             Log.debug("HLSPlayTrait:dispose");
             }
-			_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
+            _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
             _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
             super.dispose();
         }
@@ -71,17 +71,13 @@
         }
 
         /** state changed handler **/
-        private function _stateChangedHandler(event:HLSEvent):void
-        {
-            switch (event.state)
-            {
+        private function _stateChangedHandler(event:HLSEvent):void {
+            switch (event.state) {
                 case HLSPlayStates.PLAYING:
-                CONFIG::LOGGING
-                {
+                CONFIG::LOGGING {
                     Log.debug("HLSPlayTrait:_stateChangedHandler:setBuffering(true)");
                 }
-                    if (!streamStarted)
-                    {
+                    if (!streamStarted) {
                         streamStarted = true;
                         play();
                     }
