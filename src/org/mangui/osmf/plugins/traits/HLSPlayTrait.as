@@ -14,7 +14,6 @@
 
     public class HLSPlayTrait extends PlayTrait {
         private var _hls : HLS;
-
         private var streamStarted : Boolean = false;
 
         public function HLSPlayTrait(hls : HLS) {
@@ -36,10 +35,9 @@
             super.dispose();
         }
 
-
         override protected function playStateChangeStart(newPlayState:String):void {
             CONFIG::LOGGING {
-                Log.info("HLSPlayTrait:playStateChangeStart:" + newPlayState);
+            Log.info("HLSPlayTrait:playStateChangeStart:" + newPlayState);
             }
             switch (newPlayState) {
                 case PlayState.PLAYING:
@@ -49,7 +47,6 @@
                     }
                     else {
                         _hls.stream.resume();
-
                     }
                     break;
                 case PlayState.PAUSED:
