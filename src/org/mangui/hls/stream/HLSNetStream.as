@@ -110,6 +110,7 @@ package org.mangui.hls.stream {
                 Log.warn("skipped fragment(level/sn/duration):" + level + "/" + seqnum + "/" + duration);
             }
             _skippedDuration+=duration;
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_SKIPPED, duration));
         }
 
         // function is called by SCRIPT in FLV

@@ -31,6 +31,7 @@ package org.mangui.hls.model {
         public var fragBufferedBytes : int;
         public var fragChangedAuto : int;
         public var fragChangedManual : int;
+        public var fragSkipped : int;
         public var fpsDropEvent : int;
         public var fpsTotalDroppedFrames : int;
         public var fpsDropLevelCappingMin : int;
