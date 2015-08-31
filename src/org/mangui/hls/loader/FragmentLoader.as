@@ -410,6 +410,8 @@ package org.mangui.hls.loader {
                     _fragRetryCount = 0;
                     _fragRetryTimeout = 1000;
                     _loadingState = LOADING_IDLE;
+                    // dispatch event to force redundant level loading
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _fragCurrent.level));
                 } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
                     /* check if loaded fragment is not the last one of a live playlist.
                         if it is the case, don't skip to next, as there is no next fragment :-)

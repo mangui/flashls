@@ -74,6 +74,7 @@ package org.mangui.hls.model {
             if(id < urls.length && id != _redundantStreamId) {
                 _redundantStreamId = id;
                 fragments = new Vector.<Fragment>();
+                start_seqnum = end_seqnum = NaN;
             }
         }
 

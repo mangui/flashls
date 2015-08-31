@@ -332,7 +332,7 @@ package org.mangui.hls.loader {
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
         private function _levelSwitchHandler(event : HLSEvent) : void {
-            if (_loadLevel != event.level) {
+            if (_loadLevel != event.level || _levels[_loadLevel].fragments.length == 0) {
                 _loadLevel = event.level;
                 CONFIG::LOGGING {
                     Log.debug("switch to level " + _loadLevel);
