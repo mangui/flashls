@@ -583,15 +583,38 @@ package org.mangui.hls.stream {
         }
 
         private function _clipBackBuffer(maxBackBufferLength : Number) : void {
-            /*      min_pos        		                   current
-             *                                    		   position
-             *        *------------------*---------------------*----
-             *         ****************** <-------------------->
-             *           to be clipped     maxBackBufferLength
+            /*      min_pos      last video
+             *                 keyframe before                      current
+                             maxBackBufferLength                    position
+             *        *--------------K-----------*---------------------*----
+             *         <------------><-----------><-------------------->
+             *         to be clipped   to be kept        maxBackBufferLength
              */
 
-            // determine clipping position
-            var clipping_position : Number = position - maxBackBufferLength;
+            // determine clipping position. don't keep negative position (which are out of sliding window and not seekable)
+            var clipping_position0 : Number = Math.max(0,position - maxBackBufferLength);
+            var clipping_position : Number;
+
+            if(videoExpected) {
+                // find last video keyframe before clipping_position : loop through header tags and find last AVC_HEADER before clipping position
+                for each (var data : FLVData in _headerTags) {
+                    if ((data.positionAbsolute - _playlistSlidingMain ) <= clipping_position0 && data.tag.type == FLVTag.AVC_HEADER) {
+                        clipping_position = data.positionAbsolute;
+                    }
+                }
+
+                if(isNaN(clipping_position)) {
+                    return;
+                }
+            } else {
+                clipping_position = clipping_position0;
+            }
+            // CONFIG::LOGGING {
+            //     if (clipping_position != clipping_position0) {
+            //         Log.info("clipping_position/clipping_position0 " + clipping_position + '/' + clipping_position0);
+            //     }
+            // }
+
             var clipped_tags : uint = 0;
 
             // loop through each tag list and clip tags if out of max back buffer boundary
@@ -617,7 +640,7 @@ package org.mangui.hls.stream {
              * if we dont keep these tags, we will have audio/video playback issues when seeking into the buffer
              *
              * so we loop through all header tags and we retrieve the position of last AAC/AVC header tags
-             * then if any subsequent header tag is found after seek position, we create a new Vector in which we first append the previously
+             * then if any subsequent header tag is found after clipping position, we create a new Vector in which we first append the previously
              * found AAC/AVC header
              *
              */
@@ -626,55 +649,48 @@ package org.mangui.hls.stream {
             var _disHeader : FLVData;
             var headercounter : uint = 0;
             var _newheaderTags : Vector.<FLVData> = new Vector.<FLVData>();
-            for each (var data : FLVData in _headerTags) {
+            for each (data  in _headerTags) {
                 if ((data.positionAbsolute - _playlistSlidingMain ) < clipping_position) {
+                    headercounter++;
                     switch(data.tag.type) {
                         case FLVTag.DISCONTINUITY:
                             _disHeader = data;
-                            headercounter++;
                             break;
                         case FLVTag.AAC_HEADER:
                             _aacHeader = data;
-                            headercounter++;
                             break;
                         case FLVTag.AVC_HEADER:
                             _avcHeader = data;
-                            headercounter++;
                         default:
                             break;
                     }
                 } else {
-                    /* tag located after clip position : we need to keep it
-                     * first try to push DISCONTINUITY/AVC HEADER/AAC HEADER tag located
-                     * before the clip position
-                     */
-                    if (_disHeader) {
-                        headercounter--;
-                        // Log.info("push DISCONTINUITY header tags/position:" + _disHeader.position);
-                        _disHeader.position = clipping_position;
-                        _disHeader.sliding = 0;
-                        _newheaderTags.push(_disHeader);
-                        _disHeader = null;
-                    }
-                    if (_aacHeader) {
-                        headercounter--;
-                        // Log.info("push AAC header tags/position:" + _aacHeader.position);
-                        _aacHeader.position = clipping_position;
-                        _aacHeader.sliding = 0;
-                        _newheaderTags.push(_aacHeader);
-                        _aacHeader = null;
-                    }
-                    if (_avcHeader) {
-                        headercounter--;
-                        // Log.info("push AVC header tags/position:" + _avcHeader.position);
-                        _avcHeader.position = clipping_position;
-                        _avcHeader.sliding = 0;
-                        _newheaderTags.push(_avcHeader);
-                        _avcHeader = null;
-                    }
-                    // Log.info("push tag type/position:" + data.tag.type + "/" + data.position);
+                    /* push header tags located after clipping position into a new array */
                     _newheaderTags.push(data);
                 }
+            }
+
+            /* now push any DISCONTINUITY/AVC HEADER/AAC HEADER tag located before the clip position */
+            if (_disHeader) {
+                headercounter--;
+                // Log.info("push DISCONTINUITY header tags/position:" + _disHeader.position);
+                _disHeader.position = clipping_position;
+                _disHeader.sliding = 0;
+                _newheaderTags.unshift(_disHeader);
+            }
+            if (_aacHeader) {
+                headercounter--;
+                // Log.info("push AAC header tags/position:" + _aacHeader.position);
+                _aacHeader.position = clipping_position;
+                _aacHeader.sliding = 0;
+                _newheaderTags.unshift(_aacHeader);
+            }
+            if (_avcHeader) {
+                headercounter--;
+                // Log.info("push AVC header tags/position:" + _avcHeader.position);
+                _avcHeader.position = clipping_position;
+                _avcHeader.sliding = 0;
+                _newheaderTags.unshift(_avcHeader);
             }
 
             if (headercounter != 0) {
