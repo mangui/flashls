@@ -221,6 +221,26 @@ package org.mangui.hls.stream {
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                 // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
                 super.pause();
+                // var otherCounter : int = 0;
+                // for each (var tagBuffer0 : FLVTag in tags) {
+                //     switch(tagBuffer0.type) {
+                //         case FLVTag.AAC_HEADER:
+                //         case FLVTag.AVC_HEADER:
+                //         case FLVTag.DISCONTINUITY:
+                //         case FLVTag.METADATA:
+                //             CONFIG::LOGGING {
+                //                 Log.info('inject type/dts/pts:' + tagBuffer0.typeString + '/' + tagBuffer0.dts + '/' + tagBuffer0.pts);
+                //             }
+                //             break;
+                //         default:
+                //             CONFIG::LOGGING {
+                //                 if(otherCounter++< 5) {
+                //                     Log.info('inject type/dts/pts:' + tagBuffer0.typeString + '/' + tagBuffer0.dts + '/' + tagBuffer0.pts);
+                //                 }
+                //             }
+                //         break;
+                //     }
+                // }
             }
             // append all tags
             for each (var tagBuffer : FLVTag in tags) {
