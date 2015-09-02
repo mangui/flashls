@@ -70,7 +70,7 @@ package org.mangui.hls.model {
         }
 
         // when switching to a redundant stream, reset fragments. they will be retrieved from new playlist
-        public function set redundantStreamId(id) : void {
+        public function set redundantStreamId(id : int) : void {
             if(id < urls.length && id != _redundantStreamId) {
                 _redundantStreamId = id;
                 fragments = new Vector.<Fragment>();
