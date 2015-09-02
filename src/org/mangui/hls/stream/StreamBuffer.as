@@ -66,6 +66,11 @@ package org.mangui.hls.stream {
         private var _nextExpectedAbsoluteStartPosAltAudio : Number;
         /** is live loading stalled **/
         private var _liveLoadingStalled : Boolean;
+        /* last media time data */
+        private var _lastPos : Number;
+        private var _lastBufLen : Number;
+        private var _lastDuration : Number;
+
 
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
             _hls = hls;
@@ -470,8 +475,16 @@ package org.mangui.hls.stream {
          *  clipping backbuffer
          */
         private function _checkBuffer(e : Event) : void {
-            // dispatch media time event
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(position, _playlistDuration, _hls.stream.bufferLength, backBufferLength, _playlistSlidingMain, _playlistSlidingAltAudio)));
+            var pos : Number = position;
+            var bufLen : Number = _hls.stream.bufferLength;
+            var duration : Number = _playlistDuration;
+            // dispatch media time event only if position/buffer or playlist duration has changed
+            if(pos != _lastPos || bufLen != _lastBufLen || duration != _lastDuration) {
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(pos, duration, bufLen, backBufferLength, _playlistSlidingMain, _playlistSlidingAltAudio)));
+                _lastPos = pos;
+                _lastDuration = duration;
+                _lastBufLen = bufLen;
+            }
 
             var netStreamBuffer : Number = (_hls.stream as HLSNetStream).netStreamBufferLength;
             /* only append tags if seek position has been reached, otherwise wait for more tags to come
@@ -481,10 +494,10 @@ package org.mangui.hls.stream {
                 Log.debug2("position/total/audio/video/NetStream bufferLength/audioExpected/videoExpected:" + position.toFixed(2) + "/" + _hls.stream.bufferLength.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + netStreamBuffer.toFixed(2) + "/" + audioExpected + "/" + videoExpected);
             }
 
-            var duration : Number = 0;
+            var tagDuration : Number = 0;
             if (_seekPositionReached) {
                 if (netStreamBuffer < MIN_NETSTREAM_BUFFER_SIZE && _hls.playbackState != HLSPlayStates.IDLE) {
-                    duration = MAX_NETSTREAM_BUFFER_SIZE - netStreamBuffer;
+                    tagDuration = MAX_NETSTREAM_BUFFER_SIZE - netStreamBuffer;
                 }
             } else {
                 /* seek position not reached yet.
@@ -495,11 +508,11 @@ package org.mangui.hls.stream {
                  */
                 if ((max_pos+_playlistSlidingMain) >= _seekPositionRequested) {
                     // inject enough tags to reach seek position
-                    duration = _seekPositionRequested + MAX_NETSTREAM_BUFFER_SIZE - min_min_pos;
+                    tagDuration = _seekPositionRequested + MAX_NETSTREAM_BUFFER_SIZE - min_min_pos;
                 }
             }
-            if (duration > 0) {
-                var data : Vector.<FLVData> = shiftmultipletags(duration);
+            if (tagDuration > 0) {
+                var data : Vector.<FLVData> = shiftmultipletags(tagDuration);
                 if (!_seekPositionReached) {
                     data = seekFilterTags(data, _seekPositionRequested);
                     _seekPositionReached = true;
