@@ -40,13 +40,15 @@ package org.mangui.hls.stream {
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
         private var _audioIdx : uint,  _videoIdx : uint,  _metaIdx : uint, _headerIdx : uint;
         private var _fragMainLevel : int, _fragMainSN : int;
+        private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number;
         private var _fragAltAudioLevel : int, _fragAltAudioSN : int;
+        private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number;
         private var _fragMainIdx : uint,  _fragAltAudioIdx : uint;
         /** playlist duration **/
         private var _playlistDuration : Number = 0;
-        /** requested start position **/
+        /** requested start position (absolute position) **/
         private var _seekPositionRequested : Number;
-        /** real start position , retrieved from first fragment **/
+        /** real start position , retrieved from first fragment (absolute position) **/
         private var _seekPositionReal : Number;
         /** start position of first injected tag **/
         private var _seekPositionReached : Boolean;
@@ -130,6 +132,11 @@ package org.mangui.hls.stream {
             if (_seekPositionRequested >= min_pos && _seekPositionRequested <= max_pos) {
                 _seekPositionReached = false;
                 _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
+                CONFIG::LOGGING {
+                    Log.debug("seek in buffer");
+                    // seek position requested is an absolute position, add sliding main to make it absolute
+                    _seekPositionRequested+= _playlistSlidingMain;
+                }
             } else {
                 // stop any load in progress ...
                 _fragmentLoader.stop();
@@ -154,40 +161,67 @@ package org.mangui.hls.stream {
 
         public function appendTags(fragmentType : int, fragLevel : int, fragSN : int, tags : Vector.<FLVTag>, min_pts : Number, max_pts : Number, continuity : int, startPosition : Number) : void {
             // compute playlist sliding here :  it is the difference between  expected start position and real start position
-            var sliding:Number = 0, _nextRelativeStartPos: Number = startPosition + (max_pts - min_pts) / 1000, headerAppended : Boolean = false, metaAppended : Boolean = false;
+            var sliding:Number;
+            var nextRelativeStartPos: Number = startPosition + (max_pts - min_pts) / 1000;
+            var headerAppended : Boolean = false, metaAppended : Boolean = false;
             // compute sliding in case of live playlist, or in case of VoD playlist that slided in the past (live sliding ended playlist)
-            if(_hls.type == HLSTypes.LIVE  || _playlistSlidingMain || _playlistSlidingAltAudio) {
-                if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
-                    // if -1 : it is not the first appending for this fragment type : we can compute playlist sliding
-                    if(_nextExpectedAbsoluteStartPosMain !=-1) {
-                        sliding = _playlistSlidingMain = _nextExpectedAbsoluteStartPosMain - startPosition;
-                    }
-                    _nextExpectedAbsoluteStartPosMain = _nextRelativeStartPos + sliding;
-                } else if(fragmentType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
-                    // if -1 : it is not the first appending for this fragment type : we can compute playlist sliding
-                    if(_nextExpectedAbsoluteStartPosAltAudio !=-1) {
-                        sliding = _playlistSlidingAltAudio = _nextExpectedAbsoluteStartPosAltAudio - startPosition;
-                    }
-                    _nextExpectedAbsoluteStartPosAltAudio = _nextRelativeStartPos + sliding;
-                }
-            }
+            var computeSliding : Boolean = (_hls.type == HLSTypes.LIVE  || _playlistSlidingMain || _playlistSlidingAltAudio);
 
             var fragIdx : int;
             if(fragmentType == HLSLoaderTypes.FRAGMENT_MAIN) {
+                sliding = _playlistSlidingMain;
+                // if a new fragment is being appended
                 if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
                     _fragMainLevel = fragLevel;
                     _fragMainSN = fragSN;
                     _fragMainIdx++;
+                    // compute sliding if needed
+                    if(computeSliding) {
+                        // if -1 : it is not the first appending for this fragment type : we can compute playlist sliding
+                        if(_nextExpectedAbsoluteStartPosMain !=-1) {
+                            // if same continuity counter, sliding can be computed using PTS, it will be more accurate
+                            if(continuity == _fragMainInitialContinuity) {
+                                sliding = _playlistSlidingMain = _fragMainInitialStartPosition + (min_pts-_fragMainInitialPTS)/1000 - startPosition;
+                            } else {
+                                sliding = _playlistSlidingMain = _nextExpectedAbsoluteStartPosMain - startPosition;
+                            }
+                        } else {
+                            _fragMainInitialStartPosition = startPosition;
+                            _fragMainInitialPTS = min_pts;
+                            _fragMainInitialContinuity = continuity;
+                        }
+                        _nextExpectedAbsoluteStartPosMain = nextRelativeStartPos + sliding;
+
+                    }
                     CONFIG::LOGGING {
-                        Log.debug('new main frag,start/sliding/idx:' + startPosition + '/' + sliding + '/' + _fragMainIdx);
+                        Log.debug('new main frag,start/sliding/idx:' + startPosition.toFixed(3) + '/' + sliding.toFixed(3) + '/' + _fragMainIdx);
                     }
                 }
                 fragIdx = _fragMainIdx;
             } else {
+                sliding = _playlistSlidingAltAudio;
+                // if a new fragment is being appended
                 if(fragLevel != _fragAltAudioLevel || fragSN != _fragAltAudioSN) {
                     _fragAltAudioLevel = fragLevel;
                     _fragAltAudioSN = fragSN;
                     _fragAltAudioIdx++;
+                    // compute sliding if needed
+                    if(computeSliding) {
+                        // if -1 : it is not the first appending for this fragment type : we can compute playlist sliding
+                        if(_nextExpectedAbsoluteStartPosAltAudio !=-1) {
+                            // if same continuity counter, sliding can be computed using PTS, it will be more accurate
+                            if(continuity == _fragAltAudioInitialContinuity) {
+                                sliding = _playlistSlidingAltAudio = _fragAltAudioInitialStartPosition + (min_pts - _fragAltAudioInitialPTS)/1000 - startPosition;
+                            } else {
+                                sliding = _playlistSlidingAltAudio = _nextExpectedAbsoluteStartPosAltAudio - startPosition;
+                            }
+                        } else {
+                            _fragAltAudioInitialStartPosition = startPosition;
+                            _fragAltAudioInitialPTS = min_pts;
+                            _fragAltAudioInitialContinuity = continuity;
+                        }
+                        _nextExpectedAbsoluteStartPosAltAudio = nextRelativeStartPos + sliding;
+                    }
                     CONFIG::LOGGING {
                         Log.debug('new altaudio frag,start/sliding/idx:' + startPosition + '/' + sliding + '/' + _fragAltAudioIdx);
                     }
@@ -242,11 +276,12 @@ package org.mangui.hls.stream {
         public function get position() : Number {
             switch(_hls.seekState) {
                 case HLSSeekStates.SEEKING:
-                    return  _seekPositionRequested;
+                // _seekPositionRequested is an absolute position, convert it to relative by substracting sliding
+                    return  _seekPositionRequested - _playlistSlidingMain;
                 case HLSSeekStates.SEEKED:
                 case HLSSeekStates.IDLE:
                 default:
-                    /** Relative playback position = (Absolute Position(seek position + play time) - playlist sliding, non null for Live Playlist) **/
+                    /** Relative playback position = Absolute Position (which is Absolute seek position + NetStream playback time) - playlist sliding **/
                     var pos: Number = _seekPositionReal + _hls.stream.time - _playlistSlidingMain;
                     if(isNaN(pos)) {
                         pos = 0;
@@ -353,7 +388,9 @@ package org.mangui.hls.stream {
         public function get bufferLength() : Number {
             switch(_hls.seekState) {
                 case HLSSeekStates.SEEKING:
-                    return  Math.max(0, max_pos - _seekPositionRequested);
+                    /* max_pos is a relative max, seekPositionRequested is absolute. we need to add _playlistSlidingMain
+                       in order to compare apple to apple */
+                    return  Math.max(0, max_pos + _playlistSlidingMain - _seekPositionRequested);
                 case HLSSeekStates.SEEKED:
                     if (audioExpected) {
                         if (videoExpected) {
@@ -488,7 +525,7 @@ package org.mangui.hls.stream {
         }
 
         /* filter/tweak tags to seek accurately into the stream */
-        private function seekFilterTags(tags : Vector.<FLVData>, startPosition : Number) : Vector.<FLVData> {
+        private function seekFilterTags(tags : Vector.<FLVData>, absoluteStartPosition : Number) : Vector.<FLVData> {
             var aacIdx : int,avcIdx : int,disIdx : int,metIdxMain : int,metIdxAltAudio : int, keyIdx : int,lastIdx : int;
             aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = keyIdx = lastIdx = -1;
             var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
@@ -497,7 +534,7 @@ package org.mangui.hls.stream {
             // loop through all tags and find index position of header tags located before start position
             for (var i : int = 0; i < tags.length; i++) {
                 var data : FLVData = tags[i];
-                if (data.positionAbsolute - _playlistSlidingMain <= startPosition) {
+                if (data.positionAbsolute <= absoluteStartPosition) {
                     lastIdx = i;
                     // current tag is before requested start position
                     // grab AVC/AAC/DISCONTINUITY/METADATA/KEYFRAMES tag located just before
@@ -537,11 +574,11 @@ package org.mangui.hls.stream {
             if (HLSSettings.seekMode == HLSSeekMode.ACCURATE_SEEK) {
                 // start injecting from last tag before start position
                 first_pts = tags[lastIdx].tag.pts;
-                _seekPositionReal = tags[lastIdx].position;
+                _seekPositionReal = tags[lastIdx].positionAbsolute;
             } else {
                 // start injecting from keyframe tag
                 first_pts = tags[keyIdx].tag.pts;
-                _seekPositionReal = tags[keyIdx].position;
+                _seekPositionReal = tags[keyIdx].positionAbsolute;
             }
             // inject discontinuity/metadata/AVC header/AAC header if available
             if (disIdx != -1)  idx2Clone.push(disIdx);
@@ -599,7 +636,7 @@ package org.mangui.hls.stream {
                 // find last video keyframe before clipping_position : loop through header tags and find last AVC_HEADER before clipping position
                 for each (var data : FLVData in _headerTags) {
                     if ((data.positionAbsolute - _playlistSlidingMain ) <= clipping_position0 && data.tag.type == FLVTag.AVC_HEADER) {
-                        clipping_position = data.positionAbsolute;
+                        clipping_position = data.positionAbsolute - _playlistSlidingMain;
                     }
                 }
 
@@ -703,7 +740,7 @@ package org.mangui.hls.stream {
 
             CONFIG::LOGGING {
                 if (clipped_tags > 0) {
-                    Log.debug2("clipped " + clipped_tags + " tags, clipping position :" + clipping_position);
+                    Log.debug2("clipped " + clipped_tags + " tags, clipping_position0/clipping_position/position/new backBufferLength :" + clipping_position0.toFixed(3) + '/' + clipping_position.toFixed(3) + '/' + position.toFixed(3) + '/'  + (position-clipping_position).toFixed(3));
                 }
             }
         }
