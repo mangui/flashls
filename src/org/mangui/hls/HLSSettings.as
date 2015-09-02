@@ -262,9 +262,9 @@ package org.mangui.hls {
          *  it will set NetStream.useHardwareDecoder
          *  refer to http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/NetStream.html#useHardwareDecoder
          *
-         * Default is false
+         * Default is true
          */
-        public static var useHardwareVideoDecoder : Boolean = false;
+        public static var useHardwareVideoDecoder : Boolean = true;
 
         /**
          * logInfo

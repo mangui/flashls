@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.stream {
+    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.controller.BufferThresholdController;
-    import org.mangui.hls.event.HLSPlayMetrics;
+    import org.mangui.hls.demux.ID3Tag;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.constant.HLSSeekStates;
-    import org.mangui.hls.constant.HLSPlayStates;
+    import org.mangui.hls.event.HLSPlayMetrics;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
@@ -28,11 +29,19 @@ package org.mangui.hls.stream {
      *
      * play state transition :
      * 				FROM								TO								condition
-     *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     play()/play2()/seek() called
+     *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
+     *  HLSPlayStates.IDLE                  HLSPlayStates.PAUSED_BUFFERING      idle => seek() called
      *  HLSPlayStates.PLAYING_BUFFERING  	HLSPlayStates.PLAYING  				buflen > minBufferLength
      *  HLSPlayStates.PAUSED_BUFFERING  	HLSPlayStates.PAUSED  				buflen > minBufferLength
      *  HLSPlayStates.PLAYING  				HLSPlayStates.PLAYING_BUFFERING  	buflen < lowBufferLength
      *  HLSPlayStates.PAUSED  				HLSPlayStates.PAUSED_BUFFERING  	buflen < lowBufferLength
+     *
+     * seek state transition :
+     *
+     *              FROM                                TO                              condition
+     *  HLSSeekStates.IDLE/SEEKED           HLSSeekStates.SEEKING     play()/play2()/seek() called
+     *  HLSSeekStates.SEEKING               HLSSeekStates.SEEKED      upon first FLV tag appending after seek
+     *  HLSSeekStates.SEEKED                HLSSeekStates.IDLE        upon playback complete or stop() called
      */
     public class HLSNetStream extends NetStream {
         /** Reference to the framework controller. **/
@@ -73,19 +82,27 @@ package org.mangui.hls.stream {
             super.client = _client;
         }
 
-        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, ... tags) : void {
+        public function onHLSFragmentChange(level : int, seqnum : int, cc : int, duration : Number, audio_only : Boolean, program_date : Number, width : int, height : int, auto_level : Boolean, customTagNb : int, id3TagNb : int, ... tags) : void {
             CONFIG::LOGGING {
                 Log.debug("playing fragment(level/sn/cc):" + level + "/" + seqnum + "/" + cc);
             }
             _currentLevel = level;
-            var tag_list : Array = new Array();
-            for (var i : uint = 0; i < tags.length; i++) {
-                tag_list.push(tags[i]);
+            var customTagArray : Array = new Array();
+            var id3TagArray : Array = new Array();
+            for (var i : uint = 0; i < customTagNb; i++) {
+                customTagArray.push(tags[i]);
                 CONFIG::LOGGING {
                     Log.debug("custom tag:" + tags[i]);
                 }
             }
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, tag_list)));
+            for (i = customTagNb; i < tags.length; i+=4) {
+                var id3Tag : ID3Tag = new ID3Tag(tags[i],tags[i+1],tags[i+2],tags[i+3]);
+                id3TagArray.push(id3Tag);
+                CONFIG::LOGGING {
+                    Log.debug("id3 tag:" + id3Tag);
+                }
+            }
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_PLAYING, new HLSPlayMetrics(level, seqnum, cc, duration, audio_only, program_date, width, height, auto_level, customTagArray,id3TagArray)));
         }
 
 
@@ -94,6 +111,7 @@ package org.mangui.hls.stream {
                 Log.warn("skipped fragment(level/sn/duration):" + level + "/" + seqnum + "/" + duration);
             }
             _skippedDuration+=duration;
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_SKIPPED, duration));
         }
 
         // function is called by SCRIPT in FLV
@@ -204,6 +222,26 @@ package org.mangui.hls.stream {
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                 // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
                 super.pause();
+                // var otherCounter : int = 0;
+                // for each (var tagBuffer0 : FLVTag in tags) {
+                //     switch(tagBuffer0.type) {
+                //         case FLVTag.AAC_HEADER:
+                //         case FLVTag.AVC_HEADER:
+                //         case FLVTag.DISCONTINUITY:
+                //         case FLVTag.METADATA:
+                //             CONFIG::LOGGING {
+                //                 Log.info('inject type/dts/pts:' + tagBuffer0.typeString + '/' + tagBuffer0.dts + '/' + tagBuffer0.pts);
+                //             }
+                //             break;
+                //         default:
+                //             CONFIG::LOGGING {
+                //                 if(otherCounter++< 5) {
+                //                     Log.info('inject type/dts/pts:' + tagBuffer0.typeString + '/' + tagBuffer0.dts + '/' + tagBuffer0.pts);
+                //                 }
+                //             }
+                //         break;
+                //     }
+                // }
             }
             // append all tags
 
@@ -343,16 +381,16 @@ package org.mangui.hls.stream {
             }
             _streamBuffer.seek(position);
             _setSeekState(HLSSeekStates.SEEKING);
-            /* if HLS was in paused state before seeking,
+            /* if HLS playback state was in PAUSED or IDLE state before seeking,
              * switch to paused buffering state
              * otherwise, switch to playing buffering state
              */
             switch(_playbackState) {
+                case HLSPlayStates.IDLE:
                 case HLSPlayStates.PAUSED:
                 case HLSPlayStates.PAUSED_BUFFERING:
                     _setPlaybackState(HLSPlayStates.PAUSED_BUFFERING);
                     break;
-                case HLSPlayStates.IDLE:
                 case HLSPlayStates.PLAYING:
                 case HLSPlayStates.PLAYING_BUFFERING:
                     _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);

@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.demux {
+    import by.blooddy.crypto.Base64;
     import flash.utils.ByteArray;
 
     CONFIG::LOGGING {
@@ -102,29 +103,38 @@
                         }
                         break;
                     default:
-                        var tag_data : *;
+                        var tag_data : * = null;
+                        var base64 : Boolean;
                         var firstChar : String = tag_id.charAt(0);
                         if(firstChar == 'T' || firstChar == 'W') {
-                            tag_data = new Array();
+                            base64 = false;
                             var cur_tag_pos : int;
                             var end_tag_pos : int = data.position + tag_len;
                             // skip character encoding byte
                             data.position++;
+
                             while(data.position < end_tag_pos - 1) {
                                 cur_tag_pos = data.position;
                                 var text : String = data.readUTFBytes(end_tag_pos-cur_tag_pos);
-                                CONFIG::LOGGING {
-                                    Log.debug("text:" + text);
+                                if(tag_data) {
+                                    tag_data += ',' + text;
+                                } else {
+                                    tag_data = text;
                                 }
                                 data.position = cur_tag_pos + text.length + 1;
-                                tag_data.push(text);
                             }
                             data.position = end_tag_pos;
+                            CONFIG::LOGGING {
+                                Log.debug2("id/data:" + tag_id + "/" + tag_data);
+                            }
                         } else {
+                            base64 = true;
                             tag_data = new ByteArray();
                             data.readBytes(tag_data, 0, tag_len);
+                            tag_data=Base64.encode(tag_data);
                         }
-                        tags.push(new ID3Tag(tag_id,tag_flags,tag_data));
+                        var id3tag : ID3Tag = new ID3Tag(tag_id,tag_flags,base64,tag_data);
+                        tags.push(id3tag);
                         break;
                 }
             }

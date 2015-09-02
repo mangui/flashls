@@ -21,6 +21,7 @@ The plugin is compatible with the following players:
       - smooth switching : buffer will be flushed on next fragment boundary, and fragments matching with new quality level and next fragment position will be fetched. this allows a smooth (and still fast) quality switch, usually without interrupting the playback.
       - bandwidth conservative switching : buffer will not be flushed, but next fragment to be buffered will use the newly selected quality level.
     - Serial segment fetching method from http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
+    - Emergency quality switch-down to avoid buffering in case of sudden bandwidth drop
   - Alternate Audio Track Rendition
     - Master Playlist with alternative Audio
   - Configurable seeking method on VoD & Live
@@ -33,6 +34,7 @@ The plugin is compatible with the following players:
   - Error resilience
     - Retry mechanism on I/O errors
     - Recovery mechanism on badly segmented TS streams
+    - Failover on [alternate redundant streams](https://developer.apple.com/library/ios/documentation/networkinginternet/conceptual/streamingmediaguide/UsingHTTPLiveStreaming/UsingHTTPLiveStreaming.html#//apple_ref/doc/uid/TP40008332-CH102-SW22)
   - frame drop detection
     -  if the device is not powerful enough to decode content, an event will be triggered.
   - max quality level selectable by auto switch algorithm could be capped
@@ -107,7 +109,7 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_maxlevelcappingmode` (default downscale) : defines the max level capping mode to the one available in HLSMaxLevelCappingMode:
     - "downscale" - max capped level should be the one with the dimensions equal or greater than the stage dimensions (so the video will be downscaled)
     - "upscale" - max capped level should be the one with the dimensions equal or lower than the stage dimensions (so the video will be upscaled)
-  - `hls_usehardwarevideodecoder` (default true) : enable/disable hardware video decoding. it could be useful to workaround hardware video decoding issues.
+  - `hls_usehardwarevideodecoder` (default true) : enable/disable hardware video decoding. disabling it could be useful to workaround hardware video decoding issues.
   - `hls_fpsdroppedmonitoringperiod` (default 5000ms) : dropped FPS Monitor Period in ms. period at which number of dropped FPS will be checked.
   - `hls_fpsdroppedmonitoringthreshold` (default 0.2) : every fpsDroppedMonitoringPeriod, dropped FPS will be compared to displayed FPS. if during that period, ratio of (dropped FPS/displayed FPS) is greater or equal than hls_fpsdroppedmonitoringthreshold, HLSEvent.FPS_DROP event will be fired.
   - `hls_caplevelonfpsdrop` (default true) : Limit levels usable in auto-quality when FPS drop is detected.i.e. if frame drop is detected on level 5, auto level will be capped to level 4. Note: this setting is ignored in manual mode so all the levels could be selected manually.

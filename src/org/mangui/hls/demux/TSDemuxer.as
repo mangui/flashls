@@ -42,9 +42,11 @@ package org.mangui.hls.demux {
         private var _pmtId : int;
         /** video PID **/
         private var _avcId : int;
+        private var _videoPESfound : Boolean;
         /** audio PID **/
         private var _audioId : int;
         private var _audioIsAAC : Boolean;
+        private var _audioPESfound : Boolean;
         /** ID3 PID **/
         private var _id3Id : int;
         /** Vector of audio/video tags **/
@@ -101,6 +103,7 @@ package org.mangui.hls.demux {
 
         /** Transmux the M2TS file into an FLV file. **/
         public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function, audioOnly : Boolean) {
+            _avcc = null;
             _curAudioPES = null;
             _curVideoPES = null;
             _curId3PES = null;
@@ -115,6 +118,7 @@ package org.mangui.hls.demux {
             _unknownPIDFound = false;
             _pmtId = _avcId = _audioId = _id3Id = -1;
             _audioIsAAC = false;
+            _audioPESfound = _videoPESfound = false;
             _tags = new Vector.<FLVTag>();
             _timer = new Timer(0, 0);
             _audioOnly = audioOnly;
@@ -129,7 +133,6 @@ package org.mangui.hls.demux {
                 _readPosition = 0;
                 _totalBytes = 0;
                 _dataOffset = 0;
-                _avcc = null;
                 _timer.addEventListener(TimerEvent.TIMER, _parseTimer);
             }
             _dataVector.push(data);
@@ -316,6 +319,18 @@ package org.mangui.hls.demux {
                 _callback_progress(_tags);
                 _tags = new Vector.<FLVTag>();
             }
+            if(_avcId !=-1 && _videoPESfound == false) {
+                CONFIG::LOGGING {
+                    Log.warn("TS: dereference video PID, as no video found in this fragment");
+                }
+                _avcId = -1;
+            }
+            if(_audioId !=-1 && _audioPESfound == false) {
+                CONFIG::LOGGING {
+                    Log.warn("TS: dereference audio PID, as no audio found in this fragment");
+                }
+                _audioId = -1;
+            }
             CONFIG::LOGGING {
                 Log.debug("TS: parsing complete");
             }
@@ -324,6 +339,7 @@ package org.mangui.hls.demux {
         /** parse ADTS audio PES packet **/
         private function _parseADTSPES(pes : PES) : void {
             var stamp : int;
+            _audioPESfound=true;
             // check if previous ADTS frame was overflowing.
             if (_adtsFrameOverflow && _adtsFrameOverflow.length) {
                 // if overflowing, append remaining data from previous frame at the beginning of PES packet
@@ -393,6 +409,7 @@ package org.mangui.hls.demux {
                 }
                 return;
             }
+            _audioPESfound=true;
             var tag : FLVTag = new FLVTag(FLVTag.MP3_RAW, pes.pts, pes.dts, false);
             tag.push(pes.data, pes.payload, pes.data.length - pes.payload);
             _tags.push(tag);
@@ -405,6 +422,7 @@ package org.mangui.hls.demux {
             var sps_found : Boolean = false;
             var pps_found : Boolean = false;
             var frames : Vector.<VideoFrame> = Nalu.getNALU(pes.data, pes.payload);
+            _videoPESfound = true;
             // If there's no NAL unit, push all data in the previous tag, if any exists
             if (!frames.length) {
                 if (_curNalUnit) {
@@ -452,7 +470,15 @@ package org.mangui.hls.demux {
                             /* push current data into video tag, if any */
                             _curVideoTag.push(_curNalUnit, 0, _curNalUnit.length);
                         }
-                        _tags.push(_curVideoTag);
+                        // only push current tag if AVC HEADER has been pushed already
+                        if(_avcc) {
+                            _tags.push(_curVideoTag);
+                        }
+                        CONFIG::LOGGING {
+                            if(!_avcc) {
+                                Log.warn("TS: discarding video tag, as AVC HEADER not found yet, fragment not starting with I-Frame ?");
+                            }
+                        }
                     }
                     _curNalUnit = new ByteArray();
                     _curVideoTag = new FLVTag(FLVTag.AVC_NALU, pes.pts, pes.dts, false);
@@ -600,13 +626,11 @@ package org.mangui.hls.demux {
             if (sps_found && pps_found) {
                 var avcc : ByteArray = AVCC.getAVCC(sps, ppsvect);
                 // only push AVCC tag if never pushed or avcc different from previous one
-                if (_avcc == null || !compareByteArray(_avcc, avcc)) {
-                    _avcc = avcc;
-                    var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
-                    avccTag.push(avcc, 0, avcc.length);
-                    // Log.debug("TS:AVC:push AVC HEADER");
-                    _tags.push(avccTag);
-                }
+                _avcc = avcc;
+                var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
+                avccTag.push(avcc, 0, avcc.length);
+                // Log.debug("TS:AVC:push AVC HEADER");
+                _tags.push(avccTag);
             }
 
             /*

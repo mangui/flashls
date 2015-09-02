@@ -31,9 +31,8 @@
             this.type = type;
         }
 
-        public function get bandwidth() : Number {
-            var bandwidth : Number = Math.round(size * 8000 / (parsing_end_time - loading_request_time));
-            return bandwidth;
+        public function get bandwidth() : int {
+            return size * 8000 / (parsing_end_time - loading_request_time);
         }
 
         public function get processing_duration() : int {

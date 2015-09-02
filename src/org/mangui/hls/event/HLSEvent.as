@@ -28,8 +28,12 @@ package org.mangui.hls.event {
         public static const FRAGMENT_LOADING : String = "hlsEventFragmentLoading";
         /** Identifier for a fragment loaded event. **/
         public static const FRAGMENT_LOADED : String = "hlsEventFragmentLoaded";
+        /* Identifier for fragment load aborting for emergency switch down */
+        public static const FRAGMENT_LOAD_EMERGENCY_ABORTED : String = "hlsEventFragmentLoadEmergencyAborted";
         /** Identifier for a fragment playing event. **/
         public static const FRAGMENT_PLAYING : String = "hlsEventFragmentPlaying";
+        /** Identifier for a fragment skipping event. **/
+        public static const FRAGMENT_SKIPPED : String = "hlsEventFragmentSkipped";
         /** Identifier for a audio tracks list change **/
         public static const AUDIO_TRACKS_LIST_CHANGE : String = "audioTracksListChange";
         /** Identifier for a audio track switch **/
@@ -102,6 +106,7 @@ package org.mangui.hls.event {
                     break;
                 case TAGS_LOADED:
                 case FRAGMENT_LOADED:
+                case FRAGMENT_LOAD_EMERGENCY_ABORTED:
                 case LEVEL_LOADED:
                 case AUDIO_LEVEL_LOADED:
                     loadMetrics = parameter as HLSLoadMetrics;
@@ -128,6 +133,7 @@ package org.mangui.hls.event {
                     level = parameter as int;
                     break;
                 case PLAYLIST_DURATION_UPDATED:
+                case FRAGMENT_SKIPPED:
                     duration = parameter as Number;
                     break;
                 case ID3_UPDATED:

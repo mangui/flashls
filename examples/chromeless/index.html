@@ -1,5 +1,61 @@
 <!DOCTYPE html>
-<html><head><title>flashls - Chromeless HLS Flash Player</title>
+
+<head>
+<style>
+header {
+  text-align: center;
+}
+#controls
+{
+    width: 70%;
+    min-width: 615px;
+    padding: 3px;
+    margin: 0px auto 20px auto;
+    border: 1px solid #606060;
+    overflow: hidden;
+}
+.innerControls
+{
+    display:block;
+    float: left;
+    width: 99%;
+    margin: 3px;
+    padding-left: 3px;
+    font-size: 8pt
+}
+.innerControlsLeft
+{
+    display:block;
+    float: left;
+    width: 90%;
+    margin: 3px;
+    padding-left: 3px;
+    font-size: 8pt
+}
+.innerControlsRight
+{
+    display:block;
+    float: left;
+    width: 8%;
+    margin: 3px;
+    padding-left: 3px;
+    font-size: 8pt
+}
+.center
+{
+    width: 70%;
+    min-width: 615px;
+    overflow: hidden;
+    margin-left: auto;
+    margin-right: auto;
+    display: block
+}
+
+#customButtons input { width: 25%; display : inline-block; text-align: center; font-size: 8pt;}
+#toggleButtons button { width: 12%; display : inline-block; text-align: center; font-size: 8pt; background-color: #A0A0A0 }
+
+</style>
+  <title>flashls - Chromeless HLS Flash Player</title>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
 <meta name="author" content="mangui">
@@ -13,49 +69,6 @@
 
   ga('create', 'UA-52843650-1', 'auto');
   ga('send', 'pageview');
-
-var X_STATE = 0;
-var X_POSITION = 1;
-var X_DURATION = 2;
-var X_LOW_BUFFER = 3;
-var X_MIN_BUFFER = 4;
-var X_BUFFER = 5;
-var X_MAX_BUFFER = 6;
-var X_BACK_BUFFER = 7;
-var X_MAX_BACK_BUFFER = 8;
-var X_LOAD_LEVEL = 9;
-var X_AUDIOTRACKID = 10;
-var X_PLAYLIST_SLIDING = 11;
-var X_STARTLEVEL = 12;
-var X_SEEKLEVEL = 13;
-var X_LOGDEBUG = 0;
-var X_LOGDEBUG2 = 1;
-var X_FLUSHLIVEURL = 2;
-var X_JSURLLOADER = 3;
-var X_CAPLEVEL  = 4;
-var X_USEHWDECODER = 5;
-
-var Y_STATE = 1;
-var Y_POSITION = 1;
-var Y_DURATION = 1;
-var Y_LOW_BUFFER = 1;
-var Y_MIN_BUFFER = 1;
-var Y_BUFFER = 1;
-var Y_MAX_BUFFER = 1;
-var Y_BACK_BUFFER = 1;
-var Y_MAX_BACK_BUFFER = 1;
-var Y_LOAD_LEVEL = 1;
-var Y_AUDIOTRACKID = 1;
-var Y_PLAYLIST_SLIDING = 1;
-var Y_STARTLEVEL = 1;
-var Y_SEEKLEVEL = 1;
-var Y_LOGDEBUG = 3;
-var Y_LOGDEBUG2 = 3;
-var Y_FLUSHLIVEURL = 3;
-var Y_JSURLLOADER = 3;
-var Y_CAPLEVEL  = 3;
-var Y_USEHWDECODER = 3;
-
 </script>
 
 <script type="text/javascript" src="flashlsAPI.js"></script>
@@ -70,218 +83,257 @@ var Y_USEHWDECODER = 3;
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-<style type="text/css">
-a:link {
-  color: blue;
-}
-a:visited {
-  color: purple;
-}
-</style>
+
 </head>
-<body style="color: black; background-color: white;">
-
-<big style="font-weight: bold;"><big><code>flashls - Chromeless HLS Flash player</code></big></big><br>
-
-</p><div style="text-align: left;">
-<header>
-  <div>flashls is a Flash/AS3 plugin that plays back HLS streams.<br>
-   visit <a href="http://mangui.github.io/flashls"> http://mangui.github.io/flashls</a> for more details.<br>
-   player below is flashls Chromeless Flash Player. it can be controlled through JS call<br>
-   press green buttons to interact with it.<br>
-</div>
-</header>
-
-Check with your own Playlist ! <a href="http://kb2.adobe.com/cps/142/tn_14213.html">beware of Cross Domain Policy</a><br>
-<input id="userInput" size="80"> <button onclick="userSubmit()">Load</button><br>
-<a id="playbackLink" href="">playback link</a>
-<div id="customButtons"></div>
-<p>
-<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
- codebase="" id="mymoviename" width="640" height="360">
-<param name="movie"  value="../../bin/debug/flashlsChromeless.swf?inline=1" />
-<param name="quality" value="autohigh" />
-<param name="swliveconnect" value="true" />
-<param name="allowScriptAccess" value="sameDomain" />
-<param name="bgcolor" value="#0" />
-<param name="allowFullScreen" value="true" />
-<param name="wmode" value="window" />
-<param name="FlashVars" value="callback=flashlsCallback" />
-
-<embed src="../../bin/debug/flashlsChromeless.swf?inline=1" width="640" height="360" name="mymoviename"
-            quality="autohigh"
-            bgcolor="#0"
-            align="middle" allowFullScreen="true"
-            allowScriptAccess="sameDomain"
-            type="application/x-shockwave-flash"
-            swliveconnect="true"
-            wmode="window"
-            FlashVars="callback=flashlsCallback"
-            pluginspage="http://www.macromedia.com/go/getflashplayer" >
-</embed>
-</object>
-<br><br>
-<canvas id="buffered_c" width="640" height="15" onclick="buffered_seek(event)";></canvas> <br>
-<br>
-
-
-<table border id="mediaControl0">
-  <tr>
-    <th colspan="1"><button onclick="api.play(-1)">Play</button></th>
-    <th colspan="1"><button onclick="api.pause()">Pause</button></th>
-    <th colspan="1"><button onclick="api.resume()">Resume</button></th>
-    <th colspan="1"><button onclick="api.stop()">Stop</button></th>
-  </tr>
-</table>
-<div>
-current level: <div id="currentLevelControl" style="display: inline;"></div>
-</div>
-<div>
-next level: <div id="nextLevelControl" style="display: inline;"></div>
-</div>
-<div>
-load level: <div id="loadLevelControl" style="display: inline;"></div>
-</div>
-<div>
-cap level: <div id="levelCappingControl" style="display: inline;"></div>
-</div>
-<div>
-  selectable audio tracks:
-  <div id="audioControl" style="display: inline;">
+<body>
+  <div class="header-container">
+    <header class="wrapper clearfix">
+      <h1 class="title"><a href="https://github.com/mangui/flashls">flashls</a> - chromeless player</h1>
+    </header>
   </div>
-</div>
-<table border id="mediaInfo" width="640">
 
-  <tr>
-  <td>state</td>
-  <td>Position</td>
-  <td>Duration</td>
-  <td>Low Buffer Length</td>
-  <td>Min Buffer Length</td>
-  <td>Buffer Length</td>
-  <td>Max Buffer Length</td>
-  <td>Back Buffer Length</td>
-  <td>Max Back Buffer Length</td>
-  <td>Load Level</td>
-  <td>Audio Track Id</td>
-  <td> Playlist Sliding</td>
-  <td>Start From Level</td>
-  <td>Seek From Level</td>
-  </tr>
-  <tr>
-    <td>IDLE</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>0</td>
-    <td>-1</td>
-    <td>-1</td>
-  </tr>
-  <tr>
-      <td colspan="2"><button onclick="toggleDebugLogs()">Toggle Debug1 Logs</button></td>
-      <td colspan="2"><button onclick="toggleDebug2Logs()">Toggle Debug2 Logs</button></td>
-      <td colspan="3"><button onclick="toggleFlushLiveURLCache()">Toggle flush Live URL Cache</button></td>
-      <td colspan="2"><button onclick="toggleJSURLStream()"> JS URL Loader</button></td>
-      <td colspan="3"><button onclick="toggleCapLeveltoStage()">Toggle Cap Level</button></td>
-      <td colspan="3"><button onclick="toggleUseHardwareVideoDecoder()">Toggle HW Decoder</button></td>
-  </tr>
-  <tr>
-      <td colspan="2">false</td>
-      <td colspan="2">false</td>
-      <td colspan="3">false</td>
-      <td colspan="2">false</td>
-      <td colspan="3">false</td>
-      <td colspan="3">true</td>
-  </tr>
-</table>
+  <div class="main-container">
+    <header>
+      <p>
+        test with your HLS streams below in any browser with Flash plugin enabled !
+        <br>Advanced controls are also available at the bottom of this page.
+      </p>
+    </header>
+    <div id="controls">
+        <div id="customButtons"></div>
+      <select id="streamSelect" class="innerControls"><option value="" selected>(Enter custom URL below)</option></select>
+      <input id="streamURL" class="innerControlsLeft" type=text value=""/>
+      <button type="button" class="innerControlsRight" onclick="loadStream($('#streamURL').val());">load</button>
+      <br>
+      <div id="StreamPermalink" class="innerControls"></div>
+      <span id="currentResolution" style="float:left;font-size: 8pt;">-</span>
+    </div>
 
-<table border id="mediaControl">
-  <tr>
-    <th><button onclick="api.seek(document.getElementById('mediaControl').rows[0].cells[1].children[0].value)">Seek to</button></th>
-    <td><input type="text" name="seek_position"></td>
-  </tr>
-  <tr>
-    <th><button onclick="api.volume(document.getElementById('mediaControl').rows[1].cells[1].children[0].value)">Set Volume</button></th>
-    <td><input type="text" name="volume_level"></td>
-  </tr>
-  <tr>
-  </table>
+    <div class="center" id="video">
+        <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
+         codebase="" id="moviename" width="720" height="480">
+        <param name="movie"  value="../../bin/debug/flashlsChromeless.swf?inline=1" />
+        <param name="quality" value="autohigh" />
+        <param name="swliveconnect" value="true" />
+        <param name="allowScriptAccess" value="sameDomain" />
+        <param name="bgcolor" value="#0" />
+        <param name="allowFullScreen" value="true" />
+        <param name="wmode" value="window" />
+        <param name="FlashVars" value="callback=flashlsCallback" />
 
-<h3 class="title">real time metrics</h1>
-    <button type="button" class="btn btn-xs btn-success" onclick="toggleMetricsDisplay()">toggle metrics display</button><br>
-    <div id="metricsButton">
-<button type="button" class="btn btn-xs btn-primary" onclick="windowSliding=!windowSliding; refreshCanvas()">toggle sliding/fixed window</button><br>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(0)">window ALL</button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(2000)">2s</button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(5000)">5s</button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(10000)">10s</button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(20000)">20s</button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(30000)">30s</button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(60000)">60s</button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSetSliding(120000)">120s</button><br>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeZoomIn()">Window Zoom In</button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeZoomOut()">Window Zoom Out</button><br>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSlideLeft()"> <<< Window Slide </button>
-<button type="button" class="btn btn-xs btn-primary" onclick="timeRangeSlideRight()">Window Slide >>> </button><br>
-<button type="button" class="btn btn-xs btn-primary" onclick="windowStart=document.getElementById('windowStart').value">fixed window start(ms)</button>
-    <input type="text" id='windowStart' defaultValue="0" size="8" onkeydown="if(window.event.keyCode=='13'){windowStart=document.getElementById('windowStart').value;}">
-<button type="button" class="btn btn-xs btn-primary" onclick="windowEnd=document.getElementById('windowEnd').value">fixed window end(ms)</button>
-    <input type="text" id='windowEnd' defaultValue="10000" size="8" onkeydown="if(window.event.keyCode=='13'){windowEnd=document.getElementById('windowEnd').value;}"><br>
-<button type="button" class="btn btn-xs btn-success" onclick="exportmetrics()" style="font-size:18px">metrics permalink</button>
-<canvas id="bufferTimerange_c" width="640" height="100" style="border:1px solid #000000" onmousedown="timeRangeCanvasonMouseDown(event)" onmousemove="timeRangeCanvasonMouseMove(event)" onmouseup="timeRangeCanvasonMouseUp(event)" onmouseout="timeRangeCanvasonMouseOut(event)";></canvas>
-<canvas id="bufferWindow_c" width="640" height="100" style="border:1px solid #000000" onmousemove="windowCanvasonMouseMove(event)";></canvas>
-<canvas id="videoEvent_c" width="640" height="15" style="border:1px solid #000000";></canvas>
-<canvas id="loadEvent_c" width="640" height="15" style="border:1px solid #000000";></canvas><br>
+        <embed src="../../bin/debug/flashlsChromeless.swf?inline=1" width="720" height="480" name="moviename"
+                    quality="autohigh"
+                    bgcolor="#0"
+                    align="middle" allowFullScreen="true"
+                    allowScriptAccess="sameDomain"
+                    type="application/x-shockwave-flash"
+                    swliveconnect="true"
+                    wmode="window"
+                    FlashVars="callback=flashlsCallback"
+                    pluginspage="http://www.macromedia.com/go/getflashplayer" >
+        </embed>
+        </object>
+        <br><br>
+        <canvas id="buffered_c" width="640" height="15" onclick="buffered_seek(event)";></canvas> <br>
+        <br>
+    </div>
+    <div class="center" id="toggleButtons">
+      <button type="button" class="btn btn-sm" onclick="$('#PlaybackInfo').toggle();">playback info</button>
+      <button type="button" class="btn btn-sm" onclick="$('#PlaybackControl').toggle();">playback controls</button>
+      <button type="button" class="btn btn-sm" onclick="$('#QualityLevelControl').toggle();">Quality Level controls</button>
+      <button type="button" class="btn btn-sm" onclick="$('#AdvancedControl').toggle();">advanced controls</button>
+      <button type="button" class="btn btn-sm" onclick="$('#MetricsDisplay').toggle();toggleMetricsDisplay();">Metrics Display</button>
+      <button type="button" class="btn btn-sm" onclick="$('#StatsDisplay').toggle();">Stats Display</button>
+      <button type="button" class="btn btn-sm" onclick="$('#VideoStatus').toggle();">Log Message</button>
+    </div>
+
+    <div id='PlaybackControl'>
+    <h4> Playback Control </h4>
+      <button type="button" class="btn btn-sm btn-info" onclick="api.play(-1)">play</button>
+      <button type="button" class="btn btn-sm btn-info" onclick="api.pause()">pause</button>
+      <button type="button" class="btn btn-sm btn-info" onclick="api.resume()">resume</button>
+      <button type="button" class="btn btn-sm btn-info" onclick="api.seek(api.getPosition()+10)">currentTime+=10</button>
+      <button type="button" class="btn btn-sm btn-info" onclick="api.seek(api.getPosition()-10)">currentTime-=10</button>
+      <button type="button" class="btn btn-sm btn-info" onclick="api.seek($('#seek_pos').val())">seek to </button>
+       <input type="text" id='seek_pos' size="8" onkeydown="if(window.event.keyCode=='13'){api.seek($('#seek_pos').val());}">
+      <button type="button" class="btn btn-sm btn-info" onclick="api.volume($('#vol_val').val())">set volume </button>
+       <input type="text" id='vol_val' size="8" onkeydown="if(window.event.keyCode=='13'){api.volume($('#vol_val').val());}">
+       <table>
+            <tr>
+              <td>selectable audio tracks</td>
+            </tr>
+            <tr>
+              <td> <div id="audioControl" style="display: inline;"></div> </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id='QualityLevelControl'>
+    <h4> Quality Control </h4>
+      <table>
+        <tr>
+          <td>current level</td>
+          <td width=10px></td>
+          <td> <div id="currentLevelControl" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td> <p>next level</p></td>
+          <td> </td>
+          <td> <div id="nextLevelControl" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td> <p>load level</p></td>
+          <td> </td>
+          <td> <div id="loadLevelControl" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td> <p>cap level</p></td>
+          <td> </td>
+          <td> <div id="levelCappingControl" style="display: inline;"></div> </td>
+        </tr>
+      </table>
+    </div>
+
+
+    <div id='PlaybackInfo'>
+    <h4> Playback Info </h4>
+      <table border>
+        <tr>
+          <td>state</td>
+          <td> <div id="currentState" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td>position</td>
+          <td> <div id="currentPosition" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td>duration</td>
+          <td> <div id="currentDuration" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td>buffer length</td>
+          <td> <div id="bufferLength" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td>back buffer length</td>
+          <td> <div id="backBufferLength" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td>sliding</td>
+          <td> <div id="sliding" style="display: inline;"></div> </td>
+        </tr>
+      </table>
+    </div>
+
+
+    <div id='AdvancedControl'>
+    <h4> Advanced Control </h4>
+      <table border>
+        <tr>
+          <td><button type="button" class="btn btn-sm btn-info" onclick="toggleDebugLogs()">toggle debug logs</button></td>
+          <td> <div id="debugLogState" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td><button type="button" class="btn btn-sm btn-info" onclick="toggleDebug2Logs()">toggle debug2 logs</button></td>
+          <td> <div id="debug2LogState" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td><button type="button" class="btn btn-sm btn-info" onclick="toggleFlushLiveURLCache()">toggle flush Live URL Cache</button></td>
+          <td> <div id="flushLiveURLState" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td><button type="button" class="btn btn-sm btn-info" onclick="toggleJSURLStream()">toggle JS URL Loader</button></td>
+          <td> <div id="JSURLStreamState" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td><button type="button" class="btn btn-sm btn-info" onclick="toggleCapLeveltoStage()">toggle cap Level to Stage</button></td>
+          <td> <div id="capLeveltoStageState" style="display: inline;"></div> </td>
+        </tr>
+        <tr>
+          <td><button type="button" class="btn btn-sm btn-info" onclick="toggleUseHardwareVideoDecoder()">toggle HW decoder</button></td>
+          <td> <div id="hwVideoDecoderState" style="display: inline;"></div> </td>
+        </tr>
+      </table>
+    </div>
+
+    <div id='MetricsDisplay'>
+        <h4 class="title">real time metrics</h4>
+        <div id="metricsButton">
+            <button type="button" class="btn btn-xs btn-info" onclick="windowSliding=!windowSliding; refreshCanvas()">toggle sliding/fixed window</button><br>
+            <div id="metricsButtonWindow">
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSetSliding(0)">window ALL</button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSetSliding(2000)">2s</button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSetSliding(5000)">5s</button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSetSliding(10000)">10s</button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSetSliding(20000)">20s</button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSetSliding(30000)">30s</button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSetSliding(60000)">60s</button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSetSliding(120000)">120s</button><br>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeZoomIn()">Window Zoom In</button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeZoomOut()">Window Zoom Out</button><br>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSlideLeft()"> <<< Window Slide </button>
+                <button type="button" class="btn btn-xs btn-info" onclick="timeRangeSlideRight()">Window Slide >>> </button><br>
+            </div>
+            <div id="metricsButtonFixed">
+                <button type="button" class="btn btn-xs btn-info" onclick="windowStart=$('#windowStart').val()">fixed window start(ms)</button>
+                    <input type="text" id='windowStart' defaultValue="0" size="8" onkeydown="if(window.event.keyCode=='13'){windowStart=$('#windowStart').val();}">
+                <button type="button" class="btn btn-xs btn-info" onclick="windowEnd=$('#windowEnd').val()">fixed window end(ms)</button>
+                    <input type="text" id='windowEnd' defaultValue="10000" size="8" onkeydown="if(window.event.keyCode=='13'){windowEnd=$('#windowEnd').val();}"><br>
+            </div>
+            <button type="button" class="btn btn-xs btn-success" onclick="exportmetrics()" style="font-size:18px">metrics permalink</button>
+            <canvas id="bufferTimerange_c" width="640" height="100" style="border:1px solid #000000" onmousedown="timeRangeCanvasonMouseDown(event)" onmousemove="timeRangeCanvasonMouseMove(event)" onmouseup="timeRangeCanvasonMouseUp(event)" onmouseout="timeRangeCanvasonMouseOut(event)";></canvas>
+            <canvas id="bufferWindow_c" width="640" height="100" style="border:1px solid #000000" onmousemove="windowCanvasonMouseMove(event)";></canvas>
+            <canvas id="videoEvent_c" width="640" height="15" style="border:1px solid #000000";></canvas>
+            <canvas id="loadEvent_c" width="640" height="15" style="border:1px solid #000000";></canvas><br>
+        </div>
+    </div>
+    <div id='StatsDisplay'>
+    <h4> Stats Display </h4>
+      <pre id='HlsStats'></pre>
+    </div>
+    <div id="VideoStatus">
+        <h4> Video status messages </h4>
+    </div>
   </div>
-  <pre id='HlsStats'></pre>
-<h3> Test Videos </h3>
-<div> The following videos should stream correctly. Each time an
-issue is reported with a sample playlist, it will be added in the list
-and verified after bugfixing </div>
-<ul id="streamlist">
-</ul>
+  <br><br>
 
-<p>
-
-<script type="text/javascript">
-function userSubmit() {
-   loadStream(document.getElementById('userInput').value);
-}
-</script>
-
-</p><div style="text-align: left;">
 <script type="text/javascript" src="../../../playlists/streams.js"></script>
-<script type="text/javascript" src="../../../streams.js"></script>
+<script type="text/javascript" src="../../streams.js"></script>
 <script type="text/javascript">
+$(document).ready(function() {
+   $('#streamSelect').change(function()      { $('#streamURL').val($('#streamSelect').val());loadStream($('#streamURL').val());});
+   $('#streamURL').change(function()           { loadStream($('#streamURL').val());});
+   $("#PlaybackControl").hide();
+   $("#PlaybackInfo").hide();
+   $("#QualityLevelControl").hide();
+   $("#AdvancedControl").hide();
+   $("#MetricsDisplay").hide();
+   $("#StatsDisplay").hide();
+   $("#VideoStatus").hide();
+   $('#metricsButtonWindow').toggle(windowSliding);
+   $('#metricsButtonFixed').toggle(!windowSliding);
 
-var current_url;
+    var manifest = decodeURIComponent(location.search.split('src=')[1]);
+    if(manifest === 'undefined') {
+      manifest = 'http://www.streambox.fr/playlists/test_001/stream.m3u8';
+    }
+    $('#streamURL').val(manifest);
+});
 
-var manifest = decodeURIComponent(location.search.split('src=')[1]);
-if(manifest === 'undefined') {
-  manifest = 'http://www.streambox.fr/playlists/test_001/stream.m3u8';
-}
-document.getElementById('userInput').value=manifest;
 
 var events;
 var jsPingDate,flashPingDate, jsLoadDate, flashLoadDate;
-var player_id = "mymoviename";
 var lastSeekingIdx;
 var api;
-hideCanvas();
+
 
 function loadStream(url) {
   api.stop();
-  current_url = url;
   load(url);
-  document.getElementById("playbackLink").href= window.location.href.split('?')[0] + "?src=" + encodeURIComponent(url);
-  document.getElementById('userInput').value = url;
+  $('#streamURL').val(url);
+  var hlsLink = document.URL.split('?')[0] +  '?src=' + encodeURIComponent(url);
+  var description = 'permalink: ' + "<a href=\"" + hlsLink + "\">" + hlsLink + "</a>";
+  $("#StreamPermalink").html(description);
 }
 
 function appendLog(txt)
@@ -289,66 +341,61 @@ function appendLog(txt)
   var d = new Date();
   var msg = '[' + d.toString() + '] ' + txt;
   console.log(msg);
-  document.getElementById("videoStatus").innerHTML += msg + "<br />";
+  $('#VideoStatus').append(msg + "<br>");
 }
 
 function load(url) {
   jsLoadDate = new Date();
   flashLoadDate = (jsLoadDate - jsPingDate )+ flashPingDate;
-  events = { url : current_url, date : jsLoadDate, load : [], buffer : [], video : []};
-  current_url = url;
+  events = { url : url, date : jsLoadDate, load : [], buffer : [], video : []};
   api.load(url);
   appendLog("load URL " + url);
-  document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  0;
-  document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  0;
-  document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML =  0;
-  document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML =  0;
-  document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  0;
-  document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML =  0;
-  document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  0;
-  document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML =  0;
-  document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  0;
+  $('#currentPosition').html(0);
+  $('#currentDuration').html(0);
+  $('#bufferLength').html(0);
+  $('#backBufferLength').html(0);
+  $('#sliding').html(0);
 }
 
 function toggleDebugLogs() {
   var state = api.getLogDebug();
   state = !state;
-  document.getElementById('mediaInfo').rows[Y_LOGDEBUG].cells[X_LOGDEBUG].innerHTML =  state;
   api.playerSetLogDebug(state);
+  $('#debugLogState').html(state.toString());
 }
 
 function toggleDebug2Logs() {
   var state = api.getLogDebug2();
   state = !state;
-  document.getElementById('mediaInfo').rows[Y_LOGDEBUG2].cells[X_LOGDEBUG2].innerHTML =  state;
+  $('#debug2LogState').html(state.toString());
   api.playerSetLogDebug2(state);
 }
 
 function toggleUseHardwareVideoDecoder() {
   var state = api.getUseHardwareVideoDecoder();
   state = !state;
-  document.getElementById('mediaInfo').rows[Y_USEHWDECODER].cells[X_USEHWDECODER].innerHTML =  state;
+  $('#hwVideoDecoderState').html(state.toString());
   api.playerSetUseHardwareVideoDecoder(state);
 }
 
 function toggleFlushLiveURLCache() {
   var state = api.getflushLiveURLCache();
   state = !state;
-  document.getElementById('mediaInfo').rows[Y_FLUSHLIVEURL].cells[X_FLUSHLIVEURL].innerHTML =  state;
+  $('#flushLiveURLState').html(state.toString());
   api.playerSetflushLiveURLCache(state);
 }
 
 function toggleJSURLStream() {
   var state = api.getJSURLStream();
   state = !state;
-  document.getElementById('mediaInfo').rows[Y_JSURLLOADER].cells[X_JSURLLOADER].innerHTML =  state;
+  $('#JSURLStreamState').html(state.toString());
   api.playerSetJSURLStream(state);
 }
 
 function toggleCapLeveltoStage() {
   var state = api.getCapLeveltoStage();
   state = !state;
-  document.getElementById('mediaInfo').rows[Y_CAPLEVEL].cells[X_CAPLEVEL].innerHTML =  state;
+  $('#capLeveltoStageState').html(state.toString());
   api.playerCapLeveltoStage(state);
 }
 
@@ -363,26 +410,27 @@ var flashlsEvents = {
     flashPingDate = flashTime;
     jsPingDate = new Date();
     appendLog("onHLSReady()");
-    api = new flashlsAPI(getFlashMovieObject(player_id));
-    document.getElementById('mediaInfo').rows[Y_LOW_BUFFER].cells[X_LOW_BUFFER].innerHTML = api.getLowBufferLength().toFixed(2);
-    document.getElementById('mediaInfo').rows[Y_MIN_BUFFER].cells[X_MIN_BUFFER].innerHTML = api.getMinBufferLength().toFixed(2);
-    document.getElementById('mediaInfo').rows[Y_MAX_BUFFER].cells[X_MAX_BUFFER].innerHTML = api.getMaxBufferLength().toFixed(2);
+    api = new flashlsAPI(getFlashMovieObject("moviename"));
+    $('#debugLogState').html(api.getLogDebug().toString());
+    $('#debug2LogState').html(api.getLogDebug2().toString());
+    $('#flushLiveURLState').html(api.getflushLiveURLCache().toString());
+    $('#JSURLStreamState').html(api.getJSURLStream().toString());
+    $('#capLeveltoStageState').html(api.getCapLeveltoStage().toString());
+    $('#hwVideoDecoderState').html(api.getUseHardwareVideoDecoder().toString());
   },
   videoSize: function(width, height) {
     var event = {time : new Date() - jsLoadDate, type : "resize", name : width + 'x' + height};
     events.video.push(event);
-    var state = api.getCapLeveltoStage();
-    if(!state) {
-      var ratio = width / height;
-      if (height > window.innerHeight-30) {
-        height = window.innerHeight-30;
-        width = Math.round(height * ratio);
-      }
-      api.flashObject.width = width;
-      api.flashObject.height = height;
-      var canvas = document.getElementById('buffered_c');
-      canvas.width = width;
+    $("#currentResolution").html("video resolution:" + width + 'x' + height);
+    var ratio = width / height;
+    if (width > $('#video').innerWidth()-30) {
+        width = $('#video').innerWidth()-30;
+        height = Math.round(width / ratio);
     }
+   api.flashObject.width = width;
+   api.flashObject.height = height;
+   var canvas = $('#buffered_c')[0];
+   canvas.width = width;
   },
   complete: function() {
     appendLog("onComplete(), playback completed");
@@ -392,7 +440,7 @@ var flashlsEvents = {
   },
   manifest: function(duration, levels, loadmetrics) {
     appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
-    document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  duration.toFixed(2);
+    $('#currentDuration').html(duration.toFixed(2));
     showCanvas();
     updateLevelInfo();
     api.play(-1);
@@ -465,12 +513,11 @@ var flashlsEvents = {
     updateLevelInfo();
   },
   position: function(timemetrics) {
-    document.getElementById('mediaInfo').rows[Y_POSITION].cells[X_POSITION].innerHTML =  timemetrics.position.toFixed(2);
-    document.getElementById('mediaInfo').rows[Y_DURATION].cells[X_DURATION].innerHTML =  timemetrics.duration.toFixed(2);
-    document.getElementById('mediaInfo').rows[Y_BUFFER].cells[X_BUFFER].innerHTML =  timemetrics.buffer.toFixed(2);
-    document.getElementById('mediaInfo').rows[Y_BACK_BUFFER].cells[X_BACK_BUFFER].innerHTML =  timemetrics.backbuffer.toFixed(2);
-    document.getElementById('mediaInfo').rows[Y_PLAYLIST_SLIDING].cells[X_PLAYLIST_SLIDING].innerHTML =  timemetrics.live_sliding_main.toFixed(2);
-
+    $('#currentPosition').html(timemetrics.position.toFixed(2));
+    $('#currentDuration').html(timemetrics.duration.toFixed(2));
+    $('#bufferLength').html(timemetrics.buffer.toFixed(2));
+    $('#backBufferLength').html(timemetrics.backbuffer.toFixed(2));
+    $('#sliding').html(timemetrics.live_sliding_main.toFixed(2));
     var event = { time : new Date() - jsLoadDate, buffer : Math.round(1000*timemetrics.buffer), pos: Math.round(1000*timemetrics.position)};
     var bufEvents = events.buffer, bufEventLen = bufEvents.length;
     if(bufEventLen > 1) {
@@ -494,7 +541,7 @@ var flashlsEvents = {
   state: function(newState) {
     var event = {time : new Date() - jsLoadDate, type : newState.toLowerCase(), name : ''};
     events.video.push(event);
-    document.getElementById('mediaInfo').rows[Y_STATE].cells[X_STATE].innerHTML =  newState;
+    $('#currentState').html(newState);
   },
   seekState: function(newState) {
     var event = {time : new Date() - jsLoadDate, type : newState.toLowerCase(), name : ''};
@@ -510,7 +557,6 @@ var flashlsEvents = {
   switch: function(newLevel) {
     var event = {time : new Date() - jsLoadDate, type : "levelSwitch", name : newLevel.toFixed()};
     events.video.push(event);
-    document.getElementById('mediaInfo').rows[Y_LOAD_LEVEL].cells[X_LOAD_LEVEL].innerHTML =  newLevel;
   },
   audioTracksListChange: function(trackList) {
     var d = document.getElementById('audioControl');
@@ -518,14 +564,13 @@ var flashlsEvents = {
     appendLog("new track list");
     for (var t in trackList) {
       appendLog("    " + trackList[t].title + " [" + trackList[t].id + "]");
-      html += '<button onclick="api.setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
+      html += '<button class="btn btn-sm btn-info" onclick="api.setAudioTrack(' +t+ ')">' + trackList[t].title + '</button>';
     }
     d.innerHTML = html;
   },
   audioTrackChange: function(trackId) {
     var event = {time : new Date() - jsLoadDate, type : "audioTrackChange", name : trackId.toFixed()};
     events.video.push(event);
-    document.getElementById('mediaInfo').rows[Y_AUDIOTRACKID].cells[X_AUDIOTRACKID].innerHTML = trackId;
   },
   id3Updated: function(ID3Data) {
     var event = {time : new Date() - jsLoadDate, type : "ID3Data", id3data: atob(ID3Data)};
@@ -652,15 +697,11 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       }
       html4 += 'onclick="api.setNextLevel(' + i + ')">' + i + '</button>';
     }
-    document.getElementById('currentLevelControl').innerHTML = html1;
-    document.getElementById('loadLevelControl').innerHTML = html2;
-    document.getElementById('levelCappingControl').innerHTML = html3;
-    document.getElementById('nextLevelControl').innerHTML = html4;
+    $("#currentLevelControl").html(html1);
+    $("#loadLevelControl").html(html2);
+    $("#levelCappingControl").html(html3);
+    $("#nextLevelControl").html(html4);
   }
-
-
-
 </script>
-<div id="videoStatus">Video status messages<br /></div>
 </body>
 </html>

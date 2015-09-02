@@ -28,6 +28,7 @@
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING,_fragmentPlayingHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT_SKIPPED,_fragmentSkippedHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
@@ -37,6 +38,7 @@
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
+            _hls.removeEventListener(HLSEvent.FRAGMENT_SKIPPED,_fragmentSkippedHandler);
             _hls.removeEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
             _hls.removeEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
             _hls.removeEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
@@ -51,25 +53,27 @@
             _stats.levelNb = event.levels.length;
             _stats.levelStart = -1;
             _stats.tech = "flashls,"+Capabilities.version;
-            _stats.fragBuffered = _stats.fragChangedAuto = _stats.fragChangedManual = 0;
+            _stats.fragBuffered = _stats.fragChangedAuto = _stats.fragChangedManual = _stats.fragSkipped = 0;
             _stats.fpsDropEvent = _stats.fpsDropSmoothLevelSwitch = 0;
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
             var metrics : HLSLoadMetrics = event.loadMetrics;
             var latency : int = metrics.loading_begin_time-metrics.loading_request_time;
-            var bitrate : int = 8*metrics.size/(metrics.parsing_end_time-metrics.loading_begin_time);
+            var bandwidth : int = metrics.bandwidth/1000;
             if(_stats.fragBuffered) {
+              _stats.fragLastLatency = latency;
               _stats.fragMinLatency = Math.min(_stats.fragMinLatency,latency);
               _stats.fragMaxLatency = Math.max(_stats.fragMaxLatency,latency);
-              _stats.fragMinKbps = Math.min(_stats.fragMinKbps,bitrate);
-              _stats.fragMaxKbps = Math.max(_stats.fragMaxKbps,bitrate);
+              _stats.fragLastKbps = bandwidth;
+              _stats.fragMinKbps = Math.min(_stats.fragMinKbps,bandwidth);
+              _stats.fragMaxKbps = Math.max(_stats.fragMaxKbps,bandwidth);
               _stats.autoLevelCappingMin = Math.min(_stats.autoLevelCappingMin,_hls.autoLevelCapping);
               _stats.autoLevelCappingMax = Math.max(_stats.autoLevelCappingMax,_hls.autoLevelCapping);
               _stats.fragBuffered++;
             } else {
                   _stats.fragMinLatency = _stats.fragMaxLatency = latency;
-                  _stats.fragMinKbps = _stats.fragMaxKbps = bitrate;
+                  _stats.fragMinKbps = _stats.fragMaxKbps = bandwidth;
                   _stats.fragBuffered = 1;
                   _stats.fragBufferedBytes = 0;
                   _stats.autoLevelCappingMin = _stats.autoLevelCappingMax = _hls.autoLevelCapping;
@@ -77,7 +81,7 @@
                   _sumKbps=0;
             }
             _sumLatency+=latency;
-            _sumKbps+=bitrate;
+            _sumKbps+=bandwidth;
             _stats.fragBufferedBytes+=metrics.size;
             _stats.fragAvgLatency = _sumLatency/_stats.fragBuffered;
             _stats.fragAvgKbps = _sumKbps/_stats.fragBuffered;
@@ -126,15 +130,26 @@
         }
         _levelLastAuto = autoLevel;
       }
+
+      private function _fragmentSkippedHandler(event : HLSEvent) : void {
+        if(_stats.fragSkipped) {
+            _stats.fragSkipped++;
+        } else {
+            _stats.fragSkipped = 1;
+        }
+      }
+
       private function _fpsDropHandler(event : HLSEvent) : void {
         _stats.fpsDropEvent++;
         _stats.fpsTotalDroppedFrames = _hls.stream.info.droppedFrames;
-      };
+      }
+
       private function _fpsDropLevelCappingHandler(event : HLSEvent) : void {
          _stats.fpsDropLevelCappingMin=event.level;
-      };
+      }
+
       private function _fpsDropSmoothLevelSwitchHandler(event : HLSEvent) : void {
         _stats.fpsDropSmoothLevelSwitch++;
-      };
+      }
   }
 }

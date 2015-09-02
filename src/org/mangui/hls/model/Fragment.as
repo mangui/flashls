@@ -5,6 +5,7 @@ package org.mangui.hls.model {
 
     import flash.net.ObjectEncoding;
     import flash.utils.ByteArray;
+    import org.mangui.hls.demux.ID3Tag;
     import org.mangui.hls.flv.FLVTag;
 
     /** Fragment model **/
@@ -56,7 +57,7 @@ package org.mangui.hls.model {
             // }
         };
 
-        public function get metadataTag() : FLVTag {
+        public function getMetadataTag() : FLVTag {
             var tag : FLVTag = new FLVTag(FLVTag.METADATA, this.data.dts_min, this.data.dts_min, false);
             var data : ByteArray = new ByteArray();
             data.objectEncoding = ObjectEncoding.AMF0;
@@ -70,14 +71,22 @@ package org.mangui.hls.model {
             data.writeObject(this.data.video_width);
             data.writeObject(this.data.video_height);
             data.writeObject(this.data.auto_level);
+            data.writeObject(this.tag_list.length);
+            this.data.id3_tags ? data.writeObject(this.data.id3_tags.length) : data.writeObject(0);
             for each (var custom_tag : String in this.tag_list) {
                 data.writeObject(custom_tag);
+            }
+            for each (var id3_tag : ID3Tag in this.data.id3_tags) {
+                data.writeObject(id3_tag.id);
+                data.writeObject(id3_tag.flag);
+                data.writeObject(id3_tag.base64);
+                data.writeObject(id3_tag.data);
             }
             tag.push(data, 0, data.length);
             return tag;
         }
 
-        public function get skippedTag() : FLVTag {
+        public function getSkippedTag() : FLVTag {
             var tag : FLVTag = new FLVTag(FLVTag.METADATA, this.data.pts_start_computed, this.data.pts_start_computed, false);
             var data : ByteArray = new ByteArray();
             data.objectEncoding = ObjectEncoding.AMF0;

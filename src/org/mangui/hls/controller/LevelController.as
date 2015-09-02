@@ -26,14 +26,14 @@ package org.mangui.hls.controller {
         /** switch down threshold **/
         private var _switchdown : Vector.<Number> = null;
         /** bitrate array **/
-        private var _bitrate : Vector.<Number> = null;
+        private var _bitrate : Vector.<uint> = null;
         /** vector of levels with unique dimension with highest bandwidth **/
         private var _maxUniqueLevels : Vector.<Level> = null;
         /** nb level **/
         private var _nbLevel : int = 0;
         private var _lastSegmentDuration : Number;
         private var _lastFetchDuration : Number;
-        private var  lastBandwidth : Number;
+        private var  lastBandwidth : int;
         private var  _autoLevelCapping : int;
         private var  _startLevel : int = -1;
         private var  _fpsController : FPSController;
@@ -45,6 +45,7 @@ package org.mangui.hls.controller {
             _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
         }
         ;
 
@@ -54,6 +55,7 @@ package org.mangui.hls.controller {
             _hls.removeEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.removeEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
         }
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
@@ -76,7 +78,7 @@ package org.mangui.hls.controller {
             var maxswitchup : Number = 0;
             var minswitchdwown : Number = Number.MAX_VALUE;
             _nbLevel = levels.length;
-            _bitrate = new Vector.<Number>(_nbLevel, true);
+            _bitrate = new Vector.<uint>(_nbLevel, true);
             _switchup = new Vector.<Number>(_nbLevel, true);
             _switchdown = new Vector.<Number>(_nbLevel, true);
             _autoLevelCapping = -1;
@@ -120,7 +122,7 @@ package org.mangui.hls.controller {
         }
         ;
 
-        public function getbestlevel(downloadBandwidth : Number) : int {
+        public function getbestlevel(downloadBandwidth : int) : int {
             var max_level : int = _maxLevel;
             for (var i : int = max_level; i >= 0; i--) {
                 if (_bitrate[i] <= downloadBandwidth) {

@@ -2,3 +2,7 @@
 *.swc.cache
 .metadata
 .settings
+
+*.swc
+
+*.swc
