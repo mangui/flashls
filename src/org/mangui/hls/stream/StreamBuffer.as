@@ -659,6 +659,11 @@ package org.mangui.hls.stream {
             } else {
                 clipping_position = clipping_position0;
             }
+            // don't clip if clipping position is greater than current position ! this could happen on live stream with long pause
+            if(clipping_position >= position) {
+                return;
+            }
+
             // CONFIG::LOGGING {
             //     if (clipping_position != clipping_position0) {
             //         Log.info("clipping_position/clipping_position0 " + clipping_position + '/' + clipping_position0);
