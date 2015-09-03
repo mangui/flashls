@@ -294,6 +294,9 @@ package org.mangui.hls.controller {
             return 0;
         }
 
+        public function isStartLevelSet() : Boolean {
+            return (_startLevel >=0);
+        }
 
         /*  set the quality level used when starting a fresh playback */
         public function set startLevel(level : int) : void {
