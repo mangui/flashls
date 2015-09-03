@@ -13,6 +13,7 @@
   <pre id='HlsUrl'></pre>
     <canvas id="buffered_c" width="640" height="15" onclick="buffered_seek(event)";></canvas> <br>
     window size
+    <div id="metricsButton">
     <button onclick="timeRangeSetSliding(2000);">2s</button>
     <button onclick="timeRangeSetSliding(5000)">5s</button>
     <button onclick="timeRangeSetSliding(10000)">10s</button>
@@ -30,6 +31,7 @@
     <input type="text" id='windowStart' defaultValue="0" onkeydown="if(window.event.keyCode=='13'){windowStart=document.getElementById('windowStart').value;refreshCanvas();}">
     <button onclick="windowEnd=document.getElementById('windowEnd').value;refreshCanvas();">fixed window end(ms)</button>
     <input type="text" id='windowEnd' defaultValue="10000" onkeydown="if(window.event.keyCode=='13'){windowEnd=document.getElementById('windowEnd').value;refreshCanvas();}"><br>
+    </div>
     <canvas id="bufferTimerange_c" width="640" height="100" style="border:1px solid #000000" onmousedown="timeRangeCanvasonMouseDown(event)" onmousemove="timeRangeCanvasonMouseMove(event)" onmouseup="timeRangeCanvasonMouseUp(event)" onmouseout="timeRangeCanvasonMouseOut(event)";></canvas>
     <canvas id="bufferWindow_c" width="640" height="100" style="border:1px solid #000000" onmousemove="windowCanvasonMouseMove(event)";></canvas>
     <canvas id="videoEvent_c" width="640" height="15" style="border:1px solid #000000";></canvas>
@@ -46,6 +48,8 @@
   document.getElementById("HlsUrl").innerHTML = description;
   document.getElementById("HlsDate").innerHTML = "session Start Date:" + events.date;
   showMetrics();
+  toggleMetricsDisplay();
+  timeRangeSetSliding(0);
   refreshCanvas();
   </script>
 
