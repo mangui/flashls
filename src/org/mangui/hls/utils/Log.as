@@ -43,7 +43,6 @@ package org.mangui.hls.utils {
             if (ExternalInterface.available)
                 ExternalInterface.call('console.log', level + message);
             else trace(level + message);
-        };
-        
+        }
     };
 }

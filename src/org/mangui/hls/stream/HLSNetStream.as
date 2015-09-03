@@ -243,12 +243,10 @@ package org.mangui.hls.stream {
                 // }
             }
             // append all tags
-
             for each (var tagBuffer : FLVTag in tags) {
                 // CONFIG::LOGGING {
                 //     Log.debug2('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
                 // }
-
                 try {
                     if (tagBuffer.type == FLVTag.DISCONTINUITY) {
                         super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
