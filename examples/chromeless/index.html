@@ -323,7 +323,7 @@ $(document).ready(function() {
 
 var events;
 var jsPingDate,flashPingDate, jsLoadDate, flashLoadDate;
-var lastSeekingIdx;
+var lastSeekingIdx,lastFragPlayingIdx;
 var api;
 
 
@@ -347,6 +347,7 @@ function appendLog(txt)
 function load(url) {
   jsLoadDate = new Date();
   flashLoadDate = (jsLoadDate - jsPingDate )+ flashPingDate;
+  lastSeekingIdx = lastFragPlayingIdx = undefined;
   events = { url : url, date : jsLoadDate, load : [], buffer : [], video : []};
   api.load(url);
   appendLog("load URL " + url);
@@ -508,8 +509,17 @@ var flashlsEvents = {
     refreshCanvas();
   },
   fragmentPlaying: function(playmetrics) {
-    var event = {time : new Date() - jsLoadDate, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level, duration : playmetrics.duration*1000};
+
+    var currentTime = new Date() - jsLoadDate;
+    if(lastFragPlayingIdx) {
+      // ensure that last frag duration is not exceeding
+      var lastEvent = events.video[lastFragPlayingIdx];
+      if(lastEvent.time+lastEvent.duration > currentTime)
+        lastEvent.duration = currentTime - lastEvent.time;
+    }
+    var event = {time : currentTime, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level, duration : playmetrics.duration*1000};
     events.video.push(event);
+    lastFragPlayingIdx = events.video.length-1;
     updateLevelInfo();
   },
   position: function(timemetrics) {
@@ -544,11 +554,18 @@ var flashlsEvents = {
     $('#currentState').html(newState);
   },
   seekState: function(newState) {
-    var event = {time : new Date() - jsLoadDate, type : newState.toLowerCase(), name : ''};
+    var currentTime = new Date() - jsLoadDate;
+    var event = {time : currentTime, type : newState.toLowerCase(), name : ''};
     events.video.push(event);
 
     if(event.type === 'seeking') {
       lastSeekingIdx = events.video.length-1;
+      if(lastFragPlayingIdx) {
+        // ensure that last frag duration is not exceeding
+        var lastEvent = events.video[lastFragPlayingIdx];
+        if(lastEvent.time+lastEvent.duration > currentTime)
+          lastEvent.duration = currentTime - lastEvent.time;
+      }
     }
     if(event.type === 'seeked') {
       events.video[lastSeekingIdx].duration = event.time - events.video[lastSeekingIdx].time;
