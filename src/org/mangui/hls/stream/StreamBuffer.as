@@ -187,8 +187,8 @@ package org.mangui.hls.stream {
                             // if same continuity counter, sliding can be computed using PTS, it will be more accurate
                             if(continuity == _fragMainInitialContinuity) {
                                 sliding = _playlistSlidingMain = _fragMainInitialStartPosition + (min_pts-_fragMainInitialPTS)/1000 - startPosition;
-                                if(sliding < 0) {
-                                    CONFIG::LOGGING {
+                                CONFIG::LOGGING {
+                                    if(sliding < 0) {
                                         Log.warn('negative sliding : sliding/min_pts/_fragMainInitialPTS/startPosition/_fragMainInitialStartPosition:' + sliding + '/' + min_pts + '/' + _fragMainInitialPTS + '/' + startPosition.toFixed(3) + '/' + _fragMainInitialStartPosition);
                                     }
                                 }
