@@ -371,8 +371,8 @@ package org.mangui.hls.controller {
             var seek_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (HLSSettings.seekFromLevel == -1) {
-                // keep last level
-                return _hls.loadLevel;
+                // keep last level, but don't exceed _maxLevel
+                return Math.min(_hls.loadLevel,_maxLevel);
             }
 
             // set up seek level as being the lowest non-audio level.
