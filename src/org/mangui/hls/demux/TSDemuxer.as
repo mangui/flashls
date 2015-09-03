@@ -447,14 +447,6 @@ package org.mangui.hls.demux {
                 return;
             }
 
-
-//            CONFIG::LOGGING {
-//                var ba2 : ByteArray = new ByteArray();
-//                pes.data.position = pes.payload;
-//                pes.data.readBytes(ba2);
-//                Log.info("PES holding SEI data :" + Hex.fromArray(ba2));
-//            }
-
             /* first loop : look for AUD/SPS/PPS NAL unit :
              * AUD (Access Unit Delimiter) are used to detect switch to new video tag
              * SPS/PPS are used to generate AVC HEADER
@@ -505,22 +497,13 @@ package org.mangui.hls.demux {
                     pes.data.position = frame.start;
                     pes.data.readBytes(pps, 0, frame.length);
                     ppsvect.push(pps);
-                } else if (frame.type == 6) { // TODO: do we need to support 39 for H.265?
+                } else if (frame.type == 6) {
 
-//                    CONFIG::LOGGING {
-//                        ba2 = new ByteArray();
-//                        pes.data.position = frame.start;
-//                        pes.data.readBytes(ba2, 0, frame.length);
-//                        Log.info("SEI data :" + Hex.fromArray(ba2));
-//                    }
-
-                    var workerbyte1:uint;
-                    
                     // We already know it's 6, so skip first byte
                     pes.data.position = frame.start + 1;
 
                     // get the SEI payload type
-                    var payload_type : uint = workerbyte1 = pes.data.readUnsignedByte();
+                    var payload_type : uint = pes.data.readUnsignedByte();
 
                     if (payload_type == 4)
                     {
@@ -530,11 +513,6 @@ package org.mangui.hls.demux {
                             payload_size = pes.data.readUnsignedByte();
                         }
                         while(payload_size === 255)
-                        
-                        CONFIG::LOGGING {
-                            Log.debug("Picture User Data: payload_type: " + payload_type);
-                            Log.debug("Picture User Data: payload_size: " + payload_size);
-                        }
 
                         var country_code : uint = pes.data.readUnsignedByte();
 
@@ -546,10 +524,11 @@ package org.mangui.hls.demux {
                             {
                                 var user_structure : uint = pes.data.readUnsignedInt();
 
-                                if (user_structure == 0x47413934)
+                                if (user_structure == 0x47413934) // GA94
                                 {
                                     var user_data_type : uint = pes.data.readUnsignedByte();                                    
 
+                                    // CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
                                     if (user_data_type == 3)
                                     {
                                         // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
@@ -596,8 +575,6 @@ package org.mangui.hls.demux {
 
                                             // add a new FLVTag with the onCaptionInfo call
                                             var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.dts, false);
-
-                                            tag.isCC = true;
 
                                             var data : ByteArray = new ByteArray();
                                             data.objectEncoding = ObjectEncoding.AMF0;
@@ -680,31 +657,6 @@ package org.mangui.hls.demux {
                     }
                 }
             }
-        }
-
-        public static function getCharacterFromByte(byte:uint):String
-        {
-            return String.fromCharCode(byte);
-        }
-
-        // return true if same Byte Array
-        private function compareByteArray(ba1 : ByteArray, ba2 : ByteArray) : Boolean {
-            // compare the lengths
-            var size : uint = ba1.length;
-            if (ba1.length == ba2.length) {
-                ba1.position = 0;
-                ba2.position = 0;
-
-                // then the bytes
-                while (ba1.position < size) {
-                    var v1 : int = ba1.readByte();
-                    if (v1 != ba2.readByte()) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            return false;
         }
 
         /** parse ID3 PES packet **/

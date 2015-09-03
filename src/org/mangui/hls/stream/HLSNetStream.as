@@ -245,28 +245,17 @@ package org.mangui.hls.stream {
             }
             // append all tags
 
-            var i:int = 0;
-
             for each (var tagBuffer : FLVTag in tags) {
                 // CONFIG::LOGGING {
                 //     Log.debug2('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
                 // }
-                i++;
+
                 try {
                     if (tagBuffer.type == FLVTag.DISCONTINUITY) {
                         super.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
                         super.appendBytes(FLVTag.getHeader());
                     }
-                    var data:ByteArray = tagBuffer.data;
-                    super.appendBytes(data);
-
-                    data.position = 11;
-
-                    CONFIG::LOGGING {
-                        if (tagBuffer.type == FLVTag.METADATA && tagBuffer.isCC) {
-                            Log.outputCCFLVTagToConsole("appending cc_data (" + tagBuffer.pts + ", " + tagBuffer.dts + " | " + i + " of " + tags.length + ") ", data);
-                        }
-                    }                    
+                    super.appendBytes(tagBuffer.data);
                 } catch (error : Error) {
                     var hlsError : HLSError = new HLSError(HLSError.TAG_APPENDING_ERROR, null, tagBuffer.type + ": " + error.message);
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
