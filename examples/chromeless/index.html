@@ -593,6 +593,18 @@ var flashlsEvents = {
     var event = {time : new Date() - jsLoadDate, type : "ID3Data", id3data: atob(ID3Data)};
     events.video.push(event);
   },
+  fpsDrop : function(level) {
+    var event = {time : new Date() - jsLoadDate, type : "fpsDrop", name : level.toFixed()};
+    events.video.push(event);
+  },
+  fpsDropLevelCapping : function(level) {
+    var event = {time : new Date() - jsLoadDate, type : "fpsDropLevelCapping", name : level.toFixed()};
+    events.video.push(event);
+  },
+  fpsDropSmoothLevelSwitch : function() {
+    var event = {time : new Date() - jsLoadDate, type : "fpsDropSmoothLevelSwitch", name : ''};
+    events.video.push(event);
+  },
   requestPlaylist: JSLoaderPlaylist.requestPlaylist.bind(JSLoaderPlaylist),
   abortPlaylist: JSLoaderPlaylist.abortPlaylist.bind(JSLoaderPlaylist),
   requestFragment: JSLoaderFragment.requestFragment.bind(JSLoaderFragment),
