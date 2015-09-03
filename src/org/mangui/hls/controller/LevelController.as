@@ -42,7 +42,9 @@ package org.mangui.hls.controller {
         public function LevelController(hls : HLS) : void {
             _hls = hls;
             _fpsController = new FPSController(hls);
-            _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
+            /* low priority listener, so that other listeners with default priority
+               could seamlessly set hls.startLevel in their HLSEvent.MANIFEST_PARSED listener */
+            _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler, false, int.MIN_VALUE);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
