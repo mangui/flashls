@@ -923,25 +923,10 @@ package org.mangui.hls.loader {
 
         /** triggered when demux has completed fragment parsing **/
         private function _fragParsingCompleteHandler() : void {
-            var fragData : FragmentData = _fragCurrent.data;
-
-            CONFIG::LOGGING {
-                if (fragData.tags)
-                {
-                    for each (var tag:FLVTag in fragData.tags)
-                    {
-                        if (tag.isCC)
-                        {
-                            Log.outputCCFLVTagToConsole("parsed cc_data (" + tag.pts + ", " + tag.dts + "): ", tag.data);
-                        }
-                    }
-                    Log.info("-- end of tags --");
-                }
-            }
-
             if (_loadingState == LOADING_IDLE)
                 return;
             var hlsError : HLSError;
+            var fragData : FragmentData = _fragCurrent.data;
             if ((_demux.audioExpected && !fragData.audio_found) && (_demux.videoExpected && !fragData.video_found)) {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _fragCurrent.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));

@@ -12,7 +12,6 @@ package org.mangui.hls.stream {
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
-    import org.mangui.hls.utils.Hex;
 
     import by.blooddy.crypto.Base64;
 
