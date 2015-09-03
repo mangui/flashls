@@ -520,7 +520,9 @@ package org.mangui.hls.stream {
                 var data : Vector.<FLVData> = shiftmultipletags(tagDuration);
                 if (!_seekPositionReached) {
                     data = seekFilterTags(data, _seekPositionRequested);
-                    _seekPositionReached = true;
+                    if(data.length) {
+                        _seekPositionReached = true;
+                    }
                 }
 
                 var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
@@ -550,36 +552,50 @@ package org.mangui.hls.stream {
             var idx2Clone : Vector.<int> = new Vector.<int>();
 
             // loop through all tags and find index position of header tags located before start position
-            for (var i : int = 0; i < tags.length; i++) {
-                var data : FLVData = tags[i];
-                if (data.positionAbsolute <= absoluteStartPosition) {
-                    lastIdx = i;
-                    // current tag is before requested start position
-                    // grab AVC/AAC/DISCONTINUITY/METADATA/KEYFRAMES tag located just before
-                    switch(data.tag.type) {
-                        case FLVTag.DISCONTINUITY:
-                            disIdx = i;
-                            break;
-                        case FLVTag.METADATA:
-                            if(data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
-                                metIdxMain = i;
-                            } else {
-                                metIdxAltAudio = i;
-                            }
-                            break;
-                        case FLVTag.AAC_HEADER:
-                            aacIdx = i;
-                            break;
-                        case FLVTag.AVC_HEADER:
-                            avcIdx = i;
-                            break;
-                        case FLVTag.AVC_NALU:
-                            if (data.tag.keyframe) keyIdx = i;
-                        default:
-                            break;
+            while(lastIdx ==-1) {
+                for (var i : int = 0; i < tags.length; i++) {
+                    var data : FLVData = tags[i];
+                    if (data.positionAbsolute <= absoluteStartPosition) {
+                        lastIdx = i;
+                        // current tag is before requested start position
+                        // grab AVC/AAC/DISCONTINUITY/METADATA/KEYFRAMES tag located just before
+                        switch(data.tag.type) {
+                            case FLVTag.DISCONTINUITY:
+                                disIdx = i;
+                                break;
+                            case FLVTag.METADATA:
+                                if(data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
+                                    metIdxMain = i;
+                                } else {
+                                    metIdxAltAudio = i;
+                                }
+                                break;
+                            case FLVTag.AAC_HEADER:
+                                aacIdx = i;
+                                break;
+                            case FLVTag.AVC_HEADER:
+                                avcIdx = i;
+                                break;
+                            case FLVTag.AVC_NALU:
+                                if (data.tag.keyframe) keyIdx = i;
+                            default:
+                                break;
+                        }
+                    } else {
+                        break;
                     }
-                } else {
-                    break;
+                }
+                if(lastIdx == -1) {
+                    // all filtered tags are located after seek position ... tweak start position
+                    CONFIG::LOGGING {
+                        Log.warn("seekFilterTags: startPosition > first tag position:" + absoluteStartPosition.toFixed(3) + '/' + tags[0].positionAbsolute.toFixed(3));
+                    }
+                    if(absoluteStartPosition != tags[0].positionAbsolute) {
+                        absoluteStartPosition = tags[0].positionAbsolute;
+                    } else {
+                        // nothing found yet, let's return empty an array
+                        return filteredTags;
+                    }
                 }
             }
 
