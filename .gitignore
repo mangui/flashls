@@ -2,3 +2,4 @@
 *.swc.cache
 .metadata
 .settings
+/streams.js
