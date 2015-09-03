@@ -203,7 +203,13 @@ package org.mangui.hls.loader {
                             if (_manifestJustLoaded) {
                                 level = _hls.startLevel;
                             } else {
-                                level = _hls.seekLevel;
+                                if(_hls.stream.bufferLength) {
+                                    // if buffer not empty, select level from heuristics
+                                    level = _levelController.getnextlevel(_hls.loadLevel, _hls.stream.bufferLength);
+                                } else {
+                                    // if buffer empty, retrieve seek level
+                                    level = _hls.seekLevel;
+                                }
                             }
                         } else {
                             level = _hls.manualLevel;
