@@ -73,7 +73,7 @@ package org.mangui.hls.controller {
         private function _manifestParsedHandler(event : HLSEvent) : void {
             if(HLSSettings.autoStartLoad) {
                 // upon manifest parsed event, trigger a level switch to load startLevel playlist
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _hls.startLevel));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, startLevel));
             }
         }
 
