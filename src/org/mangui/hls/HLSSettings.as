@@ -7,6 +7,19 @@ package org.mangui.hls {
 
     public final class HLSSettings extends Object {
         /**
+         * autoStartLoad
+         *
+         * if set to true,
+         *      start level playlist and first fragments will be loaded automatically,
+         *      after triggering of HlsEvent.MANIFEST_PARSED event
+         * if set to false,
+         *      an explicit API call (hls.startLoad()) will be needed
+         *      to start quality level/fragment loading.
+         *
+         * Default is true
+         */
+        public static var autoStartLoad : Boolean = true;
+        /**
          * capLevelToStage
          *
          * Limit levels usable in auto-quality by the stage dimensions (width and height).

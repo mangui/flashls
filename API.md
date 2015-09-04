@@ -178,6 +178,9 @@ get : return playback session stats
 }
 ```
 
+#### ```hls.startLoad()```
+start/restart playlist/fragment loading. this is only effective if MANIFEST_PARSED event has been triggered
+
 ##Events
 
 flashls fires a bunch of events, that could be registered as highlighted below:

@@ -269,5 +269,13 @@ package org.mangui.hls {
         public function get stats() : Stats {
             return _statsHandler.stats;
         }
+
+        /* start/restart playlist/fragment loading.
+           this is only effective if MANIFEST_PARSED event has been triggered already */
+        public function startLoad() : void {
+            if(levels && levels.length) {
+                this.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, startLevel));
+            }
+        }
     }
 }
