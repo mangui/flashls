@@ -323,6 +323,7 @@ package org.mangui.hls.loader {
             _fragmentFirstLoaded = false;
             _fragPrevious = null;
             _fragSkipping = false;
+            _levelNext = -1;
             _timer.start();
         }
 
