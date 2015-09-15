@@ -269,7 +269,7 @@ package org.mangui.hls.stream {
             }
 
             if(metaAppended) {
-                _metaTags = _metaTags.sort(compareTagsPTS);
+                _metaTags = _metaTags.sort(compareTags);
             }
 
 
@@ -359,17 +359,6 @@ package org.mangui.hls.stream {
             }
         }
 
-        private function compareTagsPTS(x : FLVData, y : FLVData) : Number {
-            if (x.continuity != y.continuity) {
-                return (x.continuity - y.continuity);
-            } else {
-                if (x.tag.pts != y.tag.pts) {
-                    return (x.tag.pts - y.tag.pts);
-                } else {
-                    return (gettagrank(x.tag) - gettagrank(y.tag));
-                }
-            }
-        }
         /*
             helper function used to sort tags, lower values have highest priority
         */

@@ -574,7 +574,7 @@ package org.mangui.hls.demux {
                                             };
 
                                             // add a new FLVTag with the onCaptionInfo call
-                                            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.dts, false);
+                                            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
 
                                             var data : ByteArray = new ByteArray();
                                             data.objectEncoding = ObjectEncoding.AMF0;
