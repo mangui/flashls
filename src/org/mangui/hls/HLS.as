@@ -184,6 +184,16 @@ package org.mangui.hls {
             return _streamBuffer.position;
         };
 
+        /** Return the live main playlist sliding in seconds since previous out of buffer seek(). **/
+        public function get liveSlidingMain() : Number {
+            return _streamBuffer.liveSlidingMain;
+        }
+
+        /** Return the live altaudio playlist sliding in seconds since previous out of buffer seek(). **/
+        public function get liveSlidingAltAudio() : Number {
+            return _streamBuffer.liveSlidingAltAudio;
+        }
+
         /** Return the current playback state. **/
         public function get playbackState() : String {
             return _hlsNetStream.playbackState;
