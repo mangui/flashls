@@ -42,7 +42,9 @@ package org.mangui.hls.controller {
         public function LevelController(hls : HLS) : void {
             _hls = hls;
             _fpsController = new FPSController(hls);
-            _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler);
+            /* low priority listener, so that other listeners with default priority
+               could seamlessly set hls.startLevel in their HLSEvent.MANIFEST_PARSED listener */
+            _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler, false, int.MIN_VALUE);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
@@ -69,8 +71,10 @@ package org.mangui.hls.controller {
         }
 
         private function _manifestParsedHandler(event : HLSEvent) : void {
-            // upon manifest parsed event, trigger a level switch to load startLevel playlist
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _hls.startLevel));
+            if(HLSSettings.autoStartLoad) {
+                // upon manifest parsed event, trigger a level switch to load startLevel playlist
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, startLevel));
+            }
         }
 
         private function _manifestLoadedHandler(event : HLSEvent) : void {
@@ -292,6 +296,9 @@ package org.mangui.hls.controller {
             return 0;
         }
 
+        public function isStartLevelSet() : Boolean {
+            return (_startLevel >=0);
+        }
 
         /*  set the quality level used when starting a fresh playback */
         public function set startLevel(level : int) : void {
@@ -371,8 +378,8 @@ package org.mangui.hls.controller {
             var seek_level : int = -1;
             var levels : Vector.<Level> = _hls.levels;
             if (HLSSettings.seekFromLevel == -1) {
-                // keep last level
-                return _hls.loadLevel;
+                // keep last level, but don't exceed _maxLevel
+                return Math.min(_hls.loadLevel,_maxLevel);
             }
 
             // set up seek level as being the lowest non-audio level.

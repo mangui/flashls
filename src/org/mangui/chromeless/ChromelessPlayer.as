@@ -222,6 +222,18 @@ package org.mangui.chromeless {
             _trigger("switch", event.level);
         };
 
+        protected function _fpsDropHandler(event : HLSEvent) : void {
+            _trigger("fpsDrop", event.level);
+        };
+
+        protected function _fpsDropLevelCappingHandler(event : HLSEvent) : void {
+            _trigger("fpsDropLevelCapping", event.level);
+        };
+
+        protected function _fpsDropSmoothLevelSwitchHandler(event : HLSEvent) : void {
+            _trigger("fpsDropSmoothLevelSwitch");
+        };
+
         protected function _audioTracksListChange(event : HLSEvent) : void {
             _trigger("audioTracksListChange", _getAudioTrackList());
         }
@@ -495,6 +507,9 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
             _hls.addEventListener(HLSEvent.ID3_UPDATED, _id3Updated);
+            _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
+            _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
+            _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
 
             if (available && stage.stageVideos.length > 0) {
                 _stageVideo = stage.stageVideos[0];
