@@ -21,7 +21,6 @@ package org.mangui.chromeless {
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.model.Stats;
     import org.mangui.hls.utils.JSURLLoader;
     import org.mangui.hls.utils.JSURLStream;
     import org.mangui.hls.utils.Log;
@@ -364,7 +363,7 @@ package org.mangui.chromeless {
             return _hls.audioTrack;
         };
 
-        protected function _getStats() : Stats {
+        protected function _getStats() : Object {
             return _hls.stats;
         };
 

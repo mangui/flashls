@@ -19,7 +19,6 @@ package org.mangui.hls {
     import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.model.Stats;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
@@ -280,7 +279,7 @@ package org.mangui.hls {
             return _hlsURLLoader;
         }
         /* retrieve playback session stats */
-        public function get stats() : Stats {
+        public function get stats() : Object {
             return _statsHandler.stats;
         }
 
