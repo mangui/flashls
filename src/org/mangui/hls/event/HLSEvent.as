@@ -50,7 +50,7 @@ package org.mangui.hls.event {
         public static const PLAYBACK_STATE : String = "hlsPlaybackState";
         /** Identifier for a seek state switch event. **/
         public static const SEEK_STATE : String = "hlsSeekState";
-        /** Identifier for stream type changes: VoD or Live **/
+        /** Identifier for stream type changes: VoD or Live, type will be stored in 'streamType' field **/
         public static const STREAM_TYPE_DID_CHANGE:String = "hlsEventStreamTypeDidChange";
         /** Identifier for a playback complete event. **/
         public static const PLAYBACK_COMPLETE : String = "hlsEventPlayBackComplete";
@@ -87,6 +87,8 @@ package org.mangui.hls.event {
         public var mediatime : HLSMediatime;
         /** The new playback state. **/
         public var state : String;
+        /** The new stream type value **/
+        public var streamType: String;
         /** The current audio track **/
         public var audioTrack : int;
         /** a complete ID3 payload from PES, as a hex dump **/
@@ -137,6 +139,10 @@ package org.mangui.hls.event {
                     break;
                 case FRAGMENT_PLAYING:
                     playMetrics = parameter as HLSPlayMetrics;
+                    break;
+                case HLSEvent.STREAM_TYPE_DID_CHANGE:
+                    // Stream Type is required
+                    streamType = String(parameter);
                     break;
                 default:
                     break;
