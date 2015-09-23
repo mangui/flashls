@@ -71,8 +71,13 @@ package org.mangui.hls {
                 }
                 _hlsNetStream.close();
             }
-            return super.dispatchEvent(event);
-        };
+
+            if (hasEventListener(event.type)) {
+                return super.dispatchEvent(event);
+            }
+            
+            return false;
+        }
 
         private function _levelSwitchHandler(event : HLSEvent) : void {
             _level = event.level;
