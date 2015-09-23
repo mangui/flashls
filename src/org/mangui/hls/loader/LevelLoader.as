@@ -66,7 +66,7 @@ package org.mangui.hls.loader {
             _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
             _levels = new Vector.<Level>();
-        };
+        }
 
         public function dispose() : void {
             _close();
@@ -103,17 +103,17 @@ package org.mangui.hls.loader {
             }
             var hlsError : HLSError = new HLSError(code, _url, txt);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
-        };
+        }
 
         /** Return the current manifest. **/
         public function get levels() : Vector.<Level> {
             return _levels;
-        };
+        }
 
         /** Return the stream type. **/
         public function get type() : String {
             return _type;
-        };
+        }
 
         public function get altAudioTracks() : Vector.<AltAudioTrack> {
             return _altAudioTracks;
@@ -153,14 +153,14 @@ package org.mangui.hls.loader {
             } else {
                 _urlloader.load(new URLRequest(url));
             }
-        };
+        }
 
         /** loading progress handler, use to determine loading latency **/
         private function _loadProgressHandler(event : Event) : void {
             if(_metrics.loading_begin_time == 0) {
                 _metrics.loading_begin_time = getTimer();
             }
-        };
+        }
 
 
         /** Manifest loaded; check and parse it **/
@@ -170,7 +170,7 @@ package org.mangui.hls.loader {
             _retryTimeout = 1000;
             _retryCount = 0;
             _parseManifest(String(_urlloader.data));
-        };
+        }
 
         /** parse a playlist **/
         private function _parseLevelPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
@@ -238,7 +238,7 @@ package org.mangui.hls.loader {
             metrics.id2 = _levels[level].end_seqnum;
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADED, metrics));
             _manifestLoading = null;
-        };
+        }
 
         /** Parse First Level Playlist **/
         private function _parseManifest(string : String) : void {
@@ -294,7 +294,7 @@ package org.mangui.hls.loader {
             if(errorTxt) {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, new HLSError(HLSError.MANIFEST_PARSING_ERROR, _url, errorTxt)));
             }
-        };
+        }
 
         /** load/reload active M3U8 playlist **/
         private function _loadActiveLevelPlaylist() : void {
@@ -306,7 +306,7 @@ package org.mangui.hls.loader {
             _manifestLoading = new Manifest();
             _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, _loadLevel));
             _manifestLoading.loadPlaylist(_hls,_levels[_loadLevel].url, _parseLevelPlaylist, _errorHandler, _loadLevel, _type, HLSSettings.flushLiveURLCache);
-        };
+        }
 
         /** When level switch occurs, assess the need of (re)loading new level playlist **/
         private function _levelSwitchHandler(event : HLSEvent) : void {
@@ -328,7 +328,7 @@ package org.mangui.hls.loader {
                     _timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
                 }
             }
-        };
+        }
 
         private function _close() : void {
             CONFIG::LOGGING {
@@ -350,6 +350,6 @@ package org.mangui.hls.loader {
             if (event.state == HLSPlayStates.IDLE) {
                 _close();
             }
-        };
+        }
     }
 }
