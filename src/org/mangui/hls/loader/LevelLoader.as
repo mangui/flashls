@@ -155,20 +155,7 @@ package org.mangui.hls.loader {
             _retryTimeout = 1000;
             _retryCount = 0;
             _altAudioTracks = null;
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADING, url));
-            _metrics = new HLSLoadMetrics(HLSLoaderTypes.MANIFEST);
-            _metrics.loading_request_time = getTimer();
-            if (DataUri.isDataUri(url)) {
-                CONFIG::LOGGING {
-                    Log.debug("Identified main manifest <" + url + "> as a data URI.");
-                }
-                _metrics.loading_begin_time = getTimer();
-                var data : String = new DataUri(url).extractData();
-                _metrics.loading_end_time = getTimer();
-                _parseManifest(data || "");
-            } else {
-                _urlloader.load(new URLRequest(url));
-            }
+            _loadManifest();
         }
 
         /** loading progress handler, use to determine loading latency **/
