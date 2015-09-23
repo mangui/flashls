@@ -208,10 +208,10 @@ package org.mangui.hls.loader {
             }
             // Check whether the stream is live or not finished yet
             if (Manifest.hasEndlist(string)) {
-                _type = HLSTypes.VOD;
+                setType(HLSTypes.VOD);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_ENDLIST, level));
             } else {
-                _type = HLSTypes.LIVE;
+                setType(HLSTypes.LIVE);
                 /* in order to determine playlist reload timer,
                     check playback position against playlist duration.
                     if we are near the edge of a live playlist, reload playlist quickly
@@ -315,7 +315,7 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("switch to level " + _loadLevel);
                 }
-                if (_type == HLSTypes.LIVE || _levels[_loadLevel].fragments.length == 0) {
+                if (type == HLSTypes.LIVE || _levels[_loadLevel].fragments.length == 0) {
                     _closed = false;
                     CONFIG::LOGGING {
                         Log.debug("(re)load Playlist");
@@ -349,6 +349,18 @@ package org.mangui.hls.loader {
         private function _stateHandler(event : HLSEvent) : void {
             if (event.state == HLSPlayStates.IDLE) {
                 _close();
+            }
+        }
+
+        private function setType(value: String):void{
+            if(value != _type){
+                _type = value;
+
+                CONFIG::LOGGING {
+                    Log.debug("Stream type did change to " + value);
+                }
+
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.STREAM_TYPE_DID_CHANGE, _type));
             }
         }
     }

@@ -50,6 +50,8 @@ package org.mangui.hls.event {
         public static const PLAYBACK_STATE : String = "hlsPlaybackState";
         /** Identifier for a seek state switch event. **/
         public static const SEEK_STATE : String = "hlsSeekState";
+        /** Identifier for stream type changes: VoD or Live **/
+        public static const STREAM_TYPE_DID_CHANGE:String = "hlsEventStreamTypeDidChange";
         /** Identifier for a playback complete event. **/
         public static const PLAYBACK_COMPLETE : String = "hlsEventPlayBackComplete";
         /** Identifier for a Playlist Duration updated event **/
@@ -140,6 +142,6 @@ package org.mangui.hls.event {
                     break;
             }
             super(type, false, false);
-        };
+        }
     }
 }
