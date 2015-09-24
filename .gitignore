@@ -1,3 +1,5 @@
+*.swf.cache
+*.swc.cache
 .metadata
 .settings
 /streams.js
