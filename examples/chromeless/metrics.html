@@ -41,6 +41,7 @@
 <script type="text/javascript" src="../libs/metrics.js"></script>
 <script type="text/javascript" src="../libs/jsonpack.js"></script>
   <script>
+
   var events = jsonpack.unpack(atob(decodeURIComponent(location.search.split('data=')[1])));
   var hlsLink = document.URL.substr(0,document.URL.lastIndexOf("/")+1) + 'index.html?src=' + encodeURIComponent(events.url);
   var description = 'playlist: ' + "<a href=\"" + events.url + "\">" + events.url + "</a>" + '<br>replay: ' + "<a href=\"" + hlsLink + "\">" + hlsLink + "</a>";
