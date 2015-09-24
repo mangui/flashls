@@ -66,6 +66,8 @@ package org.mangui.hls.stream {
         private var _nextExpectedAbsoluteStartPosAltAudio : Number;
         /** is live loading stalled **/
         private var _liveLoadingStalled : Boolean;
+        /** is playback completed **/
+        private var _playbackCompleted : Boolean;
         /* last media time data */
         private var _lastPos : Number;
         private var _lastBufLen : Number;
@@ -83,6 +85,7 @@ package org.mangui.hls.stream {
             _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
         }
 
         public function dispose() : void {
@@ -91,6 +94,7 @@ package org.mangui.hls.stream {
             _hls.removeEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
             _hls.removeEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
+            _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
             _timer.stop();
             _fragmentLoader.dispose();
             _altaudiofragmentLoader.dispose();
@@ -161,6 +165,7 @@ package org.mangui.hls.stream {
                 }
                 flushBuffer();
             }
+            _playbackCompleted = false;
             _timer.start();
         }
 
@@ -491,8 +496,8 @@ package org.mangui.hls.stream {
             var pos : Number = position;
             var bufLen : Number = _hls.stream.bufferLength;
             var duration : Number = _playlistDuration;
-            // dispatch media time event only if position/buffer or playlist duration has changed
-            if(pos != _lastPos || bufLen != _lastBufLen || duration != _lastDuration) {
+            // dispatch media time event only if playback not completed AND position/buffer or playlist duration has changed
+            if(!_playbackCompleted && (pos != _lastPos || bufLen != _lastBufLen || duration != _lastDuration)) {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(pos, duration, bufLen, backBufferLength, _liveSlidingMain, _liveSlidingAltAudio)));
                 _lastPos = pos;
                 _lastDuration = duration;
@@ -956,7 +961,14 @@ package org.mangui.hls.stream {
         /** monitor fragment loader stall events, arm a boolean  **/
         private function _liveLoadingStalledHandler(event : HLSEvent) : void {
             _liveLoadingStalled = true;
-        };
+        }
+
+        /** playback complete handler **/
+        private function _playbackComplete(event : HLSEvent) : void {
+            _playbackCompleted = true;
+        }
+
+
     }
 }
 
