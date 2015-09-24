@@ -50,10 +50,8 @@ header {
     margin-right: auto;
     display: block
 }
-
 #customButtons input { width: 25%; display : inline-block; text-align: center; font-size: 8pt;}
 #toggleButtons button { width: 12%; display : inline-block; text-align: center; font-size: 8pt; background-color: #A0A0A0 }
-
 </style>
   <title>flashls - Chromeless HLS Flash Player</title>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
@@ -66,7 +64,6 @@ header {
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
   ga('create', 'UA-52843650-1', 'auto');
   ga('send', 'pageview');
 </script>
@@ -312,21 +309,16 @@ $(document).ready(function() {
    $("#VideoStatus").hide();
    $('#metricsButtonWindow').toggle(windowSliding);
    $('#metricsButtonFixed').toggle(!windowSliding);
-
     var manifest = decodeURIComponent(location.search.split('src=')[1]);
     if(manifest === 'undefined') {
       manifest = 'http://www.streambox.fr/playlists/test_001/stream.m3u8';
     }
     $('#streamURL').val(manifest);
 });
-
-
 var events;
 var jsPingDate,flashPingDate, jsLoadDate, flashLoadDate;
-var lastSeekingIdx;
+var lastSeekingIdx,lastFragPlayingIdx;
 var api;
-
-
 function loadStream(url) {
   api.stop();
   load(url);
@@ -335,7 +327,6 @@ function loadStream(url) {
   var description = 'permalink: ' + "<a href=\"" + hlsLink + "\">" + hlsLink + "</a>";
   $("#StreamPermalink").html(description);
 }
-
 function appendLog(txt)
 {
   var d = new Date();
@@ -343,10 +334,10 @@ function appendLog(txt)
   console.log(msg);
   $('#VideoStatus').append(msg + "<br>");
 }
-
 function load(url) {
   jsLoadDate = new Date();
   flashLoadDate = (jsLoadDate - jsPingDate )+ flashPingDate;
+  lastSeekingIdx = lastFragPlayingIdx = undefined;
   events = { url : url, date : jsLoadDate, load : [], buffer : [], video : []};
   api.load(url);
   appendLog("load URL " + url);
@@ -356,55 +347,47 @@ function load(url) {
   $('#backBufferLength').html(0);
   $('#sliding').html(0);
 }
-
 function toggleDebugLogs() {
   var state = api.getLogDebug();
   state = !state;
   api.playerSetLogDebug(state);
   $('#debugLogState').html(state.toString());
 }
-
 function toggleDebug2Logs() {
   var state = api.getLogDebug2();
   state = !state;
   $('#debug2LogState').html(state.toString());
   api.playerSetLogDebug2(state);
 }
-
 function toggleUseHardwareVideoDecoder() {
   var state = api.getUseHardwareVideoDecoder();
   state = !state;
   $('#hwVideoDecoderState').html(state.toString());
   api.playerSetUseHardwareVideoDecoder(state);
 }
-
 function toggleFlushLiveURLCache() {
   var state = api.getflushLiveURLCache();
   state = !state;
   $('#flushLiveURLState').html(state.toString());
   api.playerSetflushLiveURLCache(state);
 }
-
 function toggleJSURLStream() {
   var state = api.getJSURLStream();
   state = !state;
   $('#JSURLStreamState').html(state.toString());
   api.playerSetJSURLStream(state);
 }
-
 function toggleCapLeveltoStage() {
   var state = api.getCapLeveltoStage();
   state = !state;
   $('#capLeveltoStageState').html(state.toString());
   api.playerCapLeveltoStage(state);
 }
-
 // Create a single global callback function and pass it's name
 // to the SWF with the name `callback` in the FlashVars parameter.
 window.flashlsCallback = function(eventName, args) {
   flashlsEvents[eventName].apply(null, args);
 };
-
 var flashlsEvents = {
    ready: function(flashTime) {
     flashPingDate = flashTime;
@@ -508,8 +491,16 @@ var flashlsEvents = {
     refreshCanvas();
   },
   fragmentPlaying: function(playmetrics) {
-    var event = {time : new Date() - jsLoadDate, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level, duration : playmetrics.duration*1000};
+    var currentTime = new Date() - jsLoadDate;
+    if(lastFragPlayingIdx) {
+      // ensure that last frag duration is not exceeding
+      var lastEvent = events.video[lastFragPlayingIdx];
+      if(lastEvent.time+lastEvent.duration > currentTime)
+        lastEvent.duration = currentTime - lastEvent.time;
+    }
+    var event = {time : currentTime, type : "playing frag", name : playmetrics.seqnum + '@' + playmetrics.level, duration : playmetrics.duration*1000};
     events.video.push(event);
+    lastFragPlayingIdx = events.video.length-1;
     updateLevelInfo();
   },
   position: function(timemetrics) {
@@ -524,7 +515,6 @@ var flashlsEvents = {
       var event0 = bufEvents[bufEventLen-2],event1 = bufEvents[bufEventLen-1];
       var slopeBuf0 = (event0.buffer - event1.buffer)/(event0.time-event1.time);
       var slopeBuf1 = (event1.buffer - event.buffer)/(event1.time-event.time);
-
       var slopePos0 = (event0.pos - event1.pos)/(event0.time-event1.time);
       var slopePos1 = (event1.pos - event.pos)/(event1.time-event.time);
       // compute slopes. if less than 30% difference, remove event1
@@ -544,11 +534,17 @@ var flashlsEvents = {
     $('#currentState').html(newState);
   },
   seekState: function(newState) {
-    var event = {time : new Date() - jsLoadDate, type : newState.toLowerCase(), name : ''};
+    var currentTime = new Date() - jsLoadDate;
+    var event = {time : currentTime, type : newState.toLowerCase(), name : ''};
     events.video.push(event);
-
     if(event.type === 'seeking') {
       lastSeekingIdx = events.video.length-1;
+      if(lastFragPlayingIdx) {
+        // ensure that last frag duration is not exceeding
+        var lastEvent = events.video[lastFragPlayingIdx];
+        if(lastEvent.time+lastEvent.duration > currentTime)
+          lastEvent.duration = currentTime - lastEvent.time;
+      }
     }
     if(event.type === 'seeked') {
       events.video[lastSeekingIdx].duration = event.time - events.video[lastSeekingIdx].time;
@@ -576,23 +572,31 @@ var flashlsEvents = {
     var event = {time : new Date() - jsLoadDate, type : "ID3Data", id3data: atob(ID3Data)};
     events.video.push(event);
   },
+  fpsDrop : function(level) {
+    var event = {time : new Date() - jsLoadDate, type : "fpsDrop", name : level.toFixed()};
+    events.video.push(event);
+  },
+  fpsDropLevelCapping : function(level) {
+    var event = {time : new Date() - jsLoadDate, type : "fpsDropLevelCapping", name : level.toFixed()};
+    events.video.push(event);
+  },
+  fpsDropSmoothLevelSwitch : function() {
+    var event = {time : new Date() - jsLoadDate, type : "fpsDropSmoothLevelSwitch", name : ''};
+    events.video.push(event);
+  },
   requestPlaylist: JSLoaderPlaylist.requestPlaylist.bind(JSLoaderPlaylist),
   abortPlaylist: JSLoaderPlaylist.abortPlaylist.bind(JSLoaderPlaylist),
   requestFragment: JSLoaderFragment.requestFragment.bind(JSLoaderFragment),
   abortFragment: JSLoaderFragment.abortFragment.bind(JSLoaderFragment)
 };
-
-
 function showCanvas()  {
     showMetrics();
     document.getElementById('buffered_c').style.display="block";
 }
-
 function hideCanvas()  {
     hideMetrics();
     document.getElementById('buffered_c').style.display="none";
 }
-
 function exportmetrics() {
   var url = document.URL;
   var json = JSON.stringify(events);
@@ -604,13 +608,11 @@ function exportmetrics() {
   console.log(url);
   window.open(url,'_blank');
 }
-
 function buffered_seek(event) {
   var canvas = document.getElementById('buffered_c');
   var position = (event.clientX - canvas.offsetLeft) / canvas.width * api.getDuration();
   api.seek(position);
 }
-
 function updateBufferCanvas(position,duration,buffer, backbuffer) {
   var canvas = document.getElementById('buffered_c');
   var ctx = canvas.getContext('2d');
@@ -624,12 +626,10 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
   var x = position / duration * canvas.width;
   ctx.fillRect(x, 0, 2, 15);
 }
-
   function updateLevelInfo() {
     var button_template = '<button type="button" class="btn btn-sm ';
     var button_enabled  = 'btn-primary" ';
     var button_disabled = 'btn-success" ';
-
     var html1 = button_template;
     if(api.getAutoLevel()) {
       html1 += button_enabled;
@@ -637,8 +637,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       html1 += button_disabled;
     }
     html1 += 'onclick="api.setCurrentLevel(-1)">auto</button>';
-
-
     var html2 = button_template;
     if(api.getAutoLevel()) {
       html2 += button_enabled;
@@ -646,7 +644,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       html2 += button_disabled;
     }
     html2 += 'onclick="api.setLoadLevel(-1)">auto</button>';
-
     var html3 = button_template;
     if(api.getAutoLevelCapping() === -1) {
       html3 += button_enabled;
@@ -654,7 +651,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       html3 += button_disabled;
     }
     html3 += 'onclick="api.playerSetAutoLevelCapping(-1);updateLevelInfo()">none</button>';
-
     var html4 = button_template;
     if(api.getAutoLevel()) {
       html4 += button_enabled;
@@ -662,7 +658,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       html4 += button_disabled;
     }
     html4 += 'onclick="api.setNextLevel(-1)">auto</button>';
-
     for (var i=0; i < api.getLevels().length; i++) {
       html1 += button_template;
       if(api.getCurrentLevel() === i) {
@@ -671,8 +666,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
         html1 += button_disabled;
       }
       html1 += 'onclick="api.setCurrentLevel(' + i + ')">' + i + '</button>';
-
-
       html2 += button_template;
       if(api.getLoadLevel() === i) {
         html2 += button_enabled;
@@ -680,7 +673,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
         html2 += button_disabled;
       }
       html2 += 'onclick="api.setLoadLevel(' + i + ')">' + i + '</button>';
-
       html3 += button_template;
       if(api.getAutoLevelCapping() === i) {
         html3 += button_enabled;
@@ -688,7 +680,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
         html3 += button_disabled;
       }
       html3 += 'onclick="api.playerSetAutoLevelCapping(' + i + ');updateLevelInfo()">' + i + '</button>';
-
       html4 += button_template;
       if(api.getNextLevel() === i) {
         html4 += button_enabled;
