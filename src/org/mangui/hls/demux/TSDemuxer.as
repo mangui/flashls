@@ -11,6 +11,7 @@ package org.mangui.hls.demux {
     import flash.utils.Timer;
     import org.mangui.hls.flv.FLVTag;
     import org.mangui.hls.model.AudioTrack;
+    import by.blooddy.crypto.Base64;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -496,6 +497,106 @@ package org.mangui.hls.demux {
                     pes.data.position = frame.start;
                     pes.data.readBytes(pps, 0, frame.length);
                     ppsvect.push(pps);
+                } else if (frame.type == 6) {
+
+                    // We already know it's 6, so skip first byte
+                    pes.data.position = frame.start + 1;
+
+                    // get the SEI payload type
+                    var payload_type : uint = pes.data.readUnsignedByte();
+
+                    if (payload_type == 4)
+                    {
+                        var payload_size : uint = 0;
+
+                        do {
+                            payload_size = pes.data.readUnsignedByte();
+                        }
+                        while(payload_size === 255)
+
+                        var country_code : uint = pes.data.readUnsignedByte();
+
+                        if (country_code == 181) 
+                        {
+                            var provider_code : uint = pes.data.readUnsignedShort();
+
+                            if (provider_code == 49)
+                            {
+                                var user_structure : uint = pes.data.readUnsignedInt();
+
+                                if (user_structure == 0x47413934) // GA94
+                                {
+                                    var user_data_type : uint = pes.data.readUnsignedByte();                                    
+
+                                    // CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
+                                    if (user_data_type == 3)
+                                    {
+                                        // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
+                                        var byte:uint = pes.data.readUnsignedByte();
+                                    
+                                        // get the total number of cc_datas
+                                        var total:uint = 31 & byte;
+                                        var count:uint = 0;
+
+                                        // supposedly a flag to process the cc_datas or not
+                                        // isn't working for me, so i don't use it yet
+                                        var process:Boolean = !((64 & byte) == 0);
+
+                                        var size:uint = total * 3;
+
+                                        // em_data, do we need? It's not used for anything, but it's there, so i need to pull it out
+                                        var otherByte:uint = pes.data.readUnsignedByte();
+
+                                        if (pes.data.bytesAvailable >= size)
+                                        {
+                                            // ByteArray for onCaptionInfo event
+                                            var sei : ByteArray = new ByteArray();
+
+                                            // onCaptionInfo payloads need to know the size of the binary data
+                                            // there's two two bytes we just read, plus the cc_datas, which are 3 bytes each
+                                            sei.writeUnsignedInt(2+3*total);
+
+                                            // write those two bytes
+                                            sei.writeByte(byte);
+                                            sei.writeByte(otherByte);
+
+                                            // write the cc_datas
+                                            pes.data.readBytes(sei, 6, 3*total);
+
+                                            pes.data.position -= total * 3;
+
+                                            // onCaptionInfo expects Base64 data...
+                                            var sei_data:String = Base64.encode(sei);
+
+                                            var cc_data:Object = {
+                                                type: "708",
+                                                data: sei_data
+                                            };
+
+                                            // add a new FLVTag with the onCaptionInfo call
+                                            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+
+                                            var data : ByteArray = new ByteArray();
+                                            data.objectEncoding = ObjectEncoding.AMF0;
+                                            data.writeObject("onCaptionInfo");
+                                            data.objectEncoding = ObjectEncoding.AMF3;
+                                            data.writeByte(0x11);
+                                            data.writeObject(cc_data);
+                                            tag.push(data, 0, data.length);
+
+                                            _tags.push(tag);
+                                        }
+                                        else
+                                        {
+                                            CONFIG::LOGGING {
+                                                Log.info("not enough bytes!");                                
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             // if both SPS and PPS have been found, build AVCC and push tag if needed

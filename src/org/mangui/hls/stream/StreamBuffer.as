@@ -276,10 +276,12 @@ package org.mangui.hls.stream {
                 if(headerAppended) {
                     _headerTags = _headerTags.sort(compareTags);
                 }
-                if(metaAppended) {
-                    _metaTags = _metaTags.sort(compareTags);
-                }
             }
+
+            if(metaAppended) {
+                _metaTags = _metaTags.sort(compareTags);
+            }
+
 
             if (_hls.seekState == HLSSeekStates.SEEKING) {
                 /* if in seeking mode, force timer start here, this could help reducing the seek time by 100ms */
