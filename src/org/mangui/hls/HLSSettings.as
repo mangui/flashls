@@ -58,6 +58,17 @@ package org.mangui.hls {
          */
         public static var minBufferLength : Number = -1;
 
+
+        /**
+         * minBufferLengthCapping
+         *
+         * Defines minimum buffer length capping value (max value) if minBufferLength is set to -1
+         *
+         * Default is -1 = no capping
+         */
+        public static var minBufferLengthCapping : Number = -1;
+
+
         /**
          * maxBufferLength
          *

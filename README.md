@@ -63,6 +63,7 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_debug2` (default false) - Toggle _verbose debug_ traces, outputted on JS console
   - `hls_minbufferlength` (default -1) - Minimum buffer length in _seconds_ that needs to be reached before playback can start (after seeking) or restart (in case of empty buffer)
     - If set to `-1` some heuristics based on past metrics are used to define an accurate value that should prevent buffer to stall
+  - `minBufferLengthCapping` (default -1) - minimum buffer length capping value (max value) if minBufferLength is set to -1
   - `hls_lowbufferlength` (default 3) - Low buffer threshold in _seconds_. When crossing down this threshold, HLS will switch to buffering state, usually the player will report this buffering state through a rotating icon. Playback will still continue.
   - `hls_maxbufferlength` (default 300) - Maximum buffer length in _seconds_ (0 means infinite buffering)
   - `hls_maxbackbufferlength` (default 30) - Maximum back buffer length in _seconds_ (0 means infinite back buffering). back buffer is seekable without redownloading segments.

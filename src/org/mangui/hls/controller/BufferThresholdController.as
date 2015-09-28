@@ -93,6 +93,12 @@ package org.mangui.hls.controller {
                 if (HLSSettings.maxBufferLength) {
                     _minBufferLength = Math.min(HLSSettings.maxBufferLength, _minBufferLength);
                 }
+
+                // avoid _minBufferLength > minBufferLengthCapping
+                if (HLSSettings.minBufferLengthCapping > 0) {
+                    _minBufferLength = Math.min(HLSSettings.minBufferLengthCapping, _minBufferLength);
+                }
+
                 CONFIG::LOGGING {
                     Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
                 }
