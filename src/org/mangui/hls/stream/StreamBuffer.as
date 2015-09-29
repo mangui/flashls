@@ -359,15 +359,15 @@ package org.mangui.hls.stream {
             return (item.tag.type != FLVTag.AAC_HEADER);
         }
 
-        public function flushLastFragment(fragLevel : int, fragSN : int) : void {
+        public function flushLastFragment(fragLevel : int, fragSN : int) : Boolean {
             /* check if we already started injecting that fragment in NetStream
-                if that is the case, then we need to flush NetStream and seek to current position
+                if that is the case, then we cannot flush seamlessly, return false
             */
             if(fragLevel == _fragMainLevelNetStream && fragSN == _fragMainSNNetStream) {
                 CONFIG::LOGGING {
-                    Log.warn("StreamBuffer.flushLastFragment, force instant level switch");
+                    Log.debug("StreamBuffer.flushLastFragment, cannot flush, tag already pushed in NetStream");
                 }
-                _hls.currentLevel = -1;
+                return false;
             } else if(fragLevel == _fragMainLevel && fragSN == _fragMainSN) {
                 CONFIG::LOGGING {
                     Log.warn("StreamBuffer.flushLastFragment, clip end of StreamBuffer");
@@ -377,7 +377,9 @@ package org.mangui.hls.stream {
                 _videoTags = _videoTags.filter(filterlastFragment);
                 _audioTags = _audioTags.filter(filterlastFragment);
                 _metaTags = _metaTags.filter(filterlastFragment);
+                return true;
             }
+            return false;
         }
 
         private function filterlastFragment(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {

@@ -173,23 +173,25 @@ package org.mangui.hls.loader {
                             /* if we have less than 2 frag duration in buffer and if frag loaded delay is greater than buffer len
                               ... and also bigger than duration needed to load fragment at next level ...*/
                             if(bufferLen < 2*fragDuration && fragLoadedDelay > bufferLen && fragLoadedDelay > fragLevel0LoadedDelay) {
-                                // abort fragment loading ...
-                                CONFIG::LOGGING {
-                                    Log.warn("_checkLoading : loading too slow, abort fragment loading");
-                                    Log.warn("fragLoadedDelay/bufferLen/fragLevel0LoadedDelay:" + fragLoadedDelay.toFixed(1) + "/" + bufferLen.toFixed(1) + "/" + fragLevel0LoadedDelay.toFixed(1));
+                                // try to abort fragment loading ...
+                                // try to flush last fragment seamlessly
+                                if(_streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum)) {
+                                    CONFIG::LOGGING {
+                                        Log.warn("_checkLoading : loading too slow, abort fragment loading");
+                                        Log.warn("fragLoadedDelay/bufferLen/fragLevel0LoadedDelay:" + fragLoadedDelay.toFixed(1) + "/" + bufferLen.toFixed(1) + "/" + fragLevel0LoadedDelay.toFixed(1));
+                                    }
+                                    //abort fragment loading
+                                    _stop_load();
+                                    // fill loadMetrics to please LevelController that will adjust bw for next fragment
+                                    // fill theoritical value, assuming bw will remain as it is
+                                    _metrics.size = expected;
+                                    _metrics.duration = 1000*fragDuration;
+                                    _metrics.loading_end_time = _metrics.parsing_end_time = _metrics.loading_request_time + 1000*expected/loadRate;
+                                    _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _metrics));
+                                    _levelNext = _levelController.getnextlevel(_fragCurrent.level, bufferLen);
+                                  // switch back to IDLE state to request new fragment at lowest level
+                                  _loadingState = LOADING_IDLE;
                                 }
-                                //abort fragment loading
-                                _stop_load();
-                                // fill loadMetrics to please LevelController that will adjust bw for next fragment
-                                // fill theoritical value, assuming bw will remain as it is
-                                _metrics.size = expected;
-                                _metrics.duration = 1000*fragDuration;
-                                _metrics.loading_end_time = _metrics.parsing_end_time = _metrics.loading_request_time + 1000*expected/loadRate;
-                                _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _metrics));
-                                _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
-                                _levelNext = _levelController.getnextlevel(_fragCurrent.level, bufferLen);
-                              // switch back to IDLE state to request new fragment at lowest level
-                              _loadingState = LOADING_IDLE;
                             }
                         }
                     }
