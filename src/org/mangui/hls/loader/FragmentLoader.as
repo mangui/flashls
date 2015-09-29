@@ -150,8 +150,10 @@ package org.mangui.hls.loader {
                     break;
                 // loading already in progress
                 case LOADING_IN_PROGRESS:
-                    // only monitor fragment loading rate if in auto mode, and current level is not the lowest level
-                    if(_hls.autoLevel && _fragCurrent.level) {
+                    /* only monitor fragment loading rate if in auto mode, AND
+                       we are not loading the first segment AND
+                       current level is not the lowest level */
+                    if(_hls.autoLevel && !_manifestJustLoaded && _fragCurrent.level) {
                         // monitor fragment load progress after half of expected fragment duration,to stabilize bitrate
                         var requestDelay : int = getTimer() - _metrics.loading_request_time;
                         var fragDuration : Number = _fragCurrent.duration;
