@@ -268,6 +268,18 @@ package org.mangui.hls {
          */
         public static var startFromLevel : Number = -1;
 
+
+        /**
+         * autoStartMaxDuration
+         *
+         * max fragment loading duration in automatic start level selection mode (in ms)
+         * -1 : max duration not capped
+         * other : max duration is capped to avoid long playback starting time
+         *
+         * Default is -1
+         */
+        public static var autoStartMaxDuration : Number = -1;
+
         /**
          * seekFromLevel
          *

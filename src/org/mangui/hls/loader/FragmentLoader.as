@@ -966,7 +966,7 @@ package org.mangui.hls.loader {
                 _manifestJustLoaded = false;
                 if (HLSSettings.startFromLevel === -1 && HLSSettings.startFromBitrate === -1 && _levels.length > 1 && !_levelController.isStartLevelSet()) {
                     // check if we can directly switch to a better bitrate, in case download bandwidth is enough
-                    var bestlevel : int = _levelController.getbestlevel(_metrics.bandwidth);
+                    var bestlevel : int = _levelController.getAutoStartBestLevel(_metrics.bandwidth,_metrics.processing_duration, 1000*_fragCurrent.duration);
                     if (bestlevel > fragLevelIdx) {
                         CONFIG::LOGGING {
                             Log.info("enough download bandwidth, adjust start level from 0 to " + bestlevel);

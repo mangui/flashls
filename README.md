@@ -78,6 +78,9 @@ The plugin accepts several **optional** configuration options, such as:
      - if 0.5, the closest to the middle bitrate will be selected and used first.
    - -1 : automatic start level selection, playback will start from level matching download bandwidth (determined from download of first segment)
    - -2 : playback will start from the first level appearing in Manifest (regardless of its bitrate)
+  - `hls_autoStartMaxDuration` (default -1) max fragment loading duration ( bw test + fragment loading) in automatic start level selection mode (in ms)
+     - If -1 : max duration not capped
+     - If greater than 0 : max duration is capped to given value. this will avoid long playback starting time. basically if set to 2000ms, and download bandwidth test took 1500ms, we only have 500ms left to load the proper fragment ... which is not enough ... this means that flashls will stick to level 0 in that case, even if download bandwidth would be enough to select an higher bitrate
   - `hls_seekfromlevel` (default -1) - If set to true, playback will start from lowest non-audio level after any seek operation. If set to false, playback will start from level used before seeking
    - from 0 to 1 : indicates the "normalized" preferred bitrate. As such,
      - if 0, lowest non-audio bitrate is used,

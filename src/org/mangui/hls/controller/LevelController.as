@@ -126,10 +126,27 @@ package org.mangui.hls.controller {
         }
         ;
 
-        public function getbestlevel(downloadBandwidth : int) : int {
+        public function getAutoStartBestLevel(downloadBandwidth : int, initialDelay : int, lastSegmentDuration : int) : int {
+            var bwFactor : Number;
             var max_level : int = _maxLevel;
+            // in case initial delay is capped
+            if(HLSSettings.autoStartMaxDuration != -1) {
+                // if we are above initial delay, stick to level 0
+                if(initialDelay >= HLSSettings.autoStartMaxDuration) {
+                    return 0;
+                } else {
+                    // if we still have some time to load another fragment, determine load factor:
+                    // if we have 10000ms fragment, and we have 1000s left, we need a bw 10 times bigger to accomodate
+                    bwFactor = lastSegmentDuration/(HLSSettings.autoStartMaxDuration-initialDelay);
+                }
+            } else {
+                bwFactor = 1;
+            }
+            CONFIG::LOGGING {
+                Log.debug("getAutoStartBestLevel,initialDelay/max delay/bwFactor=" + initialDelay + "/" + HLSSettings.autoStartMaxDuration + "/" + bwFactor.toFixed(2));
+            }
             for (var i : int = max_level; i >= 0; i--) {
-                if (_bitrate[i] <= downloadBandwidth) {
+                if (_bitrate[i]*bwFactor <= downloadBandwidth) {
                     return i;
                 }
             }
