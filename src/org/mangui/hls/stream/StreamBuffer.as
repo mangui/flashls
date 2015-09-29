@@ -40,6 +40,8 @@ package org.mangui.hls.stream {
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
         private var _audioIdx : uint,  _videoIdx : uint,  _metaIdx : uint, _headerIdx : uint;
         private var _fragMainLevel : int, _fragMainSN : int;
+        // last main frag injected in NetStream
+        private var _fragMainLevelNetStream : int, _fragMainSNNetStream : int;
         private var _fragMainInitialContinuity : int,_fragMainInitialStartPosition : Number,_fragMainInitialPTS : Number;
         private var _fragAltAudioLevel : int, _fragAltAudioSN : int;
         private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number;
@@ -249,7 +251,7 @@ package org.mangui.hls.stream {
 //                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
 //                }
                 var pos : Number = startPosition + (tag.pts - min_pts) / 1000;
-                var tagData : FLVData = new FLVData(tag, pos, sliding, continuity, fragmentType, fragIdx, fragLevel);
+                var tagData : FLVData = new FLVData(tag, pos, sliding, continuity, fragmentType, fragIdx, fragLevel, fragSN);
                 switch(tag.type) {
                     case FLVTag.DISCONTINUITY:
                     case FLVTag.AAC_HEADER:
@@ -328,8 +330,8 @@ package org.mangui.hls.stream {
             _videoTags = new Vector.<FLVData>();
             _metaTags = new Vector.<FLVData>();
             _headerTags = new Vector.<FLVData>();
-            _fragMainLevel = _fragAltAudioLevel = -1;
-            _fragMainSN = _fragAltAudioSN = 0;
+            _fragMainLevel = _fragAltAudioLevel = _fragMainLevelNetStream = -1;
+            _fragMainSN = _fragAltAudioSN = _fragMainSNNetStream = 0;
             FLVData.refPTSMain = FLVData.refPTSAltAudio = NaN;
             _audioIdx = _videoIdx = _metaIdx = _headerIdx = 0;
             _fragMainIdx = _fragAltAudioIdx = 0;
@@ -355,6 +357,32 @@ package org.mangui.hls.stream {
 
         private function filterAACHeader(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
             return (item.tag.type != FLVTag.AAC_HEADER);
+        }
+
+        public function flushLastFragment(fragLevel : int, fragSN : int) : void {
+            /* check if we already started injecting that fragment in NetStream
+                if that is the case, then we need to flush NetStream and seek to current position
+            */
+            if(fragLevel == _fragMainLevelNetStream && fragSN == _fragMainSNNetStream) {
+                CONFIG::LOGGING {
+                    Log.warn("StreamBuffer.flushLastFragment, force instant level switch");
+                }
+                _hls.currentLevel = -1;
+            } else if(fragLevel == _fragMainLevel && fragSN == _fragMainSN) {
+                CONFIG::LOGGING {
+                    Log.warn("StreamBuffer.flushLastFragment, clip end of StreamBuffer");
+                }
+                // flush StreamBuffer if needed
+                _headerTags = _headerTags.filter(filterlastFragment);
+                _videoTags = _videoTags.filter(filterlastFragment);
+                _audioTags = _audioTags.filter(filterlastFragment);
+                _metaTags = _metaTags.filter(filterlastFragment);
+            }
+        }
+
+        private function filterlastFragment(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
+            // keep if return true. we want to keep everything but last main fragment appended tags
+            return (!(item.loaderType == HLSLoaderTypes.FRAGMENT_MAIN &&  item.fragLevel == _fragMainLevel &&  item.fragSN == _fragMainSN));
         }
 
         /* compare two tags, smallest continuity
@@ -542,6 +570,10 @@ package org.mangui.hls.stream {
 
                 var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
                 for each (var flvdata : FLVData in data) {
+                    if(flvdata.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
+                        _fragMainLevelNetStream = flvdata.fragLevel;
+                        _fragMainSNNetStream = flvdata.fragSN;
+                    }
                     tags.push(flvdata.tag);
                 }
                 if (tags.length) {
@@ -640,7 +672,7 @@ package org.mangui.hls.stream {
                 data = tags[i];
                 var tagclone : FLVTag = data.tag.clone();
                 tagclone.pts = tagclone.dts = first_pts;
-                var dataclone : FLVData = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType, data.fragIdx, data.fragLevel);
+                var dataclone : FLVData = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType, data.fragIdx, data.fragLevel, data.fragSN);
                 filteredTags.push(dataclone);
             }
 
@@ -653,7 +685,7 @@ package org.mangui.hls.stream {
                     if (data.tag.type == FLVTag.AVC_NALU) {
                         tagclone = data.tag.clone();
                         tagclone.pts = tagclone.dts = first_pts;
-                        dataclone = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType, data.fragIdx, data.fragLevel);
+                        dataclone = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType, data.fragIdx, data.fragLevel, data.fragSN);
                         filteredTags.push(dataclone);
                     }
                 } else {
@@ -986,10 +1018,11 @@ class FLVData {
     public var loaderType : int;
     public var fragIdx : int;
     public var fragLevel : int;
+    public var fragSN : int;
     public static var refPTSMain : Number;
     public static var refPTSAltAudio : Number;
 
-    public function FLVData(tag : FLVTag, position : Number, sliding : Number, continuity : int, loaderType : int, fragIdx : int, fragLevel : int) {
+    public function FLVData(tag : FLVTag, position : Number, sliding : Number, continuity : int, loaderType : int, fragIdx : int, fragLevel : int, fragSN : int) {
         this.tag = tag;
         // relative position
         this.position = position;
@@ -998,6 +1031,7 @@ class FLVData {
         this.loaderType = loaderType;
         this.fragIdx = fragIdx;
         this.fragLevel = fragLevel;
+        this.fragSN = fragSN;
         switch(loaderType) {
             case HLSLoaderTypes.FRAGMENT_MAIN:
                 if(isNaN(refPTSMain)) {

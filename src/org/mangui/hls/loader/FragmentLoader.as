@@ -180,13 +180,14 @@ package org.mangui.hls.loader {
                                 }
                                 //abort fragment loading
                                 _stop_load();
-                                // fill loadMetrics so please LevelController that will adjust bw for next fragment
+                                // fill loadMetrics to please LevelController that will adjust bw for next fragment
                                 // fill theoritical value, assuming bw will remain as it is
                                 _metrics.size = expected;
                                 _metrics.duration = 1000*fragDuration;
                                 _metrics.loading_end_time = _metrics.parsing_end_time = _metrics.loading_request_time + 1000*expected/loadRate;
                                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _metrics));
                                 _levelNext = _levelController.getnextlevel(_fragCurrent.level, bufferLen);
+                                _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
                               // switch back to IDLE state to request new fragment at lowest level
                               _loadingState = LOADING_IDLE;
                             }
@@ -871,7 +872,7 @@ package org.mangui.hls.loader {
              *      we first need to download one fragment to check the dl bw, in order to assess start level ...)
              *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
              */
-            if (( _fragmentFirstLoaded || (_manifestJustLoaded && (HLSSettings.startFromLevel !== -1 || HLSSettings.startFromBitrate !== -1 || _levels.length == 1) ) )) {
+            if (( !_manifestJustLoaded || ((HLSSettings.startFromLevel !== -1 || HLSSettings.startFromBitrate !== -1 || _levels.length == 1) ) )) {
                 /* if audio expected, PTS analysis is done on audio
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
