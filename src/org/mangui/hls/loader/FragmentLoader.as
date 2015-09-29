@@ -186,8 +186,8 @@ package org.mangui.hls.loader {
                                 _metrics.duration = 1000*fragDuration;
                                 _metrics.loading_end_time = _metrics.parsing_end_time = _metrics.loading_request_time + 1000*expected/loadRate;
                                 _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _metrics));
-                                _levelNext = _levelController.getnextlevel(_fragCurrent.level, bufferLen);
                                 _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
+                                _levelNext = _levelController.getnextlevel(_fragCurrent.level, bufferLen);
                               // switch back to IDLE state to request new fragment at lowest level
                               _loadingState = LOADING_IDLE;
                             }
