@@ -176,7 +176,7 @@ package org.mangui.hls.stream {
                 if (buffer >= _bufferThresholdController.minBufferLength || _streamBuffer.reachedEnd || _streamBuffer.liveLoadingStalled) {
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
-                            Log.debug("resume playback");
+                            Log.debug("resume playback, minBufferLength/bufferLength:"+_bufferThresholdController.minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
                         }
                         // resume playback in case it was paused, this can happen if buffer was in really low condition (less than 0.1s)
                         super.resume();
