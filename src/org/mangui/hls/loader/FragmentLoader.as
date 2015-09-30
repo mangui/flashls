@@ -870,11 +870,17 @@ package org.mangui.hls.loader {
             /* try to do progressive buffering here.
              * only do it in case :
              * 		first fragment is already loaded
-             *      if first fragment is not loaded, we can do it if startLevel is already defined (if startFromLevel is set to -1
-             *      we first need to download one fragment to check the dl bw, in order to assess start level ...)
-             *      in case startFromLevel is to -1 and there is only one level, then we can do progressive buffering
+             *      or if first fragment is not loaded, we can do it if
+             *          startLevel is already defined (startLevel is already set or
+             *          startFromLevel/startFromBitrate not set to -1
+             *          or we only have one quality level
+             *      in the other cases, flashls will first download one fragment at level 0 to measure dl bw, used to assess start level ...)
              */
-            if (( !_manifestJustLoaded || ((HLSSettings.startFromLevel !== -1 || HLSSettings.startFromBitrate !== -1 || _levels.length == 1) ) )) {
+            if (( !_manifestJustLoaded ||
+                (_levelController.isStartLevelSet() ||
+                 HLSSettings.startFromLevel !== -1 ||
+                 HLSSettings.startFromBitrate !== -1 ||
+                 _levels.length == 1))) {
                 /* if audio expected, PTS analysis is done on audio
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
