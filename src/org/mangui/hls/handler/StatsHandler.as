@@ -28,6 +28,7 @@
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING,_fragmentPlayingHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_SKIPPED,_fragmentSkippedHandler);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED,_fragmentLoadEmergencyAbortedHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
@@ -38,6 +39,7 @@
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_SKIPPED,_fragmentSkippedHandler);
+            _hls.removeEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED,_fragmentLoadEmergencyAbortedHandler);
             _hls.removeEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
             _hls.removeEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
             _hls.removeEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
@@ -135,6 +137,14 @@
             _stats.fragSkipped++;
         } else {
             _stats.fragSkipped = 1;
+        }
+      }
+
+      private function _fragmentLoadEmergencyAbortedHandler(event : HLSEvent) : void {
+        if(_stats.fragLoadEmergencyAborted) {
+            _stats.fragLoadEmergencyAborted++;
+        } else {
+            _stats.fragLoadEmergencyAborted = 1;
         }
       }
 
