@@ -211,12 +211,14 @@ package org.mangui.hls.stream {
                 this is to avoid black screen during seek command */
                 super.close();
                 _skippedDuration = 0;
-                CONFIG::FLASH_11_1 {
-                    try {
-                        super.useHardwareDecoder = HLSSettings.useHardwareVideoDecoder;
-                    } catch(e : Error) {
-                    }
-                }
+				
+				// useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
+                try {
+                    super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
+                } catch(e : Error) { 
+					// Ignore errors, we're running in FP < 11.1
+				}
+				
                 super.play(null);
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                 // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream

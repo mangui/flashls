@@ -2,16 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.playlist {
-    import flash.events.*;
-    import flash.net.*;
+    import flash.events.Event;
+    import flash.events.IOErrorEvent;
+    import flash.events.ProgressEvent;
+    import flash.events.SecurityErrorEvent;
+    import flash.net.URLLoader;
+    import flash.net.URLRequest;
     import flash.utils.ByteArray;
     import flash.utils.Dictionary;
     import flash.utils.getTimer;
+    
+    import org.mangui.hls.HLS;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
-    import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.HLS;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.DateUtil;
