@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
-  <includeClasses/>
+<flexLibProperties includeAllClasses="false" useMultiPlatformConfig="false" version="3">
+  <includeClasses>
+    <classEntry path="org.mangui.osmf.plugins.HLSDynamicPlugin"/>
+    <classEntry path="org.mangui.osmf.plugins.HLSMediaElement"/>
+    <classEntry path="org.mangui.osmf.plugins.HLSPlugin"/>
+    <classEntry path="org.mangui.osmf.plugins.loader.HLSLoadFromDocumentElement"/>
+    <classEntry path="org.mangui.osmf.plugins.loader.HLSLoaderBase"/>
+    <classEntry path="org.mangui.osmf.plugins.loader.HLSNetLoader"/>
+    <classEntry path="org.mangui.osmf.plugins.traits.HLSAlternativeAudioTrait"/>
+    <classEntry path="org.mangui.osmf.plugins.traits.HLSBufferTrait"/>
+    <classEntry path="org.mangui.osmf.plugins.traits.HLSDisplayObjectTrait"/>
+    <classEntry path="org.mangui.osmf.plugins.traits.HLSDynamicStreamTrait"/>
+    <classEntry path="org.mangui.osmf.plugins.traits.HLSNetStreamLoadTrait"/>
+    <classEntry path="org.mangui.osmf.plugins.traits.HLSPlayTrait"/>
+    <classEntry path="org.mangui.osmf.plugins.traits.HLSSeekTrait"/>
+    <classEntry path="org.mangui.osmf.plugins.traits.HLSTimeTrait"/>
+    <classEntry path="org.mangui.osmf.plugins.utils.ErrorManager"/>
+  </includeClasses>
   <includeResources/>
   <namespaceManifests/>
 </flexLibProperties>
