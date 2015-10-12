@@ -195,7 +195,8 @@ package org.mangui.hls.stream {
                             if(continuity == _fragMainInitialContinuity) {
                                 sliding = _liveSlidingMain = _fragMainInitialStartPosition + (min_pts-_fragMainInitialPTS)/1000 - startPosition;
                                 CONFIG::LOGGING {
-                                    if(sliding < 0) {
+                                    // allow negative but small values, that could happen because of frag drift
+                                    if(sliding < -1) {
                                         Log.warn('negative sliding : sliding/min_pts/_fragMainInitialPTS/startPosition/_fragMainInitialStartPosition:' + sliding + '/' + min_pts + '/' + _fragMainInitialPTS + '/' + startPosition.toFixed(3) + '/' + _fragMainInitialStartPosition);
                                     }
                                 }
