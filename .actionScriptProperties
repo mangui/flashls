@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<actionScriptProperties analytics="false" mainApplicationPath="flashls.as" projectUUID="e938451b-f4d1-4796-ba95-b9054fce71fa" version="10">
-  <compiler additionalCompilerArguments="-locale en_US -define CONFIG::LOGGING false -define CONFIG::FLASH_11_1 true" autoRSLOrdering="true" copyDependentFiles="false" fteInMXComponents="false" generateAccessible="false" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="lib" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" verifyDigests="true" warn="true">
+<actionScriptProperties analytics="false" mainApplicationPath="flashls.as" projectUUID="e938451b-f4d1-4796-ba95-b9054fce71fa" version="11">
+  <compiler additionalCompilerArguments="-locale=en_US&#13;&#10;-define+=CONFIG::LOGGING,false" autoRSLOrdering="true" copyDependentFiles="false" fteInMXComponents="false" generateAccessible="false" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" useFlashSDK="false" verifyDigests="true" warn="true">
     <compilerSourcePath/>
     <libraryPath defaultLinkType="0">
       <libraryPathEntry kind="4" path="">
         <excludedEntries>
-          <libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/flex.swc" useDefaultLinkType="false"/>
           <libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/core.swc" useDefaultLinkType="false"/>
+          <libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/flex.swc" useDefaultLinkType="false"/>
         </excludedEntries>
       </libraryPathEntry>
-      <libraryPathEntry kind="3" linkType="1" path="lib/osmf/OSMF.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="2" path="lib/osmf/OSMF.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="lib/blooddy_crypto.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="lib/flowplayer/flowplayer.swc" useDefaultLinkType="false"/>
     </libraryPath>
@@ -19,6 +19,7 @@
     <application path="flashls.as"/>
   </applications>
   <modules/>
+  <workers/>
   <buildCSSFiles/>
   <flashCatalyst validateFlashCatalystCompatibility="false"/>
 </actionScriptProperties>
