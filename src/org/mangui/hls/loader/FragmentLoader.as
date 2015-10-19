@@ -632,7 +632,6 @@ package org.mangui.hls.loader {
 
             if (_demux) {
                 _demux.cancel();
-                _demux = null;
             }
 
             if (_fragCurrent) {
