@@ -112,6 +112,4 @@ $FLEXPATH/bin/compc -include-sources ../src/org/mangui/osmf \
     -library-path+=../bin/debug/flashls.swc \
     -library-path+=../lib/osmf \
     -target-player="10.1" \
-    -debug=false \
     -external-library-path+=../lib/osmf
-
