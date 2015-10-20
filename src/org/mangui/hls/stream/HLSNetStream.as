@@ -211,14 +211,14 @@ package org.mangui.hls.stream {
                 this is to avoid black screen during seek command */
                 super.close();
                 _skippedDuration = 0;
-				
+
 				// useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
                 try {
                     super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
-                } catch(e : Error) { 
-					// Ignore errors, we're running in FP < 11.1
-				}
-				
+                } catch(e : Error) {
+	               // Ignore errors, we're running in FP < 11.1
+                }
+
                 super.play(null);
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                 // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
@@ -245,7 +245,26 @@ package org.mangui.hls.stream {
                 // }
             }
             // append all tags
+            //var otherCounter : int = 0;
             for each (var tagBuffer : FLVTag in tags) {
+                // switch(tagBuffer.type) {
+                //     case FLVTag.AAC_HEADER:
+                //     case FLVTag.AVC_HEADER:
+                //     case FLVTag.DISCONTINUITY:
+                //     case FLVTag.METADATA:
+                //         otherCounter = 0;
+                //         CONFIG::LOGGING {
+                //             Log.info('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
+                //         }
+                //         break;
+                //     default:
+                //         CONFIG::LOGGING {
+                //             if(otherCounter++< 5) {
+                //                 Log.info('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
+                //             }
+                //         }
+                //     break;
+                // }
                 // CONFIG::LOGGING {
                 //     Log.debug2('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
                 // }
