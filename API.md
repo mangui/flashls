@@ -89,6 +89,26 @@ by monitoring the below event, that will be triggered for every seek state chang
 HLSEvent.SEEK_STATE
 ```
 
+### monitoring playback position, buffer progress, live playlist sliding, watched time ...
+
+#### hls.position
+return current playback relative position( relative to live main playlist sliding), in seconds
+
+#### hls.liveSlidingMain
+Return the live main playlist sliding since previous out of buffer ```seek()```, in seconds 
+
+#### hls.liveSlidingAltAudio
+Return the live alternate audio playlist sliding since previous out of buffer ```seek()```,in seconds
+
+#### hls.stream.bufferLength
+Return the current buffer length, in seconds
+
+#### hls.stream.backBufferLength
+Return the current back buffer length, in seconds
+
+#### hls.watched
+Return the current watched time in seconds, since last call to ```hls.load(URL)```
+
 ## Controlling Quality Switch
 
 by default flashls handles quality switch automatically, using heuristics.

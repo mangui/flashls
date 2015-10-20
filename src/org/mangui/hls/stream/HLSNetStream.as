@@ -61,13 +61,15 @@ package org.mangui.hls.stream {
         private var _client : HLSNetStreamClient;
         /** skipped fragment duration **/
         private var _skippedDuration : Number;
+        /** watched duration **/
+        private var _watchedDuration : Number;
 
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
             super(connection);
             super.bufferTime = 0.1;
             _hls = hls;
-            _skippedDuration = 0;
+            _skippedDuration = _watchedDuration = 0;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
             _playbackState = HLSPlayStates.IDLE;
@@ -209,10 +211,11 @@ package org.mangui.hls.stream {
                 /* this is our first injection after seek(),
                 let's flush netstream now
                 this is to avoid black screen during seek command */
-                super.close();
+                _watchedDuration += super.time;
                 _skippedDuration = 0;
+                super.close();
 
-				// useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
+               // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
                 try {
                     super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
                 } catch(e : Error) {
@@ -311,6 +314,11 @@ package org.mangui.hls.stream {
         /* also include skipped duration in get time() so that play position will match fragment position */
         override public function get time() : Number {
             return super.time+_skippedDuration;
+        }
+
+        /** Return total watched time **/
+        public function get watched() : Number {
+            return super.time + _watchedDuration;
         }
 
         override public function play(...args) : void {
@@ -426,6 +434,7 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:close");
             }
             super.close();
+            _watchedDuration = _skippedDuration = 0;
             _streamBuffer.stop();
             _timer.stop();
             _setPlaybackState(HLSPlayStates.IDLE);

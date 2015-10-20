@@ -75,7 +75,7 @@ package org.mangui.hls {
             if (hasEventListener(event.type)) {
                 return super.dispatchEvent(event);
             }
-            
+
             return false;
         }
 
@@ -206,6 +206,11 @@ package org.mangui.hls {
         /** Return the current seek state. **/
         public function get seekState() : String {
             return _hlsNetStream.seekState;
+        };
+
+        /** Return the current watched time **/
+        public function get watched() : Number {
+            return _hlsNetStream.watched;
         };
 
         /** Return the type of stream (VOD/LIVE). **/

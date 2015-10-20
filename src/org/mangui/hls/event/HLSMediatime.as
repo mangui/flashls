@@ -20,14 +20,17 @@ package org.mangui.hls.event {
         public var buffer : Number;
         /** current buffer duration  (in seconds) **/
         public var backbuffer : Number;
+        /** total watched duration  (in seconds) since hls.load(URL) **/
+        public var watched : Number;
 
-        public function HLSMediatime(position : Number, duration : Number, buffer : Number, backbuffer : Number, live_sliding_main : Number, live_sliding_altaudio : Number) {
+        public function HLSMediatime(position : Number, duration : Number, buffer : Number, backbuffer : Number, live_sliding_main : Number, live_sliding_altaudio : Number, watched : Number) {
             this.position = position;
             this.duration = duration;
             this.buffer = buffer;
             this.backbuffer = backbuffer;
             this.live_sliding_main = live_sliding_main;
             this.live_sliding_altaudio = live_sliding_altaudio;
+            this.watched = watched;
         }
     }
 }

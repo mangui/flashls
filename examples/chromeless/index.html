@@ -222,6 +222,10 @@ header {
           <td>sliding</td>
           <td> <div id="sliding" style="display: inline;"></div> </td>
         </tr>
+        <tr>
+          <td>watched</td>
+          <td> <div id="watched" style="display: inline;"></div> </td>
+        </tr>
       </table>
     </div>
 
@@ -356,6 +360,7 @@ function load(url) {
   $('#bufferLength').html(0);
   $('#backBufferLength').html(0);
   $('#sliding').html(0);
+  $('#watched').html(0);
 }
 
 function toggleDebugLogs() {
@@ -528,6 +533,7 @@ var flashlsEvents = {
     $('#bufferLength').html(timemetrics.buffer.toFixed(2));
     $('#backBufferLength').html(timemetrics.backbuffer.toFixed(2));
     $('#sliding').html(timemetrics.live_sliding_main.toFixed(2));
+    $('#watched').html(timemetrics.watched.toFixed(2));
     var event = { time : new Date() - jsLoadDate, buffer : Math.round(1000*timemetrics.buffer), pos: Math.round(1000*timemetrics.position)};
     var bufEvents = events.buffer, bufEventLen = bufEvents.length;
     if(bufEventLen > 1) {

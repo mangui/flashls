@@ -529,9 +529,10 @@ package org.mangui.hls.stream {
             var pos : Number = position;
             var bufLen : Number = _hls.stream.bufferLength;
             var duration : Number = _playlistDuration;
+            var watched : Number = (_hls.stream as HLSNetStream).watched;
             // dispatch media time event only if playback not completed AND position/buffer or playlist duration has changed
             if(!_playbackCompleted && (pos != _lastPos || bufLen != _lastBufLen || duration != _lastDuration)) {
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(pos, duration, bufLen, backBufferLength, _liveSlidingMain, _liveSlidingAltAudio)));
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(pos, duration, bufLen, backBufferLength, _liveSlidingMain, _liveSlidingAltAudio,watched)));
                 _lastPos = pos;
                 _lastDuration = duration;
                 _lastBufLen = bufLen;
