@@ -22,6 +22,7 @@ package org.mangui.hls.stream {
     import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
+    import org.mangui.hls.model.Level;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -120,18 +121,18 @@ package org.mangui.hls.stream {
         public function seek(position : Number) : void {
             // compute _seekPositionRequested based on position and playlist type
             if (_hls.type == HLSTypes.LIVE) {
-                /* follow HLS spec :
-                If the EXT-X-ENDLIST tag is not present
-                and the client intends to play the media regularly (i.e. in playlist
-                order at the nominal playback rate), the client SHOULD NOT
-                choose a segment which starts less than three target durations from
-                the end of the Playlist file */
-                var maxLivePosition : Number = Math.max(0, _hls.levels[_hls.loadLevel].duration - 3 * _hls.levels[_hls.loadLevel].averageduration);
+                var loadLevel : Level = _hls.levels[_hls.loadLevel];
                 if (position == -1) {
-                    // seek 3 fragments from end
-                    _seekPositionRequested = maxLivePosition;
+                    /*  If start position not specified, follow HLS spec :
+                        If the EXT-X-ENDLIST tag is not present
+                        and the client intends to play the media regularly (i.e. in playlist
+                        order at the nominal playback rate), the client SHOULD NOT
+                        choose a segment which starts less than three target durations from
+                        the end of the Playlist file */
+                    _seekPositionRequested = Math.max(0, loadLevel.duration - 3 * loadLevel.averageduration);
                 } else {
-                    _seekPositionRequested = Math.min(position, maxLivePosition);
+                    // If start position is specified, trust it, just avoid seeking out of bound ...
+                    _seekPositionRequested = Math.min(position, loadLevel.duration);
                 }
             } else {
                 _seekPositionRequested = Math.max(position, 0);
@@ -543,7 +544,7 @@ package org.mangui.hls.stream {
              * this is to ensure that accurate seeking will work appropriately
              */
             CONFIG::LOGGING {
-                Log.debug2("position/total/audio/video/NetStream bufferLength/audioExpected/videoExpected:" + position.toFixed(2) + "/" + _hls.stream.bufferLength.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + netStreamBuffer.toFixed(2) + "/" + audioExpected + "/" + videoExpected);
+                Log.debug2("position/duration/total/audio/video/NetStream bufferLength/audioExpected/videoExpected:" + position.toFixed(2) + "/" + duration.toFixed(2) + "/" + _hls.stream.bufferLength.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + netStreamBuffer.toFixed(2) + "/" + audioExpected + "/" + videoExpected);
             }
 
             var tagDuration : Number = 0;
