@@ -654,16 +654,19 @@ package org.mangui.hls.stream {
                 keyIdx = lastIdx;
             }
 
-            var first_pts : Number;
+            var firstIdx : int;
             if (HLSSettings.seekMode == HLSSeekMode.ACCURATE_SEEK) {
                 // start injecting from last tag before start position
-                first_pts = tags[lastIdx].tag.pts;
-                _seekPositionReal = tags[lastIdx].positionAbsolute;
+                firstIdx = lastIdx;
             } else {
                 // start injecting from keyframe tag
-                first_pts = tags[keyIdx].tag.pts;
-                _seekPositionReal = tags[keyIdx].positionAbsolute;
+                firstIdx = keyIdx;
             }
+
+            var firstPTS : Number = tags[firstIdx].tag.pts;
+            var firstDTS : Number = tags[firstIdx].tag.dts;
+            _seekPositionReal = tags[firstIdx].positionAbsolute;
+
             // inject discontinuity/metadata/AVC header/AAC header if available
             if (disIdx != -1)  idx2Clone.push(disIdx);
             if (metIdxMain != -1)  idx2Clone.push(metIdxMain);
@@ -674,7 +677,15 @@ package org.mangui.hls.stream {
             for each (i in idx2Clone) {
                 data = tags[i];
                 var tagclone : FLVTag = data.tag.clone();
-                tagclone.pts = tagclone.dts = first_pts;
+                // use keyframe DTS as reference timestamp
+                tagclone.dts = firstDTS;
+                if(tagclone.type == FLVTag.AVC_HEADER) {
+                    // for video, PTS could be different than PTS, use correct PTS value
+                    tagclone.pts = firstPTS;
+                } else {
+                    // for other tags, force PTS = DTS
+                    tagclone.pts = firstDTS;
+                }
                 var dataclone : FLVData = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType, data.fragIdx, data.fragLevel, data.fragSN);
                 filteredTags.push(dataclone);
             }
@@ -687,7 +698,7 @@ package org.mangui.hls.stream {
                     // only push NALU to be able to reconstruct frame at seek position
                     if (data.tag.type == FLVTag.AVC_NALU) {
                         tagclone = data.tag.clone();
-                        tagclone.pts = tagclone.dts = first_pts;
+                        tagclone.pts = tagclone.dts = firstPTS;
                         dataclone = new FLVData(tagclone, _seekPositionReal, 0, data.continuity, data.loaderType, data.fragIdx, data.fragLevel, data.fragSN);
                         filteredTags.push(dataclone);
                     }
