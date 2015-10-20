@@ -58,6 +58,7 @@ package org.mangui.hls.demux {
         private var _callback_audioselect : Function;
         private var _callback_progress : Function;
         private var _callback_complete : Function;
+        private var _callback_error : Function;
         private var _callback_videometadata : Function;
         /* current audio PES */
         private var _curAudioPES : ByteArray;
@@ -102,7 +103,12 @@ package org.mangui.hls.demux {
         }
 
         /** Transmux the M2TS file into an FLV file. **/
-        public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function, audioOnly : Boolean) {
+        public function TSDemuxer(callback_audioselect : Function,
+                                  callback_progress : Function,
+                                  callback_complete : Function,
+                                  callback_error : Function,
+                                  callback_videometadata : Function,
+                                  audioOnly : Boolean) {
             _avcc = null;
             _curAudioPES = null;
             _curVideoPES = null;
@@ -113,6 +119,7 @@ package org.mangui.hls.demux {
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
+            _callback_error = callback_error;
             _callback_videometadata = callback_videometadata;
             _pmtParsed = false;
             _unknownPIDFound = false;
@@ -516,7 +523,7 @@ package org.mangui.hls.demux {
 
                         var country_code : uint = pes.data.readUnsignedByte();
 
-                        if (country_code == 181) 
+                        if (country_code == 181)
                         {
                             var provider_code : uint = pes.data.readUnsignedShort();
 
@@ -526,14 +533,14 @@ package org.mangui.hls.demux {
 
                                 if (user_structure == 0x47413934) // GA94
                                 {
-                                    var user_data_type : uint = pes.data.readUnsignedByte();                                    
+                                    var user_data_type : uint = pes.data.readUnsignedByte();
 
                                     // CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
                                     if (user_data_type == 3)
                                     {
                                         // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
                                         var byte:uint = pes.data.readUnsignedByte();
-                                    
+
                                         // get the total number of cc_datas
                                         var total:uint = 31 & byte;
                                         var count:uint = 0;
@@ -589,7 +596,7 @@ package org.mangui.hls.demux {
                                         else
                                         {
                                             CONFIG::LOGGING {
-                                                Log.info("not enough bytes!");                                
+                                                Log.info("not enough bytes!");
                                             }
                                         }
                                     }
@@ -715,7 +722,10 @@ package org.mangui.hls.demux {
                     }
                     data.position = pos_end + 1;
                 } else {
-                    throw new Error("TS: Could not parse file: sync byte not found @ offset/len " + data.position + "/" + data.length);
+                    if(_callback_error) {
+                        _callback_error("TS: Could not parse file: sync byte not found @ offset/len " + data.position + "/" + data.length);
+                        return;
+                    }
                 }
             }
             todo--;
@@ -886,13 +896,11 @@ package org.mangui.hls.demux {
             data.position += 1;
             // get section length
             var sectionLen : uint = data.readUnsignedShort() & 0x3FF;
-            // Check the section length for a single PMT.
-            if (sectionLen > 13) {
-                throw new Error("TS: Multiple PMT entries are not supported.");
+            if (sectionLen >= 13) {
+                // Grab the first PMT ID
+                data.position += 7;
+                _pmtId = data.readUnsignedShort() & 8191;
             }
-            // Grab the PMT ID.
-            data.position += 7;
-            _pmtId = data.readUnsignedShort() & 8191;
             return 13 + pointerField;
         };
 

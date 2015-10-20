@@ -9,7 +9,15 @@
         import org.mangui.hls.utils.Log;
     }
     public class DemuxHelper {
-        public static function probe(data : ByteArray, level : Level, audioselect : Function, progress : Function, complete : Function, videometadata : Function, id3tagfound : Function, audioOnly : Boolean) : Demuxer {
+        public static function probe(data : ByteArray,
+                                     level : Level,
+                                     audioselect : Function,
+                                     progress : Function,
+                                     complete : Function,
+                                     error : Function,
+                                     videometadata : Function,
+                                     id3tagfound : Function,
+                                     audioOnly : Boolean) : Demuxer {
             data.position = 0;
             CONFIG::LOGGING {
                 Log.debug("probe fragment type");
@@ -30,23 +38,23 @@
                 CONFIG::LOGGING {
                     Log.debug("TS match + H264 signaled in Manifest, use TS demuxer");
                 }
-                return new TSDemuxer(audioselect, progress, complete, videometadata, audioOnly);
+                return new TSDemuxer(audioselect, progress, complete, error, videometadata, audioOnly);
             } else if (aac_match && level.codec_aac) {
                 CONFIG::LOGGING {
                     Log.debug("AAC match + AAC signaled in Manifest, use AAC demuxer");
                 }
-                return new AACDemuxer(audioselect, progress, complete, id3tagfound);
+                return new AACDemuxer(audioselect, progress, complete, error, id3tagfound);
             } else if (mp3_match && level.codec_mp3) {
                 CONFIG::LOGGING {
                     Log.debug("MP3 match + MP3 signaled in Manifest, use MP3 demuxer");
                 }
-                return new MP3Demuxer(audioselect, progress, complete, id3tagfound);
+                return new MP3Demuxer(audioselect, progress, complete, error, id3tagfound);
             } else if (aac_match) {
-                return new AACDemuxer(audioselect, progress, complete, id3tagfound);
+                return new AACDemuxer(audioselect, progress, complete, error, id3tagfound);
             } else if (mp3_match) {
-                return new MP3Demuxer(audioselect, progress, complete, id3tagfound);
+                return new MP3Demuxer(audioselect, progress, complete, error, id3tagfound);
             } else if (ts_match) {
-                return new TSDemuxer(audioselect, progress, complete, videometadata, audioOnly);
+                return new TSDemuxer(audioselect, progress, complete, error, videometadata, audioOnly);
             } else {
                 CONFIG::LOGGING {
                     Log.debug("probe fails");
