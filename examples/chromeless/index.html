@@ -665,8 +665,14 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     var button_enabled  = 'btn-primary" ';
     var button_disabled = 'btn-success" ';
 
+    var autoLevel = api.getAutoLevel();
+    var autoLevelCapping = api.getAutoLevelCapping();
+    var currentLevel = api.getCurrentLevel();
+    var nextLevel = api.getNextLevel();
+    var loadLevel = api.getLoadLevel();
+
     var html1 = button_template;
-    if(api.getAutoLevel()) {
+    if(autoLevel) {
       html1 += button_enabled;
     } else {
       html1 += button_disabled;
@@ -675,7 +681,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
 
 
     var html2 = button_template;
-    if(api.getAutoLevel()) {
+    if(autoLevel) {
       html2 += button_enabled;
     } else {
       html2 += button_disabled;
@@ -683,7 +689,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     html2 += 'onclick="api.setLoadLevel(-1)">auto</button>';
 
     var html3 = button_template;
-    if(api.getAutoLevelCapping() === -1) {
+    if(autoLevelCapping === -1) {
       html3 += button_enabled;
     } else {
       html3 += button_disabled;
@@ -691,7 +697,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     html3 += 'onclick="api.playerSetAutoLevelCapping(-1);updateLevelInfo()">none</button>';
 
     var html4 = button_template;
-    if(api.getAutoLevel()) {
+    if(autoLevel) {
       html4 += button_enabled;
     } else {
       html4 += button_disabled;
@@ -700,7 +706,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
 
     for (var i=0; i < api.getLevels().length; i++) {
       html1 += button_template;
-      if(api.getCurrentLevel() === i) {
+      if(currentLevel === i) {
         html1 += button_enabled;
       } else {
         html1 += button_disabled;
@@ -709,7 +715,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
 
 
       html2 += button_template;
-      if(api.getLoadLevel() === i) {
+      if(loadLevel === i) {
         html2 += button_enabled;
       } else {
         html2 += button_disabled;
@@ -717,7 +723,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       html2 += 'onclick="api.setLoadLevel(' + i + ')">' + i + '</button>';
 
       html3 += button_template;
-      if(api.getAutoLevelCapping() === i) {
+      if(autoLevelCapping === i) {
         html3 += button_enabled;
       } else {
         html3 += button_disabled;
@@ -725,7 +731,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       html3 += 'onclick="api.playerSetAutoLevelCapping(' + i + ');updateLevelInfo()">' + i + '</button>';
 
       html4 += button_template;
-      if(api.getNextLevel() === i) {
+      if(nextLevel === i) {
         html4 += button_enabled;
       } else {
         html4 += button_disabled;
