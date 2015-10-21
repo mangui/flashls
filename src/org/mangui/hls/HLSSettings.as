@@ -139,9 +139,9 @@ package org.mangui.hls {
          *
          * Note: this setting is ignored in manual mode so all the levels could be selected manually.
          *
-         * Default is true
+         * Default is false
          */
-        public static var capLevelonFPSDrop : Boolean = true;
+        public static var capLevelonFPSDrop : Boolean = false;
 
         /**
          * smoothAutoSwitchonFPSDrop
