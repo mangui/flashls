@@ -128,19 +128,22 @@ package org.mangui.hls.stream {
 
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
-            var buffer : Number = this.bufferLength;
+            var buffer : Number = this.bufferLength,
+                minBufferLength : Number =_bufferThresholdController.minBufferLength,
+                reachedEnd : Boolean = _streamBuffer.reachedEnd,
+                liveLoadingStalled : Boolean = _streamBuffer.liveLoadingStalled;
             // Log.info("netstream/total:" + super.bufferLength + "/" + this.bufferLength);
             // Set playback state. no need to check buffer status if seeking
             if (_seekState != HLSSeekStates.SEEKING) {
                 // check low buffer condition
                 if (buffer <= 0.1) {
-                    if (_streamBuffer.reachedEnd || _streamBuffer.liveLoadingStalled) {
+                    if (reachedEnd || liveLoadingStalled) {
                         // Last tag done? Then append sequence end.
                         super.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         super.appendBytes(new ByteArray());
                         // reach end of playlist + playback complete (as buffer is empty).
                         // stop timer, report event and switch to IDLE mode.
-                        if(_streamBuffer.reachedEnd) {
+                        if(reachedEnd) {
                             _timer.stop();
                             CONFIG::LOGGING {
                                 Log.debug("reached end of VOD playlist, notify playback complete");
@@ -165,7 +168,7 @@ package org.mangui.hls.stream {
                     }
                 }
                 // if buffer len is below lowBufferLength, get into buffering state
-                if (!_streamBuffer.reachedEnd && !_streamBuffer.liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
+                if (!reachedEnd && !liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
                     if (_playbackState == HLSPlayStates.PLAYING) {
                         // low buffer condition and play state. switch to play buffering state
                         _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
@@ -175,10 +178,10 @@ package org.mangui.hls.stream {
                     }
                 }
                 // if buffer len is above minBufferLength, get out of buffering state
-                if (buffer >= _bufferThresholdController.minBufferLength || _streamBuffer.reachedEnd || _streamBuffer.liveLoadingStalled) {
+                if (buffer >= minBufferLength || reachedEnd || liveLoadingStalled) {
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
-                            Log.debug("resume playback, minBufferLength/bufferLength:"+_bufferThresholdController.minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
+                            Log.debug("resume playback, minBufferLength/bufferLength:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
                         }
                         // resume playback in case it was paused, this can happen if buffer was in really low condition (less than 0.1s)
                         super.resume();
