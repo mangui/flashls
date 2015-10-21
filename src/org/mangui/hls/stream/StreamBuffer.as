@@ -120,8 +120,10 @@ package org.mangui.hls.stream {
          */
         public function seek(position : Number) : void {
             // compute _seekPositionRequested based on position and playlist type
+            var loadLevel : Level = _hls.levels[_hls.loadLevel];
+            // set max position as being end of playlist - 1 second
+            var maxPosition : Number = loadLevel.duration-1;
             if (_hls.type == HLSTypes.LIVE) {
-                var loadLevel : Level = _hls.levels[_hls.loadLevel];
                 if (position == -1) {
                     /*  If start position not specified, follow HLS spec :
                         If the EXT-X-ENDLIST tag is not present
@@ -132,10 +134,10 @@ package org.mangui.hls.stream {
                     _seekPositionRequested = Math.max(0, loadLevel.duration - 3 * loadLevel.averageduration);
                 } else {
                     // If start position is specified, trust it, just avoid seeking out of bound ...
-                    _seekPositionRequested = Math.min(position, loadLevel.duration);
+                    _seekPositionRequested = Math.min(position, maxPosition);
                 }
             } else {
-                _seekPositionRequested = Math.max(position, 0);
+                _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
             }
             CONFIG::LOGGING {
                 Log.debug("seek : requested position:" + position.toFixed(2) + ",seek position:" + _seekPositionRequested.toFixed(2) + ",min/max buffer position:" + min_pos.toFixed(2) + "/" + max_pos.toFixed(2));
