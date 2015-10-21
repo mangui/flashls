@@ -100,6 +100,15 @@ package org.mangui.hls {
         public static var lowBufferLength : Number = 3;
 
         /**
+         * mediaTimeUpdatePeriod
+         *
+         * time update period in ms
+         * period at which HLSEvent.MEDIA_TIME will be triggered
+         * Default is 100 ms
+         */
+        public static var mediaTimePeriod : int = 100;
+
+        /**
          * fpsDroppedMonitoringPeriod
          *
          * dropped FPS Monitor Period in ms

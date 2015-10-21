@@ -5,6 +5,7 @@ package org.mangui.hls.stream {
     import flash.events.Event;
     import flash.events.TimerEvent;
     import flash.utils.Dictionary;
+    import flash.utils.getTimer;
     import flash.utils.Timer;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
@@ -75,6 +76,7 @@ package org.mangui.hls.stream {
         private var _lastPos : Number;
         private var _lastBufLen : Number;
         private var _lastDuration : Number;
+        private var _lastMediaTimeUpdate : int;
 
 
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
@@ -171,6 +173,7 @@ package org.mangui.hls.stream {
                 flushBuffer();
             }
             _playbackCompleted = false;
+            _lastMediaTimeUpdate = 0;
             _timer.start();
         }
 
@@ -531,14 +534,23 @@ package org.mangui.hls.stream {
         private function _checkBuffer(e : Event) : void {
             var pos : Number = position;
             var bufLen : Number = _hls.stream.bufferLength;
-            var duration : Number = _playlistDuration;
             var watched : Number = (_hls.stream as HLSNetStream).watched;
-            // dispatch media time event only if playback not completed AND position/buffer or playlist duration has changed
-            if(!_playbackCompleted && (pos != _lastPos || bufLen != _lastBufLen || duration != _lastDuration)) {
+            var currentTime : int = getTimer();
+            var dispatchTimeUpdate : Boolean = (currentTime - _lastMediaTimeUpdate > HLSSettings.mediaTimePeriod);
+            var duration : Number;
+            if(_playbackCompleted) {
+                // as playback is completed, align stream duration to last playback position
+                duration = position;
+            } else {
+                duration = _playlistDuration;
+            }
+            // dispatch media time event only if position/buffer or playlist duration has changed
+            if(dispatchTimeUpdate && (pos != _lastPos || bufLen != _lastBufLen || duration != _lastDuration) ) {
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.MEDIA_TIME, new HLSMediatime(pos, duration, bufLen, backBufferLength, _liveSlidingMain, _liveSlidingAltAudio,watched)));
                 _lastPos = pos;
                 _lastDuration = duration;
                 _lastBufLen = bufLen;
+                _lastMediaTimeUpdate = currentTime;
             }
 
             var netStreamBuffer : Number = (_hls.stream as HLSNetStream).netStreamBufferLength;
@@ -1017,10 +1029,10 @@ package org.mangui.hls.stream {
 
         /** playback complete handler **/
         private function _playbackComplete(event : HLSEvent) : void {
+            // reset lastMediaTimeUpdate to quickly trigger a MEDIA_TIME event
+            _lastMediaTimeUpdate = 0;
             _playbackCompleted = true;
         }
-
-
     }
 }
 
