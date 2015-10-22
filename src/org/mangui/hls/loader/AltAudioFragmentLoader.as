@@ -92,6 +92,7 @@ package org.mangui.hls.loader {
 
         public function dispose() : void {
             stop();
+            _timer.removeEventListener(TimerEvent.TIMER, _checkLoading);
             _loadingState = LOADING_STOPPED;
             _keymap = new Object();
         }

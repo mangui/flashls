@@ -93,6 +93,7 @@ package org.mangui.hls.utils {
         override public function close() : void {
             if(_timer) {
                 _timer.stop();
+                _timer.removeEventListener(TimerEvent.TIMER, _decodeData);
             }
             if (ExternalInterface.available) {
                 _trigger('abortFragment', ExternalInterface.objectID);

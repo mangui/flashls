@@ -461,6 +461,7 @@ package org.mangui.hls.stream {
 
         public function dispose_() : void {
             close();
+            _timer.removeEventListener(TimerEvent.TIMER, _checkBuffer);
             _bufferThresholdController.dispose();
         }
     }
