@@ -203,9 +203,12 @@ package org.mangui.hls.stream {
                             if(continuity == _fragMainInitialContinuity) {
                                 sliding = _liveSlidingMain = _fragMainInitialStartPosition + (min_pts-_fragMainInitialPTS)/1000 - startPosition;
                                 CONFIG::LOGGING {
+                                    var debugString : String = "sliding/min_pts/_fragMainInitialPTS/startPosition/_fragMainInitialStartPosition:" + sliding + '/' + min_pts + '/' + _fragMainInitialPTS + '/' + startPosition.toFixed(3) + '/' + _fragMainInitialStartPosition;
                                     // allow negative but small values, that could happen because of frag drift
                                     if(sliding < -1) {
-                                        Log.warn('negative sliding : sliding/min_pts/_fragMainInitialPTS/startPosition/_fragMainInitialStartPosition:' + sliding + '/' + min_pts + '/' + _fragMainInitialPTS + '/' + startPosition.toFixed(3) + '/' + _fragMainInitialStartPosition);
+                                        Log.warn('negative sliding:'+debugString);
+                                    } else {
+                                        Log.debug2('sliding on same cc:'+ debugString);
                                     }
                                 }
                             } else {
@@ -220,7 +223,7 @@ package org.mangui.hls.stream {
 
                     }
                     CONFIG::LOGGING {
-                        Log.debug('new main frag,start/sliding/idx:' + startPosition.toFixed(3) + '/' + sliding.toFixed(3) + '/' + _fragMainIdx);
+                        Log.debug('new main frag,start/sliding/cc/idx:' + startPosition.toFixed(3) + '/' + sliding.toFixed(3) + '/' + continuity + '/' + _fragMainIdx);
                     }
                 }
                 fragIdx = _fragMainIdx;
