@@ -20,8 +20,8 @@
             super(duration);
             setCurrentTime(0);
             _hls = hls;
-            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete, false, 0, true);
         }
 
         override public function dispose() : void {

@@ -26,7 +26,7 @@
             _timeLoaded = 0;
             _timeTotal = duration;
             super.netStream = _hls.stream;
-            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
+            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler, false, 0, true);
         }
 
         override public function dispose() : void {

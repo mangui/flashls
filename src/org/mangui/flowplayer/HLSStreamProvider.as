@@ -72,12 +72,12 @@ package org.mangui.flowplayer {
             _player = player;
             _hls = new HLS();
             _hls.stage = player.screen.getDisplayObject().stage;
-            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
-            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
-            _hls.addEventListener(HLSEvent.ID3_UPDATED, _ID3Handler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.ERROR, _errorHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.ID3_UPDATED, _ID3Handler, false, 0, true);
 
             var cfg : Object = _model.config;
             for (var object : String in cfg) {

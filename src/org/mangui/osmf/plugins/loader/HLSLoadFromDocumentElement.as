@@ -76,7 +76,7 @@ package org.mangui.osmf.plugins.loader {
             if (_resource != value && value != null) {
                 _resource = value;
                 loadTrait = new LoadFromDocumentLoadTrait(loader, resource);
-                loadTrait.addEventListener(LoadEvent.LOAD_STATE_CHANGE, onLoadStateChange, false, int.MAX_VALUE);
+                loadTrait.addEventListener(LoadEvent.LOAD_STATE_CHANGE, onLoadStateChange, false, int.MAX_VALUE, true);
 
                 if (super.getTrait(MediaTraitType.LOAD) != null) {
                     super.removeTrait(MediaTraitType.LOAD);
@@ -107,7 +107,7 @@ package org.mangui.osmf.plugins.loader {
                 // Set up a listener so that we can prevent the dispatch
                 // of a second LOADING event.
                 var proxiedLoadTrait : LoadTrait = loadTrait.mediaElement.getTrait(MediaTraitType.LOAD) as LoadTrait;
-                proxiedLoadTrait.addEventListener(LoadEvent.LOAD_STATE_CHANGE, onProxiedElementLoadStateChange, false, int.MAX_VALUE);
+                proxiedLoadTrait.addEventListener(LoadEvent.LOAD_STATE_CHANGE, onProxiedElementLoadStateChange, false, int.MAX_VALUE, true);
 
                 // Expose the proxied element.
                 proxiedElement = loadTrait.mediaElement;

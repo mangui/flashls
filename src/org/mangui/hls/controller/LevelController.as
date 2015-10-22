@@ -44,10 +44,10 @@ package org.mangui.hls.controller {
             _fpsController = new FPSController(hls);
             /* low priority listener, so that other listeners with default priority
                could seamlessly set hls.startLevel in their HLSEvent.MANIFEST_PARSED listener */
-            _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler, false, int.MIN_VALUE);
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_PARSED, _manifestParsedHandler, false, int.MIN_VALUE, true);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED, _fragmentLoadedHandler, false, 0, true);
         }
         ;
 

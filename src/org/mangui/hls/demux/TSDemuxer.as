@@ -140,7 +140,7 @@ package org.mangui.hls.demux {
                 _readPosition = 0;
                 _totalBytes = 0;
                 _dataOffset = 0;
-                _timer.addEventListener(TimerEvent.TIMER, _parseTimer);
+                _timer.addEventListener(TimerEvent.TIMER, _parseTimer, false, 0, true);
             }
             _dataVector.push(data);
             _totalBytes += data.length;

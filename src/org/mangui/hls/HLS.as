@@ -60,7 +60,7 @@ package org.mangui.hls {
             var connection : NetConnection = new NetConnection();
             connection.connect(null);
             _hlsNetStream = new HLSNetStream(connection, this, _streamBuffer);
-            this.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            this.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler, false, 0, true);
         };
 
         /** Forward internal errors. **/

@@ -28,7 +28,7 @@
             this.videoSurface = videoSurface as VideoSurface;
 
             if (this.videoSurface is VideoSurface)
-                this.videoSurface.addEventListener(Event.ADDED_TO_STAGE, onStage);
+                this.videoSurface.addEventListener(Event.ADDED_TO_STAGE, onStage, false, 0, true);
         }
 
         override public function dispose() : void {
@@ -42,7 +42,7 @@
         private function onStage(event : Event) : void {
             _hls.stage = event.target.stage as Stage;
             videoSurface.removeEventListener(Event.ADDED_TO_STAGE, onStage);
-            videoSurface.addEventListener(Event.ENTER_FRAME, onFrame);
+            videoSurface.addEventListener(Event.ENTER_FRAME, onFrame, false, 0, true);
         }
 
         private function onFrame(event : Event) : void {

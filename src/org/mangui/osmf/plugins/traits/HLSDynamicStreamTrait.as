@@ -19,7 +19,7 @@
             Log.debug("HLSDynamicStreamTrait()");
             }
             _hls = hls;
-            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler, false, 0, true);
             super(true, _hls.startLevel, hls.levels.length);
         }
 

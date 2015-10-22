@@ -22,8 +22,8 @@
             }
             super();
             _hls = hls;
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateChangedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete, false, 0, true);
         }
 
         override public function dispose() : void {

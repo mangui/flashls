@@ -31,8 +31,8 @@ package org.mangui.osmf.plugins.traits {
             _numAlternativeAudioStreams = _audioTrackList.length - 1;
             super(_numAlternativeAudioStreams);
             _media = media;
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChangedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTrackListChangedHandler, false, 0, true);
         }
 
         override public function dispose() : void {

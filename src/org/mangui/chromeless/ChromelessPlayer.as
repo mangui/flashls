@@ -129,8 +129,8 @@ package org.mangui.chromeless {
             stage.scaleMode = StageScaleMode.NO_SCALE;
             stage.align = StageAlign.TOP_LEFT;
             stage.fullScreenSourceRect = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
-            stage.addEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState);
-            stage.addEventListener(Event.RESIZE, _onStageResize);
+            stage.addEventListener(StageVideoAvailabilityEvent.STAGE_VIDEO_AVAILABILITY, _onStageVideoState, false, 0, true);
+            stage.addEventListener(Event.RESIZE, _onStageResize, false, 0, true);
         }
 
         protected function _setupSheet() : void {
@@ -138,7 +138,7 @@ package org.mangui.chromeless {
             _sheet = new Sprite();
             _sheet.graphics.beginFill(0x000000, 0);
             _sheet.graphics.drawRect(0, 0, stage.stageWidth, stage.stageHeight);
-            _sheet.addEventListener(MouseEvent.CLICK, _clickHandler);
+            _sheet.addEventListener(MouseEvent.CLICK, _clickHandler, false, 0, true);
             _sheet.buttonMode = true;
             addChild(_sheet);
         }
@@ -492,32 +492,32 @@ package org.mangui.chromeless {
             var available : Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
             _hls = new HLS();
             _hls.stage = stage;
-            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
-            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
-            _hls.addEventListener(HLSEvent.SEEK_STATE, _seekStateHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
-            _hls.addEventListener(HLSEvent.ID3_UPDATED, _id3Updated);
-            _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
-            _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
-            _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.ERROR, _errorHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.SEEK_STATE, _seekStateHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACKS_LIST_CHANGE, _audioTracksListChange, false, 0, true);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange, false, 0, true);
+            _hls.addEventListener(HLSEvent.ID3_UPDATED, _id3Updated, false, 0, true);
+            _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler, false, 0, true);
 
             if (available && stage.stageVideos.length > 0) {
                 _stageVideo = stage.stageVideos[0];
-                _stageVideo.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange)
+                _stageVideo.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange, false, 0, true)
                 _stageVideo.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
                 _stageVideo.attachNetStream(_hls.stream);
             } else {
                 _video = new Video(stage.stageWidth, stage.stageHeight);
-                _video.addEventListener(VideoEvent.RENDER_STATE, _onVideoStateChange);
+                _video.addEventListener(VideoEvent.RENDER_STATE, _onVideoStateChange, false, 0, true);
                 addChild(_video);
                 _video.smoothing = true;
                 _video.attachNetStream(_hls.stream);

@@ -22,9 +22,9 @@ package org.mangui.hls.controller {
         /** Create the loader. **/
         public function BufferThresholdController(hls : HLS) : void {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.TAGS_LOADED, _fragmentLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler, false, 0, true);
         };
 
         public function dispose() : void {
