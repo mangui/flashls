@@ -67,11 +67,9 @@ package org.mangui.hls.demux {
             // AAC should contain ID3 tag filled with a timestamp
             var frames : Vector.<AudioFrame> = AACDemuxer.getFrames(_data, _data.position);
             var adif : ByteArray = getADIF(_data, id3.len);
-            if(!adif) {
-                if(_callback_error) {
-                    _callback_error(ADTS_NOT_FOUND);
-                    return;
-                }
+            if(adif == null && _callback_error != null) {
+                _callback_error(ADTS_NOT_FOUND);
+                return;
             }
             var adifTag : FLVTag = new FLVTag(FLVTag.AAC_HEADER, id3.timestamp, id3.timestamp, true);
             adifTag.push(adif, 0, adif.length);
