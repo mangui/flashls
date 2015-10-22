@@ -101,6 +101,7 @@ package org.mangui.hls.stream {
             _hls.removeEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
             _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
             _timer.stop();
+            _timer.removeEventListener(TimerEvent.TIMER, _checkBuffer);
             _fragmentLoader.dispose();
             _altaudiofragmentLoader.dispose();
             _fragmentLoader = null;
@@ -121,23 +122,24 @@ package org.mangui.hls.stream {
          * if seek position out of buffer, ask fragment loader to retrieve data
          */
         public function seek(position : Number) : void {
-            // compute _seekPositionRequested based on position and playlist type
-            var loadLevel : Level = _hls.levels[_hls.loadLevel];
-            // set max position as being end of playlist - 1 second
-            var maxPosition : Number = loadLevel.duration-1;
-            if (_hls.type == HLSTypes.LIVE) {
-                if (position == -1) {
-                    /*  If start position not specified, follow HLS spec :
-                        If the EXT-X-ENDLIST tag is not present
-                        and the client intends to play the media regularly (i.e. in playlist
-                        order at the nominal playback rate), the client SHOULD NOT
-                        choose a segment which starts less than three target durations from
-                        the end of the Playlist file */
-                    _seekPositionRequested = Math.max(0, loadLevel.duration - 3 * loadLevel.averageduration);
-                } else {
-                    // If start position is specified, trust it, just avoid seeking out of bound ...
-                    _seekPositionRequested = Math.min(position, maxPosition);
+            var loadLevel : Level;
+            // cap max position if known playlist duration
+            var maxPosition : Number = Number.POSITIVE_INFINITY;
+            if(_hls.loadLevel < _hls.levels.length) {
+                loadLevel = _hls.levels[_hls.loadLevel];
+                // if defined, set max position as being end of playlist - 1 second
+                if(!isNaN(loadLevel.duration)) {
+                    maxPosition = loadLevel.duration-1;
                 }
+            }
+            if (position == -1 && loadLevel && _hls.type == HLSTypes.LIVE) {
+                /*  If start position not specified for a live stream, follow HLS spec :
+                    If the EXT-X-ENDLIST tag is not present
+                    and the client intends to play the media regularly (i.e. in playlist
+                    order at the nominal playback rate), the client SHOULD NOT
+                    choose a segment which starts less than three target durations from
+                    the end of the Playlist file */
+                _seekPositionRequested = Math.max(0, loadLevel.duration - 3 * loadLevel.averageduration);
             } else {
                 _seekPositionRequested = Math.min(Math.max(position, 0), maxPosition);
             }
