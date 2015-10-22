@@ -24,14 +24,14 @@
 
         public function StatsHandler(hls : HLS) {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING,_fragmentPlayingHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_SKIPPED,_fragmentSkippedHandler);
-            _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED,_fragmentLoadEmergencyAbortedHandler);
-            _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
-            _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
-            _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING,_fragmentPlayingHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_SKIPPED,_fragmentSkippedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED,_fragmentLoadEmergencyAbortedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler, false, 0, true);
         }
 
         public function dispose() : void {

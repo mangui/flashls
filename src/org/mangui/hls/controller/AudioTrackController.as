@@ -27,8 +27,8 @@ package org.mangui.hls.controller {
 
         public function AudioTrackController(hls : HLS) {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler, false, 0, true);
         }
 
         public function dispose() : void {

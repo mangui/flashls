@@ -46,7 +46,7 @@
             _hls = hls;
             _defaultduration = duration;
             super(resource, new HLSNetLoader(hls));
-            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
+            _hls.addEventListener(HLSEvent.ERROR, _errorHandler, false, 0, true);
         }
 
         protected function createVideo() : Video {

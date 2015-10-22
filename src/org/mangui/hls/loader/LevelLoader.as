@@ -63,8 +63,8 @@ package org.mangui.hls.loader {
         /** Setup the loader. **/
         public function LevelLoader(hls : HLS) {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.LEVEL_SWITCH, _levelSwitchHandler, false, 0, true);
             _levels = new Vector.<Level>();
         }
 
@@ -141,10 +141,10 @@ package org.mangui.hls.loader {
                 //_urlloader = new URLLoader();
                 var urlLoaderClass : Class = _hls.URLloader as Class;
                 _urlloader = (new urlLoaderClass()) as URLLoader;
-                _urlloader.addEventListener(Event.COMPLETE, _loadCompleteHandler);
-                _urlloader.addEventListener(ProgressEvent.PROGRESS, _loadProgressHandler);
-                _urlloader.addEventListener(IOErrorEvent.IO_ERROR, _errorHandler);
-                _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _errorHandler);
+                _urlloader.addEventListener(Event.COMPLETE, _loadCompleteHandler, false, 0, true);
+                _urlloader.addEventListener(ProgressEvent.PROGRESS, _loadProgressHandler, false, 0, true);
+                _urlloader.addEventListener(IOErrorEvent.IO_ERROR, _errorHandler, false, 0, true);
+                _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _errorHandler, false, 0, true);
             }
             _close();
             _closed = false;

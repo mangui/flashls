@@ -58,7 +58,7 @@
             _data.position = _writePosition;
             _data.writeBytes(data);
             if (_writePosition == 0) {
-                _displayObject.addEventListener(Event.ENTER_FRAME, _decryptTimer);
+                _displayObject.addEventListener(Event.ENTER_FRAME, _decryptTimer, false, 0, true);
             }
             _writePosition += data.length;
         }

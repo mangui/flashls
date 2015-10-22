@@ -77,7 +77,7 @@ package org.mangui.hls.stream {
             _playbackState = HLSPlayStates.IDLE;
             _seekState = HLSSeekStates.IDLE;
             _timer = new Timer(100, 0);
-            _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
+            _timer.addEventListener(TimerEvent.TIMER, _checkBuffer, false, 0, true);
             _client = new HLSNetStreamClient();
             _client.registerCallback("onHLSFragmentChange", onHLSFragmentChange);
             _client.registerCallback("onHLSFragmentSkipped", onHLSFragmentSkipped);

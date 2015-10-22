@@ -38,8 +38,8 @@
           _lastTime = 0;
           /** Check that Flash Player version is sufficient (11.2 or above) to use throttling event **/
           if(_checkVersion() >= 11.2) {
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
-            _hls.addEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.STAGE_SET, _stageSetHandler, false, 0, true);
           }
       }
 
@@ -66,9 +66,9 @@
           Log.debug("FPSController:stage defined, listen to throttle event");
         }
         _timer = new Timer(HLSSettings.fpsDroppedMonitoringPeriod,0);
-        _timer.addEventListener(TimerEvent.TIMER, _checkFPS);
+        _timer.addEventListener(TimerEvent.TIMER, _checkFPS, false, 0, true);
         _timer.start();
-        _hls.stage.addEventListener(THROTTLE, onThrottle);
+        _hls.stage.addEventListener(THROTTLE, onThrottle, false, 0, true);
       }
 
       private function _playbackStateHandler(event : HLSEvent) : void {

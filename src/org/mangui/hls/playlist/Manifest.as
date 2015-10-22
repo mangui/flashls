@@ -77,10 +77,10 @@ package org.mangui.hls.playlist {
             _index = index;
             var urlLoaderClass : Class = hls.URLloader as Class;
             _urlloader = (new urlLoaderClass()) as URLLoader;
-            _urlloader.addEventListener(Event.COMPLETE, _loadCompleteHandler);
-            _urlloader.addEventListener(ProgressEvent.PROGRESS, _loadProgressHandler);
-            _urlloader.addEventListener(IOErrorEvent.IO_ERROR, error);
-            _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, error);
+            _urlloader.addEventListener(Event.COMPLETE, _loadCompleteHandler, false, 0, true);
+            _urlloader.addEventListener(ProgressEvent.PROGRESS, _loadProgressHandler, false, 0, true);
+            _urlloader.addEventListener(IOErrorEvent.IO_ERROR, error, false, 0, true);
+            _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, error, false, 0, true);
 
             if (flushLiveURLcache && type == HLSTypes.LIVE) {
                 /*

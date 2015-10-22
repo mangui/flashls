@@ -45,8 +45,8 @@ package org.mangui.hls.loader {
         /** Setup the loader. **/
         public function AltAudioLevelLoader(hls : HLS) {
             _hls = hls;
-            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler);
+            _hls.addEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackSwitchHandler, false, 0, true);
         };
 
         public function dispose() : void {

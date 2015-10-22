@@ -21,7 +21,7 @@ package org.mangui.basic {
             video.y = 0;
             video.smoothing = true;
             video.attachNetStream(hls.stream);
-            hls.addEventListener(HLSEvent.MANIFEST_LOADED, manifestHandler);
+            hls.addEventListener(HLSEvent.MANIFEST_LOADED, manifestHandler, false, 0, true);
             hls.load("http://domain.com/hls/m1.m3u8");
         }
 

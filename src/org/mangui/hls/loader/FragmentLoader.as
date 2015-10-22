@@ -103,10 +103,10 @@ package org.mangui.hls.loader {
             _levelController = levelController;
             _audioTrackController = audioTrackController;
             _streamBuffer = streamBuffer;
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler, false, 0, true);
             _timer = new Timer(20, 0);
-            _timer.addEventListener(TimerEvent.TIMER, _checkLoading);
+            _timer.addEventListener(TimerEvent.TIMER, _checkLoading, false, 0, true);
             _loadingState = LOADING_STOPPED;
             _manifestJustLoaded = false;
             _keymap = new Object();
@@ -781,16 +781,16 @@ package org.mangui.hls.loader {
             if (_fragstreamloader == null) {
                 var urlStreamClass : Class = _hls.URLstream as Class;
                 _fragstreamloader = (new urlStreamClass()) as URLStream;
-                _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragLoadErrorHandler);
-                _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragLoadErrorHandler);
-                _fragstreamloader.addEventListener(ProgressEvent.PROGRESS, _fragLoadProgressHandler);
-                _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _fragLoadHTTPStatusHandler);
-                _fragstreamloader.addEventListener(Event.COMPLETE, _fragLoadCompleteHandler);
+                _fragstreamloader.addEventListener(IOErrorEvent.IO_ERROR, _fragLoadErrorHandler, false, 0, true);
+                _fragstreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _fragLoadErrorHandler, false, 0, true);
+                _fragstreamloader.addEventListener(ProgressEvent.PROGRESS, _fragLoadProgressHandler, false, 0, true);
+                _fragstreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _fragLoadHTTPStatusHandler, false, 0, true);
+                _fragstreamloader.addEventListener(Event.COMPLETE, _fragLoadCompleteHandler, false, 0, true);
                 _keystreamloader = (new urlStreamClass()) as URLStream;
-                _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyLoadErrorHandler);
-                _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyLoadErrorHandler);
-                _keystreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _keyLoadHTTPStatusHandler);
-                _keystreamloader.addEventListener(Event.COMPLETE, _keyLoadCompleteHandler);
+                _keystreamloader.addEventListener(IOErrorEvent.IO_ERROR, _keyLoadErrorHandler, false, 0, true);
+                _keystreamloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, _keyLoadErrorHandler, false, 0, true);
+                _keystreamloader.addEventListener(HTTPStatusEvent.HTTP_STATUS, _keyLoadHTTPStatusHandler, false, 0, true);
+                _keystreamloader.addEventListener(Event.COMPLETE, _keyLoadCompleteHandler, false, 0, true);
             }
             if (_hasDiscontinuity || _switchLevel) {
                 _demux = null;

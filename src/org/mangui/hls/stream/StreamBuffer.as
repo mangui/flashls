@@ -85,12 +85,12 @@ package org.mangui.hls.stream {
             _altaudiofragmentLoader = new AltAudioFragmentLoader(hls, this);
             flushBuffer();
             _timer = new Timer(100, 0);
-            _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
-            _hls.addEventListener(HLSEvent.LIVE_LOADING_STALLED, _liveLoadingStalledHandler);
-            _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated);
-            _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler);
-            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange);
-            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
+            _timer.addEventListener(TimerEvent.TIMER, _checkBuffer, false, 0, true);
+            _hls.addEventListener(HLSEvent.LIVE_LOADING_STALLED, _liveLoadingStalledHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.PLAYLIST_DURATION_UPDATED, _playlistDurationUpdated, false, 0, true);
+            _hls.addEventListener(HLSEvent.LAST_VOD_FRAGMENT_LOADED, _lastVODFragmentLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.AUDIO_TRACK_SWITCH, _audioTrackChange, false, 0, true);
+            _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete, false, 0, true);
         }
 
         public function dispose() : void {

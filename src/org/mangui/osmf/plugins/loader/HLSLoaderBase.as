@@ -77,8 +77,8 @@
                 _hls = null;
             }
             _hls = new HLS();
-            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
-            _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
+            _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler, false, 0, true);
+            _hls.addEventListener(HLSEvent.ERROR, _errorHandler, false, 0, true);
             /* load playlist */
             _hls.load(URLResource(loadTrait.resource).url);
         }

@@ -40,7 +40,7 @@ package org.mangui.hls.utils {
         protected static var _callbackName : String = 'JSLoaderFragment';
 
         public function JSURLStream() {
-            addEventListener(Event.OPEN, onOpen);
+            addEventListener(Event.OPEN, onOpen, false, 0, true);
             ExternalInterface.marshallExceptions = true;
             super();
 
@@ -125,7 +125,7 @@ package org.mangui.hls.utils {
             _readPosition = 0;
             _finalLength = len;
             _timer = new Timer(20, 0);
-            _timer.addEventListener(TimerEvent.TIMER, _decodeData);
+            _timer.addEventListener(TimerEvent.TIMER, _decodeData, false, 0, true);
             _timer.start();
             _base64Resource = base64Resource;
         }
