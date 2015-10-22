@@ -162,6 +162,7 @@ package org.mangui.hls.demux {
             _avcc = null;
             _tags = new Vector.<FLVTag>();
             _timer.stop();
+            _timer.removeEventListener(TimerEvent.TIMER, _parseTimer);
         }
 
         public function notifycomplete() : void {
