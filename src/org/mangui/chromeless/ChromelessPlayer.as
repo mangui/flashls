@@ -492,6 +492,8 @@ package org.mangui.chromeless {
             var available : Boolean = (event.availability == StageVideoAvailability.AVAILABLE);
             _hls = new HLS();
             _hls.stage = stage;
+            // set framerate to 60 fps
+            stage.frameRate = 60;
             _hls.addEventListener(HLSEvent.PLAYBACK_COMPLETE, _completeHandler);
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
