@@ -329,6 +329,7 @@ var events;
 var jsPingDate,flashPingDate, jsLoadDate, flashLoadDate;
 var lastSeekingIdx,lastFragPlayingIdx;
 var api;
+var levelNb;
 
 
 function loadStream(url) {
@@ -352,6 +353,7 @@ function load(url) {
   jsLoadDate = new Date();
   flashLoadDate = (jsLoadDate - jsPingDate )+ flashPingDate;
   lastSeekingIdx = lastFragPlayingIdx = undefined;
+  levelNb = 0;
   events = { url : url, date : jsLoadDate, load : [], buffer : [], video : []};
   api.load(url);
   appendLog("load URL " + url);
@@ -448,6 +450,7 @@ var flashlsEvents = {
     appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
     $('#currentDuration').html(duration.toFixed(2));
     showCanvas();
+    levelNb = levels.length;
     updateLevelInfo();
     api.play(-1);
     api.volume(10);
@@ -670,7 +673,6 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     var currentLevel = api.getCurrentLevel();
     var nextLevel = api.getNextLevel();
     var loadLevel = api.getLoadLevel();
-    var levelNb = api.getLevels().length;
 
     var html1 = button_template;
     if(autoLevel) {
