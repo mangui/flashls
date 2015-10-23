@@ -21,9 +21,9 @@ package org.mangui.hls.flv {
         /** metadata Type ID. **/
         public static const METADATA : int = 6;
         /* FLV TAG TYPE */
-        private static var TAG_TYPE_AUDIO : int = 8;
-        private static var TAG_TYPE_VIDEO : int = 9;
-        private static var TAG_TYPE_SCRIPT : int = 18;
+        private static const TAG_TYPE_AUDIO : int = 8;
+        private static const TAG_TYPE_VIDEO : int = 9;
+        private static const TAG_TYPE_SCRIPT : int = 18;
         /** Is this a keyframe. **/
         public var keyframe : Boolean;
         /** Array with data pointers. **/
