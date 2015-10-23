@@ -529,6 +529,8 @@ var flashlsEvents = {
     events.video.push(event);
     lastFragPlayingIdx = events.video.length-1;
     updateLevelInfo();
+    document.getElementById("HlsStats").innerHTML = JSON.stringify(api.getStats(),null,"\t");
+    refreshCanvas();
   },
   position: function(timemetrics) {
     $('#currentPosition').html(timemetrics.position.toFixed(2));
