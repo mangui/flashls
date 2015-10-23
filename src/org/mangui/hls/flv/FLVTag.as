@@ -60,7 +60,7 @@ package org.mangui.hls.flv {
         /** Get an FLV Tag header (11 bytes). **/
         public static function getTagHeader(type : int, length : int, stamp : int) : ByteArray {
             var tag : ByteArray = new ByteArray();
-            tag.length = 11;
+            tag.length = 11+length+4;
             tag.writeByte(type);
 
             // Size of the tag in bytes after StreamID.
