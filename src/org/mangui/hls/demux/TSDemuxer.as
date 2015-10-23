@@ -220,8 +220,9 @@ package org.mangui.hls.demux {
             var start_time : int = getTimer();
             /** Byte data to be read **/
             var data : ByteArray = getNextTSBuffer(_readPosition);
-            // dont spend more than 20ms demuxing TS packets to avoid loosing frames
-            while(data  != null && ((getTimer() - start_time) < 20)) {
+            // dont spend more than 10ms demuxing TS packets to avoid loosing frames
+            // if frame rate is 60fps, we have 1000/60 = 16.6ms budget total per frame
+            while(data  != null && ((getTimer() - start_time) < 10)) {
                 _parseTSPacket(data);
                 _readPosition+=PACKETSIZE;
                 if(data.bytesAvailable < PACKETSIZE) {

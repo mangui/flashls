@@ -79,8 +79,9 @@
             var decrypted : Boolean;
             do {
                 decrypted = _decryptChunk();
-                // dont spend more than 20 ms in the decrypt timer to avoid blocking/freezing video
-            } while (decrypted && (getTimer() - start_time) < 20);
+            // dont spend more than 10ms in the decrypt timer to avoid blocking/freezing video
+            // if frame rate is 60fps, we have 1000/60 = 16.6ms budget total per frame
+            } while (decrypted && (getTimer() - start_time) < 10);
         }
 
         /** decrypt a small chunk of packets each time to avoid blocking **/
