@@ -670,6 +670,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     var currentLevel = api.getCurrentLevel();
     var nextLevel = api.getNextLevel();
     var loadLevel = api.getLoadLevel();
+    var levelNb = api.getLevels().length;
 
     var html1 = button_template;
     if(autoLevel) {
@@ -704,7 +705,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     }
     html4 += 'onclick="api.setNextLevel(-1)">auto</button>';
 
-    for (var i=0; i < api.getLevels().length; i++) {
+    for (var i=0; i < levelNb; i++) {
       html1 += button_template;
       if(currentLevel === i) {
         html1 += button_enabled;
