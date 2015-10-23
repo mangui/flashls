@@ -18,8 +18,13 @@ package org.mangui.hls.stream {
     import flash.events.Event;
     import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
-    import flash.net.*;
-    import flash.utils.*;
+    import flash.net.NetConnection;
+    import flash.net.NetStream;
+    import flash.net.NetStreamAppendBytesAction;
+    import flash.net.NetStreamInfo;
+    import flash.net.NetStreamPlayOptions;
+    import flash.utils.ByteArray;
+    import flash.utils.Timer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -63,6 +68,8 @@ package org.mangui.hls.stream {
         private var _skippedDuration : Number;
         /** watched duration **/
         private var _watchedDuration : Number;
+        /** dropped frames counter **/
+        private var _droppedFrames : Number;
         /** last NetStream.time, used to check if playback is over **/
         private var _lastNetStreamTime : Number;
 
@@ -71,7 +78,7 @@ package org.mangui.hls.stream {
             super(connection);
             super.bufferTime = 0.1;
             _hls = hls;
-            _skippedDuration = _watchedDuration = _lastNetStreamTime = 0;
+            _skippedDuration = _watchedDuration = _droppedFrames = _lastNetStreamTime = 0;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
             _playbackState = HLSPlayStates.IDLE;
@@ -230,6 +237,7 @@ package org.mangui.hls.stream {
                 let's flush netstream now
                 this is to avoid black screen during seek command */
                 _watchedDuration += super.time;
+                _droppedFrames += super.info.droppedFrames;
                 _skippedDuration = 0;
                 super.close();
 
@@ -332,6 +340,11 @@ package org.mangui.hls.stream {
         /* also include skipped duration in get time() so that play position will match fragment position */
         override public function get time() : Number {
             return super.time+_skippedDuration;
+        }
+
+        /* return nb of dropped Frames since session started */
+        public function get droppedFrames() : Number {
+            return super.info.droppedFrames + _droppedFrames;
         }
 
         /** Return total watched time **/
@@ -452,7 +465,7 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:close");
             }
             super.close();
-            _watchedDuration = _skippedDuration = _lastNetStreamTime = 0;
+            _watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = 0;
             _streamBuffer.stop();
             _timer.stop();
             _setPlaybackState(HLSPlayStates.IDLE);
