@@ -99,10 +99,17 @@ package org.mangui.hls.model {
                 return -1;
 
             var len : int = fragments.length;
-            for (var i : int = 0; i < len; i++) {
-                /* check whether fragment contains current position */
-                if (fragments[i].data.valid && fragments[i].program_date <= program_date && fragments[i].program_date + 1000 * fragments[i].duration > program_date) {
-                    return (start_seqnum + i);
+            if(len) {
+                if (program_date > (fragments[len-1].program_date + 1000*fragments[len-1].duration))
+                    return -1;
+
+                for (var i : int = 0; i < len; i++) {
+                    /* check whether fragment contains current position */
+                    if (fragments[i].data.valid &&
+                        (fragments[i].program_date <= program_date) &&
+                        (fragments[i].program_date + 1000 * fragments[i].duration) > program_date) {
+                        return (start_seqnum + i);
+                    }
                 }
             }
             return -1;
