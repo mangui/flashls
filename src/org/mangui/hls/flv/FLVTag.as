@@ -34,6 +34,10 @@ package org.mangui.hls.flv {
         public var dts : Number;
         /** Type of FLV tag.**/
         public var type : int;
+        /* built data */
+        protected var builtData : ByteArray;
+        /* payload length */
+        protected var length : int;
 
         /** Get the FLV file header. **/
         public static function getHeader() : ByteArray {
@@ -55,12 +59,14 @@ package org.mangui.hls.flv {
             // PreviousTagSize0
             flv.writeUnsignedInt(0);
             return flv;
-        };
+        }
 
         /** Get an FLV Tag header (11 bytes). **/
-        public static function getTagHeader(type : int, length : int, stamp : int) : ByteArray {
-            var tag : ByteArray = new ByteArray();
-            tag.length = 11+length+4;
+        private static function updateTagHeader(tag: ByteArray, type : int, length : int, stamp : int) : void {
+            if(tag.length == 0) {
+                // set exact length only if not specified already
+                tag.length = 11+length+4;
+            }
             tag.writeByte(type);
 
             // Size of the tag in bytes after StreamID.
@@ -77,8 +83,8 @@ package org.mangui.hls.flv {
             tag.writeByte(0);
             tag.writeByte(0);
             // All done
-            return tag;
-        };
+            return;
+        }
 
         /** Save the frame data and parameters. **/
         public function FLVTag(typ : int, stp_p : Number, stp_d : Number, key : Boolean) {
@@ -86,21 +92,53 @@ package org.mangui.hls.flv {
             pts = stp_p;
             dts = stp_d;
             keyframe = key;
+            length = 0;
         }
-        ;
 
         /** Returns the tag data. **/
         public function get data() : ByteArray {
-            var array : ByteArray;
-            /* following specification http://download.macromedia.com/f4v/video_file_format_spec_v10_1.pdf */
+            if(builtData) {
+                // update header (PTS/DTS may have changed because of keyframe/accurate seeking)
+                buildHeader(builtData);
+            } else {
+                build();
+            }
+            return builtData;
+        }
 
+        /** Build tag data (including header) **/
+        public function build() : void {
+            if(!builtData) {
+                var array : ByteArray = new ByteArray();
+                buildHeader(array);
+                if(pointers) {
+                    for each(var pointer : TagData in pointers) {
+                        if (type == AVC_NALU) {
+                            array.writeUnsignedInt(pointer.length);
+                        }
+                        array.writeBytes(pointer.array, pointer.start, pointer.length);
+                    }
+                    // save memory, free pointers (PES payload)
+                    pointers = null;
+                }
+                // Write previousTagSize and return data.
+                array.writeUnsignedInt(array.length);
+                builtData = array;
+            }
+        }
+
+        /** build/update FLV tag header **/
+        private function buildHeader(array : ByteArray) : void {
+            /* following specification http://download.macromedia.com/f4v/video_file_format_spec_v10_1.pdf */
             // Render header data
+            // ensure that we are at the beginning , for update case
+            array.position = 0;
             if (type == FLVTag.MP3_RAW) {
-                array = getTagHeader(TAG_TYPE_AUDIO, length + 1, pts);
+                updateTagHeader(array,TAG_TYPE_AUDIO, length + 1, pts);
                 // Presume MP3 is 44.1 stereo.
                 array.writeByte(0x2F);
             } else if (type == AVC_HEADER || type == AVC_NALU) {
-                array = getTagHeader(TAG_TYPE_VIDEO, length + 5, dts);
+                updateTagHeader(array,TAG_TYPE_VIDEO, length + 5, dts);
                 // keyframe/interframe switch (0x10 / 0x20) + AVC (0x07)
                 keyframe ? array.writeByte(0x17) : array.writeByte(0x27);
                 /* AVC Packet Type :
@@ -118,37 +156,16 @@ package org.mangui.hls.flv {
                 array.writeByte(compositionTime >> 8);
                 array.writeByte(compositionTime);
             } else if (type == DISCONTINUITY || type == METADATA) {
-                array = getTagHeader(FLVTag.TAG_TYPE_SCRIPT, length, pts);
+                updateTagHeader(array,FLVTag.TAG_TYPE_SCRIPT, length, pts);
             } else {
-                array = getTagHeader(TAG_TYPE_AUDIO, length + 2, pts);
+                updateTagHeader(array,TAG_TYPE_AUDIO, length + 2, pts);
                 // SoundFormat, -Rate, -Size, Type and Header/Raw switch.
                 array.writeByte(0xAF);
                 type == AAC_HEADER ? array.writeByte(0x00) : array.writeByte(0x01);
             }
-            for (var i : int = 0; i < pointers.length; i++) {
-                if (type == AVC_NALU) {
-                    array.writeUnsignedInt(pointers[i].length);
-                }
-                array.writeBytes(pointers[i].array, pointers[i].start, pointers[i].length);
-            }
-            // Write previousTagSize and return data.
-            array.writeUnsignedInt(array.length);
-            return array;
+            return;
         }
 
-        /** Returns the bytesize of the frame. **/
-        private function get length() : int {
-            var length : int = 0;
-            for (var i : int = 0; i < pointers.length; i++) {
-                length += pointers[i].length;
-                // Account for NAL startcode length.
-                if (type == AVC_NALU) {
-                    length += 4;
-                }
-            }
-            return length;
-        }
-        ;
         CONFIG::LOGGING {
             public function get typeString() : String {
                 switch(type) {
@@ -171,21 +188,26 @@ package org.mangui.hls.flv {
                 }
             }
         }
+
         /** push a data pointer into the frame. **/
         public function push(array : ByteArray, start : int, length : int) : void {
             pointers.push(new TagData(array, start, length));
+            length += length;
+            if (type == AVC_NALU) {
+                length += 4;
+            }
         }
-        ;
 
         /** Trace the contents of this tag. **/
         public function toString() : String {
             return "TAG (type: " + type + ", pts:" + pts + ", dts:" + dts + ", length:" + length + ")";
         }
-        ;
 
         public function clone() : FLVTag {
             var cloned : FLVTag = new FLVTag(this.type, this.pts, this.dts, this.keyframe);
+            cloned.builtData = this.builtData;
             cloned.pointers = this.pointers;
+            cloned.length = this.length;
             return cloned;
         }
     }

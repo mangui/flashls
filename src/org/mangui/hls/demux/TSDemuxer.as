@@ -292,6 +292,7 @@ package org.mangui.hls.demux {
                         if (_curNalUnit && _curNalUnit.length) {
                             _curVideoTag.push(_curNalUnit, 0, _curNalUnit.length);
                         }
+                        _curVideoTag.build();
                         _tags.push(_curVideoTag);
                         _curVideoTag = null;
                         _curNalUnit = null;
@@ -376,6 +377,7 @@ package org.mangui.hls.demux {
                     Log.debug("TS/AAC: insert ADIF TAG");
                 }
                 adifTag.push(adif, 0, adif.length);
+                adifTag.build();
                 _tags.push(adifTag);
                 _adifTagInserted = true;
             }
@@ -388,6 +390,7 @@ package org.mangui.hls.demux {
                 stamp = Math.round(pes.pts + j * 1024 * 1000 / frame.rate);
                 var curAudioTag : FLVTag = new FLVTag(FLVTag.AAC_RAW, stamp, stamp, false);
                 curAudioTag.push(pes.data, frame.start, frame.length);
+                curAudioTag.build();
                 _tags.push(curAudioTag);
             }
             if (frame) {
@@ -421,6 +424,7 @@ package org.mangui.hls.demux {
             _audioPESfound=true;
             var tag : FLVTag = new FLVTag(FLVTag.MP3_RAW, pes.pts, pes.dts, false);
             tag.push(pes.data, pes.payload, pes.data.length - pes.payload);
+            tag.build();
             _tags.push(tag);
         };
 
@@ -473,6 +477,7 @@ package org.mangui.hls.demux {
                         }
                         // only push current tag if AVC HEADER has been pushed already
                         if(_avcc) {
+                            _curVideoTag.build();
                             _tags.push(_curVideoTag);
                         }
                         CONFIG::LOGGING {
@@ -592,7 +597,7 @@ package org.mangui.hls.demux {
                                             data.writeByte(0x11);
                                             data.writeObject(cc_data);
                                             tag.push(data, 0, data.length);
-
+                                            tag.build();
                                             _tags.push(tag);
                                         }
                                         else
@@ -615,6 +620,7 @@ package org.mangui.hls.demux {
                 _avcc = avcc;
                 var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
                 avccTag.push(avcc, 0, avcc.length);
+                avccTag.build();
                 // Log.debug("TS:AVC:push AVC HEADER");
                 _tags.push(avccTag);
             }
@@ -701,6 +707,7 @@ package org.mangui.hls.demux {
             // then write the ByteArray
             data.writeObject(pespayload);
             tag.push(data, 0, data.length);
+            tag.build();
             _tags.push(tag);
         }
 

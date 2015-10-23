@@ -68,6 +68,7 @@
                 } else {
                     audioTag.push(_data, frames[i].start, _data.length - frames[i].start);
                 }
+                audioTag.build();
                 audioTags.push(audioTag);
                 i++;
             }

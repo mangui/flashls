@@ -73,6 +73,7 @@ package org.mangui.hls.demux {
             }
             var adifTag : FLVTag = new FLVTag(FLVTag.AAC_HEADER, id3.timestamp, id3.timestamp, true);
             adifTag.push(adif, 0, adif.length);
+            adifTag.build();
             audioTags.push(adifTag);
 
             var audioTag : FLVTag;
@@ -87,6 +88,7 @@ package org.mangui.hls.demux {
                 } else {
                     audioTag.push(_data, frames[i].start, _data.length - frames[i].start);
                 }
+                audioTag.build();
                 audioTags.push(audioTag);
                 i++;
             }
