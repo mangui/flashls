@@ -161,27 +161,6 @@ get/set : capping/max level value that could be used by automatic level selectio
 
 default value is -1 (no level capping)
 
-
-#### hls.stats
-get : return playback session stats
-
-```js
-{
-  droppedFrames : nb of dropped frames since last call to hls.load(URL)
-  fragLastKbps : last fragment load bandwidth  
-  fragMinKbps : min fragment load bandwidth
-  fragMaxKbps : max fragment load bandwidth
-  fragAvgKbps : avg fragment load bandwidth
-  fragLastLatency : last fragment load latency
-  fragMinLatency : min fragment load latency
-  fragMaxLatency : max fragment load latency
-  fragAvgLatency : avg fragment load latency
-  fragBuffered : total nb of buffered fragments
-  fragBufferedBytes : total nb of buffered bytes
-  fragSkipped : total nb of skipped fragments
-}
-```
-
 #### ```hls.startLoad()```
 start/restart playlist/fragment loading. this is only effective if MANIFEST_PARSED event has been triggered
 
