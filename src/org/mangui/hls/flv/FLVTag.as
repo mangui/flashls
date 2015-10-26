@@ -190,11 +190,13 @@ package org.mangui.hls.flv {
         }
 
         /** push a data pointer into the frame. **/
-        public function push(array : ByteArray, start : int, length : int) : void {
-            pointers.push(new TagData(array, start, length));
-            length += length;
-            if (type == AVC_NALU) {
-                length += 4;
+        public function push(array : ByteArray, start : int, len : int) : void {
+            if(len) {
+                pointers.push(new TagData(array, start, len));
+                length += len;
+                if (type == AVC_NALU) {
+                    length += 4;
+                }
             }
         }
 
