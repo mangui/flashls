@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.hls.handler {
-    import flash.system.Capabilities;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.event.HLSPlayMetrics;
