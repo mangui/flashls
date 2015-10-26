@@ -209,6 +209,12 @@ package org.mangui.hls {
             return _hlsNetStream.watched;
         };
 
+
+        /** Return the total nb of dropped video frames since last call to hls.load() **/
+        public function get droppedFrames() : Number {
+            return _hlsNetStream.droppedFrames;
+        };
+
         /** Return the type of stream (VOD/LIVE). **/
         public function get type() : String {
             return _levelLoader.type;

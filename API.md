@@ -109,6 +109,9 @@ Return the current back buffer length, in seconds
 #### hls.watched
 Return the current watched time in seconds, since last call to ```hls.load(URL)```
 
+#### hls.droppedFrames
+Return the total number of dropped video frames, since last call to ```hls.load(URL)```
+
 ## Controlling Quality Switch
 
 by default flashls handles quality switch automatically, using heuristics.

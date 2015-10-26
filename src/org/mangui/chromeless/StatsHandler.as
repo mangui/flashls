@@ -101,7 +101,7 @@
       }
 
       private function _mediaTimeHandler(event : HLSEvent) : void {
-        _stats.droppedFrames = (_hls.stream as HLSNetStream).droppedFrames;
+        _stats.droppedFrames = _hls.droppedFrames;
       }
   }
 }
