@@ -513,7 +513,7 @@ var flashlsEvents = {
       event.type =  'fragment main'
     }
     events.load.push(event);
-    document.getElementById("HlsStats").innerHTML = JSON.stringify(api.getStats(),null,"\t");
+    document.getElementById("HlsStats").innerHTML = JSON.stringify(sortObject(api.getStats()),null,"\t");
     refreshCanvas();
   },
   fragmentPlaying: function(playmetrics) {
@@ -529,7 +529,7 @@ var flashlsEvents = {
     events.video.push(event);
     lastFragPlayingIdx = events.video.length-1;
     updateLevelInfo();
-    document.getElementById("HlsStats").innerHTML = JSON.stringify(api.getStats(),null,"\t");
+    document.getElementById("HlsStats").innerHTML = JSON.stringify(sortObject(api.getStats()),null,"\t");
     refreshCanvas();
   },
   position: function(timemetrics) {
@@ -622,6 +622,19 @@ var flashlsEvents = {
   abortFragment: JSLoaderFragment.abortFragment.bind(JSLoaderFragment)
 };
 
+
+function sortObject(obj) {
+    if(typeof obj !== 'object')
+        return obj
+    var temp = {};
+    var keys = [];
+    for(var key in obj)
+        keys.push(key);
+    keys.sort();
+    for(var index in keys)
+        temp[keys[index]] = sortObject(obj[keys[index]]);
+    return temp;
+}
 
 function showCanvas()  {
     showMetrics();

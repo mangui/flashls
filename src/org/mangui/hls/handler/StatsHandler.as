@@ -47,7 +47,7 @@
         }
 
         private function _manifestLoadedHandler(event : HLSEvent) : void {
-            _stats = { tech : "flashls,"+Capabilities.version};
+            _stats = {};
         };
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
