@@ -232,10 +232,16 @@ package org.mangui.hls.loader {
                 _timeoutID = setTimeout(_loadActiveLevelPlaylist, timeout);
             }
             if (!_canStart) {
-                _canStart = (_levels[level].fragments.length > 0);
+                _canStart = ((type == HLSTypes.VOD) && _levels[level].fragments.length > 0) || (_levels[level].fragments.length >= HLSSettings.initialLiveManifestSize);
+                CONFIG::LOGGING {
+                    if(!_canStart && (type == HLSTypes.LIVE)){
+                        Log.warn("Can not start playback of level, reason: not enough segments " +
+                                 _levels[level].fragments.length + "<" + HLSSettings.initialLiveManifestSize);
+                    }
+                }
                 if (_canStart) {
                     CONFIG::LOGGING {
-                        Log.debug("first level filled with at least 1 fragment, notify event");
+                        Log.debug("First level filled with necessary amount of fragments, notify event");
                     }
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_LOADED, _levels, _metrics));
                 }

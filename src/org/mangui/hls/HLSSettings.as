@@ -238,7 +238,7 @@ package org.mangui.hls {
          * initialLiveManifestSize
          *
          * Number of segments needed to start playback of Live stream.
-         * 
+         *
          * Default is 1
          */
         public static var initialLiveManifestSize: uint = 1;
