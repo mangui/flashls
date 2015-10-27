@@ -197,7 +197,7 @@ package org.mangui.hls.stream {
                     _fragMainIdx++;
                     // compute sliding if needed
                     if(computeSliding) {
-                        // if -1 : it is not the first appending for this fragment type : we can compute playlist sliding
+                        // if not -1 : it is not the first appending for this fragment type : we can compute playlist sliding
                         if(_nextExpectedAbsoluteStartPosMain !=-1) {
                             // if same continuity counter, sliding can be computed using PTS, it will be more accurate
                             if(continuity == _fragMainInitialContinuity) {
@@ -213,20 +213,25 @@ package org.mangui.hls.stream {
                                 }
                             } else {
                                 sliding = _liveSlidingMain = _nextExpectedAbsoluteStartPosMain - startPosition;
+                                CONFIG::LOGGING {
+                                   Log.debug2('sliding on different cc: expectedAbsoluteStart/relativeStart/sliding' + _nextExpectedAbsoluteStartPosMain.toFixed(3) + '/' + startPosition.toFixed(3) + '/' + sliding.toFixed(3));
+                                }
                             }
                         } else {
                             _fragMainInitialStartPosition = startPosition;
                             _fragMainInitialPTS = min_pts;
                             _fragMainInitialContinuity = continuity;
                         }
-                        _nextExpectedAbsoluteStartPosMain = nextRelativeStartPos + sliding;
-
                     }
                     CONFIG::LOGGING {
                         Log.debug('new main frag,start/sliding/cc/idx:' + startPosition.toFixed(3) + '/' + sliding.toFixed(3) + '/' + continuity + '/' + _fragMainIdx);
                     }
                 }
                 fragIdx = _fragMainIdx;
+                /* update next expected absolute start pos at this point : absolute = relative + sliding
+                   useful to compute sliding when discontinuity occurs
+                */
+                _nextExpectedAbsoluteStartPosMain = nextRelativeStartPos + sliding;
             } else {
                 sliding = _liveSlidingAltAudio;
                 // if a new fragment is being appended
@@ -249,13 +254,16 @@ package org.mangui.hls.stream {
                             _fragAltAudioInitialPTS = min_pts;
                             _fragAltAudioInitialContinuity = continuity;
                         }
-                        _nextExpectedAbsoluteStartPosAltAudio = nextRelativeStartPos + sliding;
                     }
                     CONFIG::LOGGING {
                         Log.debug('new altaudio frag,start/sliding/idx:' + startPosition + '/' + sliding + '/' + _fragAltAudioIdx);
                     }
                 }
                 fragIdx = _fragAltAudioIdx;
+                /* update next expected absolute start pos at this point : absolute = relative + sliding
+                   useful to compute sliding when discontinuity occurs
+                */
+                _nextExpectedAbsoluteStartPosAltAudio = nextRelativeStartPos + sliding;
             }
 
             for each (var tag : FLVTag in tags) {
