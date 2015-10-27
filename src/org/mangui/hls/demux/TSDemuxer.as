@@ -731,7 +731,7 @@ package org.mangui.hls.demux {
                     }
                     data.position = pos_end + 1;
                 } else {
-                    if(_callback_error) {
+                    if(_callback_error != null) {
                         _callback_error("TS: Could not parse file: sync byte not found @ offset/len " + data.position + "/" + data.length);
                         return;
                     }
