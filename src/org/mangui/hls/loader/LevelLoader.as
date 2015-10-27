@@ -258,14 +258,14 @@ package org.mangui.hls.loader {
                     level.urls.push(_url);
                     _levels.push(level);
                     _metrics.parsing_end_time = getTimer();
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
-                    _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, 0));
                     CONFIG::LOGGING {
                         Log.debug("1 Level Playlist, load it");
                     }
+                    _parseLevelPlaylist(string, _url, 0,_metrics);
                     _loadLevel = 0;
                     _metrics.type = HLSLoaderTypes.LEVEL_MAIN;
-                    _parseLevelPlaylist(string, _url, 0,_metrics);
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.MANIFEST_PARSED, _levels));
+                    _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING, 0));
                 } else if (string.indexOf(Manifest.LEVEL) > 0) {
                     CONFIG::LOGGING {
                         Log.debug("adaptive playlist:\n" + string);
