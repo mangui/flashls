@@ -513,6 +513,7 @@ var flashlsEvents = {
       event.type =  'fragment main'
     }
     events.load.push(event);
+    updateLevelInfo();
     document.getElementById("HlsStats").innerHTML = JSON.stringify(sortObject(api.getStats()),null,"\t");
     refreshCanvas();
   },
@@ -695,7 +696,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     } else {
       html1 += button_disabled;
     }
-    html1 += 'onclick="api.setCurrentLevel(-1)">auto</button>';
+    html1 += 'onclick="api.setCurrentLevel(-1);updateLevelInfo()">auto</button>';
 
 
     var html2 = button_template;
@@ -704,7 +705,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     } else {
       html2 += button_disabled;
     }
-    html2 += 'onclick="api.setLoadLevel(-1)">auto</button>';
+    html2 += 'onclick="api.setLoadLevel(-1);updateLevelInfo()">auto</button>';
 
     var html3 = button_template;
     if(autoLevelCapping === -1) {
@@ -720,7 +721,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     } else {
       html4 += button_disabled;
     }
-    html4 += 'onclick="api.setNextLevel(-1)">auto</button>';
+    html4 += 'onclick="api.setNextLevel(-1);updateLevelInfo()">auto</button>';
 
     for (var i=0; i < levelNb; i++) {
       html1 += button_template;
@@ -729,7 +730,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       } else {
         html1 += button_disabled;
       }
-      html1 += 'onclick="api.setCurrentLevel(' + i + ')">' + i + '</button>';
+      html1 += 'onclick="api.setCurrentLevel(' + i + ');updateLevelInfo()">' + i + '</button>';
 
 
       html2 += button_template;
@@ -738,7 +739,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       } else {
         html2 += button_disabled;
       }
-      html2 += 'onclick="api.setLoadLevel(' + i + ')">' + i + '</button>';
+      html2 += 'onclick="api.setLoadLevel(' + i + ');updateLevelInfo()">' + i + '</button>';
 
       html3 += button_template;
       if(autoLevelCapping === i) {
@@ -754,7 +755,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       } else {
         html4 += button_disabled;
       }
-      html4 += 'onclick="api.setNextLevel(' + i + ')">' + i + '</button>';
+      html4 += 'onclick="api.setNextLevel(' + i + ');updateLevelInfo()">' + i + '</button>';
     }
     $("#currentLevelControl").html(html1);
     $("#loadLevelControl").html(html2);
