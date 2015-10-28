@@ -149,7 +149,7 @@ package org.mangui.hls {
             _streamBuffer.nextLevel = level;
         };
 
-        /*  set quality level for last loaded fragment (-1 for automatic level selection) */
+        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set loadLevel(level : int) : void {
             _manual_level = level;
         };
