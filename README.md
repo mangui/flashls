@@ -87,7 +87,8 @@ The plugin accepts several **optional** configuration options, such as:
      - if 1, highest bitrate is used,
      - if 0.5, the closest to the middle bitrate will be selected and used first.
    - -1 : automatic seek level selection, keep level before seek.
-  - `hls_live_flushurlcache` (default false) - If set to true, Live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player / IE version)
+  - `hls_flushliveurlcache` (default false) - If set to true, Live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player / IE version)
+  - `hls_initiallivemanifestsize` (default 1) - Number of segments needed to start playback of Live stream.
   - `hls_seekmode`
     - "ACCURATE" - Seek to exact position
     - "KEYFRAME" - Seek to last keyframe before requested position
