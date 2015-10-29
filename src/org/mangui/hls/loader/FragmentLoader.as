@@ -336,6 +336,21 @@ package org.mangui.hls.loader {
             _timer.start();
         }
 
+        public function seekFromLastFrag(lastFrag : Fragment) : void {
+            CONFIG::LOGGING {
+                Log.info("FragmentLoader:seekFromLastFrag(level:" + lastFrag.level + ",SN:" + lastFrag.seqnum + ",PTS:" + lastFrag.data.pts_start +")");
+            }
+            // reset IO Error when seeking
+            _fragRetryCount = _keyRetryCount = 0;
+            _fragRetryTimeout = _keyRetryTimeout = 1000;
+            _loadingState = LOADING_IDLE;
+            _fragmentFirstLoaded = true;
+            _fragSkipping = false;
+            _levelNext = -1;
+            _fragPrevious = lastFrag;
+            _timer.start();
+        }
+
         /** key load completed. **/
         private function _keyLoadCompleteHandler(event : Event) : void {
             if (_loadingState == LOADING_IDLE)
@@ -704,9 +719,9 @@ package org.mangui.hls.loader {
                 }
                 if (last_seqnum == -1) {
                     // if we are here, it means that no program date info is available in the playlist. try to get last seqnum position from PTS + continuity counter
-                    last_seqnum = _levels[level].getSeqNumNearestPTS(frag_previous.data.pts_start, frag_previous.continuity);
+                    last_seqnum = _levels[level].getSeqNumNearestPTS(frag_previous.data.pts_start_computed, frag_previous.continuity);
                     CONFIG::LOGGING {
-                        Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + level + "," + frag_previous.data.pts_start + "," + frag_previous.continuity + ")=" + last_seqnum);
+                        Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + level + "," + frag_previous.data.pts_start_computed + "," + frag_previous.continuity + ")=" + last_seqnum);
                     }
                     if (last_seqnum == Number.POSITIVE_INFINITY) {
                         /* requested PTS above max PTS of this level:
@@ -905,9 +920,9 @@ package org.mangui.hls.loader {
                         if this is the expected one, then continue
                         if not, then cancel current fragment loading, next call to loadnextfragment() will load the right seqnum
                          */
-                        var next_seqnum : Number = _levels[_hls.loadLevel].getSeqNumNearestPTS(_fragPrevious.data.pts_start, _fragCurrent.continuity) + 1;
+                        var next_seqnum : Number = _levels[_hls.loadLevel].getSeqNumNearestPTS(_fragPrevious.data.pts_start_computed, _fragCurrent.continuity) + 1;
                         CONFIG::LOGGING {
-                            Log.debug("analyzed PTS : getSeqNumNearestPTS(level,pts,cc:" + _hls.loadLevel + "," + _fragPrevious.data.pts_start + "," + _fragCurrent.continuity + ")=" + next_seqnum);
+                            Log.debug("analyzed PTS : getSeqNumNearestPTS(level,pts,cc:" + _hls.loadLevel + "," + _fragPrevious.data.pts_start_computed + "," + _fragCurrent.continuity + ")=" + next_seqnum);
                         }
                         // CONFIG::LOGGING {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);

@@ -511,32 +511,57 @@ package org.mangui.hls.stream {
 
         /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set nextLevel(level : int) : void {
-            /* remove tags not injected into NetStream.
-                as tags are injected on fragment boundary, tags not injected in NetStream corresponds
-                with next fragment tags
-            */
-            // flush all video tags not injected into NetStream
-            _videoTags.splice(_videoIdx, _videoTags.length-_videoIdx);
-
-            // if we are not using alt audio, we can flush all other "not buffered" tags as well
-            if(_useAltAudio == false) {
-                _audioTags.splice(_audioIdx, _audioTags.length-_audioIdx);
-                _headerTags.splice(_headerIdx, _headerTags.length-_headerIdx);
-                _metaTags.splice(_metaIdx, _metaTags.length-_metaIdx);
-            } else {
-                // we keep audio tags, no need to flush them
-                // keep alt audio header tags located after _headerIdx
-                filterMainFragmentTags(_headerTags,_headerIdx);
-                // keep alt audio metadata located after _metaIdx
-                filterMainFragmentTags(_metaTags,_metaIdx);
+            CONFIG::LOGGING {
+                Log.debug("StreamBuffer:set nextLevel:" + level);
             }
+            if(_videoIdx < _videoTags.length) {
+                /* remove tags not injected into NetStream,
+                    as tags are injected on fragment boundary, tags not injected in NetStream corresponds
+                    with next fragment tags
+                */
 
-            // determine position within next fragment (add 1s to be sure that we are inside next frag)
-            var pos : Number = position + (_hls.stream as HLSNetStream).netStreamBufferLength + 1;
-            // stop any load in progress ...
-            _fragmentLoader.stop();
-            // seek position is out of buffer : load from fragment
-            _fragmentLoader.seek(pos);
+                //find idx for next tag not matching with _fragMainLevelNetStream/_fragMainSNNetStream
+                for(var i : int = _videoIdx; i < _videoTags.length ; i++) {
+                    var tagData : FLVData = _videoTags[_videoIdx];
+                    if(tagData.fragLevel != _fragMainSNNetStream ||tagData.fragSN != _fragMainLevelNetStream) {
+                        CONFIG::LOGGING {
+                            Log.debug("first video FLV tag from next frag is @ " + i + " of [" + _videoIdx + "," + (_videoTags.length-1) + "]");
+                        }
+                        var lastLevel : Number =  tagData.fragLevel;
+                        var lastSN : Number =  tagData.fragSN;
+                        // if we want to seek to the right fragment, we need to set lastFrag with lastSN-1
+                        var lastFrag : Fragment = _hls.levels[lastLevel].getFragmentfromSeqNum(lastSN-1);
+                        if(lastFrag) {
+                            CONFIG::LOGGING {
+                                Log.debug("StreamBuffer:lastFrag defined, flush buffer and seekFromLastFrag");
+                            }
+                            // flush all video tags not injected into NetStream
+                            _videoTags.splice(_videoIdx, _videoTags.length-_videoIdx);
+
+                            // if we are not using alt audio, we can flush all other "not buffered" tags as well
+                            if(_useAltAudio == false) {
+                                _audioTags.splice(_audioIdx, _audioTags.length-_audioIdx);
+                                _headerTags.splice(_headerIdx, _headerTags.length-_headerIdx);
+                                _metaTags.splice(_metaIdx, _metaTags.length-_metaIdx);
+                            } else {
+                                // we keep audio tags, no need to flush them
+                                // keep alt audio header tags located after _headerIdx
+                                filterMainFragmentTags(_headerTags,_headerIdx);
+                                // keep alt audio metadata located after _metaIdx
+                                filterMainFragmentTags(_metaTags,_metaIdx);
+                            }
+                            // stop any load in progress ...
+                            _fragmentLoader.stop();
+                            // seek position is out of buffer : load after fragment
+                            _fragmentLoader.seekFromLastFrag(lastFrag);
+                        }
+                        return;
+                    }
+                }
+                CONFIG::LOGGING {
+                    Log.debug("StreamBuffer:can't find tags associated to next frag, don't flush anything");
+                }
+            }
         };
 
         /**  StreamBuffer Timer, responsible of
@@ -592,7 +617,7 @@ package org.mangui.hls.stream {
                 }
             }
             if (tagDuration > 0) {
-                var data : Vector.<FLVData> = shiftmultipletags(tagDuration);
+                var data : Vector.<FLVData> = shiftMultipleTags(tagDuration);
                 if (!_seekPositionReached) {
                     data = seekFilterTags(data, _seekPositionRequested);
                     if(data.length) {
@@ -603,16 +628,17 @@ package org.mangui.hls.stream {
                 var tags : Vector.<FLVTag> = new Vector.<FLVTag>();
                 for each (var flvdata : FLVData in data) {
                     if(flvdata.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
-                        _fragMainLevelNetStream = flvdata.fragLevel;
-                        _fragMainSNNetStream = flvdata.fragSN;
+                            _fragMainLevelNetStream = flvdata.fragLevel;
+                            _fragMainSNNetStream = flvdata.fragSN;
                     }
                     tags.push(flvdata.tag);
                 }
                 if (tags.length) {
                     CONFIG::LOGGING {
-                        var t0 : Number = data[0].positionAbsolute - _liveSlidingMain;
-                        var t1 : Number = data[data.length - 1].positionAbsolute - _liveSlidingMain;
-                        Log.debug("appending " + tags.length + " tags, start/end :" + t0.toFixed(2) + "/" + t1.toFixed(2));
+                        var flvdata0 : FLVData = data[0];
+                        Log.debug('appending first level/sn/type/dts/pts/position:' + flvdata0.fragLevel + '/' + flvdata0.fragSN + '/' + flvdata0.tag.typeString + '/' + flvdata0.tag.dts + '/' + flvdata0.tag.pts + '/' + (flvdata0.positionAbsolute - _liveSlidingMain).toFixed(2));
+                        flvdata0 = data[data.length-1];
+                        Log.debug('appending last  level/sn/type/dts/pts/position:' + flvdata0.fragLevel + '/' + flvdata0.fragSN + '/' + flvdata0.tag.typeString + '/' + flvdata0.tag.dts + '/' + flvdata0.tag.pts + '/' + (flvdata0.positionAbsolute - _liveSlidingMain).toFixed(2));
                     }
                     (_hls.stream as HLSNetStream).appendTags(tags);
                 }
@@ -894,7 +920,7 @@ package org.mangui.hls.stream {
          * then smallest dts
          * then header  then video then audio then metadata tags
          */
-        private function shiftnexttag() : FLVData {
+        private function getNextTag(shift : Boolean) : FLVData {
             var mtag : FLVData ,vtag : FLVData,atag : FLVData, htag : FLVData;
 
             var continuity : int = int.MAX_VALUE;
@@ -928,35 +954,58 @@ package org.mangui.hls.stream {
 
             // for this continuity counter, this DTS, prioritize tags with the following order : header/metadata/video/audio
             if (htag && htag.continuity == continuity && htag.tag.dts == dts) {
-                _headerIdx++;
+                if(shift) _headerIdx++;
                 return htag;
             }
             if (mtag && mtag.continuity == continuity && mtag.tag.dts == dts) {
-                _metaIdx++;
+                if(shift) _metaIdx++;
                 return mtag;
             }
             if (vtag && vtag.continuity == continuity && vtag.tag.dts == dts) {
-                _videoIdx++;
+                if(shift) _videoIdx++;
                 return vtag;
             } else {
-                _audioIdx++;
+                if(shift) _audioIdx++;
                 return atag;
             }
         }
 
-        private function shiftmultipletags(maxDuration : Number) : Vector.<FLVData> {
-            var tags : Vector.<FLVData>=  new Vector.<FLVData>();
-            var tag : FLVData = shiftnexttag();
-            if (tag) {
-                var minOffset : Number = tag.positionAbsolute;
-                var fragIdx : int = tag.fragIdx;
-                do {
-                    tags.push(tag);
-                    var tagOffset : Number = tag.positionAbsolute;
-                    if ((tagOffset - minOffset) > maxDuration && tag.fragIdx != fragIdx) {
+        // shift tags until different frag
+        private function shiftMultipleTags(maxDuration : Number) : Vector.<FLVData> {
+            var tags : Vector.<FLVData>=  new Vector.<FLVData>(),
+                mainIdx : uint = 0,
+                altIdx : uint = 0,
+                firstPos : Number = undefined,
+                tagPos : Number,
+                tag : FLVData,
+                isMain : Boolean,
+                tagIdx : uint;
+
+            // get tag, without shifting it
+             while ((tag = getNextTag(false)) != null) {
+                isMain = (tag.loaderType == HLSLoaderTypes.FRAGMENT_MAIN);
+                tagIdx = tag.fragIdx;
+                tagPos = tag.positionAbsolute;
+                if(isNaN(firstPos)) {
+                    firstPos = tagPos;
+                }
+                if(isMain && !mainIdx) {
+                    // first tag coming from main frag loader, store idx
+                    mainIdx = tagIdx;
+                } else if(!isMain && !altIdx) {
+                    // first tag coming from alt audio frag loader, store idx
+                    altIdx = tagIdx;
+                } else {
+                    // not first tag, ensure idx is within same frag, otherwise exit
+                    if ( (tagPos - firstPos) > maxDuration && ((isMain && tagIdx != mainIdx) || (!isMain && tagIdx != altIdx))) {
+                        // CONFIG::LOGGING {
+                        //     Log.info('discard level/sn/type/dts/pts:' + tag.fragLevel + '/' + tag.fragSN + '/' + tag.tag.typeString + '/' + tag.tag.dts + '/' + tag.tag.pts);
+                        // }
                         break;
                     }
-                } while ((tag = shiftnexttag()) != null);
+                }
+                // tag matches, shift it and push it in new array
+                tags.push(getNextTag(true));
             }
             return tags;
         }
