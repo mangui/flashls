@@ -102,16 +102,23 @@ package org.mangui.hls.loader {
                 _retryCount++;
                 return;
             } else {
-                // if we have redundant streams left for that level, switch to it
-                if(_loadLevel < _levels.length && _levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {
-                    CONFIG::LOGGING {
-                        Log.warn("max load retry reached, switch to redundant stream");
-                    }
-                    _levels[_loadLevel].redundantStreamId++;
-                    _timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
-                    _retryTimeout = 1000;
-                    _retryCount = 0;
-                    return;
+                // if we have redundant streams left for that level, switch to it, otherwise retry primary stream 
+				if(_loadLevel < _levels.length && _levels[_loadLevel].redundantStreamsNb>0 ) {
+					CONFIG::LOGGING {
+						Log.warn("max load retry reached, switch to redundant stream");
+					}
+						// try next redundant stream
+						if (_levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {	
+							_levels[_loadLevel].redundantStreamId++;
+						}
+							// retry primary stream if the last redundant stream has failed
+						else {
+							_levels[_loadLevel].redundantStreamId = 0;
+						}
+						_timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
+					_retryTimeout = 1000;
+					_retryCount = 0;
+					return;
                 } else {
                     code = HLSError.MANIFEST_LOADING_IO_ERROR;
                     txt = "Cannot load M3U8: " + event.text;
