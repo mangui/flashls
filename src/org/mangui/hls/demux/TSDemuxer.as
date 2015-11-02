@@ -79,6 +79,7 @@ package org.mangui.hls.demux {
         private var _timer : Timer;
         private var _totalBytes : uint;
         private var _audioOnly : Boolean;
+        private var _audioFound : Boolean;
         private var _audioSelected : Boolean;
 
         public static function probe(data : ByteArray) : Boolean {
@@ -129,6 +130,7 @@ package org.mangui.hls.demux {
             _tags = new Vector.<FLVTag>();
             _timer = new Timer(0, 0);
             _audioOnly = audioOnly;
+            _audioFound = false;
             _audioSelected = true;
         };
 
@@ -793,10 +795,10 @@ package org.mangui.hls.demux {
                             }
                             _pmtParsed = true;
                             _readPosition = 0;
-                            _unknownPIDFound = false;
                             return;
                         }
                         _pmtParsed = true;
+                        _unknownPIDFound = false;
                     }
                     break;
                 case _audioId:
@@ -881,10 +883,14 @@ package org.mangui.hls.demux {
                 default:
                 /* check for unknown PID :
                     video PID not defined and stream is not audio only OR
-                    audio PID not defined and audio selected
+                    audio PID not defined and audio not found
                     adding this condition is useful to avoid reporting unknown PIDs for streams with multiple audio PIDs for example ...
                 */
-                    if((_avcId ==-1 && !_audioOnly) || (_audioId ==-1 && _audioSelected)) {
+                    if((_avcId ==-1 && !_audioOnly) ||
+                       (_audioId ==-1 && !_audioFound)) {
+                        CONFIG::LOGGING {
+                            Log.debug("TS: unknown PID:" + pid);
+                        }
                         _unknownPIDFound = true;
                     }
                     break;
@@ -981,6 +987,7 @@ package org.mangui.hls.demux {
             }
             // provide audio track List to audio select callback. this callback will return the selected audio track
             var audioPID : int;
+            _audioFound = (audioList.length > 0);
             var audioTrack : AudioTrack = _callback_audioselect(audioList);
             if (audioTrack) {
                 audioPID = audioTrack.id;
