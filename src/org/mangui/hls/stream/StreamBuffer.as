@@ -48,6 +48,7 @@ package org.mangui.hls.stream {
         private var _fragAltAudioLevel : int, _fragAltAudioSN : int;
         private var _fragAltAudioInitialContinuity : int,_fragAltAudioInitialStartPosition : Number,_fragAltAudioInitialPTS : Number;
         private var _fragMainIdx : uint,  _fragAltAudioIdx : uint;
+        private var _filteringStartIdx : uint;
         /** playlist duration **/
         private var _playlistDuration : Number = 0;
         /** requested start position (absolute position) **/
@@ -499,16 +500,6 @@ package org.mangui.hls.stream {
             }
         };
 
-        // remove tags coming from main fragment loader, only keep tags coming from alt audio frag loader
-        private function filterMainFragmentTags(tags : Vector.<FLVData>, startIndex : int) : void {
-            for (var i : int = startIndex; i < tags.length; i++) {
-                if(tags[i].loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
-                    // splice FLV tag from main fragment loader
-                    tags.splice(i,1);
-                }
-            }
-        }
-
         /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set nextLevel(level : int) : void {
             CONFIG::LOGGING {
@@ -522,8 +513,8 @@ package org.mangui.hls.stream {
 
                 //find idx for next tag not matching with _fragMainLevelNetStream/_fragMainSNNetStream
                 for(var i : int = _videoIdx; i < _videoTags.length ; i++) {
-                    var tagData : FLVData = _videoTags[_videoIdx];
-                    if(tagData.fragLevel != _fragMainSNNetStream ||tagData.fragSN != _fragMainLevelNetStream) {
+                    var tagData : FLVData = _videoTags[i];
+                    if(tagData.fragLevel != _fragMainLevelNetStream ||tagData.fragSN != _fragMainSNNetStream) {
                         CONFIG::LOGGING {
                             Log.debug("first video FLV tag from next frag is @ " + i + " of [" + _videoIdx + "," + (_videoTags.length-1) + "]");
                         }
@@ -535,21 +526,17 @@ package org.mangui.hls.stream {
                             CONFIG::LOGGING {
                                 Log.debug("StreamBuffer:lastFrag defined, flush buffer and seekFromLastFrag");
                             }
-                            // flush all video tags not injected into NetStream
-                            _videoTags.splice(_videoIdx, _videoTags.length-_videoIdx);
-
-                            // if we are not using alt audio, we can flush all other "not buffered" tags as well
-                            if(_useAltAudio == false) {
-                                _audioTags.splice(_audioIdx, _audioTags.length-_audioIdx);
-                                _headerTags.splice(_headerIdx, _headerTags.length-_headerIdx);
-                                _metaTags.splice(_metaIdx, _metaTags.length-_metaIdx);
-                            } else {
-                                // we keep audio tags, no need to flush them
-                                // keep alt audio header tags located after _headerIdx
-                                filterMainFragmentTags(_headerTags,_headerIdx);
-                                // keep alt audio metadata located after _metaIdx
-                                filterMainFragmentTags(_metaTags,_metaIdx);
-                            }
+                            // flush all video tags not injected into NetStream, from next fragment onwards
+                            _videoTags.splice(i, _videoTags.length-i);
+                            // flush all audio tags from next main fragment onwards
+                            _filteringStartIdx = _audioIdx;
+                            _audioTags = _audioTags.filter(filternextFragments);
+                            // flush all header tags from next main fragment onwards
+                            _filteringStartIdx = _headerIdx;
+                            _headerTags = _headerTags.filter(filternextFragments);
+                            // flush all metadata tags from next main fragment onwards
+                            _filteringStartIdx = _metaIdx;
+                            _metaTags = _metaTags.filter(filternextFragments);
                             // stop any load in progress ...
                             _fragmentLoader.stop();
                             // seek position is out of buffer : load after fragment
@@ -563,6 +550,16 @@ package org.mangui.hls.stream {
                 }
             }
         };
+
+        private function filternextFragments(item : FLVData, index : int, vector : Vector.<FLVData>) : Boolean {
+            // keep if return true
+            // we want to keep only if alt audio loader OR
+            // index less than start filtering index (i.e. we want to keep backbuffer) OR
+            // matching with current fragment appended tags
+            return (item.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO ||
+                                   index < _filteringStartIdx ||
+                                   (item.fragLevel == _fragMainLevelNetStream &&  item.fragSN == _fragMainSNNetStream));
+        }
 
         /**  StreamBuffer Timer, responsible of
          * reporting media time event
