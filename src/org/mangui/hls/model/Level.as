@@ -93,8 +93,8 @@ package org.mangui.hls.model {
             return fragments[len - 1];
         };
 
-        /** Return the sequence number from a given program date **/
-        public function getSeqNumFromProgramDate(program_date : Number) : int {
+        /** Return the sequence number nearest a given program date **/
+        public function getSeqNumNearestProgramDate(program_date : Number) : int {
             if (program_date < fragments[0].program_date)
                 return -1;
 
@@ -104,11 +104,11 @@ package org.mangui.hls.model {
                     return -1;
 
                 for (var i : int = 0; i < len; i++) {
+                    var frag : Fragment = fragments[i];
                     /* check whether fragment contains current position */
-                    if (fragments[i].data.valid &&
-                        (fragments[i].program_date <= program_date) &&
-                        (fragments[i].program_date + 1000 * fragments[i].duration) > program_date) {
-                        return (start_seqnum + i);
+                    if (frag.data.valid &&
+                        Math.abs(frag.program_date - program_date) < Math.abs(frag.program_date + 1000 * frag.duration - program_date)) {
+                        return frag.seqnum;
                     }
                 }
             }
