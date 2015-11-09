@@ -331,7 +331,7 @@ var events;
 var jsPingDate,flashPingDate, jsLoadDate, flashLoadDate;
 var lastSeekingIdx,lastFragPlayingIdx;
 var api;
-var levelNb;
+var levels;
 
 
 function loadStream(url) {
@@ -355,7 +355,7 @@ function load(url) {
   jsLoadDate = new Date();
   flashLoadDate = (jsLoadDate - jsPingDate )+ flashPingDate;
   lastSeekingIdx = lastFragPlayingIdx = undefined;
-  levelNb = 0;
+  levels = null;
   events = { url : url, date : jsLoadDate, load : [], buffer : [], video : []};
   api.load(url);
   appendLog("load URL " + url);
@@ -448,11 +448,11 @@ var flashlsEvents = {
   error: function(code, url, message) {
     appendLog("onError():error code:"+ code + " url:" + url + " message:" + message);
   },
-  manifest: function(duration, levels, loadmetrics) {
+  manifest: function(duration, levels_, loadmetrics) {
     appendLog("manifest loaded, playlist duration:"+ duration.toFixed(2));
     $('#currentDuration').html(duration.toFixed(2));
     showCanvas();
-    levelNb = levels.length;
+    levels = levels_;
     updateLevelInfo();
     api.play(-1);
     api.volume(10);
@@ -756,14 +756,18 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
     }
     html4 += 'onclick="api.setNextLevel(-1);updateLevelInfo()">auto</button>';
 
-    for (var i=0; i < levelNb; i++) {
+    for (var i=0; i < levels.length; i++) {
       html1 += button_template;
       if(currentLevel === i) {
         html1 += button_enabled;
       } else {
         html1 += button_disabled;
       }
-      html1 += 'onclick="api.setCurrentLevel(' + i + ');updateLevelInfo()">' + i + '</button>';
+      var levelName = i, label = level2label(i);
+      if(label) {
+        levelName += '(' + level2label(i) + ')';
+      }
+      html1 += 'onclick="api.setCurrentLevel(' + i + ');updateLevelInfo()">' + levelName + '</button>';
 
 
       html2 += button_template;
@@ -772,7 +776,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       } else {
         html2 += button_disabled;
       }
-      html2 += 'onclick="api.setLoadLevel(' + i + ');updateLevelInfo()">' + i + '</button>';
+      html2 += 'onclick="api.setLoadLevel(' + i + ');updateLevelInfo()">' + levelName + '</button>';
 
       html3 += button_template;
       if(autoLevelCapping === i) {
@@ -780,7 +784,7 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       } else {
         html3 += button_disabled;
       }
-      html3 += 'onclick="api.playerSetAutoLevelCapping(' + i + ');updateLevelInfo()">' + i + '</button>';
+      html3 += 'onclick="api.playerSetAutoLevelCapping(' + i + ');updateLevelInfo()">' + levelName + '</button>';
 
       html4 += button_template;
       if(nextLevel === i) {
@@ -788,12 +792,31 @@ function updateBufferCanvas(position,duration,buffer, backbuffer) {
       } else {
         html4 += button_disabled;
       }
-      html4 += 'onclick="api.setNextLevel(' + i + ');updateLevelInfo()">' + i + '</button>';
+      html4 += 'onclick="api.setNextLevel(' + i + ');updateLevelInfo()">' + levelName + '</button>';
     }
     $("#currentLevelControl").html(html1);
     $("#loadLevelControl").html(html2);
     $("#levelCappingControl").html(html3);
     $("#nextLevelControl").html(html4);
+  }
+
+  function level2label(index) {
+    if(levels && levels.length-1 >= index) {
+      var level = levels[index];
+      if (level.name) {
+          return level.name;
+      } else {
+          if (level.height) {
+              return(level.height + 'p / ' + Math.round(level.bitrate / 1024) + 'kb');
+          } else {
+              if(level.bitrate) {
+                return(Math.round(level.bitrate / 1024) + 'kb');
+              } else {
+                return null;
+              }
+          }
+      }
+    }
   }
 </script>
 </body>
