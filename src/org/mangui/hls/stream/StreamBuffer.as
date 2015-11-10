@@ -593,7 +593,7 @@ package org.mangui.hls.stream {
              * this is to ensure that accurate seeking will work appropriately
              */
             CONFIG::LOGGING {
-                Log.debug("position/duration/buffer/backBuffer/audio/video/NetStream bufferLength/audioExpected/videoExpected:" + position.toFixed(2) + "/" + duration.toFixed(2) + "/" + bufLen.toFixed(2) + "/" + backBufferLength.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + netStreamBuffer.toFixed(2) + "/" + audioExpected + "/" + videoExpected);
+                Log.debug2("position/duration/buffer/backBuffer/audio/video/NetStream bufferLength/audioExpected/videoExpected:" + position.toFixed(2) + "/" + duration.toFixed(2) + "/" + bufLen.toFixed(2) + "/" + backBufferLength.toFixed(2) + "/" + audioBufferLength.toFixed(2) + "/" + videoBufferLength.toFixed(2) + "/" + netStreamBuffer.toFixed(2) + "/" + audioExpected + "/" + videoExpected);
             }
 
             var tagDuration : Number = 0;
