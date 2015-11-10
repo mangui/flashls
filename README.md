@@ -119,6 +119,7 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_fpsdroppedmonitoringthreshold` (default 0.2) : every fpsDroppedMonitoringPeriod, dropped FPS will be compared to displayed FPS. if during that period, ratio of (dropped FPS/displayed FPS) is greater or equal than hls_fpsdroppedmonitoringthreshold, HLSEvent.FPS_DROP event will be fired.
   - `hls_caplevelonfpsdrop` (default true) : Limit levels usable in auto-quality when FPS drop is detected.i.e. if frame drop is detected on level 5, auto level will be capped to level 4. Note: this setting is ignored in manual mode so all the levels could be selected manually.
   - `hls_smoothautoswitchonfpsdrop` (default true) : force a smooth level switch Limit when FPS drop is detected in auto-quality. i.e. if frame drop is detected on level 5, it will trigger an auto quality level switch to level 4 for next fragment. Note: this setting is active only if capLevelonFPSDrop==true.
+  - `hls_switchdownonlevelerror` (default true) : if level loading fails, and if in auto mode, and we are not on lowest level, don't report Level loading error straight-away, try to switch down first
 
 ## hls API
 hls API and events are described [here](API.md)

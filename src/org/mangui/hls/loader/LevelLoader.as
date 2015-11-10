@@ -113,8 +113,14 @@ package org.mangui.hls.loader {
                     _retryCount = 0;
                     return;
                 } else {
-                    code = HLSError.MANIFEST_LOADING_IO_ERROR;
-                    txt = "Cannot load M3U8: " + event.text;
+                    // if level > 0 and in autolevel, and switch down on level error is activated, trigger LEVEL_LOADING_ABORTED
+                    if(_loadLevel && _hls.autoLevel && HLSSettings.switchDownOnLevelError) {
+                        _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING_ABORTED, _loadLevel));
+                        return;
+                    } else {
+                        code = HLSError.MANIFEST_LOADING_IO_ERROR;
+                        txt = "Cannot load M3U8: " + event.text;
+                    }
                 }
             }
             var hlsError : HLSError = new HLSError(code, _url, txt);
