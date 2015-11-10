@@ -12,14 +12,15 @@ package org.mangui.hls.loader {
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.AltAudioTrack;
@@ -107,15 +108,22 @@ package org.mangui.hls.loader {
 					CONFIG::LOGGING {
 						Log.warn("max load retry reached, switch to redundant stream");
 					}
-						// try next redundant stream
-						if (_levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {	
-							_levels[_loadLevel].redundantStreamId++;
-						}
-							// retry primary stream if the last redundant stream has failed
-						else {
-							_levels[_loadLevel].redundantStreamId = 0;
-						}
-						_timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
+					// try next redundant stream
+					if (_levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {	
+						_levels[_loadLevel].redundantStreamId++;
+					}
+					// retry primary stream if the last redundant stream has failed and HLSSettings.manifestRedundantLoadmaxRetry allows 
+					else if (HLSSettings.manifestRedundantLoadmaxRetry>0){
+						_levels[_loadLevel].redundantStreamId = 0;
+					}
+					else {
+						code = HLSError.MANIFEST_LOADING_IO_ERROR;
+						txt = "Cannot load M3U8: " + event.text;
+						var hlsError : HLSError = new HLSError(code, _url, txt);
+						_hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+						return;
+					}
+					_timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
 					_retryTimeout = 1000;
 					_retryCount = 0;
 					return;

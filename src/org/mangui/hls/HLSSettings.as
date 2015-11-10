@@ -263,6 +263,16 @@ package org.mangui.hls {
          */
         public static var manifestLoadMaxRetryTimeout : Number = 64000;
 
+		/**
+		 * manifestRedundantLoadmaxRetry
+		 * 
+		 * max nb of trying the redundant streams.
+		 *   >1  means looping over the stream array multiple times
+		 *    1  means trying exactly once - default behaviour
+		 *   -1  means infinite retry
+		 */
+		public static var manifestRedundantLoadmaxRetry : int = 1;
+			
         /**
          * startFromBitrate
          *
