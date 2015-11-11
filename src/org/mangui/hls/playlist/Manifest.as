@@ -409,6 +409,33 @@ package org.mangui.hls.playlist {
             return altAudioTracks;
         };
 
+        /** Extract Alternate Audio Tracks from manifest data. **/
+        public static function extractSubtitleTracks(data : String, base : String = '') : Vector.<SubtitleTrack> {
+            var subtitleTracks : Vector.<SubtitleTrack> = new Vector.<SubtitleTrack>();
+            var lines : Array = data.split("\n");
+            var i : int = 0;
+            while (i < lines.length) {
+                var line : String = lines[i++];
+                if (line.indexOf(MEDIA) == 0) {
+                    var params : Object = _parseAlternateRendition(line);
+
+                    // #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="bipbop_audio",LANGUAGE="eng",NAME="BipBop Audio 1",AUTOSELECT=YES,DEFAULT=YES
+                    // #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="bipbop_audio",LANGUAGE="eng",NAME="BipBop Audio 2",AUTOSELECT=NO,DEFAULT=NO,URI="alternate_audio_aac_sinewave/prog_index.m3u8"
+                    // #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,LANGUAGE="eng",URI="captions.m3u8"
+
+                    var uri : String = params['URI'];
+                    if (uri) {
+                        uri = _extractURL(uri, base);
+                    }
+                    if (params['TYPE'] == 'SUBTITLES') {
+                        var subtitle : SubtitleTrack = new SubtitleTrack(params['GROUP-ID'], params['LANGUAGE'], params['NAME'], params['AUTOSELECT'] == 'YES', params['DEFAULT'] == 'YES', params['FORCED'] == 'YES', uri);
+                        subtitleTracks.push(subtitle);
+                    }
+                }
+            }
+            return subtitleTracks;
+        };
+		
         private static const RENDITION_STATE_READKEY : Number = 1;
         private static const RENDITION_STATE_READVALUESTART : Number = 2;
         private static const RENDITION_STATE_READSIMPLEVALUE : Number = 3;
