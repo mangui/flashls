@@ -12,19 +12,21 @@ package org.mangui.hls.loader {
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.DataUri;
     import org.mangui.hls.playlist.Manifest;
+    import org.mangui.hls.playlist.SubtitleTrack;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -57,6 +59,8 @@ package org.mangui.hls.loader {
         private var _retryCount : int;
         /* alt audio tracks */
         private var _altAudioTracks : Vector.<AltAudioTrack>;
+        /* subtitle tracks */
+        private var _subtitleTracks : Vector.<SubtitleTrack>;
         /* manifest load metrics */
         private var _metrics : HLSLoadMetrics;
 
@@ -141,6 +145,10 @@ package org.mangui.hls.loader {
             return _altAudioTracks;
         }
 
+        public function get subtitleTracks() : Vector.<SubtitleTrack> {
+            return _subtitleTracks;
+        }
+
         /** Load the manifest file. **/
         public function load(url : String) : void {
             if(!_urlloader) {
@@ -161,6 +169,7 @@ package org.mangui.hls.loader {
             _retryTimeout = 1000;
             _retryCount = 0;
             _altAudioTracks = null;
+            _subtitleTracks = null;
             _loadManifest();
         }
 
@@ -297,6 +306,12 @@ package org.mangui.hls.loader {
                             CONFIG::LOGGING {
                                 if (_altAudioTracks.length > 0) {
                                     Log.debug(_altAudioTracks.length + " alternate audio tracks found");
+                                }
+                            }
+                            _subtitleTracks = Manifest.extractSubtitleTracks(string, _url);
+                            CONFIG::LOGGING {
+                                if (_subtitleTracks.length > 0) {
+                                    Log.debug(_subtitleTracks.length + " subtitle tracks found");
                                 }
                             }
                         }
