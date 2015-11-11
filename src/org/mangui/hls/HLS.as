@@ -10,15 +10,21 @@ package org.mangui.hls {
     import flash.net.NetStream;
     import flash.net.URLLoader;
     import flash.net.URLStream;
+    
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
+    import org.mangui.hls.controller.SubtitlesTrackController;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.loader.AltAudioLevelLoader;
     import org.mangui.hls.loader.LevelLoader;
+    import org.mangui.hls.loader.SubtitlesFragmentLoader;
+    import org.mangui.hls.loader.SubtitlesLevelLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.AltAudioTrack;
+    import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
     import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
 
@@ -30,6 +36,9 @@ package org.mangui.hls {
         private var _levelLoader : LevelLoader;
         private var _altAudioLevelLoader : AltAudioLevelLoader;
         private var _audioTrackController : AudioTrackController;
+		private var _subtitlesLevelLoader : SubtitlesLevelLoader;
+        private var _subtitlesTrackController : SubtitlesTrackController;
+        private var _subtitlesFragmentLoader : SubtitlesFragmentLoader;
         private var _levelController : LevelController;
         private var _streamBuffer : StreamBuffer;
         /** HLS NetStream **/
@@ -49,6 +58,9 @@ package org.mangui.hls {
             _levelLoader = new LevelLoader(this);
             _altAudioLevelLoader = new AltAudioLevelLoader(this);
             _audioTrackController = new AudioTrackController(this);
+			_subtitlesLevelLoader = new SubtitlesLevelLoader(this);
+            _subtitlesTrackController = new SubtitlesTrackController(this);
+			_subtitlesFragmentLoader = new SubtitlesFragmentLoader(this);
             _levelController = new LevelController(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
             _hlsURLStream = URLStream as Class;
@@ -85,12 +97,16 @@ package org.mangui.hls {
             _levelLoader.dispose();
             _altAudioLevelLoader.dispose();
             _audioTrackController.dispose();
+            _subtitlesLevelLoader.dispose();
+            _subtitlesTrackController.dispose();
             _levelController.dispose();
             _hlsNetStream.dispose_();
             _streamBuffer.dispose();
             _levelLoader = null;
             _altAudioLevelLoader = null;
             _audioTrackController = null;
+            _subtitlesLevelLoader = null;
+            _subtitlesTrackController = null;
             _levelController = null;
             _hlsNetStream = null;
             _client = null;
@@ -239,7 +255,33 @@ package org.mangui.hls {
         public function set client(value : Object) : void {
             _client = value;
         }
+		
+		/** get subtitles tracks list from playlist **/
+		public function get subtitlesPlaylistTracks() : Vector.<SubtitlesPlaylistTrack> {
+			return _levelLoader.subtitlesPlaylistTracks;
+		};
 
+        /** get subtitles tracks list**/
+        public function get subtitlesTracks() : Vector.<SubtitlesTrack> {
+            return _subtitlesTrackController.subtitlesTracks;
+        };
+
+		/** get index of the selected subtitles track (index in subtitles track lists) **/
+		public function get subtitlesTrack() : int {
+			return _subtitlesTrackController.subtitlesTrack;
+		};
+		
+		/** select an audio track, based on its index in audio track lists**/
+		public function set subtitlesTrack(val : int) : void {
+			_subtitlesTrackController.subtitlesTrack = val;
+		}
+		
+		/** How many subtitles tracks does the current media have? */
+		public function get numSubtitlesTracks():uint
+		{
+			return !!subtitlesTracks ? subtitlesTracks.length : 0;
+		}
+		
         /** get audio tracks list**/
         public function get audioTracks() : Vector.<AudioTrack> {
             return _audioTrackController.audioTracks;
@@ -259,7 +301,13 @@ package org.mangui.hls {
         public function set audioTrack(val : int) : void {
             _audioTrackController.audioTrack = val;
         }
-
+		
+		/** How many audio tracks does the current media have? */
+		public function get numAudioTracks():uint
+		{
+			return !!audioTracks ? audioTracks.length : 0;
+		}
+		
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;

@@ -26,7 +26,7 @@ package org.mangui.hls.loader {
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.DataUri;
     import org.mangui.hls.playlist.Manifest;
-    import org.mangui.hls.playlist.SubtitleTrack;
+    import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -60,7 +60,7 @@ package org.mangui.hls.loader {
         /* alt audio tracks */
         private var _altAudioTracks : Vector.<AltAudioTrack>;
         /* subtitle tracks */
-        private var _subtitleTracks : Vector.<SubtitleTrack>;
+        private var _subtitlesPlaylistTracks : Vector.<SubtitlesPlaylistTrack>;
         /* manifest load metrics */
         private var _metrics : HLSLoadMetrics;
 
@@ -145,8 +145,8 @@ package org.mangui.hls.loader {
             return _altAudioTracks;
         }
 
-        public function get subtitleTracks() : Vector.<SubtitleTrack> {
-            return _subtitleTracks;
+        public function get subtitlesPlaylistTracks() : Vector.<SubtitlesPlaylistTrack> {
+            return _subtitlesPlaylistTracks;
         }
 
         /** Load the manifest file. **/
@@ -169,7 +169,7 @@ package org.mangui.hls.loader {
             _retryTimeout = 1000;
             _retryCount = 0;
             _altAudioTracks = null;
-            _subtitleTracks = null;
+            _subtitlesPlaylistTracks = null;
             _loadManifest();
         }
 
@@ -308,10 +308,16 @@ package org.mangui.hls.loader {
                                     Log.debug(_altAudioTracks.length + " alternate audio tracks found");
                                 }
                             }
-                            _subtitleTracks = Manifest.extractSubtitleTracks(string, _url);
+						}
+						if (string.indexOf(Manifest.SUBTITLES) > 0) {
+							CONFIG::LOGGING {
+								Log.debug("subtitles level found");
+							}
+							// parse subtitles tracks
+                            _subtitlesPlaylistTracks = Manifest.extractSubtitlesTracks(string, _url);
                             CONFIG::LOGGING {
-                                if (_subtitleTracks.length > 0) {
-                                    Log.debug(_subtitleTracks.length + " subtitle tracks found");
+                                if (_subtitlesPlaylistTracks.length > 0) {
+                                    Log.debug(_subtitlesPlaylistTracks.length + " subtitle tracks found");
                                 }
                             }
                         }

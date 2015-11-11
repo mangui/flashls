@@ -8,11 +8,21 @@ package org.mangui.hls.utils {
 
     /** Class that sends log messages to browser console. **/
     public class Log {
+		
+		// Static initializer
+		{
+			JS_METHODS[LEVEL_INFO] = 'info';
+			JS_METHODS[LEVEL_DEBUG] = 'log';
+			JS_METHODS[LEVEL_WARN] = 'info';
+			JS_METHODS[LEVEL_ERROR] = 'error';
+		}
+		
         private static const LEVEL_INFO : String = "INFO:";
         private static const LEVEL_DEBUG : String = "DEBUG:";
         private static const LEVEL_WARN : String = "WARN:";
         private static const LEVEL_ERROR : String = "ERROR:";
-
+		private static const JS_METHODS : Array = [];
+		
         public static function info(message : *) : void {
             if (HLSSettings.logInfo)
                 outputlog(LEVEL_INFO, String(message));
@@ -41,8 +51,8 @@ package org.mangui.hls.utils {
         /** Log a message to the console. **/
         private static function outputlog(level : String, message : String) : void {
             if (ExternalInterface.available)
-                ExternalInterface.call('console.log', level + message);
-            else trace(level + message);
+				ExternalInterface.call('console.'+JS_METHODS[level], message);
+			else trace(level + ' ' + message);
         }
     };
 }

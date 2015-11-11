@@ -10,6 +10,7 @@
         public static const LEVEL_MAIN : int = 1;
     	// playlist / level loader
         public static const LEVEL_ALTAUDIO : int = 2;
+        public static const LEVEL_SUBTITLES : int = 5;
         // main fragment loader
         public static const FRAGMENT_MAIN : int = 3;
         // alt audio fragment loader

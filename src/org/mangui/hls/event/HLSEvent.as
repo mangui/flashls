@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.event {
-    import org.mangui.hls.model.Level;
-
     import flash.events.Event;
+    
+    import org.mangui.hls.model.Level;
+    import org.mangui.hls.model.Subtitles;
 
     /** Event fired when an error prevents playback. **/
     public class HLSEvent extends Event {
@@ -44,6 +45,14 @@ package org.mangui.hls.event {
         public static const AUDIO_LEVEL_LOADING : String = "hlsEventAudioLevelLoading";
         /** Identifier for a audio level loaded event  **/
         public static const AUDIO_LEVEL_LOADED : String = "hlsEventAudioLevelLoaded";
+		/** Identifier for a subtitles track switch **/
+		public static const SUBTITLES_TRACK_SWITCH : String = "hlsEventSubtitlesTrackSwitch";
+		/** Identifier for a subtitles level loading event  **/
+		public static const SUBTITLES_LEVEL_LOADING : String = "hlsEventSubtitlesLevelLoading";
+		/** Identifier for a subtitles level loaded event  **/
+		public static const SUBTITLES_LEVEL_LOADED : String = "hlsEventSubtitlesLevelLoaded";
+		/** Identifier for a subtitles level loaded event  **/
+		public static const SUBTITLES_CHANGE : String = "hlsEventSubtitlesChange";
         /** Identifier for audio/video TAGS loaded event. **/
         public static const TAGS_LOADED : String = "hlsEventTagsLoaded";
         /** Identifier when last fragment of playlist has been loaded **/
@@ -97,8 +106,12 @@ package org.mangui.hls.event {
         public var streamType: String;
         /** The current audio track **/
         public var audioTrack : int;
+        /** The current subtitles track **/
+        public var subtitlesTrack : int;
         /** a complete ID3 payload from PES, as a hex dump **/
         public var ID3Data : String;
+		/** a subtitles model */
+		public var subtitles:Subtitles;
 
         /** Assign event parameter and dispatch. **/
         public function HLSEvent(type : String, parameter : *=null, parameter2 : *=null) {
@@ -115,8 +128,12 @@ package org.mangui.hls.event {
                 case FRAGMENT_LOAD_EMERGENCY_ABORTED:
                 case LEVEL_LOADED:
                 case AUDIO_LEVEL_LOADED:
+				case SUBTITLES_LEVEL_LOADED:
                     loadMetrics = parameter as HLSLoadMetrics;
                     break;
+				case SUBTITLES_CHANGE:
+					subtitles = parameter as Subtitles;
+					break;
                 case MANIFEST_PARSED:
                 case MANIFEST_LOADED:
                     levels = parameter as Vector.<Level>;
@@ -135,6 +152,7 @@ package org.mangui.hls.event {
                 case LEVEL_LOADING_ABORTED:
                 case LEVEL_SWITCH:
                 case AUDIO_LEVEL_LOADING:
+                case SUBTITLES_LEVEL_LOADING:
                 case FPS_DROP:
                 case FPS_DROP_LEVEL_CAPPING:
                     level = parameter as int;

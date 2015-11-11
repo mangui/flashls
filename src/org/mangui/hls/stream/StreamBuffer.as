@@ -4,9 +4,11 @@
 package org.mangui.hls.stream {
     import flash.events.Event;
     import flash.events.TimerEvent;
-    import flash.utils.Dictionary;
-    import flash.utils.getTimer;
     import flash.utils.Timer;
+    import flash.utils.getTimer;
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekMode;
@@ -17,8 +19,6 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSMediatime;
     import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
     import org.mangui.hls.model.AudioTrack;
