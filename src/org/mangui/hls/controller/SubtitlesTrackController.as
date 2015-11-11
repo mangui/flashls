@@ -12,7 +12,8 @@ package org.mangui.hls.controller {
     }
 	
     /*
-     * Class that handles subtitles tracks
+     * Class that handles subtitles tracks, based on alternative audio controller
+	 * @author	Neil Rackett
      */
     public class SubtitlesTrackController {
         /** Reference to the HLS controller. **/

@@ -12,6 +12,10 @@ package org.mangui.hls.model {
         public var isForced : Boolean;
         public var level : Level;
 
+		/**
+		 * Subtitles track model, based on alternative audio track model
+		 * @author	Neil Rackett
+		 */
         public function SubtitlesTrack(title : String, source : int, id : int, isDefault : Boolean, isForced : Boolean) {
             this.title = title;
             this.source = source;

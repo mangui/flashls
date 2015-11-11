@@ -1,16 +1,31 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.utils
 {
 	import mx.utils.StringUtil;
 	
 	import org.mangui.hls.model.Subtitles;
 
+	/**
+	 * WebVTT subtitles parser
+	 * 
+	 * This is a massively simplified version of the WebVTT parser used by the 
+	 * Denivip HLS plugin for OSMF
+	 * 
+	 * @author	Neil Rackett
+	 */
 	public class WebVTTParser
 	{
 		static private const CUE:RegExp = /^(?:(.*)(?:\r\n|\n))?([\d:,.]+) --> ([\d:,.]+)(?:\s.*)((.|\n|\r\n)*)/;
 		static private const TIMESTAMP:RegExp = /^(?:(\d{2,}):)?(\d{2}):(\d{2})[,.](\d{3})$/;
 		
-		static private var targetDuration:Number = 10;
+		static private var targetDuration:Number = 10.0;
 		
+		/**
+		 * Parse a string into a series of Subtitles objects and return
+		 * them in a Vector
+		 */
 		static public function parse(data:String, offset:Number=0):Vector.<Subtitles>
 		{
 			var subtitles:Subtitles;
@@ -36,8 +51,6 @@ package org.mangui.hls.utils
 					text = text.replace(/(\r\n)/g, '\n');
 					subtitles = new Subtitles(start, end-start, text);
 					results.push(subtitles);
-					
-					trace(subtitles.toString());
 				}
 			}
 			
@@ -46,6 +59,9 @@ package org.mangui.hls.utils
 			return results;
 		}
 		
+		/**
+		 * Converts a time string in the format 00:00:00.000 into seconds
+		 */
 		static public function parseTime(time:String):Number
 		{
 			if (!TIMESTAMP.test(time))

@@ -24,6 +24,11 @@ package org.mangui.hls.loader {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
+		
+	/**
+	 * Subtitles level loader, based on the alternative audio level loader
+	 * @author	Neil Rackett
+	 */
     public class SubtitlesLevelLoader {
         /** Reference to the hls framework controller. **/
         private var _hls : HLS;
@@ -102,7 +107,7 @@ package org.mangui.hls.loader {
 				
                 // if stream is live, use a timer to periodically reload playlist
                 if (!Manifest.hasEndlist(string)) {
-                    var timeout : int = Math.max(100, _reloadPlaylistTimer + 1000*frags.length*subtitlesLevel.averageduration - getTimer());
+                    var timeout : int = Math.max(100, _reloadPlaylistTimer + 1000*frags.length*subtitlesLevel.targetduration - getTimer());
 					
                     CONFIG::LOGGING {
                         Log.debug("Subtitles Level Live Playlist parsing finished: reload in " + timeout + " ms");

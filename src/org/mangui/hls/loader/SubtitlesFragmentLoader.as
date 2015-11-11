@@ -17,15 +17,24 @@ package org.mangui.hls.loader
 	import org.mangui.hls.model.Subtitles;
 	import org.mangui.hls.utils.WebVTTParser;
 
+	CONFIG::LOGGING 
+	{
+		import org.mangui.hls.utils.Log;
+	}
+	
+	/**
+	 * Subtitles fragment loader and sequencer
+	 * @author	Neil Rackett
+	 */
 	public class SubtitlesFragmentLoader
 	{
 		protected var _hls:HLS;
 		protected var _loader:URLLoader;
-		protected var _subtitles:Vector.<Subtitles>;
+		protected var _subtitlesSequences:Array;
 		protected var _fragments:Vector.<Fragment>;
 		protected var _fragment:Fragment;
-		protected var _offset:Number;
-		protected var _programDate:Number;
+		protected var _seqNum:Number;
+		protected var _seqPosition:Number;
 		protected var _currentSubtitles:Subtitles;
 		
 		public function SubtitlesFragmentLoader(hls:HLS)
@@ -40,10 +49,14 @@ package org.mangui.hls.loader
 			_loader.addEventListener(Event.COMPLETE, loader_completeHandler);
 			_loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
 			_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
+			
+			_subtitlesSequences = [];
 		}
 		
 		public function dispose():void
 		{
+			stop();
+			
 			_hls.removeEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, subtitlesTrackSwitchHandler);
 			_hls.removeEventListener(HLSEvent.SUBTITLES_LEVEL_LOADED, subtitlesLevelLoadedHandler);
 			_hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
@@ -54,91 +67,150 @@ package org.mangui.hls.loader
 			_loader.removeEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
 			_loader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
 			_loader = null;
+			
+			_subtitlesSequences = null;
 		}
 		
+		/**
+		 * The currently displayed subtitles
+		 */
 		public function get currentSubtitles():Subtitles
 		{
 			return _currentSubtitles;
 		}
 		
+		/**
+		 * Stop any currently loading subtitles
+		 */
 		public function stop():void
 		{
 			try { _loader.close(); }
 			catch (e:Error) {};
 		}
 		
-		protected function subtitlesTrackSwitchHandler(event:Event):void
+		/**
+		 * Handle the user switching subtitles track
+		 */
+		protected function subtitlesTrackSwitchHandler(event:HLSEvent):void
 		{
+			CONFIG::LOGGING 
+			{
+				Log.debug("Switching to subtitles track "+event.subtitlesTrack);
+			}
+			
 			stop();
-			_subtitles = new Vector.<Subtitles>;
+			_subtitlesSequences = [];
 		}
 		
+		/**
+		 * Preload all of the subtitles listed in the loaded subtitles level definitions
+		 */
 		protected function subtitlesLevelLoadedHandler(event:HLSEvent):void
 		{
 			_fragments = _hls.subtitlesTracks[_hls.subtitlesTrack].level.fragments;
-			_offset = 0;
-			
 			loadNextFragment();
 		}
 		
+		/**
+		 * Sync subtitles with the current audio/video fragments
+		 */
 		protected function fragmentPlayingHandler(event:HLSEvent):void
 		{
-			_programDate = event.playMetrics.program_date;
+			_seqNum = event.playMetrics.seqnum;
+			_seqPosition = _hls.position;
 		}
 		
+		/**
+		 * The time within the current sequence 
+		 */
 		protected function get subtitleTime():Number
 		{
-			return _programDate/1000 + _hls.position;
+			return _hls.position-_seqPosition;
 		}
 		
+		/**
+		 * Match subtitles to the current playhead position and dispatch
+		 * events as appropriate
+		 */
 		protected function mediaTimeHandler(event:HLSEvent):void
 		{
-			if (!_subtitles || !_subtitles.length) return;
+			var subs:Vector.<Subtitles> = _subtitlesSequences[_seqNum];
 			
-			var mt:HLSMediatime = event.mediatime;
-			var currentSubtitles:Subtitles;
-			
-			for each (var subtitles:Subtitles in _subtitles)
+			if (subs)
 			{
-				if (subtitles.start <= subtitleTime && subtitles.end >= subtitleTime)
-				{
-					currentSubtitles = subtitles;
-					break;
-				}
-			}
-			
-			if (currentSubtitles != _currentSubtitles)
-			{
-				if (currentSubtitles) trace("\t\t", currentSubtitles.text);
+				var mt:HLSMediatime = event.mediatime;
+				var matchingSubtitles:Subtitles;
+				var time:Number = subtitleTime;
 				
-				_currentSubtitles = currentSubtitles;
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, currentSubtitles));
+				for each (var subtitles:Subtitles in subs)
+				{
+					if (subtitles.start <= time && subtitles.end >= time)
+					{
+						matchingSubtitles = subtitles;
+						break;
+					}
+				}
+				
+				if (matchingSubtitles != _currentSubtitles)
+				{
+					CONFIG::LOGGING 
+					{
+						Log.debug("Changing subtitles to: "+matchingSubtitles);
+					}
+					
+					_currentSubtitles = matchingSubtitles;
+					_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, matchingSubtitles));
+				}
 			}
 		}
 		
+		/**
+		 * Load the next subtitles fragment (if it hasn't been loaded already) 
+		 */
 		protected function loadNextFragment():void
 		{
 			if (!_fragments || !_fragments.length) return;
 			
 			_fragment = _fragments.shift();
-			_loader.load(new URLRequest(_fragment.url));
+			
+			if (!_subtitlesSequences[_fragment.seqnum])
+			{
+				_loader.load(new URLRequest(_fragment.url));
+			}
+			else
+			{
+				loadNextFragment();
+			}
 		}
 		
+		/**
+		 * Parse the loaded WebVTT subtitles
+		 */
 		protected function loader_completeHandler(event:Event):void
 		{
-			_subtitles = _subtitles.concat(WebVTTParser.parse(_loader.data, _fragment.program_date/1000 + _offset));
-			_offset += 10;
+			_subtitlesSequences[_fragment.seqnum] = WebVTTParser.parse(_loader.data);
+			
+			CONFIG::LOGGING 
+			{
+				Log.debug("Loaded "+_subtitlesSequences[_fragment.seqnum].length+" subtitles from "+_fragment.url);
+			}
 			
 			loadNextFragment();
 		}
 		
+		/**
+		 * If the subtitles fail to load, give up and load the next subtitles fragment
+		 */
 		protected function loader_errorHandler(event:ErrorEvent):void
 		{
-			// TODO Log error
-			_offset += 10;
-
+			CONFIG::LOGGING 
+			{
+				Log.error("Error "+event.errorID+" while loading "+_fragment.url+": "+event.text);
+			}
+			
 			loadNextFragment();
 		}
 		
 	}
+
 }

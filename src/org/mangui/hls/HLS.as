@@ -99,6 +99,7 @@ package org.mangui.hls {
             _audioTrackController.dispose();
             _subtitlesLevelLoader.dispose();
             _subtitlesTrackController.dispose();
+            _subtitlesFragmentLoader.dispose();
             _levelController.dispose();
             _hlsNetStream.dispose_();
             _streamBuffer.dispose();
