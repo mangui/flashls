@@ -56,6 +56,7 @@ package org.mangui.hls.loader {
         /* playlist retry timeout */
         private var _retryTimeout : Number;
         private var _retryCount : int;
+		private var _redundantRetryCount:int;
         /* alt audio tracks */
         private var _altAudioTracks : Vector.<AltAudioTrack>;
         /* manifest load metrics */
@@ -113,14 +114,14 @@ package org.mangui.hls.loader {
 						_levels[_loadLevel].redundantStreamId++;
 					}
 					// retry primary stream if the last redundant stream has failed and HLSSettings.manifestRedundantLoadmaxRetry allows 
-					else if (HLSSettings.manifestRedundantLoadmaxRetry>0){
-						_levels[_loadLevel].redundantStreamId = 0;
+					else if ((HLSSettings.manifestRedundantLoadmaxRetry > 0 && _redundantRetryCount < HLSSettings.manifestRedundantLoadmaxRetry ) || HLSSettings.manifestRedundantLoadmaxRetry==-1 ) {
+							_redundantRetryCount++;
+							_levels[_loadLevel].redundantStreamId = 0;
 					}
 					else {
 						code = HLSError.MANIFEST_LOADING_IO_ERROR;
 						txt = "Cannot load M3U8: " + event.text;
-						var hlsError : HLSError = new HLSError(code, _url, txt);
-						_hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+						dispatchHLSError(code, txt);
 						return;
 					}
 					_timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
@@ -132,9 +133,13 @@ package org.mangui.hls.loader {
                     txt = "Cannot load M3U8: " + event.text;
                 }
             }
-            var hlsError : HLSError = new HLSError(code, _url, txt);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+			dispatchHLSError(code, txt);
         }
+		
+		private function dispatchHLSError(code:int, txt:String):void {
+            var hlsError : HLSError = new HLSError(code, _url, txt);
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));			
+		}
 
         /** Return the current manifest. **/
         public function get levels() : Vector.<Level> {
@@ -169,6 +174,7 @@ package org.mangui.hls.loader {
             _reloadPlaylistTimer = getTimer();
             _retryTimeout = 1000;
             _retryCount = 0;
+			_redundantRetryCount = 0;
             _altAudioTracks = null;
             _loadManifest();
         }

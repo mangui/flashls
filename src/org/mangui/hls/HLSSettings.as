@@ -266,12 +266,12 @@ package org.mangui.hls {
 		/**
 		 * manifestRedundantLoadmaxRetry
 		 * 
-		 * max nb of trying the redundant streams.
-		 *   >1  means looping over the stream array multiple times
-		 *    1  means trying exactly once - default behaviour
+		 * max nb of looping over the redundant streams.
+		 *   >0  means looping over the stream array 2 or more times
+		 *    0  means looping exactly once (no retries) - default behaviour
 		 *   -1  means infinite retry
 		 */
-		public static var manifestRedundantLoadmaxRetry : int = 1;
+		public static var manifestRedundantLoadmaxRetry : int = 3;
 			
         /**
          * startFromBitrate
