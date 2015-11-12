@@ -12,15 +12,15 @@ package org.mangui.hls.loader {
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
-    
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
+
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.AltAudioTrack;
@@ -56,7 +56,7 @@ package org.mangui.hls.loader {
         /* playlist retry timeout */
         private var _retryTimeout : Number;
         private var _retryCount : int;
-		private var _redundantRetryCount:int;
+        private var _redundantRetryCount:int;
         /* alt audio tracks */
         private var _altAudioTracks : Vector.<AltAudioTrack>;
         /* manifest load metrics */
@@ -104,30 +104,30 @@ package org.mangui.hls.loader {
                 _retryCount++;
                 return;
             } else {
-                // if we have redundant streams left for that level, switch to it, otherwise retry primary stream 
-				if(_loadLevel < _levels.length && _levels[_loadLevel].redundantStreamsNb>0 ) {
-					CONFIG::LOGGING {
-						Log.warn("max load retry reached, switch to redundant stream");
-					}
-					// try next redundant stream
-					if (_levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {	
-						_levels[_loadLevel].redundantStreamId++;
-					}
-					// retry primary stream if the last redundant stream has failed and HLSSettings.manifestRedundantLoadmaxRetry allows 
-					else if ((HLSSettings.manifestRedundantLoadmaxRetry > 0 && _redundantRetryCount < HLSSettings.manifestRedundantLoadmaxRetry ) || HLSSettings.manifestRedundantLoadmaxRetry==-1 ) {
-							_redundantRetryCount++;
-							_levels[_loadLevel].redundantStreamId = 0;
-					}
-					else {
-						code = HLSError.MANIFEST_LOADING_IO_ERROR;
-						txt = "Cannot load M3U8: " + event.text;
-						dispatchHLSError(code, txt);
-						return;
-					}
-					_timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
-					_retryTimeout = 1000;
-					_retryCount = 0;
-					return;
+                // if we have redundant streams left for that level, switch to it, otherwise retry primary stream
+                if(_loadLevel < _levels.length && _levels[_loadLevel].redundantStreamsNb>0 ) {
+                    CONFIG::LOGGING {
+                        Log.warn("max load retry reached, switch to redundant stream");
+                    }
+                    // try next redundant stream
+                    if (_levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {
+                        _levels[_loadLevel].redundantStreamId++;
+                    }
+                    // retry primary stream if the last redundant stream has failed and HLSSettings.manifestRedundantLoadmaxRetry allows
+                    else if ((HLSSettings.manifestRedundantLoadmaxRetry > 0 && _redundantRetryCount < HLSSettings.manifestRedundantLoadmaxRetry ) || HLSSettings.manifestRedundantLoadmaxRetry==-1 ) {
+                            _redundantRetryCount++;
+                            _levels[_loadLevel].redundantStreamId = 0;
+                    }
+                    else {
+                        code = HLSError.MANIFEST_LOADING_IO_ERROR;
+                        txt = "Cannot load M3U8: " + event.text;
+                        dispatchHLSError(code, txt);
+                        return;
+                    }
+                    _timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
+                    _retryTimeout = 1000;
+                    _retryCount = 0;
+                    return;
                 } else {
                     // if level > 0 and in autolevel, and switch down on level error is activated, trigger LEVEL_LOADING_ABORTED
                     if(_loadLevel && _hls.autoLevel && HLSSettings.switchDownOnLevelError) {
@@ -139,13 +139,13 @@ package org.mangui.hls.loader {
                     }
                 }
             }
-			dispatchHLSError(code, txt);
+            dispatchHLSError(code, txt);
         }
-		
-		private function dispatchHLSError(code:int, txt:String):void {
+
+        private function dispatchHLSError(code:int, txt:String):void {
             var hlsError : HLSError = new HLSError(code, _url, txt);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));			
-		}
+            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+        }
 
         /** Return the current manifest. **/
         public function get levels() : Vector.<Level> {
@@ -180,7 +180,7 @@ package org.mangui.hls.loader {
             _reloadPlaylistTimer = getTimer();
             _retryTimeout = 1000;
             _retryCount = 0;
-			_redundantRetryCount = 0;
+            _redundantRetryCount = 0;
             _altAudioTracks = null;
             _loadManifest();
         }
