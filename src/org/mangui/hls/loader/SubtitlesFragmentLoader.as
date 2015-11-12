@@ -11,6 +11,7 @@ package org.mangui.hls.loader
 	import flash.net.URLRequest;
 	
 	import org.mangui.hls.HLS;
+	import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.event.HLSMediatime;
 	import org.mangui.hls.model.Fragment;
@@ -114,17 +115,26 @@ package org.mangui.hls.loader
 		/**
 		 * Sync subtitles with the current audio/video fragments
 		 * 
-		 * TODO	This works fine for live media, but do we need a better sync 
-		 * 		method for on-demand content?
+		 * Live subtitles are assumed to contain times reletive to the current
+		 * sequence, and VOD content relative to the entire video duration 
 		 */
 		protected function fragmentPlayingHandler(event:HLSEvent):void
 		{
-			_seqNum = event.playMetrics.seqnum;
-			_seqStartPosition = _hls.position;
+			if (_hls.type == HLSTypes.LIVE)
+			{
+				_seqNum = event.playMetrics.seqnum;
+				_seqStartPosition = _hls.position;
+				
+				return;
+			}
+			
+			_seqNum = 0;
+			_seqStartPosition = 0;
 		}
 		
 		/**
-		 * The time within the current sequence 
+		 * The current position relative to the start of the current sequence 
+		 * (live) or to the entire video (VOD)
 		 */
 		protected function get seqPosition():Number
 		{
@@ -145,6 +155,7 @@ package org.mangui.hls.loader
 				var matchingSubtitles:Subtitles;
 				var position:Number = seqPosition;
 				
+				// TODO Is it possible to optimise this? It's fine for live or short VOD, but could be expensive for long VODs
 				for each (var subtitles:Subtitles in subs)
 				{
 					if (subtitles.startPosition <= position && subtitles.endPosition >= position)
@@ -191,11 +202,20 @@ package org.mangui.hls.loader
 		 */
 		protected function loader_completeHandler(event:Event):void
 		{
-			_seqSubtitles[_fragment.seqnum] = WebVTTParser.parse(_loader.data);
+			var parsed:Vector.<Subtitles> = WebVTTParser.parse(_loader.data);
+			
+			if (_hls.type == HLSTypes.LIVE)
+			{
+				_seqSubtitles[_fragment.seqnum] = parsed;
+			}
+			else
+			{
+				_seqSubtitles[0] = (_seqSubtitles[0] || new Vector.<Subtitles>).concat(parsed);
+			}
 			
 			CONFIG::LOGGING 
 			{
-				Log.debug("Loaded "+_seqSubtitles[_fragment.seqnum].length+" subtitles from "+_fragment.url);
+				Log.debug("Loaded "+parsed.length+" subtitles from "+_fragment.url.split("/").pop()+":\n"+parsed.join("\n"));
 			}
 			
 			loadNextFragment();
