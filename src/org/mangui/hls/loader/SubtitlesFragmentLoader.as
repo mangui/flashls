@@ -119,8 +119,6 @@ package org.mangui.hls.loader
 		 */
 		protected function fragmentPlayingHandler(event:HLSEvent):void
 		{
-			trace(this, event.playMetrics.continuity_counter);
-			
 			_seqNum = event.playMetrics.seqnum;
 			_seqPosition = _hls.position;
 		}
