@@ -421,7 +421,7 @@ package org.mangui.hls.loader {
             the one in memory is from SN [50-60], and we are trying to load SN50.
              */
             CONFIG::LOGGING {
-                Log.error("I/O Error while loading fragment:" + message);
+                Log.warn("I/O Error while loading fragment:" + message);
             }
             if (HLSSettings.fragmentLoadMaxRetry == -1 || _fragRetryCount < HLSSettings.fragmentLoadMaxRetry) {
                 _loadingState = LOADING_FRAGMENT_IO_ERROR;
@@ -522,9 +522,6 @@ package org.mangui.hls.loader {
 
         /** frag load completed. **/
         private function _fragLoadCompleteHandler(event : Event) : void {
-            // load complete, reset retry counter
-            _fragRetryCount = 0;
-            _fragRetryTimeout = 1000;
             var fragData : FragmentData = _fragCurrent.data;
             if (fragData.bytes == null) {
                 CONFIG::LOGGING {
@@ -983,9 +980,13 @@ package org.mangui.hls.loader {
             var fragData : FragmentData = _fragCurrent.data;
             var fragLevelIdx : int = _fragCurrent.level;
             if ((_demux.audioExpected && !fragData.audio_found) && (_demux.videoExpected && !fragData.video_found)) {
-                hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _fragCurrent.url, "error parsing fragment, no tag found");
-                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+                // handle it like a IO error
+                _fraghandleIOError("error parsing fragment, no tag found");
+                return;
             }
+            // parsing complete, reset retry counter
+            _fragRetryCount = 0;
+            _fragRetryTimeout = 1000;
             CONFIG::LOGGING {
                 if (fragData.audio_found) {
                     Log.debug("m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
