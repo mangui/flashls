@@ -34,7 +34,7 @@ package org.mangui.hls.loader
 		protected var _fragment:Fragment;
 		protected var _seqSubtitles:Array;
 		protected var _seqNum:Number;
-		protected var _seqPosition:Number;
+		protected var _seqStartPosition:Number;
 		protected var _currentSubtitles:Subtitles;
 		
 		public function SubtitlesFragmentLoader(hls:HLS)
@@ -120,15 +120,15 @@ package org.mangui.hls.loader
 		protected function fragmentPlayingHandler(event:HLSEvent):void
 		{
 			_seqNum = event.playMetrics.seqnum;
-			_seqPosition = _hls.position;
+			_seqStartPosition = _hls.position;
 		}
 		
 		/**
 		 * The time within the current sequence 
 		 */
-		protected function get subtitleTime():Number
+		protected function get seqPosition():Number
 		{
-			return _hls.position-_seqPosition;
+			return _hls.position-_seqStartPosition;
 		}
 		
 		/**
@@ -143,11 +143,11 @@ package org.mangui.hls.loader
 			{
 				var mt:HLSMediatime = event.mediatime;
 				var matchingSubtitles:Subtitles;
-				var time:Number = subtitleTime;
+				var position:Number = seqPosition;
 				
 				for each (var subtitles:Subtitles in subs)
 				{
-					if (subtitles.startPosition <= time && subtitles.endPosition >= time)
+					if (subtitles.startPosition <= position && subtitles.endPosition >= position)
 					{
 						matchingSubtitles = subtitles;
 						break;
