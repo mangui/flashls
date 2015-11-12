@@ -30,9 +30,9 @@ package org.mangui.hls.loader
 	{
 		protected var _hls:HLS;
 		protected var _loader:URLLoader;
-		protected var _subtitlesSequences:Array;
 		protected var _fragments:Vector.<Fragment>;
 		protected var _fragment:Fragment;
+		protected var _seqSubtitles:Array;
 		protected var _seqNum:Number;
 		protected var _seqPosition:Number;
 		protected var _currentSubtitles:Subtitles;
@@ -50,7 +50,7 @@ package org.mangui.hls.loader
 			_loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
 			_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
 			
-			_subtitlesSequences = [];
+			_seqSubtitles = [];
 		}
 		
 		public function dispose():void
@@ -68,7 +68,7 @@ package org.mangui.hls.loader
 			_loader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
 			_loader = null;
 			
-			_subtitlesSequences = null;
+			_seqSubtitles = null;
 		}
 		
 		/**
@@ -99,7 +99,7 @@ package org.mangui.hls.loader
 			}
 			
 			stop();
-			_subtitlesSequences = [];
+			_seqSubtitles = [];
 		}
 		
 		/**
@@ -113,9 +113,14 @@ package org.mangui.hls.loader
 		
 		/**
 		 * Sync subtitles with the current audio/video fragments
+		 * 
+		 * TODO	This works fine for live media, but do we need a better sync 
+		 * 		method for on-demand content?
 		 */
 		protected function fragmentPlayingHandler(event:HLSEvent):void
 		{
+			trace(this, event.playMetrics.continuity_counter);
+			
 			_seqNum = event.playMetrics.seqnum;
 			_seqPosition = _hls.position;
 		}
@@ -134,7 +139,7 @@ package org.mangui.hls.loader
 		 */
 		protected function mediaTimeHandler(event:HLSEvent):void
 		{
-			var subs:Vector.<Subtitles> = _subtitlesSequences[_seqNum];
+			var subs:Vector.<Subtitles> = _seqSubtitles[_seqNum];
 			
 			if (subs)
 			{
@@ -144,7 +149,7 @@ package org.mangui.hls.loader
 				
 				for each (var subtitles:Subtitles in subs)
 				{
-					if (subtitles.start <= time && subtitles.end >= time)
+					if (subtitles.startPosition <= time && subtitles.endPosition >= time)
 					{
 						matchingSubtitles = subtitles;
 						break;
@@ -173,7 +178,7 @@ package org.mangui.hls.loader
 			
 			_fragment = _fragments.shift();
 			
-			if (!_subtitlesSequences[_fragment.seqnum])
+			if (!_seqSubtitles[_fragment.seqnum])
 			{
 				_loader.load(new URLRequest(_fragment.url));
 			}
@@ -188,11 +193,11 @@ package org.mangui.hls.loader
 		 */
 		protected function loader_completeHandler(event:Event):void
 		{
-			_subtitlesSequences[_fragment.seqnum] = WebVTTParser.parse(_loader.data);
+			_seqSubtitles[_fragment.seqnum] = WebVTTParser.parse(_loader.data);
 			
 			CONFIG::LOGGING 
 			{
-				Log.debug("Loaded "+_subtitlesSequences[_fragment.seqnum].length+" subtitles from "+_fragment.url);
+				Log.debug("Loaded "+_seqSubtitles[_fragment.seqnum].length+" subtitles from "+_fragment.url);
 			}
 			
 			loadNextFragment();

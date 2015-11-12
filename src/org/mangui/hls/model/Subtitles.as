@@ -1,26 +1,30 @@
 package org.mangui.hls.model
 {
+	/**
+	 * Subtitles model for Flashls
+	 * @author	Neil Rackett
+	 */
 	public class Subtitles
 	{
-		private var _start:Number;
-		private var _duration:Number;
+		private var _startPosition:Number;
+		private var _endPosition:Number;
 		private var _text:String;
 		
-		public function Subtitles(start:Number, duration:Number, text:String) 
+		public function Subtitles(startPosition:Number, endPosition:Number, text:String) 
 		{
-			_start = start;
-			_duration = duration;
-			_text = text;
+			_startPosition = startPosition;
+			_endPosition = endPosition;
+			_text = text || '';
 		}
 		
-		public function get start():Number { return _start; }
-		public function get end():Number { return _start + _duration; }
-		public function get duration():Number { return _duration; }
+		public function get startPosition():Number { return _startPosition; }
+		public function get endPosition():Number { return _endPosition; }
+		public function get duration():Number { return _endPosition-_startPosition; }
 		public function get text():String { return _text; }
 		
 		public function toString():String
 		{
-			return '[Subtitles start='+start+' end='+end+' duration='+duration+' text="'+text+'"]';
+			return '[Subtitles startPosition='+startPosition+' endPosition='+endPosition+' duration='+duration+' text="'+text+'"]';
 		}
 	}
 }
