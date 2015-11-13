@@ -24,7 +24,7 @@ package org.mangui.hls.model
 		
 		public function toString():String
 		{
-			return '[Subtitles startPosition='+startPosition+' endPosition='+endPosition+' duration='+duration+' text="'+text+'"]';
+			return '[Subtitles startPosition='+startPosition+' endPosition='+endPosition+' text="'+text+'"]';
 		}
 	}
 }

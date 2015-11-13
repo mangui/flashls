@@ -11,6 +11,7 @@ package org.mangui.hls.loader
 	import flash.net.URLRequest;
 	
 	import org.mangui.hls.HLS;
+	import org.mangui.hls.HLSSettings;
 	import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.event.HLSMediatime;
@@ -38,6 +39,7 @@ package org.mangui.hls.loader
 		protected var _seqStartPosition:Number;
 		protected var _currentSubtitles:Subtitles;
 		protected var _seqSubsIndex:int;
+		protected var _remainingRetries:int;
 		
 		public function SubtitlesFragmentLoader(hls:HLS)
 		{
@@ -218,16 +220,25 @@ package org.mangui.hls.loader
 		{
 			if (!_fragments || !_fragments.length) return;
 			
+			_remainingRetries = HLSSettings.fragmentLoadMaxRetry;
 			_fragment = _fragments.shift();
 			
 			if (!_seqSubs[_fragment.seqnum])
 			{
-				_loader.load(new URLRequest(_fragment.url));
+				loadFragment();
 			}
 			else
 			{
 				loadNextFragment();
 			}
+		}
+		
+		/**
+		 * The load operation was separated from loadNextFragment() to enable retries
+		 */
+		protected function loadFragment():void
+		{
+			_loader.load(new URLRequest(_fragment.url));
 		}
 		
 		/**
@@ -243,6 +254,7 @@ package org.mangui.hls.loader
 			}
 			else
 			{
+				_seqSubs[_fragment.seqnum] = true;
 				_seqSubs[0] = (_seqSubs[0] || new Vector.<Subtitles>).concat(parsed);
 			}
 			
@@ -262,9 +274,17 @@ package org.mangui.hls.loader
 			CONFIG::LOGGING 
 			{
 				Log.error("Error "+event.errorID+" while loading "+_fragment.url+": "+event.text);
+				Log.error(_remainingRetries+" retries remaining");
 			}
 			
-			loadNextFragment();
+			if (_remainingRetries--)
+			{
+				loadFragment();
+			}
+			else
+			{
+				loadNextFragment();
+			}
 		}
 		
 	}
