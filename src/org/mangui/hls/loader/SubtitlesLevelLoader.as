@@ -139,7 +139,7 @@ package org.mangui.hls.loader {
             _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_LEVEL_LOADING, _currentTrack));
         };
 
-        /** When subtitles track switch occurs, assess the need of loading subtitles level playlist **/
+        /** When subtitles track switch occurs, load subtitles level playlist **/
         private function _subtitlesTrackSwitchHandler(event : HLSEvent) : void {
             
 			_currentTrack = event.subtitlesTrack;

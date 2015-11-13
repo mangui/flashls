@@ -127,7 +127,7 @@ package org.mangui.hls.loader {
             var audioTrack : AudioTrack = _hls.audioTracks[_currentTrack];
             if (audioTrack.source == AudioTrack.FROM_PLAYLIST) {
                 var altAudioTrack : AltAudioTrack = _hls.altAudioTracks[audioTrack.id];
-                if (altAudioTrack.url) {
+                if (altAudioTrack.url && audioTrack.level == null) {
                     CONFIG::LOGGING {
                         Log.debug("switch to audio track " + _currentTrack + ", load Playlist");
                     }
