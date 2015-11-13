@@ -129,7 +129,7 @@ package org.mangui.hls.loader {
 			if (_closed) {
                 return;
             }
-            
+			
 			_reloadPlaylistTimer = getTimer();
             
 			var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[_hls.subtitlesTracks[_currentTrack].id];
@@ -143,32 +143,36 @@ package org.mangui.hls.loader {
         private function _subtitlesTrackSwitchHandler(event : HLSEvent) : void {
             
 			_currentTrack = event.subtitlesTrack;
+			clearTimeout(_timeoutID);
             
-			var subtitlesTrack : SubtitlesTrack = _hls.subtitlesTracks[_currentTrack];
+			if (_currentTrack > -1 && _currentTrack < _hls.numSubtitlesTracks) {
+				
+				var subtitlesTrack:SubtitlesTrack = _hls.subtitlesTracks[_currentTrack];
+				
+	            if (subtitlesTrack.source == SubtitlesTrack.FROM_PLAYLIST) {
+	                
+					var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[subtitlesTrack.id];
+	                
+					if (subtitlesPlaylistTrack.url) {
+						
+	                    CONFIG::LOGGING {
+	                        Log.debug("switch to subtitles track " + _currentTrack + ", load Playlist");
+	                    }
+						
+	                    _retryTimeout = 1000;
+	                    _retryCount = 0;
+	                    _closed = false;
+						
+	                    if(_manifestLoading) {
+	                       _manifestLoading.close();
+	                       _manifestLoading = null;
+	                    }
+						
+	                    _loadSubtitlesLevelPlaylist();
+	                }
+	            }
+			}
 			
-            if (subtitlesTrack.source == SubtitlesTrack.FROM_PLAYLIST) {
-                
-				var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[subtitlesTrack.id];
-                
-				if (subtitlesPlaylistTrack.url && subtitlesTrack.level == null) {
-					
-                    CONFIG::LOGGING {
-                        Log.debug("switch to subtitles track " + _currentTrack + ", load Playlist");
-                    }
-					
-                    _retryTimeout = 1000;
-                    _retryCount = 0;
-                    _closed = false;
-					
-                    if(_manifestLoading) {
-                       _manifestLoading.close();
-                       _manifestLoading = null;
-                    }
-					
-                    clearTimeout(_timeoutID);
-                    _timeoutID = setTimeout(_loadSubtitlesLevelPlaylist, 0);
-                }
-            }
         };
 
         private function _close() : void {

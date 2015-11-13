@@ -189,8 +189,11 @@ package org.mangui.hls.loader
 				}
 				
 				// To keep the search for the next subtitles as inexpensive as possible
-				// we always start the next search at the previous jump off point
-				_seqSubsIndex = i;
+				// for big VOD, we start the next search at the previous jump off point
+				if (_hls.type == HLSTypes.VOD)
+				{
+					_seqSubsIndex = i;
+				}
 				
 				if (matchingSubtitles != _currentSubtitles)
 				{
@@ -255,7 +258,7 @@ package org.mangui.hls.loader
 			else
 			{
 				_seqSubs[_fragment.seqnum] = true;
-				_seqSubs[0] = (_seqSubs[0] || new Vector.<Subtitles>).concat(parsed);
+				_seqSubs[0] = (_seqSubs[0] is Vector.<Subtitles> ? _seqSubs[0] : new Vector.<Subtitles>).concat(parsed);
 			}
 			
 			CONFIG::LOGGING 
