@@ -146,7 +146,8 @@ package org.mangui.hls.model {
 
         /** Return the fragment index from fragment sequence number **/
         public function getFragmentfromSeqNum(seqnum : Number) : Fragment {
-            var index : int = getIndexfromSeqNum(seqnum);
+			// TODO Why does index sometimes return -2 (particularly during live streams)?
+			var index : int = getIndexfromSeqNum(seqnum);
             if (index > -1) {
                 return fragments[index];
             } else {

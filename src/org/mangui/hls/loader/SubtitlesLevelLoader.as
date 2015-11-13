@@ -92,7 +92,7 @@ package org.mangui.hls.loader {
                 CONFIG::LOGGING {
                     Log.debug("subtitles level " + level + " playlist:\n" + string);
                 }
-					
+				
 				// Extract WebVTT subtitles fragments from the manifest
                 var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
 				var subtitlesTrack : SubtitlesTrack = _hls.subtitlesTracks[_currentTrack];
@@ -107,7 +107,7 @@ package org.mangui.hls.loader {
 				
                 // if stream is live, use a timer to periodically reload playlist
                 if (!Manifest.hasEndlist(string)) {
-                    var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*frags.length*subtitlesLevel.targetduration - getTimer());
+                    var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*(frags.length-1)*subtitlesLevel.targetduration - getTimer());
 					
                     CONFIG::LOGGING {
                         Log.debug("Subtitles Level Live Playlist parsing finished: reload in " + timeout + " ms");

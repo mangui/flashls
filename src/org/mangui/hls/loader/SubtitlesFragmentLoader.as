@@ -33,10 +33,11 @@ package org.mangui.hls.loader
 		protected var _loader:URLLoader;
 		protected var _fragments:Vector.<Fragment>;
 		protected var _fragment:Fragment;
-		protected var _seqSubtitles:Array;
+		protected var _seqSubs:Array;
 		protected var _seqNum:Number;
 		protected var _seqStartPosition:Number;
 		protected var _currentSubtitles:Subtitles;
+		protected var _seqSubsIndex:int;
 		
 		public function SubtitlesFragmentLoader(hls:HLS)
 		{
@@ -45,13 +46,15 @@ package org.mangui.hls.loader
 			_hls.addEventListener(HLSEvent.SUBTITLES_LEVEL_LOADED, subtitlesLevelLoadedHandler);
 			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
+			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
 			
 			_loader = new URLLoader();
 			_loader.addEventListener(Event.COMPLETE, loader_completeHandler);
 			_loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
 			_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
 			
-			_seqSubtitles = [];
+			_seqSubs = [];
+			_seqSubsIndex = 0;
 		}
 		
 		public function dispose():void
@@ -62,6 +65,7 @@ package org.mangui.hls.loader
 			_hls.removeEventListener(HLSEvent.SUBTITLES_LEVEL_LOADED, subtitlesLevelLoadedHandler);
 			_hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.removeEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
+			_hls.removeEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
 			_hls = null;
 			
 			_loader.removeEventListener(Event.COMPLETE, loader_completeHandler);
@@ -69,7 +73,7 @@ package org.mangui.hls.loader
 			_loader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
 			_loader = null;
 			
-			_seqSubtitles = null;
+			_seqSubs = null;
 		}
 		
 		/**
@@ -100,7 +104,14 @@ package org.mangui.hls.loader
 			}
 			
 			stop();
-			_seqSubtitles = [];
+			
+			if (_currentSubtitles)
+			{
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, null));
+			}
+			
+			_seqSubs = [];
+			_seqSubsIndex = 0;			
 		}
 		
 		/**
@@ -124,6 +135,7 @@ package org.mangui.hls.loader
 			{
 				_seqNum = event.playMetrics.seqnum;
 				_seqStartPosition = _hls.position;
+				_seqSubsIndex = 0;
 				
 				return;
 			}
@@ -138,7 +150,7 @@ package org.mangui.hls.loader
 		 */
 		protected function get seqPosition():Number
 		{
-			return _hls.position-_seqStartPosition;
+			return _hls.position - _seqStartPosition;
 		}
 		
 		/**
@@ -147,23 +159,36 @@ package org.mangui.hls.loader
 		 */
 		protected function mediaTimeHandler(event:HLSEvent):void
 		{
-			var subs:Vector.<Subtitles> = _seqSubtitles[_seqNum];
+			var subs:Vector.<Subtitles> = _seqSubs[_seqNum];
 			
 			if (subs)
 			{
 				var mt:HLSMediatime = event.mediatime;
 				var matchingSubtitles:Subtitles;
 				var position:Number = seqPosition;
+				var i:uint;
+				var length:uint = subs.length;
 				
-				// TODO Is it possible to optimise this? It's fine for live or short VOD, but could be expensive for long VODs
-				for each (var subtitles:Subtitles in subs)
+				for (i=_seqSubsIndex; i<length; ++i)
 				{
+					var subtitles:Subtitles = subs[i];
+					
+					// There's no point searching more that we need to!
+					if (subtitles.startPosition > position)
+					{
+						break;
+					}
+					
 					if (subtitles.startPosition <= position && subtitles.endPosition >= position)
 					{
 						matchingSubtitles = subtitles;
 						break;
 					}
 				}
+				
+				// To keep the search for the next subtitles as inexpensive as possible
+				// we always start the next search at the previous jump off point
+				_seqSubsIndex = i;
 				
 				if (matchingSubtitles != _currentSubtitles)
 				{
@@ -179,6 +204,14 @@ package org.mangui.hls.loader
 		}
 		
 		/**
+		 * When the media seeks, we reset the index from which we look for the next subtitles
+		 */
+		protected function seekStateHandler(event:Event):void
+		{
+			_seqSubsIndex = 0;
+		}
+		
+		/**
 		 * Load the next subtitles fragment (if it hasn't been loaded already) 
 		 */
 		protected function loadNextFragment():void
@@ -187,7 +220,7 @@ package org.mangui.hls.loader
 			
 			_fragment = _fragments.shift();
 			
-			if (!_seqSubtitles[_fragment.seqnum])
+			if (!_seqSubs[_fragment.seqnum])
 			{
 				_loader.load(new URLRequest(_fragment.url));
 			}
@@ -206,11 +239,11 @@ package org.mangui.hls.loader
 			
 			if (_hls.type == HLSTypes.LIVE)
 			{
-				_seqSubtitles[_fragment.seqnum] = parsed;
+				_seqSubs[_fragment.seqnum] = parsed;
 			}
 			else
 			{
-				_seqSubtitles[0] = (_seqSubtitles[0] || new Vector.<Subtitles>).concat(parsed);
+				_seqSubs[0] = (_seqSubs[0] || new Vector.<Subtitles>).concat(parsed);
 			}
 			
 			CONFIG::LOGGING 
