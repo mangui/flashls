@@ -14,7 +14,6 @@ package org.mangui.hls.loader
 	
 	import org.mangui.hls.HLS;
 	import org.mangui.hls.HLSSettings;
-	import org.mangui.hls.constant.HLSPlayStates;
 	import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.event.HLSMediatime;
@@ -44,6 +43,7 @@ package org.mangui.hls.loader
 		protected var _seqSubsIndex:int;
 		protected var _remainingRetries:int;
 		protected var _retryTimeout:uint;
+		protected var _emptySubtitles:Subtitles;
 		
 		public function SubtitlesFragmentLoader(hls:HLS)
 		{
@@ -53,7 +53,7 @@ package org.mangui.hls.loader
 			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
 			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
-			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, manifestLoadingHandler);
+			_hls.addEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
 			
 			_loader = new URLLoader();
 			_loader.addEventListener(Event.COMPLETE, loader_completeHandler);
@@ -62,6 +62,7 @@ package org.mangui.hls.loader
 			
 			_seqSubs = [];
 			_seqSubsIndex = 0;
+			_emptySubtitles = new Subtitles(-1, -1, '');
 		}
 		
 		public function dispose():void
@@ -97,10 +98,10 @@ package org.mangui.hls.loader
 		 */
 		public function stop():void
 		{
-			if (_currentSubtitles !== undefined)
+			if (_currentSubtitles)
 			{
-				_currentSubtitles = undefined;
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, undefined));
+				_currentSubtitles = null;
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, _emptySubtitles));
 			}
 			
 			try { _loader.close(); }
@@ -150,7 +151,7 @@ package org.mangui.hls.loader
 			
 			if (_hls.type == HLSTypes.LIVE)
 			{
-				_currentSubtitles = null;
+				_currentSubtitles = _emptySubtitles;
 				_seqNum = event.playMetrics.seqnum;
 				_seqStartPosition = _hls.position;
 				_seqSubsIndex = 0;
@@ -191,7 +192,7 @@ package org.mangui.hls.loader
 			if (subs)
 			{
 				var mt:HLSMediatime = event.mediatime;
-				var matchingSubtitles:Subtitles = undefined;
+				var matchingSubtitles:Subtitles = _emptySubtitles;
 				var i:uint;
 				var length:uint = subs.length;
 				

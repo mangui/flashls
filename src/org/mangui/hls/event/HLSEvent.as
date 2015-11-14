@@ -31,7 +31,7 @@ package org.mangui.hls.event {
         public static const FRAGMENT_LOADING : String = "hlsEventFragmentLoading";
         /** Identifier for a fragment loaded event. **/
         public static const FRAGMENT_LOADED : String = "hlsEventFragmentLoaded";
-        /* Identifier for fragment load aborting for emergency switch down */
+        /** Identifier for fragment load aborting for emergency switch down */
         public static const FRAGMENT_LOAD_EMERGENCY_ABORTED : String = "hlsEventFragmentLoadEmergencyAborted";
         /** Identifier for a fragment playing event. **/
         public static const FRAGMENT_PLAYING : String = "hlsEventFragmentPlaying";

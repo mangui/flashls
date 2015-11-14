@@ -103,7 +103,7 @@ package org.mangui.hls.controller {
 						var track:SubtitlesTrack = new SubtitlesTrack(playlistTrack.name, idx, SubtitlesTrack.FROM_PLAYLIST, playlistTrack.lang, isDefault, isForced, autoSelect);
 						
                         CONFIG::LOGGING {
-                            Log.debug("subtitles track[" + subtitlesTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + subtitlesPlaylistTrack.name);
+                            Log.debug("subtitles track[" + subtitlesTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + playlistTrack.name);
                         }
 						
                         subtitlesTrackList.push(track);
