@@ -154,7 +154,7 @@ package org.mangui.hls.controller {
 			_subtitlesTracks = _subtitlesTracksFromManifest.slice();
 		}
 		
-        /** triggered by demux, it should return the subtitles track to be parsed */
+        /** Normally triggered by user selection, it should return the subtitles track to be parsed */
         public function subtitlesTrackSelectionHandler(subtitlesTrackList : Vector.<SubtitlesTrack>) : SubtitlesTrack {
             var subtitlesTrackChanged : Boolean = false;
             subtitlesTrackList = subtitlesTrackList.sort(function(a : SubtitlesTrack, b : SubtitlesTrack) : int {
