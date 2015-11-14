@@ -6,6 +6,7 @@ package org.mangui.hls.model {
     public class SubtitlesTrack {
         public static const FROM_PLAYLIST : int = 1;
         public var title : String;
+        public var language : String;
         public var id : int;
         public var source : int;
         public var isDefault : Boolean;
@@ -17,8 +18,9 @@ package org.mangui.hls.model {
 		 * Subtitles track model, based on alternative audio track model
 		 * @author	Neil Rackett
 		 */
-        public function SubtitlesTrack(title:String, source:int, id:int, isDefault:Boolean=false, isForced:Boolean=false, autoSelect:Boolean=false) {
+        public function SubtitlesTrack(title:String, language:String, source:int, id:int, isDefault:Boolean=false, isForced:Boolean=false, autoSelect:Boolean=false) {
             this.title = title;
+            this.language = language;
             this.source = source;
             this.id = id;
             this.isDefault = isDefault;

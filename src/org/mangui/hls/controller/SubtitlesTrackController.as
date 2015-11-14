@@ -100,7 +100,7 @@ package org.mangui.hls.controller {
                         var isDefault : Boolean = playlistTrack.default_track;
 						var isForced : Boolean = playlistTrack.forced;
 						var autoSelect : Boolean = playlistTrack.autoselect;
-						var track:SubtitlesTrack = new SubtitlesTrack(playlistTrack.name, SubtitlesTrack.FROM_PLAYLIST, idx, isDefault, isForced, autoSelect);
+						var track:SubtitlesTrack = new SubtitlesTrack(playlistTrack.name, playlistTrack.lang, SubtitlesTrack.FROM_PLAYLIST, idx, isDefault, isForced, autoSelect);
 						
                         CONFIG::LOGGING {
                             Log.debug("subtitles track[" + subtitlesTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + subtitlesPlaylistTrack.name);
@@ -112,7 +112,10 @@ package org.mangui.hls.controller {
 						if (isForced) _forcedTrackId = idx;
 						
 						// Technical Note TN2288: https://developer.apple.com/library/ios/technotes/tn2288/_index.html
-						if (autoSelect && playlistTrack.lang.substr(0,2) == Capabilities.language) autoSelectId = idx;
+						if (autoSelect 
+							&& playlistTrack.lang.toLowerCase().substr(0,2) == Capabilities.language) {
+							autoSelectId = idx;
+						}
                     }
                 }
             }
