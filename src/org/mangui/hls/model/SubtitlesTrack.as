@@ -10,22 +10,24 @@ package org.mangui.hls.model {
         public var source : int;
         public var isDefault : Boolean;
         public var isForced : Boolean;
+        public var autoSelect : Boolean;
         public var level : Level;
-
+		
 		/**
 		 * Subtitles track model, based on alternative audio track model
 		 * @author	Neil Rackett
 		 */
-        public function SubtitlesTrack(title : String, source : int, id : int, isDefault : Boolean, isForced : Boolean) {
+        public function SubtitlesTrack(title:String, source:int, id:int, isDefault:Boolean=false, isForced:Boolean=false, autoSelect:Boolean=false) {
             this.title = title;
             this.source = source;
             this.id = id;
             this.isDefault = isDefault;
             this.isForced = isForced;
+            this.autoSelect = autoSelect;
         }
 
         public function toString() : String {
-            return "SubtitlesTrack ID: " + id + " Title: " + title + " Source: " + source + " Default: " + isDefault + " Forced: " + isForced;
+            return "SubtitlesTrack ID: " + id + " Title: " + title + " Source: " + source + " Default: " + isDefault + " Forced: " + isForced + " Auto Select: " + autoSelect;
         }
     }
 }

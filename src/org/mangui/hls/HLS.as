@@ -22,6 +22,7 @@ package org.mangui.hls {
     import org.mangui.hls.loader.SubtitlesLevelLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.model.Subtitles;
     import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
@@ -278,9 +279,18 @@ package org.mangui.hls {
 		}
 		
 		/** How many subtitles tracks does the current media have? */
-		public function get numSubtitlesTracks():uint
-		{
+		public function get numSubtitlesTracks():uint {
 			return !!subtitlesTracks ? subtitlesTracks.length : 0;
+		}
+		
+		/** The ID of the default subtitles track */
+		public function get defaultSubtitlesTrack():int {
+			return _subtitlesTrackController.defaultSubtitlesTrack;
+		}
+		
+		/** Does the current subtitles playlist contain forced subtitles? */
+		public function get hasForcedSubtitles():Boolean {
+			return _subtitlesTrackController.hasForcedSubtitles;
 		}
 		
         /** get audio tracks list**/
