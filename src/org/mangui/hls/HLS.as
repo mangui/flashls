@@ -22,7 +22,6 @@ package org.mangui.hls {
     import org.mangui.hls.loader.SubtitlesLevelLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
-    import org.mangui.hls.model.Subtitles;
     import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.SubtitlesPlaylistTrack;

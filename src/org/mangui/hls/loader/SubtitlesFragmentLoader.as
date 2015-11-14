@@ -14,6 +14,7 @@ package org.mangui.hls.loader
 	
 	import org.mangui.hls.HLS;
 	import org.mangui.hls.HLSSettings;
+	import org.mangui.hls.constant.HLSPlayStates;
 	import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.event.HLSMediatime;
@@ -53,7 +54,7 @@ package org.mangui.hls.loader
 			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
 			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
-			_hls.addEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
+			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
 			
 			_loader = new URLLoader();
 			_loader.addEventListener(Event.COMPLETE, loader_completeHandler);
@@ -74,7 +75,7 @@ package org.mangui.hls.loader
 			_hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.removeEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
 			_hls.removeEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
-			_hls.removeEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
+			_hls.removeEventListener(HLSEvent.PLAYBACK_STATE, playbackStateHandler);
 			_hls = null;
 			
 			_loader.removeEventListener(Event.COMPLETE, loader_completeHandler);
@@ -124,9 +125,12 @@ package org.mangui.hls.loader
 			_seqSubsIndex = 0;			
 		}
 		
-		protected function manifestLoadingHandler(event:HLSEvent):void
+		protected function playbackStateHandler(event:HLSEvent):void
 		{
-			stop();
+			if (event.state == HLSPlayStates.IDLE)
+			{
+				stop();
+			}
 		}
 		
 		/**
