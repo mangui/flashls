@@ -9,6 +9,8 @@ package org.mangui.hls.loader
 	import flash.events.SecurityErrorEvent;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.utils.clearTimeout;
+	import flash.utils.setTimeout;
 	
 	import org.mangui.hls.HLS;
 	import org.mangui.hls.HLSSettings;
@@ -40,6 +42,7 @@ package org.mangui.hls.loader
 		protected var _currentSubtitles:Subtitles;
 		protected var _seqSubsIndex:int;
 		protected var _remainingRetries:int;
+		protected var _retryTimeout:uint;
 		
 		public function SubtitlesFragmentLoader(hls:HLS)
 		{
@@ -133,6 +136,9 @@ package org.mangui.hls.loader
 		 */
 		protected function fragmentPlayingHandler(event:HLSEvent):void
 		{
+			// If subtitles are disabled, there's nothing to do
+			if (_hls.subtitlesTrack == -1) return;
+			
 			if (_hls.type == HLSTypes.LIVE)
 			{
 				_currentSubtitles = null;
@@ -217,6 +223,9 @@ package org.mangui.hls.loader
 			}
 		}
 		
+		/**
+		 * Are the specified subtitles the correct ones for the specified position?
+		 */
 		protected function isCurrent(subtitles:Subtitles, position:Number):Boolean
 		{
 			return subtitles 
@@ -257,6 +266,7 @@ package org.mangui.hls.loader
 		 */
 		protected function loadFragment():void
 		{
+			clearTimeout(_retryTimeout);
 			_loader.load(new URLRequest(_fragment.url));
 		}
 		
@@ -296,9 +306,12 @@ package org.mangui.hls.loader
 				Log.error(_remainingRetries+" retries remaining");
 			}
 			
+			// We only wait 1s to retry because if we waited any longer the playhead will probably
+			// have moved past the position where these subtitles were supposed to be used
 			if (_remainingRetries--)
 			{
-				loadFragment();
+				clearTimeout(_retryTimeout);
+				_retryTimeout = setTimeout(loadFragment, 1000);
 			}
 			else
 			{
