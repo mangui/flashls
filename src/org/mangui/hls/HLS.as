@@ -240,7 +240,7 @@ package org.mangui.hls {
 
         /** Load and parse a new HLS URL **/
         public function load(url : String) : void {
-            _level = 0;
+			_level = 0;
             _hlsNetStream.close();
             _levelLoader.load(url);
         };

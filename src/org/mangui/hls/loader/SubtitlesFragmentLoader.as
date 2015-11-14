@@ -14,6 +14,7 @@ package org.mangui.hls.loader
 	
 	import org.mangui.hls.HLS;
 	import org.mangui.hls.HLSSettings;
+	import org.mangui.hls.constant.HLSPlayStates;
 	import org.mangui.hls.constant.HLSTypes;
 	import org.mangui.hls.event.HLSEvent;
 	import org.mangui.hls.event.HLSMediatime;
@@ -52,7 +53,7 @@ package org.mangui.hls.loader
 			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
 			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
-			_hls.addEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
+			_hls.addEventListener(HLSEvent.PLAYBACK_STATE, manifestLoadingHandler);
 			
 			_loader = new URLLoader();
 			_loader.addEventListener(Event.COMPLETE, loader_completeHandler);
@@ -96,9 +97,10 @@ package org.mangui.hls.loader
 		 */
 		public function stop():void
 		{
-			if (_currentSubtitles)
+			if (_currentSubtitles !== undefined)
 			{
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, null));
+				_currentSubtitles = undefined;
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, undefined));
 			}
 			
 			try { _loader.close(); }
@@ -121,7 +123,7 @@ package org.mangui.hls.loader
 			_seqSubsIndex = 0;			
 		}
 		
-		protected function manifestLoadingHandler(event:HLSEvent=null):void
+		protected function manifestLoadingHandler(event:HLSEvent):void
 		{
 			stop();
 		}
@@ -189,7 +191,7 @@ package org.mangui.hls.loader
 			if (subs)
 			{
 				var mt:HLSMediatime = event.mediatime;
-				var matchingSubtitles:Subtitles;
+				var matchingSubtitles:Subtitles = undefined;
 				var i:uint;
 				var length:uint = subs.length;
 				
