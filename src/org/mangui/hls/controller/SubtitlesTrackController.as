@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
+    import flash.system.Capabilities;
+    
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.event.HLSEvent;
@@ -92,20 +94,25 @@ package org.mangui.hls.controller {
             if (streamId && _hls.subtitlesPlaylistTracks) {
                 // try to find subtitles streams matching with this ID
                 for (var idx : int = 0; idx < _hls.subtitlesPlaylistTracks.length; idx++) {
-                    var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[idx];
+                    var playlistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[idx];
 					
-                    if (subtitlesPlaylistTrack.group_id == streamId) {
-                        var isDefault : Boolean = subtitlesPlaylistTrack.default_track;
-						var isForced : Boolean = subtitlesPlaylistTrack.forced;
-						var autoSelect : Boolean = subtitlesPlaylistTrack.autoselect;
+                    if (playlistTrack.group_id == streamId) {
+                        var isDefault : Boolean = playlistTrack.default_track;
+						var isForced : Boolean = playlistTrack.forced;
+						var autoSelect : Boolean = playlistTrack.autoselect;
+						var track:SubtitlesTrack = new SubtitlesTrack(playlistTrack.name, SubtitlesTrack.FROM_PLAYLIST, idx, isDefault, isForced, autoSelect);
+						
                         CONFIG::LOGGING {
                             Log.debug("subtitles track[" + subtitlesTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + subtitlesPlaylistTrack.name);
                         }
-                        subtitlesTrackList.push(new SubtitlesTrack(subtitlesPlaylistTrack.name, SubtitlesTrack.FROM_PLAYLIST, idx, isDefault, isForced, autoSelect));
+						
+                        subtitlesTrackList.push(track);
 						
 						if (isDefault) _defaultTrackId = idx;
 						if (isForced) _forcedTrackId = idx;
-						if (isForced || autoSelect) autoSelectId = idx;
+						
+						// Technical Note TN2288: https://developer.apple.com/library/ios/technotes/tn2288/_index.html
+						if (autoSelect && playlistTrack.lang.substr(0,2) == Capabilities.language) autoSelectId = idx;
                     }
                 }
             }
@@ -129,6 +136,12 @@ package org.mangui.hls.controller {
             }
 			
 			// Automatically select forced subtitles track
+			if (HLSSettings.autoSelectForcedSubtitles && _forcedTrackId != -1){
+				subtitlesTrack = _forcedTrackId;
+				return;
+			}
+			
+			// Automatically select auto-selectable subtitles track that matches current locale
 			if (HLSSettings.autoSelectSubtitles && autoSelectId != -1) {
 				subtitlesTrack = autoSelectId;
 			}
