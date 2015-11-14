@@ -52,6 +52,7 @@ package org.mangui.hls.loader
 			_hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.addEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
 			_hls.addEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
+			_hls.addEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
 			
 			_loader = new URLLoader();
 			_loader.addEventListener(Event.COMPLETE, loader_completeHandler);
@@ -71,6 +72,7 @@ package org.mangui.hls.loader
 			_hls.removeEventListener(HLSEvent.FRAGMENT_PLAYING, fragmentPlayingHandler);
 			_hls.removeEventListener(HLSEvent.MEDIA_TIME, mediaTimeHandler);
 			_hls.removeEventListener(HLSEvent.SEEK_STATE, seekStateHandler);
+			_hls.removeEventListener(HLSEvent.MANIFEST_LOADING, manifestLoadingHandler);
 			_hls = null;
 			
 			_loader.removeEventListener(Event.COMPLETE, loader_completeHandler);
@@ -94,6 +96,11 @@ package org.mangui.hls.loader
 		 */
 		public function stop():void
 		{
+			if (_currentSubtitles)
+			{
+				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, null));
+			}
+			
 			try { _loader.close(); }
 			catch (e:Error) {};
 		}
@@ -110,13 +117,13 @@ package org.mangui.hls.loader
 			
 			stop();
 			
-			if (_currentSubtitles)
-			{
-				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, null));
-			}
-			
 			_seqSubs = [];
 			_seqSubsIndex = 0;			
+		}
+		
+		protected function manifestLoadingHandler(event:HLSEvent=null):void
+		{
+			stop();
 		}
 		
 		/**
