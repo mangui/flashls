@@ -135,6 +135,7 @@ package org.mangui.hls.loader
 		{
 			if (_hls.type == HLSTypes.LIVE)
 			{
+				_currentSubtitles = null;
 				_seqNum = event.playMetrics.seqnum;
 				_seqStartPosition = _hls.position;
 				_seqSubsIndex = 0;
@@ -161,13 +162,21 @@ package org.mangui.hls.loader
 		 */
 		protected function mediaTimeHandler(event:HLSEvent):void
 		{
+			// If subtitles are disabled, there's nothing to do
+			if (_hls.subtitlesTrack == -1) return;
+			
+			var position:Number = seqPosition;
+			
+			// If the subtitles haven't changed, there's nothing to do
+			if (isCurrent(_currentSubtitles, position)) return;
+			
+			// Get the subtitles list for the current sequence (always 0 for VOD)
 			var subs:Vector.<Subtitles> = _seqSubs[_seqNum];
 			
 			if (subs)
 			{
 				var mt:HLSMediatime = event.mediatime;
 				var matchingSubtitles:Subtitles;
-				var position:Number = seqPosition;
 				var i:uint;
 				var length:uint = subs.length;
 				
@@ -181,7 +190,7 @@ package org.mangui.hls.loader
 						break;
 					}
 					
-					if (subtitles.startPosition <= position && subtitles.endPosition >= position)
+					if (isCurrent(subtitles, position))
 					{
 						matchingSubtitles = subtitles;
 						break;
@@ -206,6 +215,13 @@ package org.mangui.hls.loader
 					_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, matchingSubtitles));
 				}
 			}
+		}
+		
+		protected function isCurrent(subtitles:Subtitles, position:Number):Boolean
+		{
+			return subtitles 
+				&& subtitles.startPosition <= position 
+				&& subtitles.endPosition >= position
 		}
 		
 		/**
