@@ -287,6 +287,11 @@ package org.mangui.hls {
 			return _subtitlesTrackController.defaultSubtitlesTrack;
 		}
 		
+		/** The ID of the forced subtitles track */
+		public function get forcedSubtitlesTrack():int {
+			return _subtitlesTrackController.forcedSubtitlesTrack;
+		}
+		
 		/** Does the current subtitles playlist contain forced subtitles? */
 		public function get hasForcedSubtitles():Boolean {
 			return _subtitlesTrackController.hasForcedSubtitles;
