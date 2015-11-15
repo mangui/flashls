@@ -57,6 +57,7 @@ package org.mangui.hls.loader {
         /* playlist retry timeout */
         private var _retryTimeout : Number;
         private var _retryCount : int;
+        private var _redundantRetryCount:int;
         /* alt audio tracks */
         private var _altAudioTracks : Vector.<AltAudioTrack>;
         /* subtitle tracks */
@@ -106,12 +107,26 @@ package org.mangui.hls.loader {
                 _retryCount++;
                 return;
             } else {
-                // if we have redundant streams left for that level, switch to it
-                if(_loadLevel < _levels.length && _levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {
+                // if we have redundant streams left for that level, switch to it, otherwise retry primary stream
+                if(_loadLevel < _levels.length && _levels[_loadLevel].redundantStreamsNb>0 ) {
                     CONFIG::LOGGING {
                         Log.warn("max load retry reached, switch to redundant stream");
                     }
+                    // try next redundant stream
+                    if (_levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {
                     _levels[_loadLevel].redundantStreamId++;
+                    }
+                    // retry primary stream if the last redundant stream has failed and HLSSettings.manifestRedundantLoadmaxRetry allows
+                    else if ((HLSSettings.manifestRedundantLoadmaxRetry > 0 && _redundantRetryCount < HLSSettings.manifestRedundantLoadmaxRetry ) || HLSSettings.manifestRedundantLoadmaxRetry==-1 ) {
+                            _redundantRetryCount++;
+                            _levels[_loadLevel].redundantStreamId = 0;
+                    }
+                    else {
+                        code = HLSError.MANIFEST_LOADING_IO_ERROR;
+                        txt = "Cannot load M3U8: " + event.text;
+                        dispatchHLSError(code, txt);
+                        return;
+                    }
                     _timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
                     _retryTimeout = 1000;
                     _retryCount = 0;
@@ -127,6 +142,10 @@ package org.mangui.hls.loader {
                     }
                 }
             }
+            dispatchHLSError(code, txt);
+        }
+
+        private function dispatchHLSError(code:int, txt:String):void {
             var hlsError : HLSError = new HLSError(code, _url, txt);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
         }
@@ -168,6 +187,7 @@ package org.mangui.hls.loader {
             _reloadPlaylistTimer = getTimer();
             _retryTimeout = 1000;
             _retryCount = 0;
+            _redundantRetryCount = 0;
             _altAudioTracks = null;
             _subtitlesPlaylistTracks = null;
             _loadManifest();
