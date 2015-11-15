@@ -28,7 +28,7 @@ package org.mangui.hls.utils
 		 * Parse a string into a series of Subtitles objects and return
 		 * them in a Vector
 		 */
-		static public function parse(data:String, offset:Number=0):Vector.<Subtitles>
+		static public function parse(data:String, offset:Number=0, keepEmpty:Boolean=false):Vector.<Subtitles>
 		{
 			var results:Vector.<Subtitles> = new Vector.<Subtitles>;
 			var lines:Array = data.replace(/\balign:.*+/ig,'').split(/(?:(?:\r\n|\r|\n){2,})/);
@@ -42,7 +42,7 @@ package org.mangui.hls.utils
 				var endPosition:Number = offset+parseTime(matches[3]);
 				var text:String = StringUtil.trim((matches[4] || '').replace(/(\r\n|\r|\|)/g, '\n'));
 				
-				if (text)
+				if (keepEmpty || text)
 				{
 					var subs:Subtitles = new Subtitles(startPosition, endPosition, text);
 					

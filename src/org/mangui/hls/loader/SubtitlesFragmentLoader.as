@@ -37,11 +37,11 @@ package org.mangui.hls.loader
 		protected var _loader:URLLoader;
 		protected var _fragments:Vector.<Fragment>;
 		protected var _fragment:Fragment;
-		protected var _seqSubs:Array;
+		protected var _seqSubs:Object;
 		protected var _seqNum:Number;
 		protected var _seqStartPosition:Number;
 		protected var _currentSubtitles:Subtitles;
-		protected var _seqSubsIndex:int;
+		protected var _seqIndex:int;
 		protected var _remainingRetries:int;
 		protected var _retryTimeout:uint;
 		protected var _emptySubtitles:Subtitles;
@@ -61,8 +61,8 @@ package org.mangui.hls.loader
 			_loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
 			_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
 			
-			_seqSubs = [];
-			_seqSubsIndex = 0;
+			_seqSubs = {};
+			_seqIndex = 0;
 			_emptySubtitles = new Subtitles(-1, -1, '');
 		}
 		
@@ -121,8 +121,8 @@ package org.mangui.hls.loader
 			
 			stop();
 			
-			_seqSubs = [];
-			_seqSubsIndex = 0;			
+			_seqSubs = {};
+			_seqIndex = 0;			
 		}
 		
 		protected function playbackStateHandler(event:HLSEvent):void
@@ -158,7 +158,23 @@ package org.mangui.hls.loader
 				_currentSubtitles = _emptySubtitles;
 				_seqNum = event.playMetrics.seqnum;
 				_seqStartPosition = _hls.position;
-				_seqSubsIndex = 0;
+				_seqIndex = 0;
+				
+				try
+				{
+					var targetDuration:Number = _hls.subtitlesTracks[_hls.subtitlesTrack].level.targetduration
+					var dvrWindowDuration:Number = _hls.liveSlidingMain;
+					var firstSeqNum:Number = _seqNum - (dvrWindowDuration/targetDuration);
+					
+					for (var seqNum:String in _seqSubs)
+					{
+						if (parseInt(seqNum) < firstSeqNum)
+						{
+							delete _seqSubs[seqNum];
+						}
+					}
+				}
+				catch(e:Error) {}
 				
 				return;
 			}
@@ -200,7 +216,7 @@ package org.mangui.hls.loader
 				var i:uint;
 				var length:uint = subs.length;
 				
-				for (i=_seqSubsIndex; i<length; ++i)
+				for (i=_seqIndex; i<length; ++i)
 				{
 					var subtitles:Subtitles = subs[i];
 					
@@ -221,7 +237,7 @@ package org.mangui.hls.loader
 				// for big VOD, we start the next search at the previous jump off point
 				if (_hls.type == HLSTypes.VOD)
 				{
-					_seqSubsIndex = i;
+					_seqIndex = i;
 				}
 				
 				if (matchingSubtitles != _currentSubtitles)
@@ -252,7 +268,7 @@ package org.mangui.hls.loader
 		 */
 		protected function seekStateHandler(event:Event):void
 		{
-			_seqSubsIndex = 0;
+			_seqIndex = 0;
 		}
 		
 		/**
