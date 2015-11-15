@@ -332,6 +332,18 @@ package org.mangui.hls {
 		public static var autoSelectSubtitles:Boolean = true;
 		
 		/**
+		 * autoSelectDefaultSubtitles
+		 * 
+		 * Should a subtitles track automatically be selected is it is flagged 
+		 * as DEFAULT=YES? Default subtitles will be selected in preference to 
+		 * other AUTOSELECT=YES subtitles, but not in preference to subtitles
+		 * flagged FORCED=YES.
+		 * 
+		 * Default is true 
+		 */
+		public static var autoSelectDefaultSubtitles:Boolean = true;
+		
+		/**
 		 * autoSelectForcedSubtitles
 		 * 
 		 * Should a subtitles track automatically be selected is it is flagged 

@@ -138,16 +138,24 @@ package org.mangui.hls.controller {
 				_subtitlesTracksMerge();
             }
 			
-			// Automatically select forced subtitles track
+			// PRIORITY #1: Automatically select forced subtitles track
 			if (HLSSettings.autoSelectForcedSubtitles && _forcedTrackId != -1){
 				subtitlesTrack = _forcedTrackId;
 				return;
 			}
 			
-			// Automatically select auto-selectable subtitles track that matches current locale
+			// PRIORITY #2: Automatically select default subtitles track
+			if (HLSSettings.autoSelectDefaultSubtitles && _defaultTrackId != -1){
+				subtitlesTrack = _defaultTrackId;
+				return;
+			}
+			
+			// PRIORITY #3: Automatically select auto-select subtitles track that matches current locale
 			if (HLSSettings.autoSelectSubtitles && autoSelectId != -1) {
 				subtitlesTrack = autoSelectId;
 			}
+			
+			// Otherwise leave subtitles off/unselected
         }
 		
 		private function _subtitlesTracksMerge() : void {
