@@ -9,6 +9,7 @@ package org.mangui.hls.loader
 	import flash.events.SecurityErrorEvent;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
+	import flash.utils.Dictionary;
 	import flash.utils.clearTimeout;
 	import flash.utils.setTimeout;
 	
@@ -37,7 +38,7 @@ package org.mangui.hls.loader
 		protected var _loader:URLLoader;
 		protected var _fragments:Vector.<Fragment>;
 		protected var _fragment:Fragment;
-		protected var _seqSubs:Object;
+		protected var _seqSubs:Dictionary;
 		protected var _seqNum:Number;
 		protected var _seqStartPosition:Number;
 		protected var _currentSubtitles:Subtitles;
@@ -61,7 +62,7 @@ package org.mangui.hls.loader
 			_loader.addEventListener(IOErrorEvent.IO_ERROR, loader_errorHandler);
 			_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, loader_errorHandler);
 			
-			_seqSubs = {};
+			_seqSubs = new Dictionary(true);
 			_seqIndex = 0;
 			_emptySubtitles = new Subtitles(-1, -1, '');
 		}
@@ -121,7 +122,7 @@ package org.mangui.hls.loader
 			
 			stop();
 			
-			_seqSubs = {};
+			_seqSubs = new Dictionary();
 			_seqIndex = 0;			
 		}
 		
@@ -166,9 +167,9 @@ package org.mangui.hls.loader
 					var dvrWindowDuration:Number = _hls.liveSlidingMain;
 					var firstSeqNum:Number = _seqNum - (dvrWindowDuration/targetDuration);
 					
-					for (var seqNum:String in _seqSubs)
+					for (var seqNum:* in _seqSubs)
 					{
-						if (parseInt(seqNum) < firstSeqNum)
+						if (seqNum is Number && seqNum < firstSeqNum)
 						{
 							delete _seqSubs[seqNum];
 						}
