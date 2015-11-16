@@ -145,28 +145,33 @@ package org.mangui.hls.loader {
 		 * sequence, and VOD content relative to the entire video duration 
 		 */
 		protected function fragmentPlayingHandler(event:HLSEvent):void {
-			// If subtitles are disabled, there's nothing to do
-			if (_hls.subtitlesTrack == -1) return;
 			
 			if (_hls.type == HLSTypes.LIVE) {
 				
-				_currentSubtitles = _emptySubtitles;
+				// Keep track all the time to prevent delay in subtitles starting when selected
 				_seqNum = event.playMetrics.seqnum;
 				_seqStartPosition = _hls.position;
 				_seqIndex = 0;
 				
-				try {
-					var targetDuration:Number = _hls.subtitlesTracks[_hls.subtitlesTrack].level.targetduration
-					var dvrWindowDuration:Number = _hls.liveSlidingMain;
-					var firstSeqNum:Number = _seqNum - (dvrWindowDuration/targetDuration);
+				// Only needed if subs are selected and being listened for
+				if (_hls.subtitlesTrack != -1
+					&& _hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
 					
-					for (var seqNum:* in _seqSubs) {
-						if (seqNum is Number && seqNum < firstSeqNum) {
-							delete _seqSubs[seqNum];
+					_currentSubtitles = _emptySubtitles;
+					
+					try {
+						var targetDuration:Number = _hls.subtitlesTracks[_hls.subtitlesTrack].level.targetduration
+						var dvrWindowDuration:Number = _hls.liveSlidingMain;
+						var firstSeqNum:Number = _seqNum - (dvrWindowDuration/targetDuration);
+						
+						for (var seqNum:* in _seqSubs) {
+							if (seqNum is Number && seqNum < firstSeqNum) {
+								delete _seqSubs[seqNum];
+							}
 						}
 					}
+					catch(e:Error) {}
 				}
-				catch(e:Error) {}
 				
 				return;
 			}
