@@ -109,7 +109,7 @@ package org.mangui.hls.loader {
                 if (!Manifest.hasEndlist(string)) {
                     //var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*(frags.length-1)*subtitlesLevel.targetduration - getTimer());
                     //var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*(frags.length-1)*subtitlesLevel.averageduration - getTimer());
-                    var timeout : int = Math.max(10000, _reloadPlaylistTimer+subtitlesLevel.averageduration-getTimer());
+                    var timeout : int = Math.max(10000, _reloadPlaylistTimer+1000*subtitlesLevel.averageduration-getTimer());
 					
                     CONFIG::LOGGING {
                         Log.debug("Subtitles Level Live Playlist parsing finished: reload in " + timeout + " ms");
