@@ -378,6 +378,21 @@ package org.mangui.hls {
 		 */
 		public static var keepEmptySubtitles:Boolean = false;
 		
+		/**
+		 * ignoreGapsInLiveSubtitles
+		 * 
+		 * By default, when there is a gap between subtitles for live streams
+		 * a generic empty subtitle is dispatched to tell the listener that 
+		 * the currently displayed subtitles should be cleared.
+		 * 
+		 * However, if your live stream already include empty subtitles to
+		 * fill these gaps, you may prefer to use this option, in combination
+		 * with keepEmptySubtitles, to suppress these events. 
+		 * 
+		 * Default is false
+		 */
+		public static var ignoreGapsInLiveSubtitles:Boolean = false;
+		
         /**
          * useHardwareVideoDecoder
          *
