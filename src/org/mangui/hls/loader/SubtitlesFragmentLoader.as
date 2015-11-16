@@ -291,7 +291,7 @@ package org.mangui.hls.loader {
 		 */
 		protected function loader_completeHandler(event:Event):void {
 			
-			var parsed:Vector.<Subtitles> = WebVTTParser.parse(_loader.data);
+			var parsed:Vector.<Subtitles> = WebVTTParser.parse(_loader.data, 0, HLSSettings.keepEmptySubtitles);
 			
 			if (_hls.type == HLSTypes.LIVE) {
 				_seqSubs[_fragment.seqnum] = parsed;

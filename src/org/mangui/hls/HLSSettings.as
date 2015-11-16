@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
-    import org.mangui.hls.constant.HLSSeekMode;
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
+    import org.mangui.hls.constant.HLSSeekMode;
 
     public final class HLSSettings extends Object {
         /**
@@ -363,6 +363,20 @@ package org.mangui.hls {
 		 * Default is true 
 		 */
 		public static var autoSelectForcedSubtitles:Boolean = true;
+		
+		/**
+		 * keepEmptySubtitles
+		 * 
+		 * By default, empty subtitles are ignored and a generic empty subtitle
+		 * is used to fill the gaps to minimize the number of SUBTITLES_CHANGE
+		 * it is necessary to dispatch.
+		 * 
+		 * When set to true, all subtitles will be parsed and dispatched, even
+		 * if they have no content.
+		 * 
+		 * Default is false
+		 */
+		public static var keepEmptySubtitles:Boolean = false;
 		
         /**
          * useHardwareVideoDecoder
