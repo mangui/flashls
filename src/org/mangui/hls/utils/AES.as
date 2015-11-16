@@ -86,6 +86,9 @@
 					decrypted = _decryptChunk(); 
 				} catch (e:Error) {
 					// If _decryptChunk fails, give up and move on
+					CONFIG::LOGGING {
+						Log.error("Decryption error: "+e.message);
+					}
 					decrypted = false; 
 				}
             // dont spend more than 10ms in the decrypt timer to avoid blocking/freezing video
