@@ -188,8 +188,10 @@ package org.mangui.hls.loader {
 		 * events as appropriate
 		 */
 		protected function mediaTimeHandler(event:HLSEvent):void {
-			// If subtitles are disabled, there's nothing to do
-			if (_hls.subtitlesTrack == -1) return;
+			// If subtitles are disabled or nobody's listening, there's nothing to do
+			if (_hls.subtitlesTrack == -1 || !_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
+				return;
+			}
 			
 			var position:Number = seqPosition;
 			
