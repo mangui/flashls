@@ -7,6 +7,10 @@
     import flash.utils.ByteArray;
     import flash.events.Event;
 
+	CONFIG::LOGGING {
+		import org.mangui.hls.utils.Log;
+	}
+
     /**
      * Contains Utility functions for AES-128 CBC Decryption
      */
@@ -131,12 +135,19 @@
             decrypt.length = len;
 
             for (var i : uint = 0; i < len / 16; i++) {
-                // read src byte array
-                src[0] = crypt.readUnsignedInt();
-                src[1] = crypt.readUnsignedInt();
-                src[2] = crypt.readUnsignedInt();
-                src[3] = crypt.readUnsignedInt();
-
+                
+				try {
+					// read src byte array
+	                src[0] = crypt.readUnsignedInt();
+	                src[1] = crypt.readUnsignedInt();
+	                src[2] = crypt.readUnsignedInt();
+	                src[3] = crypt.readUnsignedInt();
+				} catch(e:Error) {
+					CONFIG::LOGGING {
+						Log.error("Error while decrypting CBC: "+e.message)
+					}
+				}
+				
                 // AES decrypt src vector into dst vector
                 _key.decrypt128(src, dst);
 

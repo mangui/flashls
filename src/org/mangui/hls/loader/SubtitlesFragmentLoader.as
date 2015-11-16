@@ -64,6 +64,7 @@ package org.mangui.hls.loader {
 			_seqSubs = new Dictionary(true);
 			_seqIndex = 0;
 			_emptySubtitles = new Subtitles(-1, -1, '');
+			_fragments = new Vector.<Fragment>;
 		}
 		
 		public function dispose():void {
@@ -84,6 +85,8 @@ package org.mangui.hls.loader {
 			_loader = null;
 			
 			_seqSubs = null;
+			_fragments = null;
+			_fragment = null;
 		}
 		
 		/**
@@ -98,8 +101,7 @@ package org.mangui.hls.loader {
 		 */
 		public function stop():void {
 			
-			if (_currentSubtitles)
-			{
+			if (_currentSubtitles) {
 				_currentSubtitles = null;
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, _emptySubtitles));
 			}
@@ -107,6 +109,8 @@ package org.mangui.hls.loader {
 			try {
 				_loader.close(); 
 			} catch (e:Error) {};
+			
+			_fragments.splice(0, _fragments.length);
 		}
 		
 		/**
@@ -134,7 +138,7 @@ package org.mangui.hls.loader {
 		 * Preload all of the subtitles listed in the loaded subtitles level definitions
 		 */
 		protected function subtitlesLevelLoadedHandler(event:HLSEvent):void {
-			_fragments = _hls.subtitlesTracks[_hls.subtitlesTrack].level.fragments;
+			_fragments = _fragments.concat(_hls.subtitlesTracks[_hls.subtitlesTrack].level.fragments);
 			loadNextFragment();
 		}
 		
@@ -233,7 +237,12 @@ package org.mangui.hls.loader {
 					_seqIndex = i;
 				}
 				
-				if (matchingSubtitles != _currentSubtitles) {
+				var suppressDispatch:Boolean = 
+						HLSSettings.ignoreGapsInLiveSubtitles 
+						&& _hls.type == HLSTypes.LIVE
+						&& matchingSubtitles == _emptySubtitles;
+				
+				if (matchingSubtitles != _currentSubtitles && !suppressDispatch) {
 					
 					CONFIG::LOGGING {
 						Log.debug("Changing subtitles to: "+matchingSubtitles);
