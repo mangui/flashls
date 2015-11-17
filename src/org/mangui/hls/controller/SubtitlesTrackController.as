@@ -13,10 +13,10 @@ package org.mangui.hls.controller {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-	
+    
     /*
      * Class that handles subtitles tracks, based on alternative audio controller
-	 * @author	Neil Rackett
+     * @author    Neil Rackett
      */
     public class SubtitlesTrackController {
         /** Reference to the HLS controller. **/
@@ -27,18 +27,18 @@ package org.mangui.hls.controller {
         private var _subtitlesTracks : Vector.<SubtitlesTrack>;
         /** current subtitles track id **/
         private var _subtitlesTrackId : int;
-		/** default subtitles track id **/
-		private var _defaultTrackId : int;
-		/** forced subtitles track id **/
-		private var _forcedTrackId : int;
+        /** default subtitles track id **/
+        private var _defaultTrackId : int;
+        /** forced subtitles track id **/
+        private var _forcedTrackId : int;
 
         public function SubtitlesTrackController(hls : HLS) {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
-			
-			_defaultTrackId = -1;
-			_forcedTrackId = -1;
+            
+            _defaultTrackId = -1;
+            _forcedTrackId = -1;
         }
 
         public function dispose() : void {
@@ -67,10 +67,10 @@ package org.mangui.hls.controller {
         }
 
         private function _manifestLoadedHandler(event : HLSEvent) : void {
-			
+            
             // reset subtitles tracks
-			_defaultTrackId = -1;
-			_forcedTrackId = -1;
+            _defaultTrackId = -1;
+            _forcedTrackId = -1;
             _subtitlesTrackId = -1;
             _subtitlesTracksFromManifest = new Vector.<SubtitlesTrack>();
             _updateSubtitlesTrackForLevel(_hls.loadLevel);
@@ -86,40 +86,40 @@ package org.mangui.hls.controller {
 
         private function _updateSubtitlesTrackForLevel(level : uint) : void {
             
-			var subtitlesTrackList : Vector.<SubtitlesTrack> = new Vector.<SubtitlesTrack>();
+            var subtitlesTrackList : Vector.<SubtitlesTrack> = new Vector.<SubtitlesTrack>();
             var streamId : String = _hls.levels[level].subtitles_stream_id;
-			var autoSelectId : int = -1;
-			
-			// check if subtitles stream id is set, and subtitles tracks available
+            var autoSelectId : int = -1;
+            
+            // check if subtitles stream id is set, and subtitles tracks available
             if (streamId && _hls.subtitlesPlaylistTracks) {
                 // try to find subtitles streams matching with this ID
                 for (var idx : int = 0; idx < _hls.subtitlesPlaylistTracks.length; idx++) {
                     var playlistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[idx];
-					
+                    
                     if (playlistTrack.group_id == streamId) {
                         var isDefault : Boolean = playlistTrack.default_track;
-						var isForced : Boolean = playlistTrack.forced;
-						var autoSelect : Boolean = playlistTrack.autoselect;
-						var track:SubtitlesTrack = new SubtitlesTrack(playlistTrack.name, idx, SubtitlesTrack.FROM_PLAYLIST, playlistTrack.lang, isDefault, isForced, autoSelect);
-						
+                        var isForced : Boolean = playlistTrack.forced;
+                        var autoSelect : Boolean = playlistTrack.autoselect;
+                        var track:SubtitlesTrack = new SubtitlesTrack(playlistTrack.name, idx, SubtitlesTrack.FROM_PLAYLIST, playlistTrack.lang, isDefault, isForced, autoSelect);
+                        
                         CONFIG::LOGGING {
                             Log.debug("subtitles track[" + subtitlesTrackList.length + "]:" + (isDefault ? "default:" : "alternate:") + playlistTrack.name);
                         }
-						
+                        
                         subtitlesTrackList.push(track);
-						
-						if (isDefault) _defaultTrackId = idx;
-						if (isForced) _forcedTrackId = idx;
-						
-						// Technical Note TN2288: https://developer.apple.com/library/ios/technotes/tn2288/_index.html
-						if (autoSelect 
-							&& playlistTrack.lang.toLowerCase().substr(0,2) == Capabilities.language) {
-							autoSelectId = idx;
-						}
+                        
+                        if (isDefault) _defaultTrackId = idx;
+                        if (isForced) _forcedTrackId = idx;
+                        
+                        // Technical Note TN2288: https://developer.apple.com/library/ios/technotes/tn2288/_index.html
+                        if (autoSelect 
+                            && playlistTrack.lang.toLowerCase().substr(0,2) == Capabilities.language) {
+                            autoSelectId = idx;
+                        }
                     }
                 }
             }
-			
+            
             // check if subtitles tracks matching with current level have changed since last time
             var subtitlesTrackChanged : Boolean = false;
             if (_subtitlesTracksFromManifest.length != subtitlesTrackList.length) {
@@ -131,44 +131,44 @@ package org.mangui.hls.controller {
                     }
                 }
             }
-			
+            
             // update subtitles list
             if (subtitlesTrackChanged) {
                 _subtitlesTracksFromManifest = subtitlesTrackList;
-				_subtitlesTracksMerge();
+                _subtitlesTracksMerge();
             }
-			
-			// PRIORITY #1: Automatically select forced subtitles track
-			if (HLSSettings.autoSelectForcedSubtitles && _forcedTrackId != -1){
-				subtitlesTrack = _forcedTrackId;
-				return;
-			}
-			
-			// PRIORITY #2: Automatically select default subtitles track
-			if (HLSSettings.autoSelectDefaultSubtitles && _defaultTrackId != -1){
-				subtitlesTrack = _defaultTrackId;
-				return;
-			}
-			
-			// PRIORITY #3: Automatically select auto-select subtitles track that matches current locale
-			if (HLSSettings.autoSelectSubtitles && autoSelectId != -1) {
-				subtitlesTrack = autoSelectId;
-			}
-			
-			// Otherwise leave subtitles off/unselected
+            
+            // PRIORITY #1: Automatically select forced subtitles track
+            if (HLSSettings.autoSelectForcedSubtitles && _forcedTrackId != -1){
+                subtitlesTrack = _forcedTrackId;
+                return;
+            }
+            
+            // PRIORITY #2: Automatically select default subtitles track
+            if (HLSSettings.autoSelectDefaultSubtitles && _defaultTrackId != -1){
+                subtitlesTrack = _defaultTrackId;
+                return;
+            }
+            
+            // PRIORITY #3: Automatically select auto-select subtitles track that matches current locale
+            if (HLSSettings.autoSelectSubtitles && autoSelectId != -1) {
+                subtitlesTrack = autoSelectId;
+            }
+            
+            // Otherwise leave subtitles off/unselected
         }
-		
-		private function _subtitlesTracksMerge() : void {
-			_subtitlesTracks = _subtitlesTracksFromManifest.slice();
-		}
-		
+        
+        private function _subtitlesTracksMerge() : void {
+            _subtitlesTracks = _subtitlesTracksFromManifest.slice();
+        }
+        
         /** Normally triggered by user selection, it should return the subtitles track to be parsed */
         public function subtitlesTrackSelectionHandler(subtitlesTrackList : Vector.<SubtitlesTrack>) : SubtitlesTrack {
             var subtitlesTrackChanged : Boolean = false;
             subtitlesTrackList = subtitlesTrackList.sort(function(a : SubtitlesTrack, b : SubtitlesTrack) : int {
                 return a.id - b.id;
             });
-			
+            
             /* if subtitles track not defined, or subtitles from external source (playlist) return null (not selected) */
             if (_subtitlesTrackId == -1 || _subtitlesTrackId >= _subtitlesTracks.length || _subtitlesTracks[_subtitlesTrackId].source == SubtitlesTrack.FROM_PLAYLIST) {
                 return null;
@@ -176,17 +176,17 @@ package org.mangui.hls.controller {
                 return _subtitlesTracks[_subtitlesTrackId];
             }
         }
-		
-		public function get defaultSubtitlesTrack():int {
-			return _defaultTrackId;
-		}
-		
-		public function get hasForcedSubtitles():Boolean {
-			return _forcedTrackId != -1;
-		}
-		
-		public function get forcedSubtitlesTrack():int {
-			return _forcedTrackId;
-		}
+        
+        public function get defaultSubtitlesTrack():int {
+            return _defaultTrackId;
+        }
+        
+        public function get hasForcedSubtitles():Boolean {
+            return _forcedTrackId != -1;
+        }
+        
+        public function get forcedSubtitlesTrack():int {
+            return _forcedTrackId;
+        }
     }
 }

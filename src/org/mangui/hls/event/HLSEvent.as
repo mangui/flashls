@@ -45,14 +45,14 @@ package org.mangui.hls.event {
         public static const AUDIO_LEVEL_LOADING : String = "hlsEventAudioLevelLoading";
         /** Identifier for a audio level loaded event  **/
         public static const AUDIO_LEVEL_LOADED : String = "hlsEventAudioLevelLoaded";
-		/** Identifier for a subtitles track switch **/
-		public static const SUBTITLES_TRACK_SWITCH : String = "hlsEventSubtitlesTrackSwitch";
-		/** Identifier for a subtitles level loading event  **/
-		public static const SUBTITLES_LEVEL_LOADING : String = "hlsEventSubtitlesLevelLoading";
-		/** Identifier for a subtitles level loaded event  **/
-		public static const SUBTITLES_LEVEL_LOADED : String = "hlsEventSubtitlesLevelLoaded";
-		/** Identifier for a subtitles level loaded event  **/
-		public static const SUBTITLES_CHANGE : String = "hlsEventSubtitlesChange";
+        /** Identifier for a subtitles track switch **/
+        public static const SUBTITLES_TRACK_SWITCH : String = "hlsEventSubtitlesTrackSwitch";
+        /** Identifier for a subtitles level loading event  **/
+        public static const SUBTITLES_LEVEL_LOADING : String = "hlsEventSubtitlesLevelLoading";
+        /** Identifier for a subtitles level loaded event  **/
+        public static const SUBTITLES_LEVEL_LOADED : String = "hlsEventSubtitlesLevelLoaded";
+        /** Identifier for a subtitles level loaded event  **/
+        public static const SUBTITLES_CHANGE : String = "hlsEventSubtitlesChange";
         /** Identifier for audio/video TAGS loaded event. **/
         public static const TAGS_LOADED : String = "hlsEventTagsLoaded";
         /** Identifier when last fragment of playlist has been loaded **/
@@ -110,8 +110,8 @@ package org.mangui.hls.event {
         public var subtitlesTrack : int;
         /** a complete ID3 payload from PES, as a hex dump **/
         public var ID3Data : String;
-		/** a subtitles model */
-		public var subtitles:Subtitles;
+        /** a subtitles model */
+        public var subtitles:Subtitles;
 
         /** Assign event parameter and dispatch. **/
         public function HLSEvent(type : String, parameter : *=null, parameter2 : *=null) {
@@ -128,12 +128,12 @@ package org.mangui.hls.event {
                 case FRAGMENT_LOAD_EMERGENCY_ABORTED:
                 case LEVEL_LOADED:
                 case AUDIO_LEVEL_LOADED:
-				case SUBTITLES_LEVEL_LOADED:
+                case SUBTITLES_LEVEL_LOADED:
                     loadMetrics = parameter as HLSLoadMetrics;
                     break;
-				case SUBTITLES_CHANGE:
-					subtitles = parameter as Subtitles;
-					break;
+                case SUBTITLES_CHANGE:
+                    subtitles = parameter as Subtitles;
+                    break;
                 case MANIFEST_PARSED:
                 case MANIFEST_LOADED:
                     levels = parameter as Vector.<Level>;

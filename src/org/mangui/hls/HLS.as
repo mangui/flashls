@@ -36,7 +36,7 @@ package org.mangui.hls {
         private var _levelLoader : LevelLoader;
         private var _altAudioLevelLoader : AltAudioLevelLoader;
         private var _audioTrackController : AudioTrackController;
-		private var _subtitlesLevelLoader : SubtitlesLevelLoader;
+        private var _subtitlesLevelLoader : SubtitlesLevelLoader;
         private var _subtitlesTrackController : SubtitlesTrackController;
         private var _subtitlesFragmentLoader : SubtitlesFragmentLoader;
         private var _levelController : LevelController;
@@ -58,9 +58,9 @@ package org.mangui.hls {
             _levelLoader = new LevelLoader(this);
             _altAudioLevelLoader = new AltAudioLevelLoader(this);
             _audioTrackController = new AudioTrackController(this);
-			_subtitlesLevelLoader = new SubtitlesLevelLoader(this);
+            _subtitlesLevelLoader = new SubtitlesLevelLoader(this);
             _subtitlesTrackController = new SubtitlesTrackController(this);
-			_subtitlesFragmentLoader = new SubtitlesFragmentLoader(this);
+            _subtitlesFragmentLoader = new SubtitlesFragmentLoader(this);
             _levelController = new LevelController(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
             _hlsURLStream = URLStream as Class;
@@ -239,7 +239,7 @@ package org.mangui.hls {
 
         /** Load and parse a new HLS URL **/
         public function load(url : String) : void {
-			_level = 0;
+            _level = 0;
             _hlsNetStream.close();
             _levelLoader.load(url);
         };
@@ -256,47 +256,47 @@ package org.mangui.hls {
         public function set client(value : Object) : void {
             _client = value;
         }
-		
-		/** get subtitles tracks list from playlist **/
-		public function get subtitlesPlaylistTracks() : Vector.<SubtitlesPlaylistTrack> {
-			return _levelLoader.subtitlesPlaylistTracks;
-		};
+        
+        /** get subtitles tracks list from playlist **/
+        public function get subtitlesPlaylistTracks() : Vector.<SubtitlesPlaylistTrack> {
+            return _levelLoader.subtitlesPlaylistTracks;
+        };
 
         /** get subtitles tracks list**/
         public function get subtitlesTracks() : Vector.<SubtitlesTrack> {
             return _subtitlesTrackController.subtitlesTracks;
         };
 
-		/** get index of the selected subtitles track (index in subtitles track lists) **/
-		public function get subtitlesTrack() : int {
-			return _subtitlesTrackController.subtitlesTrack;
-		};
-		
-		/** select an audio track, based on its index in audio track lists**/
-		public function set subtitlesTrack(val : int) : void {
-			_subtitlesTrackController.subtitlesTrack = val;
-		}
-		
-		/** How many subtitles tracks does the current media have? */
-		public function get numSubtitlesTracks():uint {
-			return !!subtitlesTracks ? subtitlesTracks.length : 0;
-		}
-		
-		/** The ID of the default subtitles track */
-		public function get defaultSubtitlesTrack():int {
-			return _subtitlesTrackController.defaultSubtitlesTrack;
-		}
-		
-		/** The ID of the forced subtitles track */
-		public function get forcedSubtitlesTrack():int {
-			return _subtitlesTrackController.forcedSubtitlesTrack;
-		}
-		
-		/** Does the current subtitles playlist contain forced subtitles? */
-		public function get hasForcedSubtitles():Boolean {
-			return _subtitlesTrackController.hasForcedSubtitles;
-		}
-		
+        /** get index of the selected subtitles track (index in subtitles track lists) **/
+        public function get subtitlesTrack() : int {
+            return _subtitlesTrackController.subtitlesTrack;
+        };
+        
+        /** select an audio track, based on its index in audio track lists**/
+        public function set subtitlesTrack(val : int) : void {
+            _subtitlesTrackController.subtitlesTrack = val;
+        }
+        
+        /** How many subtitles tracks does the current media have? */
+        public function get numSubtitlesTracks():uint {
+            return !!subtitlesTracks ? subtitlesTracks.length : 0;
+        }
+        
+        /** The ID of the default subtitles track */
+        public function get defaultSubtitlesTrack():int {
+            return _subtitlesTrackController.defaultSubtitlesTrack;
+        }
+        
+        /** The ID of the forced subtitles track */
+        public function get forcedSubtitlesTrack():int {
+            return _subtitlesTrackController.forcedSubtitlesTrack;
+        }
+        
+        /** Does the current subtitles playlist contain forced subtitles? */
+        public function get hasForcedSubtitles():Boolean {
+            return _subtitlesTrackController.hasForcedSubtitles;
+        }
+        
         /** get audio tracks list**/
         public function get audioTracks() : Vector.<AudioTrack> {
             return _audioTrackController.audioTracks;
@@ -316,13 +316,13 @@ package org.mangui.hls {
         public function set audioTrack(val : int) : void {
             _audioTrackController.audioTrack = val;
         }
-		
-		/** How many audio tracks does the current media have? */
-		public function get numAudioTracks():uint
-		{
-			return !!audioTracks ? audioTracks.length : 0;
-		}
-		
+        
+        /** How many audio tracks does the current media have? */
+        public function get numAudioTracks():uint
+        {
+            return !!audioTracks ? audioTracks.length : 0;
+        }
+        
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;

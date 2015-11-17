@@ -32,7 +32,7 @@ package org.mangui.hls.model {
         /** audio/video found ? */
         public var audio_found : Boolean;
         public var video_found : Boolean;
-		/** subtitles found ? */
+        /** subtitles found ? */
         public var subtitles_found : Boolean;
         /** tag related stuff */
         public var metadata_tag_injected : Boolean;

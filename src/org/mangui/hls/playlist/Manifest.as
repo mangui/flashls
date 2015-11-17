@@ -436,7 +436,7 @@ package org.mangui.hls.playlist {
             }
             return subtitlesTracks;
         };
-		
+        
         private static const RENDITION_STATE_READKEY : Number = 1;
         private static const RENDITION_STATE_READVALUESTART : Number = 2;
         private static const RENDITION_STATE_READSIMPLEVALUE : Number = 3;

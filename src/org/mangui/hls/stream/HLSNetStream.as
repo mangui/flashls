@@ -32,13 +32,13 @@ package org.mangui.hls.stream {
     /** Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
      *
      * play state transition :
-     * 				FROM								TO								condition
-     *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
+     *                 FROM                                TO                                condition
+     *  HLSPlayStates.IDLE                  HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
      *  HLSPlayStates.IDLE                  HLSPlayStates.PAUSED_BUFFERING      idle => seek() called
-     *  HLSPlayStates.PLAYING_BUFFERING  	HLSPlayStates.PLAYING  				buflen > minBufferLength
-     *  HLSPlayStates.PAUSED_BUFFERING  	HLSPlayStates.PAUSED  				buflen > minBufferLength
-     *  HLSPlayStates.PLAYING  				HLSPlayStates.PLAYING_BUFFERING  	buflen < lowBufferLength
-     *  HLSPlayStates.PAUSED  				HLSPlayStates.PAUSED_BUFFERING  	buflen < lowBufferLength
+     *  HLSPlayStates.PLAYING_BUFFERING      HLSPlayStates.PLAYING                  buflen > minBufferLength
+     *  HLSPlayStates.PAUSED_BUFFERING      HLSPlayStates.PAUSED                  buflen > minBufferLength
+     *  HLSPlayStates.PLAYING                  HLSPlayStates.PLAYING_BUFFERING      buflen < lowBufferLength
+     *  HLSPlayStates.PAUSED                  HLSPlayStates.PAUSED_BUFFERING      buflen < lowBufferLength
      *
      * seek state transition :
      *
@@ -245,7 +245,7 @@ package org.mangui.hls.stream {
                 try {
                     super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
                 } catch(e : Error) {
-	               // Ignore errors, we're running in FP < 11.1
+                   // Ignore errors, we're running in FP < 11.1
                 }
 
                 super.play(null);

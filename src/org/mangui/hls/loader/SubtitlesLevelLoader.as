@@ -24,11 +24,11 @@ package org.mangui.hls.loader {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-		
-	/**
-	 * Subtitles level loader, based on the alternative audio level loader
-	 * @author	Neil Rackett
-	 */
+        
+    /**
+     * Subtitles level loader, based on the alternative audio level loader
+     * @author    Neil Rackett
+     */
     public class SubtitlesLevelLoader {
         /** Reference to the hls framework controller. **/
         private var _hls : HLS;
@@ -60,7 +60,7 @@ package org.mangui.hls.loader {
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _stateHandler);
             _hls.removeEventListener(HLSEvent.SUBTITLES_TRACK_SWITCH, _subtitlesTrackSwitchHandler);
         }
-		
+        
         /** Loading failed; return errors. **/
         private function _errorHandler(event : ErrorEvent) : void {
             var txt : String;
@@ -84,43 +84,43 @@ package org.mangui.hls.loader {
             var hlsError : HLSError = new HLSError(code, _url, txt);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
         };
-		
+        
         /** parse a playlist **/
         private function _parseSubtitlesPlaylist(string : String, url : String, level : int, metrics : HLSLoadMetrics) : void {
             
-			if (string != null && string.length != 0) {
+            if (string != null && string.length != 0) {
                 CONFIG::LOGGING {
                     Log.debug("subtitles level " + level + " playlist:\n" + string);
                 }
-				
-				// Extract WebVTT subtitles fragments from the manifest
+                
+                // Extract WebVTT subtitles fragments from the manifest
                 var frags : Vector.<Fragment> = Manifest.getFragments(string, url, level);
-				var subtitlesTrack : SubtitlesTrack = _hls.subtitlesTracks[_currentTrack];
-				var subtitlesLevel : Level = subtitlesTrack.level;
-				
-				if(subtitlesLevel == null) {
-					subtitlesLevel = subtitlesTrack.level = new Level();
-				}
-				
-				subtitlesLevel.updateFragments(frags);
-				subtitlesLevel.targetduration = Manifest.getTargetDuration(string);
-				
+                var subtitlesTrack : SubtitlesTrack = _hls.subtitlesTracks[_currentTrack];
+                var subtitlesLevel : Level = subtitlesTrack.level;
+                
+                if(subtitlesLevel == null) {
+                    subtitlesLevel = subtitlesTrack.level = new Level();
+                }
+                
+                subtitlesLevel.updateFragments(frags);
+                subtitlesLevel.targetduration = Manifest.getTargetDuration(string);
+                
                 // if stream is live, use a timer to periodically reload playlist
                 if (!Manifest.hasEndlist(string)) {
                     //var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*(frags.length-1)*subtitlesLevel.targetduration - getTimer());
                     //var timeout : int = Math.max(10000, _reloadPlaylistTimer + 1000*(frags.length-1)*subtitlesLevel.averageduration - getTimer());
                     var timeout : int = Math.max(10000, _reloadPlaylistTimer+1000*subtitlesLevel.averageduration-getTimer());
-					
+                    
                     CONFIG::LOGGING {
                         Log.debug("Subtitles Level Live Playlist parsing finished: reload in " + timeout + " ms");
                     }
                     _timeoutID = setTimeout(_loadSubtitlesLevelPlaylist, timeout);
                 }
             }
-			
+            
             metrics.id  = subtitlesLevel.start_seqnum;
             metrics.id2 = subtitlesLevel.end_seqnum;
-			
+            
             _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_LEVEL_LOADED, metrics, frags));
             _manifestLoading = null;
         };
@@ -128,14 +128,14 @@ package org.mangui.hls.loader {
         /** load/reload active M3U8 playlist **/
         private function _loadSubtitlesLevelPlaylist() : void {
             
-			if (_closed) {
+            if (_closed) {
                 return;
             }
-			
-			_reloadPlaylistTimer = getTimer();
             
-			var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[_hls.subtitlesTracks[_currentTrack].id];
-			
+            _reloadPlaylistTimer = getTimer();
+            
+            var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[_hls.subtitlesTracks[_currentTrack].id];
+            
             _manifestLoading = new Manifest();
             _manifestLoading.loadPlaylist(_hls, subtitlesPlaylistTrack.url, _parseSubtitlesPlaylist, _errorHandler, _currentTrack, _hls.type, HLSSettings.flushLiveURLCache);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_LEVEL_LOADING, _currentTrack));
@@ -144,37 +144,37 @@ package org.mangui.hls.loader {
         /** When subtitles track switch occurs, load subtitles level playlist **/
         private function _subtitlesTrackSwitchHandler(event : HLSEvent) : void {
             
-			_currentTrack = event.subtitlesTrack;
-			clearTimeout(_timeoutID);
+            _currentTrack = event.subtitlesTrack;
+            clearTimeout(_timeoutID);
             
-			if (_currentTrack > -1 && _currentTrack < _hls.numSubtitlesTracks) {
-				
-				var subtitlesTrack:SubtitlesTrack = _hls.subtitlesTracks[_currentTrack];
-				
-	            if (subtitlesTrack.source == SubtitlesTrack.FROM_PLAYLIST) {
-	                
-					var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[subtitlesTrack.id];
-	                
-					if (subtitlesPlaylistTrack.url) {
-						
-	                    CONFIG::LOGGING {
-	                        Log.debug("switch to subtitles track " + _currentTrack + ", load Playlist");
-	                    }
-						
-	                    _retryTimeout = 1000;
-	                    _retryCount = 0;
-	                    _closed = false;
-						
-	                    if(_manifestLoading) {
-	                       _manifestLoading.close();
-	                       _manifestLoading = null;
-	                    }
-						
-	                    _loadSubtitlesLevelPlaylist();
-	                }
-	            }
-			}
-			
+            if (_currentTrack > -1 && _currentTrack < _hls.numSubtitlesTracks) {
+                
+                var subtitlesTrack:SubtitlesTrack = _hls.subtitlesTracks[_currentTrack];
+                
+                if (subtitlesTrack.source == SubtitlesTrack.FROM_PLAYLIST) {
+                    
+                    var subtitlesPlaylistTrack : SubtitlesPlaylistTrack = _hls.subtitlesPlaylistTracks[subtitlesTrack.id];
+                    
+                    if (subtitlesPlaylistTrack.url) {
+                        
+                        CONFIG::LOGGING {
+                            Log.debug("switch to subtitles track " + _currentTrack + ", load Playlist");
+                        }
+                        
+                        _retryTimeout = 1000;
+                        _retryCount = 0;
+                        _closed = false;
+                        
+                        if(_manifestLoading) {
+                           _manifestLoading.close();
+                           _manifestLoading = null;
+                        }
+                        
+                        _loadSubtitlesLevelPlaylist();
+                    }
+                }
+            }
+            
         };
 
         private function _close() : void {

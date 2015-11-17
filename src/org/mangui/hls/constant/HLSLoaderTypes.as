@@ -6,14 +6,17 @@
     public class HLSLoaderTypes {
         // manifest loader
         public static const MANIFEST : int = 0;
-    	// playlist / level loader
+        // playlist / level loader
         public static const LEVEL_MAIN : int = 1;
-    	// playlist / level loader
+        // playlist / level loader
         public static const LEVEL_ALTAUDIO : int = 2;
-        public static const LEVEL_SUBTITLES : int = 5;
+        // playlist / level loader
+        public static const LEVEL_SUBTITLES : int = 3;
         // main fragment loader
-        public static const FRAGMENT_MAIN : int = 3;
+        public static const FRAGMENT_MAIN : int = 4;
         // alt audio fragment loader
-        public static const FRAGMENT_ALTAUDIO : int = 4;
+        public static const FRAGMENT_ALTAUDIO : int = 5;
+        // subtitles fragment loader
+        public static const FRAGMENT_SUBTITLES : int = 6;
     }
 }

@@ -328,12 +328,12 @@ package org.mangui.hls.loader {
                                     Log.debug(_altAudioTracks.length + " alternate audio tracks found");
                                 }
                             }
-						}
-						if (string.indexOf(Manifest.SUBTITLES) > 0) {
-							CONFIG::LOGGING {
-								Log.debug("subtitles level found");
-							}
-							// parse subtitles tracks
+                        }
+                        if (string.indexOf(Manifest.SUBTITLES) > 0) {
+                            CONFIG::LOGGING {
+                                Log.debug("subtitles level found");
+                            }
+                            // parse subtitles tracks
                             _subtitlesPlaylistTracks = Manifest.extractSubtitlesTracks(string, _url);
                             CONFIG::LOGGING {
                                 if (_subtitlesPlaylistTracks.length > 0) {

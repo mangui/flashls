@@ -11,7 +11,7 @@
         public var forced : Boolean;
         public var url : String;
         public var id:Object;
-		
+        
         /** Create the quality level. **/
         public function SubtitlesPlaylistTrack(alt_group_id : String, alt_lang : String, alt_name : String, alt_autoselect : Boolean, alt_default : Boolean, alt_forced : Boolean, alt_url : String) {
             group_id = alt_group_id;
@@ -19,7 +19,7 @@
             name = alt_name;
             autoselect = alt_autoselect;
             default_track = alt_default;
-			forced = alt_forced;
+            forced = alt_forced;
             url = alt_url;
         };
 

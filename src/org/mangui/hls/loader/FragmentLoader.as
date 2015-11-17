@@ -902,7 +902,7 @@ package org.mangui.hls.loader {
 
             /* try to do progressive buffering here.
              * only do it in case :
-             * 		first fragment is already loaded
+             *         first fragment is already loaded
              *      or if first fragment is not loaded, we can do it if
              *          startLevel is already defined (startLevel is already set or
              *          startFromLevel/startFromBitrate not set to -1
@@ -918,7 +918,7 @@ package org.mangui.hls.loader {
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
                  */
-				
+                
                 if ((_demux.audioExpected && fragData.audio_found) || (!_demux.audioExpected && fragData.video_found)) {
                     if (_ptsAnalyzing == true) {
                         _ptsAnalyzing = false;
