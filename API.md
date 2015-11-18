@@ -204,7 +204,7 @@ full list of Events is described below :
     -  data: { loadMetrics : HLSLoadMetrics }
   - `HLSEvent.FRAGMENT_PLAYING`  - triggered when playback switches to a new fragment
   	-  data: { playMetrics : HLSPlayMetrics }
-  - `HLSEvent.FRAGMENT_SKIPPED`  - triggered when a fragment has been skipped because of fragment load I/O error
+  - `HLSEvent.FRAGMENT_SKIPPED`  - triggered when a fragment has been skipped because of fragment load I/O or parsing error
     -  data: { duration : skipped fragment duration }
   - `HLSEvent.AUDIO_TRACKS_LIST_CHANGE`  - triggered when available audio tracks list changes
   	-  data: none
@@ -218,6 +218,8 @@ full list of Events is described below :
   	-  data: { loadMetrics : HLSLoadMetrics }
   - `HLSEvent.LAST_VOD_FRAGMENT_LOADED`  - triggered when last fragment of a VoD playlist has been successfully loaded
   	-  data: none
+  - `HLSEvent.WARNING`  - triggered when any warning (potentially recoverable error) occurs
+    -  data: { error : HLSError}
   - `HLSEvent.ERROR`  - triggered when any error occurs
   	-  data: { error : HLSError}
   - `HLSEvent.MEDIA_TIME`  - triggered when media position gets updated
