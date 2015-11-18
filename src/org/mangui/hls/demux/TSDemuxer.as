@@ -613,6 +613,12 @@ package org.mangui.hls.demux {
                             }
                         }
                     }
+                } else if (frame.type == 0) {
+                    // report parsing error
+                    if(_callback_error != null) {
+                        _callback_error("TS: invalid NALu type found, corrupted fragment ?");
+                        return;
+                    }
                 }
             }
             // if both SPS and PPS have been found, build AVCC and push tag if needed

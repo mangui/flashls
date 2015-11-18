@@ -410,6 +410,45 @@ package org.mangui.hls.loader {
             }
         }
 
+        /* in case of parsing error,
+            first, try to switch to redundant stream if any
+            OR skip fragment if allowed to
+            if not allowed to, report PARSING error
+        */
+        private function _fragHandleParsingError(message : String) : void {
+            var level : Level = _levels[_fragCurrent.level];
+            // if we have redundant streams left for that level, switch to it
+            if(level.redundantStreamId < level.redundantStreamsNb) {
+                CONFIG::LOGGING {
+                    Log.warn("parsing error, switch to redundant stream");
+                }
+                level.redundantStreamId++;
+                _fragRetryCount = 0;
+                _fragRetryTimeout = 1000;
+                _loadingState = LOADING_IDLE;
+                // dispatch event to force redundant level loading
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _fragCurrent.level));
+            } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
+                CONFIG::LOGGING {
+                    Log.warn("error parsing fragment, skip it and load next one");
+                }
+                var tags : Vector.<FLVTag> = tags = new Vector.<FLVTag>();
+                tags.push(_fragCurrent.getSkippedTag());
+                // send skipped FLV tag to StreamBuffer
+                _streamBuffer.appendTags(HLSLoaderTypes.FRAGMENT_MAIN,_fragCurrent.level,_fragCurrent.seqnum ,tags,_fragCurrent.data.pts_start_computed, _fragCurrent.data.pts_start_computed + 1000*_fragCurrent.duration, _fragCurrent.continuity, _fragCurrent.start_time);
+                _fragRetryCount = 0;
+                _fragRetryTimeout = 1000;
+                _fragPrevious = _fragCurrent;
+                _fragSkipping = true;
+                // set fragment first loaded to be true to ensure that we can skip first fragment as well
+                _fragmentFirstLoaded = true;
+                _loadingState = LOADING_IDLE;
+            } else {
+                var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _fragCurrent.url, "Parsing Error :" + message);
+                _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+            }
+        }
+
         private function _fraghandleIOError(message : String) : void {
             /* usually, errors happen in two situations :
             - bad networks  : in that case, the second or third reload of URL should fix the issue
@@ -867,8 +906,12 @@ package org.mangui.hls.loader {
         };
 
         private function _fragParsingErrorHandler(error : String) : void {
+            // abort any load in progress
             _stop_load();
-            _fraghandleIOError(error);
+            // flush any tags that might have been injected for this fragment
+            _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
+            // then try to overcome parsing error
+            _fragHandleParsingError(error);
         }
 
         private function _fragParsingID3TagHandler(id3_tags : Vector.<ID3Tag>) : void {
@@ -980,8 +1023,8 @@ package org.mangui.hls.loader {
             var fragData : FragmentData = _fragCurrent.data;
             var fragLevelIdx : int = _fragCurrent.level;
             if ((_demux.audioExpected && !fragData.audio_found) && (_demux.videoExpected && !fragData.video_found)) {
-                // handle it like a IO error
-                _fraghandleIOError("error parsing fragment, no tag found");
+                // handle it like a parsing error
+                _fragHandleParsingError("error parsing fragment, no tag found");
                 return;
             }
             // parsing complete, reset retry counter
