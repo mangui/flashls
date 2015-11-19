@@ -411,17 +411,21 @@ package org.mangui.hls.loader {
         }
 
         /* in case of parsing error,
-            first, try to switch to redundant stream if any
+            first, try to flush any tags that might have been injected in the NetStream
+            then switch to redundant stream if any
+            OR level switch down and cap level if in auto mode
             OR skip fragment if allowed to
             if not allowed to, report PARSING error
         */
         private function _fragHandleParsingError(message : String) : void {
             var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _fragCurrent.url, "Parsing Error :" + message);
+            var level : Level = _levels[_fragCurrent.level];
             CONFIG::LOGGING {
                 Log.warn(hlsError.msg);
             }
+            // flush any tags that might have been injected for this fragment
+            _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.WARNING, hlsError));
-            var level : Level = _levels[_fragCurrent.level];
             // if we have redundant streams left for that level, switch to it
             if(level.redundantStreamId < level.redundantStreamsNb) {
                 CONFIG::LOGGING {
@@ -433,6 +437,16 @@ package org.mangui.hls.loader {
                 _loadingState = LOADING_IDLE;
                 // dispatch event to force redundant level loading
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _fragCurrent.level));
+            } else if(_hls.autoLevel && _fragCurrent.level) {
+                // auto level and not on level 0, try to switch down for next fragment, and cap level to avoid coming back on this one
+                _levelNext = _fragCurrent.level-1;
+                if(_hls.autoLevelCapping == -1) {
+                    _hls.autoLevelCapping = _levelNext;
+                } else {
+                    _hls.autoLevelCapping = Math.min(_levelNext,_hls.autoLevelCapping);
+                }
+                // switch back to IDLE state to request new fragment at lowest level
+                _loadingState = LOADING_IDLE;
             } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
                 CONFIG::LOGGING {
                     Log.warn("error parsing fragment, skip it and load next one");
@@ -453,16 +467,14 @@ package org.mangui.hls.loader {
             }
         }
 
+        /* in case of IO error,
+            retry loading fragment several times if allowed to
+            then switch to redundant stream if any
+            OR level switch down and cap level if in auto mode
+            OR skip fragment if allowed to
+            if not allowed to, report LOADING error
+        */
         private function _fraghandleIOError(message : String) : void {
-            /* usually, errors happen in two situations :
-            - bad networks  : in that case, the second or third reload of URL should fix the issue
-                               if loading retry still fails after HLSSettings.fragmentLoadMaxRetry, and
-                               if (a) redundant stream(s) is/are available for that level, then try to switch
-                               to that redundant stream instead.
-            - live playlist : when we are trying to load an out of bound fragments : for example,
-            the playlist on webserver is from SN [51-61]
-            the one in memory is from SN [50-60], and we are trying to load SN50.
-             */
             var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_ERROR, _fragCurrent.url, "I/O Error while loading fragment:" + message);
             _hls.dispatchEvent(new HLSEvent(HLSEvent.WARNING, hlsError));
             CONFIG::LOGGING {
@@ -490,6 +502,16 @@ package org.mangui.hls.loader {
                     _loadingState = LOADING_IDLE;
                     // dispatch event to force redundant level loading
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_SWITCH, _fragCurrent.level));
+                } else if(_hls.autoLevel && _fragCurrent.level) {
+                    // auto level and not on level 0, try to switch down for next fragment, and cap level to avoid coming back on this one
+                    _levelNext = _fragCurrent.level-1;
+                    if(_hls.autoLevelCapping == -1) {
+                        _hls.autoLevelCapping = _levelNext;
+                    } else {
+                        _hls.autoLevelCapping = Math.min(_levelNext,_hls.autoLevelCapping);
+                    }
+                    // switch back to IDLE state to request new fragment at lowest level
+                    _loadingState = LOADING_IDLE;
                 } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
                     /* check if loaded fragment is not the last one of a live playlist.
                         if it is the case, don't skip to next, as there is no next fragment :-)
@@ -722,7 +744,11 @@ package org.mangui.hls.loader {
                 var hlsError : HLSError = new HLSError(HLSError.FRAGMENT_LOADING_CROSSDOMAIN_ERROR, _fragCurrent.url, txt);
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
             } else {
-                _fraghandleIOError("HTTP status:" + _fragLoadStatus + ",msg:" + event.text);
+                if(_fragLoadStatus == 200) {
+                    _fragHandleParsingError("HTTP 2OO but IO error, treat as parsing error");
+                } else {
+                    _fraghandleIOError("HTTP status:" + _fragLoadStatus + ",msg:" + event.text);
+                }
             }
         };
 
@@ -913,8 +939,6 @@ package org.mangui.hls.loader {
         private function _fragParsingErrorHandler(error : String) : void {
             // abort any load in progress
             _stop_load();
-            // flush any tags that might have been injected for this fragment
-            _streamBuffer.flushLastFragment(_fragCurrent.level,_fragCurrent.seqnum);
             // then try to overcome parsing error
             _fragHandleParsingError(error);
         }
