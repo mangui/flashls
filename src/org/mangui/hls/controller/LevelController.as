@@ -190,7 +190,13 @@ package org.mangui.hls.controller {
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
                 if (_hls.stage && maxLevelsCount) {
-                    var maxLevel : Level = this._maxUniqueLevels[0], maxLevelIdx : int = maxLevel.index, sWidth : Number = this._hls.stage.stageWidth * this._hls.stage.contentsScaleFactor, sHeight : Number = this._hls.stage.stageHeight * this._hls.stage.contentsScaleFactor, lWidth : int, lHeight : int, i : int;
+                    var maxLevel : Level = this._maxUniqueLevels[0], 
+                    maxLevelIdx : int = maxLevel.index, 
+                    sWidth : Number = this._hls.stage.contentsScaleFactor ? this._hls.stage.stageWidth * this._hls.stage.contentsScaleFactor : this._hls.stage.stageWidth, 
+                    sHeight : Number = this._hls.stage.contentsScaleFactor ? this._hls.stage.stageHeight * this._hls.stage.contentsScaleFactor : this._hls.stage.stageHeight, 
+                    lWidth : int, 
+                    lHeight : int, 
+                    i : int;
 
                     switch (HLSSettings.maxLevelCappingMode) {
                         case HLSMaxLevelCappingMode.UPSCALE:
