@@ -386,5 +386,16 @@ package org.mangui.hls {
          * Default is true
          */
         public static var logError : Boolean = true;
+		
+        /**
+         * proxyUrl
+         *
+         * Defines url for tunneling http requests through a proxy on another server - such as
+		 * https://github.com/cowboy/php-simple-proxy
+		 * e.g. "http://xxx.xxx.xxx.xxx/simpleproxy.php?mode=native&url="
+         *
+         * Default is an empty string
+         */
+        public static var proxyUrl : String = "";
     }
 }
