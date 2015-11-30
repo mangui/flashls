@@ -625,12 +625,14 @@ package org.mangui.hls.demux {
             if (sps_found && pps_found) {
                 var avcc : ByteArray = AVCC.getAVCC(sps, ppsvect);
                 // only push AVCC tag if never pushed or avcc different from previous one
-                _avcc = avcc;
-                var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
-                avccTag.push(avcc, 0, avcc.length);
-                avccTag.build();
-                // Log.debug("TS:AVC:push AVC HEADER");
-                _tags.push(avccTag);
+                if (_avcc == null || !compareByteArray(_avcc, avcc)) {
+                    _avcc = avcc;
+                    var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
+                    avccTag.push(avcc, 0, avcc.length);
+                    avccTag.build();
+                    // Log.debug("TS:AVC:push AVC HEADER");
+                    _tags.push(avccTag);
+                }
             }
 
             /*
@@ -680,6 +682,26 @@ package org.mangui.hls.demux {
                     }
                 }
             }
+        }
+
+        // return true if same Byte Array
+        private function compareByteArray(ba1 : ByteArray, ba2 : ByteArray) : Boolean {
+            // compare the lengths
+            var size : uint = ba1.length;
+            if (ba1.length == ba2.length) {
+                ba1.position = 0;
+                ba2.position = 0;
+
+                // then the bytes
+                while (ba1.position < size) {
+                    var v1 : int = ba1.readByte();
+                    if (v1 != ba2.readByte()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
         }
 
         /** parse ID3 PES packet **/
