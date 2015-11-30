@@ -160,7 +160,7 @@ package org.mangui.hls.loader {
 
         /** Load the manifest file. **/
         public function load(url : String) : void {
-			if(HLSSettings.proxyUrl) url = HLSSettings.proxyUrl + escape(url)
+            if(HLSSettings.proxyUrl) url = HLSSettings.proxyUrl + escape(url)
             if(!_urlloader) {
                 //_urlloader = new URLLoader();
                 var urlLoaderClass : Class = _hls.URLloader as Class;

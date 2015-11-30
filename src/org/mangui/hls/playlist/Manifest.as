@@ -11,7 +11,7 @@ package org.mangui.hls.playlist {
     import flash.utils.ByteArray;
     import flash.utils.Dictionary;
     import flash.utils.getTimer;
-	import org.mangui.hls.HLSSettings;
+    import org.mangui.hls.HLSSettings;
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.constant.HLSLoaderTypes;
@@ -506,7 +506,7 @@ package org.mangui.hls.playlist {
 
         /** Extract URL (check if absolute or not). **/
         private static function _extractURL(path : String, base : String) : String {
-			if (HLSSettings.proxyUrl && base.indexOf(HLSSettings.proxyUrl) != -1) base = unescape(base.split(HLSSettings.proxyUrl)[1]);
+            if (HLSSettings.proxyUrl && base.indexOf(HLSSettings.proxyUrl) != -1) base = unescape(base.split(HLSSettings.proxyUrl)[1]);
             var _prefix : String = null;
             var _suffix : String = null;
             // trim white space if any
