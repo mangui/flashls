@@ -772,6 +772,7 @@ package org.mangui.hls.loader {
             }
             var new_seqnum : Number;
             var last_seqnum : Number = -1;
+            var levelObj : Level = _levels[level];
             var log_prefix : String;
             var frag : Fragment;
 
@@ -781,17 +782,20 @@ package org.mangui.hls.loader {
                 // level switch
                 // trust program-time : if program-time defined in previous loaded fragment, try to find seqnum matching program-time in new level.
                 if (frag_previous.program_date) {
-                    last_seqnum = _levels[level].getSeqNumNearestProgramDate(frag_previous.program_date);
+                    last_seqnum = levelObj.getSeqNumNearestProgramDate(frag_previous.program_date);
                     CONFIG::LOGGING {
                         Log.debug("loadnextfragment : getSeqNumNearestProgramDate(level,date,cc:" + level + "," + frag_previous.program_date + ")=" + last_seqnum);
                     }
                 }
                 if (last_seqnum == -1) {
                     // if we are here, it means that no program date info is available in the playlist. try to get last seqnum position from PTS + continuity counter
-                    last_seqnum = _levels[level].getSeqNumNearestPTS(frag_previous.data.pts_start_computed, frag_previous.continuity);
+                    // last_pts is an approximation of last injected PTS of previous fragment
+                    var last_pts : Number = frag_previous.data.pts_start_computed+1000*frag_previous.duration;
+                    last_seqnum = levelObj.getSeqNumNearestPTS(last_pts, frag_previous.continuity);
                     CONFIG::LOGGING {
-                        Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + level + "," + frag_previous.data.pts_start_computed + "," + frag_previous.continuity + ")=" + last_seqnum);
+                        Log.debug("loadnextfragment : getSeqNumNearestPTS(level,pts,cc:" + level + "," + last_pts + "," + frag_previous.continuity + ")=" + last_seqnum);
                     }
+                    last_seqnum--;
                     if (last_seqnum == Number.POSITIVE_INFINITY) {
                         /* requested PTS above max PTS of this level:
                          * this case could happen when switching level at the edge of live playlist,
@@ -799,11 +803,11 @@ package org.mangui.hls.loader {
                          * return 1 to retry loading later.
                          */
                         return LOADING_WAITING_LEVEL_UPDATE;
-                    } else if (last_seqnum == -1) {
+                    } else if (last_seqnum < -1) {
                         // if we are here, it means that we have no PTS info for this continuity index, we need to do some PTS probing to find the right seqnum
                         /* we need to perform PTS analysis on fragments from same continuity range
                         get first fragment from playlist matching with criteria and load pts */
-                        last_seqnum = _levels[level].getFirstSeqNumfromContinuity(frag_previous.continuity);
+                        last_seqnum = levelObj.getFirstSeqNumfromContinuity(frag_previous.continuity);
                         CONFIG::LOGGING {
                             Log.debug("loadnextfragment : getFirstSeqNumfromContinuity(level,cc:" + level + "," + frag_previous.continuity + ")=" + last_seqnum);
                         }
@@ -812,8 +816,8 @@ package org.mangui.hls.loader {
                             return LOADING_WAITING_LEVEL_UPDATE;
                         }
                         /* when probing PTS, take previous sequence number as reference if possible */
-                        new_seqnum = Math.min(frag_previous.seqnum + 1, _levels[level].getLastSeqNumfromContinuity(frag_previous.continuity));
-                        new_seqnum = Math.max(new_seqnum, _levels[level].getFirstSeqNumfromContinuity(frag_previous.continuity));
+                        new_seqnum = Math.min(frag_previous.seqnum + 1, levelObj.getLastSeqNumfromContinuity(frag_previous.continuity));
+                        new_seqnum = Math.max(new_seqnum, levelObj.getFirstSeqNumfromContinuity(frag_previous.continuity));
                         _ptsAnalyzing = true;
                         log_prefix = "analyzing PTS ";
                     } else {
@@ -824,7 +828,7 @@ package org.mangui.hls.loader {
             }
 
             if (_ptsAnalyzing == false) {
-                if (last_seqnum == _levels[level].end_seqnum) {
+                if (last_seqnum == levelObj.end_seqnum) {
                     // if last segment of level already loaded, return
                     if (_hls.type == HLSTypes.VOD) {
                         // if VOD playlist, loading is completed
@@ -836,14 +840,14 @@ package org.mangui.hls.loader {
                 } else {
                     // if previous segment is not the last one, increment it to get new seqnum
                     new_seqnum = last_seqnum + 1;
-                    if (new_seqnum < _levels[level].start_seqnum) {
+                    if (new_seqnum < levelObj.start_seqnum) {
                         // loading stalled ! report to caller
                         return LOADING_STALLED;
                     }
-                    frag = _levels[level].getFragmentfromSeqNum(new_seqnum);
+                    frag = levelObj.getFragmentfromSeqNum(new_seqnum);
                     if (frag == null) {
                         CONFIG::LOGGING {
-                            Log.warn("error trying to load " + new_seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
+                            Log.warn("error trying to load " + new_seqnum + " of [" + (levelObj.start_seqnum) + "," + (levelObj.end_seqnum) + "],level " + level);
                         }
                         return LOADING_WAITING_LEVEL_UPDATE;
                     }
@@ -853,9 +857,9 @@ package org.mangui.hls.loader {
                     log_prefix = "Loading       ";
                 }
             }
-            frag = _levels[level].getFragmentfromSeqNum(new_seqnum);
+            frag = levelObj.getFragmentfromSeqNum(new_seqnum);
             CONFIG::LOGGING {
-                Log.debug(log_prefix + new_seqnum + " of [" + (_levels[level].start_seqnum) + "," + (_levels[level].end_seqnum) + "],level " + level);
+                Log.debug(log_prefix + new_seqnum + " of [" + (levelObj.start_seqnum) + "," + (levelObj.end_seqnum) + "],level " + level);
             }
             _loadfragment(frag);
             return LOADING_IN_PROGRESS;
@@ -992,19 +996,21 @@ package org.mangui.hls.loader {
                  */
                 if ((_demux.audioExpected && fragData.audio_found) || (!_demux.audioExpected && fragData.video_found)) {
                     if (_ptsAnalyzing == true) {
+                        var levelObj : Level = _levels[_hls.loadLevel];
                         _ptsAnalyzing = false;
-                        _levels[_hls.loadLevel].updateFragment(_fragCurrent.seqnum, true, fragData.pts_min, fragData.pts_min + _fragCurrent.duration * 1000);
+                        levelObj.updateFragment(_fragCurrent.seqnum, true, fragData.pts_min, fragData.pts_min + _fragCurrent.duration * 1000);
                         /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
                         CONFIG::LOGGING {
-                            Log.debug("analyzed  PTS " + _fragCurrent.seqnum + " of [" + (_levels[_hls.loadLevel].start_seqnum) + "," + (_levels[_hls.loadLevel].end_seqnum) + "],level " + _hls.loadLevel + " m PTS:" + fragData.pts_min);
+                            Log.debug("analyzed  PTS " + _fragCurrent.seqnum + " of [" + (levelObj.start_seqnum) + "," + (levelObj.end_seqnum) + "],level " + _hls.loadLevel + " m PTS:" + fragData.pts_min);
                         }
                         /* check if fragment loaded for PTS analysis is the next one
                         if this is the expected one, then continue
                         if not, then cancel current fragment loading, next call to loadnextfragment() will load the right seqnum
                          */
-                        var next_seqnum : Number = _levels[_hls.loadLevel].getSeqNumNearestPTS(_fragPrevious.data.pts_start_computed, _fragCurrent.continuity) + 1;
+                        var next_pts : Number = _fragPrevious.data.pts_start_computed + 1000*_fragPrevious.duration;
+                        var next_seqnum : Number = levelObj.getSeqNumNearestPTS(next_pts, _fragCurrent.continuity);
                         CONFIG::LOGGING {
-                            Log.debug("analyzed PTS : getSeqNumNearestPTS(level,pts,cc:" + _hls.loadLevel + "," + _fragPrevious.data.pts_start_computed + "," + _fragCurrent.continuity + ")=" + next_seqnum);
+                            Log.debug("analyzed PTS : getSeqNumNearestPTS(level,pts,cc:" + _hls.loadLevel + "," + next_pts + "," + _fragCurrent.continuity + ")=" + next_seqnum);
                         }
                         // CONFIG::LOGGING {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
@@ -1013,7 +1019,7 @@ package org.mangui.hls.loader {
                             // stick to same level after PTS analysis
                             _levelNext = _hls.loadLevel;
                             CONFIG::LOGGING {
-                                Log.debug("PTS analysis done on " + _fragCurrent.seqnum + ", matching seqnum is " + next_seqnum + " of [" + (_levels[_hls.loadLevel].start_seqnum) + "," + (_levels[_hls.loadLevel].end_seqnum) + "],cancel loading and get new one");
+                                Log.debug("PTS analysis done on " + _fragCurrent.seqnum + ", matching seqnum is " + next_seqnum + " of [" + (levelObj.start_seqnum) + "," + (levelObj.end_seqnum) + "],cancel loading and get new one");
                             }
                             // cancel loading
                             _stop_load();
