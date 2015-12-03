@@ -176,7 +176,11 @@ package org.mangui.hls.flv {
                     case AVC_HEADER:
                         return "AVC_HEADER";
                     case AVC_NALU:
-                        return "AVC_NALU";
+                        if(keyframe) {
+                            return "AVC_NALU_K";
+                        } else {
+                            return "AVC_NALU";
+                        }
                     case MP3_RAW:
                         return "MP3_RAW";
                     case DISCONTINUITY:
