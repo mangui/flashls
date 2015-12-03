@@ -126,8 +126,15 @@ package org.mangui.hls.model {
 
             for (var i : int = firstIndex; i <= lastIndex; i++) {
                 var frag : Fragment = fragments[i];
+                var start : Number = frag.data.pts_start_computed;
+                var duration :Number = frag.duration;
+                var end : Number = start + 1000*duration;
                 /* check nearest fragment */
-                if ( frag.data.valid && (frag.duration >= 0) && (Math.abs(frag.data.pts_start_computed - pts) < Math.abs(frag.data.pts_start_computed + 1000 * frag.duration - pts))) {
+                if ( frag.data.valid &&
+                    (duration >= 0) &&
+                    // if PTS is closer from end OR if PTS is greater than start and more than 10% after frag start
+                    ((Math.abs(start - pts) < Math.abs(end - pts)) ||
+                    (pts - start ) > 100*duration)) {
                     return frag.seqnum;
                 }
             }
