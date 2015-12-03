@@ -397,5 +397,14 @@ package org.mangui.hls {
          * Default is an empty string
          */
         public static var proxyUrl : String = "";
+        
+         /**
+         * useProxyForFragments
+         *
+         * Sometimes the proxy isn't required past the first playlist file, so disable it here.
+         *
+         * Default is true
+         */
+        static public var useProxyForFragments:Boolean = true;
     }
 }
