@@ -198,48 +198,51 @@ package org.mangui.hls.stream {
                 // if a new fragment is being appended
                 if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
                     if(continuity == _fragMainInitialContinuity) {
-                        // this whole part of the code is here to handle playlists with fragments overlapping with each other (when switching level usually)
-                        // for example let's imagine we have data already  buffered, and new tags are appended, overlapping with existing buffer :
-                        // existing ------------------------------------------->
-                        // new tags                                       K--K----K----->
-                        //
-                        // here we are trying to filter new tags to convert them into the following
-                        // existing ------------------------------------------->
-                        // filtered new tags                                      K----->
-                        // this is more complex than it seems, as we need to deal with keyframes for video and all that kind of stuff
-                        // video filtered new tags should start with a keyframe ...
-                        // if we already have overlapping tags, adjust startPosition/minPTS to match the one from first tag
-                        // we only trigger this logic if detected overlapping is more than 500 ms
+                        /// don't check overlapping on live playlists or VoD playlists that slided in the past
+                        if(!computeSliding) {
+                            // this whole part of the code is here to handle playlists with fragments overlapping with each other (when switching level usually)
+                            // for example let's imagine we have data already  buffered, and new tags are appended, overlapping with existing buffer :
+                            // existing ------------------------------------------->
+                            // new tags                                       K--K----K----->
+                            //
+                            // here we are trying to filter new tags to convert them into the following
+                            // existing ------------------------------------------->
+                            // filtered new tags                                      K----->
+                            // this is more complex than it seems, as we need to deal with keyframes for video and all that kind of stuff
+                            // video filtered new tags should start with a keyframe ...
+                            // if we already have overlapping tags, adjust startPosition/minPTS to match the one from first tag
+                            // we only trigger this logic if detected overlapping is more than 500 ms
 
-                        if(_overlappingTags.length) {
-                            startPosition = _overlappingStartPosition;
-                            min_pts = _overlappingMinPTS;
-                            nextRelativeStartPos = startPosition + (max_pts - min_pts) / 1000;
-                        } else {
-                            _overlappingStartPosition = startPosition;
-                            _overlappingMinPTS = min_pts;
-                        }
-                        var end : Number = startPosition+(max_pts-min_pts)/1000;
-                        // check if any overlapping occurs, let 500ms tolerance
-                        if(startPosition+0.5 < max_audio_pos && startPosition+0.5 < max_video_pos) {
-                            CONFIG::LOGGING {
-                                Log.warn("fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition+"/"+ end + "/" + max_audio_pos+"/"+max_video_pos);
-                            }
-                            _overlappingTags = _overlappingTags.concat(tags);
-                            // filter out overlapping tags
-                            tags = filterOverlappingTags(_overlappingTags, max_pos - startPosition);
-                            if(tags.length == 0) {
-                                // not enough data, cannot filter overlapping tags, don't push those tags
-                                // fragloader will call us back later with more data
-                                return;
-                            } else {
-                                // reset overlapping tags
-                                _overlappingTags = new Vector.<FLVTag>();
-                                // adjust startPosition and min_pts
-                                startPosition = max_pos;
-                                min_pts = tags[0].pts;
-                                // recompute value
+                            if(_overlappingTags.length) {
+                                startPosition = _overlappingStartPosition;
+                                min_pts = _overlappingMinPTS;
                                 nextRelativeStartPos = startPosition + (max_pts - min_pts) / 1000;
+                            } else {
+                                _overlappingStartPosition = startPosition;
+                                _overlappingMinPTS = min_pts;
+                            }
+                            var end : Number = startPosition+(max_pts-min_pts)/1000;
+                            // check if any overlapping occurs, let 500ms tolerance
+                            if(startPosition+0.5 < max_audio_pos && startPosition+0.5 < max_video_pos) {
+                                CONFIG::LOGGING {
+                                    Log.warn("fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition+"/"+ end + "/" + max_audio_pos+"/"+max_video_pos);
+                                }
+                                _overlappingTags = _overlappingTags.concat(tags);
+                                // filter out overlapping tags
+                                tags = filterOverlappingTags(_overlappingTags, max_pos - startPosition);
+                                if(tags.length == 0) {
+                                    // not enough data, cannot filter overlapping tags, don't push those tags
+                                    // fragloader will call us back later with more data
+                                    return;
+                                } else {
+                                    // reset overlapping tags
+                                    _overlappingTags = new Vector.<FLVTag>();
+                                    // adjust startPosition and min_pts
+                                    startPosition = max_pos;
+                                    min_pts = tags[0].pts;
+                                    // recompute value
+                                    nextRelativeStartPos = startPosition + (max_pts - min_pts) / 1000;
+                                }
                             }
                         }
                     }
