@@ -4,11 +4,12 @@ An Open-source HLS Flash plugin that allows you to play HLS streams.
 
 The plugin is compatible with the following players:
 
-  - [Flowplayer](#flowplayer) 3.2.12
+  - [Clappr](https://github.com/globocom/clappr) - a very easy open source player to use and to extend.
+  - [Flowplayer Flash](#flowplayer) 3.2.12
+  - [Flowplayer 6.x](https://flowplayer.org/news/)
+  - [MediaElement.js][3] (adaptation done here [https://github.com/mangui/mediaelement][4], now integrated in official MediaElement.js release since 2.15.0)  
   - [OSMF 2.0](#strobe-media-playback-smp-and-other-osmf-based-players) based players (such as SMP and GrindPlayer)
   - [Video.js][1] 4.6, 4.7, 4.8 (adaptation done here [https://github.com/mangui/video-js-swf][2])
-  - [MediaElement.js][3] (adaptation done here [https://github.com/mangui/mediaelement][4], now integrated in official MediaElement.js release since 2.15.0)
-  - [Clappr](https://github.com/globocom/clappr) - a very easy open source player to use and to extend.
 
 ## Features
 
