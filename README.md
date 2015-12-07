@@ -20,7 +20,8 @@ The plugin is compatible with the following players:
       - instant switching : playback will be paused, whole buffer will be flushed, and fragments matching with new quality level and current playback position will be fetched, then playback will resume.
       - smooth switching : buffer will be flushed on next fragment boundary, and fragments matching with new quality level and next fragment position will be fetched. this allows a smooth (and still fast) quality switch, usually without interrupting the playback.
       - bandwidth conservative switching : buffer will not be flushed, but next fragment to be buffered will use the newly selected quality level.
-    - Serial segment fetching method from http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
+    - ABR algorithm : Serial segment fetching method from [Rate adaptation for dynamic adaptive streaming over HTTP in
+content distribution network, Chenghao Liu,Imed Bouazizi, Miska M. Hannuksela,Moncef Gabbouj](docs/10.1.1.300.5957.pdf)
     - Emergency quality switch-down to avoid buffering in case of sudden bandwidth drop
   - Alternate Audio Track Rendition
     - Master Playlist with alternative Audio
