@@ -7,7 +7,7 @@ The plugin is compatible with the following players:
   - [Clappr](https://github.com/globocom/clappr) - a very easy open source player to use and to extend.
   - [Flowplayer Flash](#flowplayer) 3.2.12
   - [Flowplayer 6.x](https://flowplayer.org/news/)
-  - [MediaElement.js][3] (adaptation done here [https://github.com/mangui/mediaelement][4], now integrated in official MediaElement.js release since 2.15.0)  
+  - [MediaElement.js][3] (integrated in MediaElement.js since 2.15.0)  
   - [OSMF 2.0](#strobe-media-playback-smp-and-other-osmf-based-players) based players (such as SMP and GrindPlayer)
   - [Video.js][1] 4.6, 4.7, 4.8 (adaptation done here [https://github.com/mangui/video-js-swf][2])
 
@@ -242,10 +242,6 @@ If you'd like to support future development and new product features, please mak
 
 ---
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mangui/flashls/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
-
   [1]: http://www.videojs.com
   [2]: https://github.com/mangui/video-js-swf
   [3]: http://mediaelementjs.com
-  [4]: https://github.com/mangui/mediaelement
