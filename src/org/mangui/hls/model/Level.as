@@ -129,12 +129,18 @@ package org.mangui.hls.model {
                 var start : Number = frag.data.pts_start_computed;
                 var duration :Number = frag.duration;
                 var end : Number = start + 1000*duration;
+
+                // CONFIG::LOGGING {
+                //     Log.debug("getSeqNumNearestPTS: pts/start/end/duration:" + pts + '/' + start + '/' + end + '/' + duration);
+                // }
                 /* check nearest fragment */
                 if ( frag.data.valid &&
                     (duration >= 0) &&
-                    // if PTS is closer from end OR if PTS is greater than start and more than 10% after frag start
+                    // if PTS is closer from end OR
+                    // if PTS is smaller than end PTS and more than 10% after frag start
                     ((Math.abs(start - pts) < Math.abs(end - pts)) ||
-                    (pts - start ) > 100*duration)) {
+                    (   (pts < end) &&
+                        (pts - start ) > 100*duration))) {
                     return frag.seqnum;
                 }
             }
