@@ -348,10 +348,8 @@ package org.mangui.hls.stream {
                 }
             }
 
-            if(_useAltAudio) {
-                if(headerAppended) {
-                    _headerTags = _headerTags.sort(compareTags);
-                }
+            if(headerAppended) {
+                _headerTags = _headerTags.sort(compareTags);
             }
 
             if(metaAppended) {
