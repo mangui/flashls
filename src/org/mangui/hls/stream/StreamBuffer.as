@@ -245,6 +245,12 @@ package org.mangui.hls.stream {
                                 }
                             }
                         }
+                    } else {
+                        // different continuity counter, reset any overlapping tags
+                        if(_overlappingTags.length) {
+                            // reset overlapping tags
+                            _overlappingTags = new Vector.<FLVTag>();
+                        }
                     }
                     _fragMainLevel = fragLevel;
                     _fragMainSN = fragSN;
