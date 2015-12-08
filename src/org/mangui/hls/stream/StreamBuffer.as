@@ -772,7 +772,12 @@ package org.mangui.hls.stream {
                 }
             }
 
-            if((videoIdx >= 0 || audioIdx >=0) && filteredDuration > 500) {
+            // only push tags, if we found more than 500ms of tags AND
+            // (audio not expected OR audio tags found) AND
+            // (video not expected OR video tags found)
+            if((!audioExpected || audioIdx>=0) &&
+               (!videoExpected || videoIdx>=0) &&
+                filteredDuration > 500) {
                 // modify PTS for DISCONTINUITY/METADATA/AAC_HEADER/AVC_HEADER tag
                 // and push as filtered tag
                 if(disIdx >=0) {
@@ -790,6 +795,10 @@ package org.mangui.hls.stream {
                 if(avcIdx >=0) {
                     tags[avcIdx].pts = tags[avcIdx].dts = tags[videoIdx].dts;
                     filteredTags.push(tags[avcIdx]);
+                }
+
+                CONFIG::LOGGING {
+                    Log.debug("filterOverlappingTags : header appended:" + filteredTags.length);
                 }
 
                 for (i= 0; i < tags.length; i++) {
@@ -811,6 +820,9 @@ package org.mangui.hls.stream {
                         default:
                             break;
                     }
+                }
+                CONFIG::LOGGING {
+                    Log.debug("filterOverlappingTags : tags appended:" + filteredTags.length);
                 }
             } else {
                 CONFIG::LOGGING {
