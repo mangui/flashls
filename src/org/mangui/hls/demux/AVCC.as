@@ -8,9 +8,9 @@
         import org.mangui.hls.HLSSettings;
     }
     public class AVCC {
-        
+
         /** H264 profiles. **/
-        private static const PROFILES : Object = {'66':'H264 Baseline', '77':'H264 Main', '100':'H264 High'};        
+        private static const PROFILES : Object = {'66':'H264 Baseline', '77':'H264 Main', '100':'H264 High'};
         /** Get Avcc header from AVC stream
            See ISO 14496-15, 5.2.4.1 for the description of AVCDecoderConfigurationRecord
          **/
@@ -37,7 +37,7 @@
                 avcc.writeBytes(pps, 0, pps.length);
             }
             CONFIG::LOGGING {
-                if (HLSSettings.logDebug) {
+                if (HLSSettings.logDebug2) {
                     // Grab profile/level
                     sps.position = 1;
                     var prf : int = sps.readByte();
