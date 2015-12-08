@@ -136,11 +136,22 @@ package org.mangui.hls.model {
                 /* check nearest fragment */
                 if ( frag.data.valid &&
                     (duration >= 0) &&
-                    // if PTS is closer from end OR
-                    // if PTS is smaller than end PTS and more than 10% after frag start
-                    ((Math.abs(start - pts) < Math.abs(end - pts)) ||
-                    (   (pts < end) &&
-                        (pts - start ) > 100*duration))) {
+                    // if PTS is closer from start
+                    ((Math.abs(start - pts) < Math.abs(end - pts))
+                    //  start PTS                     end
+                    //    *----|-----------------------*
+                    //
+                    //  PTS start                 end
+                    //   |--*-----------------------*
+                    //
+                    //
+                    // OR if PTS is bigger than start PTS AND more than 10% before frag end
+                    //
+                    //  start                   PTS  end
+                    //    *----------------------|-----*
+                    //                             <10%>
+                    || ((pts > start) &&
+                        (end - pts ) > 100*duration))) {
                     return frag.seqnum;
                 }
             }
