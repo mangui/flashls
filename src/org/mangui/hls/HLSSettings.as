@@ -237,6 +237,17 @@ package org.mangui.hls {
         public static var fragmentLoadSkipAfterMaxRetry : Boolean = true;
 
         /**
+         * maxSkippedFragments
+         *
+         * Maximum count of skipped fragments in a row before an I/O Error will be raised.
+         *      0 - no skip (same as fragmentLoadSkipAfterMaxRetry = false)
+         *      -1 - no limit for skipping, skip till the end of the playlist 
+         *
+         * Default is 5.
+         */
+        public static var maxSkippedFragments : int = 5;
+
+        /**
          * flushLiveURLCache
          *
          * If set to true, live playlist will be flushed from URL cache before reloading
