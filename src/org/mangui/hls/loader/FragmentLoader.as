@@ -6,21 +6,22 @@ package org.mangui.hls.loader {
     import flash.events.*;
     import flash.net.*;
     import flash.utils.ByteArray;
-    import flash.utils.getTimer;
     import flash.utils.Timer;
+    import flash.utils.getTimer;
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
-    import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.demux.DemuxHelper;
+    import org.mangui.hls.demux.Demuxer;
     import org.mangui.hls.demux.ID3Tag;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
     import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.FragmentData;
@@ -81,6 +82,7 @@ package org.mangui.hls.loader {
         private var _fragRetryCount : int;
         private var _fragLoadStatus : int;
         private var _fragSkipping : Boolean;
+        private var _fragSkipCount : int;
         /** reference to previous/current fragment */
         private var _fragPrevious : Fragment;
         private var _fragCurrent : Fragment;
@@ -334,6 +336,7 @@ package org.mangui.hls.loader {
             _fragmentFirstLoaded = false;
             _fragPrevious = null;
             _fragSkipping = false;
+            _fragSkipCount = 0;
             _levelNext = -1;
             _timer.start();
         }
@@ -348,6 +351,7 @@ package org.mangui.hls.loader {
             _loadingState = LOADING_IDLE;
             _fragmentFirstLoaded = true;
             _fragSkipping = false;
+            _fragSkipCount = 0;
             _levelNext = -1;
             _fragPrevious = lastFrag;
             _timer.start();
@@ -447,7 +451,7 @@ package org.mangui.hls.loader {
                 }
                 // switch back to IDLE state to request new fragment at lowest level
                 _loadingState = LOADING_IDLE;
-            } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
+            } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true && _fragSkipCount < HLSSettings.maxSkippedFragments  || HLSSettings.maxSkippedFragments < 0) {
                 CONFIG::LOGGING {
                     Log.warn("error parsing fragment, skip it and load next one");
                 }
@@ -459,6 +463,10 @@ package org.mangui.hls.loader {
                 _fragRetryTimeout = 1000;
                 _fragPrevious = _fragCurrent;
                 _fragSkipping = true;
+                _fragSkipCount++;
+                CONFIG::LOGGING {
+                    Log.debug("fragments skipped / max: " + _fragSkipCount + "/" + HLSSettings.maxSkippedFragments );
+                }
                 // set fragment first loaded to be true to ensure that we can skip first fragment as well
                 _fragmentFirstLoaded = true;
                 _loadingState = LOADING_IDLE;
@@ -512,7 +520,7 @@ package org.mangui.hls.loader {
                     }
                     // switch back to IDLE state to request new fragment at lowest level
                     _loadingState = LOADING_IDLE;
-                } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true) {
+                } else if(HLSSettings.fragmentLoadSkipAfterMaxRetry == true && _fragSkipCount < HLSSettings.maxSkippedFragments || HLSSettings.maxSkippedFragments < 0) {
                     /* check if loaded fragment is not the last one of a live playlist.
                         if it is the case, don't skip to next, as there is no next fragment :-)
                     */
@@ -527,7 +535,7 @@ package org.mangui.hls.loader {
                         _fragRetryTimeout = Math.min(HLSSettings.fragmentLoadMaxRetryTimeout, 2 * _fragRetryTimeout);
                     } else {
                         CONFIG::LOGGING {
-                            Log.warn("max fragment load retry reached, skip fragment and load next one");
+                            Log.warn("max fragment load retry reached, skip fragment and load next one.");
                         }
                         var tags : Vector.<FLVTag> = tags = new Vector.<FLVTag>();
                         tags.push(_fragCurrent.getSkippedTag());
@@ -537,6 +545,10 @@ package org.mangui.hls.loader {
                         _fragRetryTimeout = 1000;
                         _fragPrevious = _fragCurrent;
                         _fragSkipping = true;
+                        _fragSkipCount++;
+                        CONFIG::LOGGING {
+                            Log.debug("fragments skipped / max: " + _fragSkipCount + "/" + HLSSettings.maxSkippedFragments );
+                        }
                         // set fragment first loaded to be true to ensure that we can skip first fragment as well
                         _fragmentFirstLoaded = true;
                         _loadingState = LOADING_IDLE;
@@ -601,6 +613,7 @@ package org.mangui.hls.loader {
                 Log.debug("loading completed");
             }
             _fragSkipping = false;
+            _fragSkipCount = 0;
             _metrics.loading_end_time = getTimer();
             _metrics.size = fragData.bytesLoaded;
 
@@ -978,7 +991,7 @@ package org.mangui.hls.loader {
 
             /* try to do progressive buffering here.
              * only do it in case :
-             * 		first fragment is already loaded
+             *      first fragment is already loaded
              *      or if first fragment is not loaded, we can do it if
              *          startLevel is already defined (startLevel is already set or
              *          startFromLevel/startFromBitrate not set to -1
@@ -1062,9 +1075,10 @@ package org.mangui.hls.loader {
                 _fragHandleParsingError("error parsing fragment, no tag found");
                 return;
             }
-            // parsing complete, reset retry counter
+            // parsing complete, reset retry and skip counters
             _fragRetryCount = 0;
             _fragRetryTimeout = 1000;
+            _fragSkipCount = 0;
             CONFIG::LOGGING {
                 if (fragData.audio_found) {
                     Log.debug("m/M audio PTS:" + fragData.pts_min_audio + "/" + fragData.pts_max_audio);
