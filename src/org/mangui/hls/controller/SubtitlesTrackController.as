@@ -37,6 +37,7 @@ package org.mangui.hls.controller {
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
             
+			_subtitlesTrackId = -1;
             _defaultTrackId = -1;
             _forcedTrackId = -1;
         }
@@ -144,15 +145,16 @@ package org.mangui.hls.controller {
                 return;
             }
             
-            // PRIORITY #2: Automatically select default subtitles track
+			// PRIORITY #2: Automatically select auto-select subtitles track that matches current locale
+			if (HLSSettings.autoSelectSubtitles && autoSelectId != -1) {
+				subtitlesTrack = autoSelectId;
+				return;
+			}
+			
+            // PRIORITY #3: Automatically select default subtitles track
             if (HLSSettings.autoSelectDefaultSubtitles && _defaultTrackId != -1){
                 subtitlesTrack = _defaultTrackId;
                 return;
-            }
-            
-            // PRIORITY #3: Automatically select auto-select subtitles track that matches current locale
-            if (HLSSettings.autoSelectSubtitles && autoSelectId != -1) {
-                subtitlesTrack = autoSelectId;
             }
             
             // Otherwise leave subtitles off/unselected

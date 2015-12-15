@@ -18,6 +18,7 @@
     <classEntry path="org.mangui.osmf.plugins.utils.ErrorManager"/>
     <classEntry path="org.mangui.hls.loader.SubtitlesFragmentLoader"/>
     <classEntry path="org.mangui.hls.model.Subtitles"/>
+    <classEntry path="org.mangui.hls.utils.hls_internal"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>
