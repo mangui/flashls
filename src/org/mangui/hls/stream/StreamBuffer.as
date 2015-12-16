@@ -78,6 +78,10 @@ package org.mangui.hls.stream {
         private var _lastBufLen : Number;
         private var _lastDuration : Number;
         private var _lastMediaTimeUpdate : int;
+        /* overlapping fragment stuff */
+        private var _overlappingTags : Vector.<FLVTag>;
+        private var _overlappingStartPosition : Number;
+        private var _overlappingMinPTS : Number;
 
 
         public function StreamBuffer(hls : HLS, audioTrackController : AudioTrackController, levelController : LevelController) {
@@ -193,6 +197,61 @@ package org.mangui.hls.stream {
                 sliding = _liveSlidingMain;
                 // if a new fragment is being appended
                 if(fragLevel != _fragMainLevel || fragSN != _fragMainSN) {
+                    if(continuity == _fragMainInitialContinuity) {
+                        /// don't check overlapping on live playlists or VoD playlists that slided in the past
+                        if(!computeSliding) {
+                            // this whole part of the code is here to handle playlists with fragments overlapping with each other (when switching level usually)
+                            // for example let's imagine we have data already  buffered, and new tags are appended, overlapping with existing buffer :
+                            // existing ------------------------------------------->
+                            // new tags                                       K--K----K----->
+                            //
+                            // here we are trying to filter new tags to convert them into the following
+                            // existing ------------------------------------------->
+                            // filtered new tags                                      K----->
+                            // this is more complex than it seems, as we need to deal with keyframes for video and all that kind of stuff
+                            // video filtered new tags should start with a keyframe ...
+                            // if we already have overlapping tags, adjust startPosition/minPTS to match the one from first tag
+                            // we only trigger this logic if detected overlapping is more than 500 ms
+
+                            if(_overlappingTags.length) {
+                                startPosition = _overlappingStartPosition;
+                                min_pts = _overlappingMinPTS;
+                                nextRelativeStartPos = startPosition + (max_pts - min_pts) / 1000;
+                            } else {
+                                _overlappingStartPosition = startPosition;
+                                _overlappingMinPTS = min_pts;
+                            }
+                            var end : Number = startPosition+(max_pts-min_pts)/1000;
+                            // check if any overlapping occurs, let 500ms tolerance
+                            if(startPosition+0.5 < max_audio_pos && startPosition+0.5 < max_video_pos) {
+                                CONFIG::LOGGING {
+                                    Log.warn("fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition+"/"+ end + "/" + max_audio_pos+"/"+max_video_pos);
+                                }
+                                _overlappingTags = _overlappingTags.concat(tags);
+                                // filter out overlapping tags
+                                tags = filterOverlappingTags(_overlappingTags, max_pos - startPosition);
+                                if(tags.length == 0) {
+                                    // not enough data, cannot filter overlapping tags, don't push those tags
+                                    // fragloader will call us back later with more data
+                                    return;
+                                } else {
+                                    // reset overlapping tags
+                                    _overlappingTags = new Vector.<FLVTag>();
+                                    // adjust startPosition and min_pts
+                                    startPosition = max_pos;
+                                    min_pts = tags[0].pts;
+                                    // recompute value
+                                    nextRelativeStartPos = startPosition + (max_pts - min_pts) / 1000;
+                                }
+                            }
+                        }
+                    } else {
+                        // different continuity counter, reset any overlapping tags
+                        if(_overlappingTags.length) {
+                            // reset overlapping tags
+                            _overlappingTags = new Vector.<FLVTag>();
+                        }
+                    }
                     _fragMainLevel = fragLevel;
                     _fragMainSN = fragSN;
                     _fragMainIdx++;
@@ -295,10 +354,8 @@ package org.mangui.hls.stream {
                 }
             }
 
-            if(_useAltAudio) {
-                if(headerAppended) {
-                    _headerTags = _headerTags.sort(compareTags);
-                }
+            if(headerAppended) {
+                _headerTags = _headerTags.sort(compareTags);
             }
 
             if(metaAppended) {
@@ -351,6 +408,7 @@ package org.mangui.hls.stream {
             _videoTags = new Vector.<FLVData>();
             _metaTags = new Vector.<FLVData>();
             _headerTags = new Vector.<FLVData>();
+            _overlappingTags = new Vector.<FLVTag>();
             _fragMainLevel = _fragAltAudioLevel = _fragMainLevelNetStream = -1;
             _fragMainSN = _fragAltAudioSN = _fragMainSNNetStream = 0;
             FLVData.refPTSMain = FLVData.refPTSAltAudio = NaN;
@@ -541,6 +599,8 @@ package org.mangui.hls.stream {
                             _fragmentLoader.stop();
                             // seek position is out of buffer : load after fragment
                             _fragmentLoader.seekFromLastFrag(lastFrag);
+                            // reset overlapping tags, if any
+                            _overlappingTags = new Vector.<FLVTag>();
                         }
                         return;
                     }
@@ -645,6 +705,139 @@ package org.mangui.hls.stream {
                 _clipBackBuffer(HLSSettings.maxBackBufferLength);
             }
         }
+
+        /* filter incoming tags overlapping with existing buffer */
+        private function filterOverlappingTags(tags : Vector.<FLVTag>, overlap : Number) : Vector.<FLVTag> {
+            var aacIdx : int,avcIdx : int,disIdx : int,metIdx : int, videoIdx : int,audioIdx : int, lastIdx : int;
+            var first_pts : Number = tags[0].pts + 1000*overlap;
+            var flvData : FLVData = getNextTag(false);
+            if(flvData) {
+                first_pts = Math.max(first_pts,flvData.tag.pts);
+            }
+            var filteredTags : Vector.<FLVTag>=  new Vector.<FLVTag>();
+            var filteredDuration : Number = 0;
+            aacIdx = avcIdx = disIdx = metIdx = videoIdx = audioIdx = lastIdx = -1;
+            for (var i : int = 0; i < tags.length; i++) {
+                var tag : FLVTag = tags[i];
+                switch(tag.type) {
+                    case FLVTag.DISCONTINUITY:
+                        // retrieve last DISCONTINUITY tag before first_pts
+                        if (tag.pts <= first_pts)
+                            disIdx = i;
+                        break;
+                    case FLVTag.METADATA:
+                        // retrieve last METADATA tag before first_pts
+                        if (tag.pts <= first_pts)
+                            metIdx = i;
+                        break;
+                    case FLVTag.AAC_HEADER:
+                        // retrieve last AAC_HEADER tag before first_pts
+                        if (tag.pts <= first_pts)
+                            aacIdx = i;
+                        break;
+                    case FLVTag.AVC_HEADER:
+                        // retrieve last AVC_HEADER tag before first_pts
+                        if (tag.pts <= first_pts)
+                            avcIdx = i;
+                        break;
+                    case FLVTag.AVC_NALU:
+                        // retrieve first keyframe after first_pts
+                        if (videoIdx == -1 && tag.pts > first_pts && tag.keyframe) {
+                            lastIdx = videoIdx = i;
+                            CONFIG::LOGGING {
+                                Log.debug("found AVC_NALU_K after overlap @PTS:" + tag.pts);
+                            }
+                        } else if (videoIdx >=0) {
+                            lastIdx = i;
+                        }
+                         break;
+                    case FLVTag.MP3_RAW:
+                    case FLVTag.AAC_RAW:
+                        // retrieve first frame after first_pts
+                        if (audioIdx == -1 && tag.pts >  first_pts) {
+                            lastIdx = audioIdx = i;
+                        } else if (audioIdx >=0) {
+                            lastIdx = i;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if(lastIdx >=0) {
+                filteredDuration = tags[lastIdx].pts - first_pts;
+                CONFIG::LOGGING {
+                    Log.debug("filterOverlappingTags : filtered duration:" + filteredDuration);
+                }
+            }
+
+            // only push tags, if we found more than 500ms of tags AND
+            // (audio not expected OR audio tags found) AND
+            // (video not expected OR video tags found)
+            if((!audioExpected || audioIdx>=0) &&
+               (!videoExpected || videoIdx>=0) &&
+                filteredDuration > 500) {
+                // modify PTS for DISCONTINUITY/METADATA/AAC_HEADER/AVC_HEADER tag
+                // and push as filtered tag
+                if(disIdx >=0) {
+                    tags[disIdx].pts = tags[disIdx].dts = Math.min(tags[audioIdx].dts,tags[videoIdx].dts);
+                    filteredTags.push(tags[disIdx]);
+                }
+                if(metIdx >=0) {
+                    tags[metIdx].pts = tags[metIdx].dts = Math.min(tags[audioIdx].dts,tags[videoIdx].dts);
+                    filteredTags.push(tags[metIdx]);
+                }
+                if(aacIdx >=0) {
+                    tags[aacIdx].pts = tags[aacIdx].dts = tags[audioIdx].dts;
+                    filteredTags.push(tags[aacIdx]);
+                }
+                if(avcIdx >=0) {
+                    tags[avcIdx].pts = tags[avcIdx].dts = tags[videoIdx].dts;
+                    filteredTags.push(tags[avcIdx]);
+                }
+
+                CONFIG::LOGGING {
+                    Log.debug("filterOverlappingTags : header appended:" + filteredTags.length);
+                }
+
+                for (i= 0; i < tags.length; i++) {
+                    tag = tags[i];
+                    switch(tag.type) {
+                        case FLVTag.AVC_NALU:
+                            // push all AVC NALU located after videoIdx
+                            if (videoIdx >= 0 && i >=  videoIdx) {
+                                filteredTags.push(tag);
+                            }
+                             break;
+                        case FLVTag.MP3_RAW:
+                        case FLVTag.AAC_RAW:
+                            // push all audio tags located after audioIdx
+                            if (audioIdx >=0 && i >=  audioIdx) {
+                                filteredTags.push(tag);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                CONFIG::LOGGING {
+                    Log.debug("filterOverlappingTags : tags appended:" + filteredTags.length);
+                }
+            } else {
+                CONFIG::LOGGING {
+                    Log.debug("filterOverlappingTags: only overlapping tags found");
+                }
+            }
+            CONFIG::LOGGING {
+                Log.debug("filterOverlappingTags: filtered " + filteredTags.length + " out of " + tags.length);
+                // for (i= 0; i < filteredTags.length; i++) {
+                //     Log.debug("filteredOverlappingTags: filtered " + filteredTags[i].typeString + '/' + filteredTags[i].dts + '/' + filteredTags[i].pts);
+                // }
+            }
+            return filteredTags;
+        }
+
 
         /* filter/tweak tags to seek accurately into the stream */
         private function seekFilterTags(tags : Vector.<FLVData>, absoluteStartPosition : Number) : Vector.<FLVData> {

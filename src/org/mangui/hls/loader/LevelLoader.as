@@ -88,8 +88,8 @@ package org.mangui.hls.loader {
 
         /** Loading failed; return errors. **/
         private function _errorHandler(event : ErrorEvent) : void {
-            var txt : String;
-            var code : int;
+            var txt : String = "Cannot load M3U8: " + event.text;
+            var code : int = HLSError.MANIFEST_LOADING_IO_ERROR;
             if (event is SecurityErrorEvent) {
                 code = HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
                 txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
@@ -105,6 +105,7 @@ package org.mangui.hls.loader {
                 /* exponential increase of retry timeout, capped to manifestLoadMaxRetryTimeout */
                 _retryTimeout = Math.min(HLSSettings.manifestLoadMaxRetryTimeout, 2 * _retryTimeout);
                 _retryCount++;
+                dispatchHLSEvent(HLSEvent.WARNING,code, txt);
                 return;
             } else {
                 // if we have redundant streams left for that level, switch to it, otherwise retry primary stream
@@ -122,32 +123,28 @@ package org.mangui.hls.loader {
                             _levels[_loadLevel].redundantStreamId = 0;
                     }
                     else {
-                        code = HLSError.MANIFEST_LOADING_IO_ERROR;
-                        txt = "Cannot load M3U8: " + event.text;
-                        dispatchHLSError(code, txt);
+                        dispatchHLSEvent(HLSEvent.ERROR,code, txt);
                         return;
                     }
                     _timeoutID = setTimeout(_loadActiveLevelPlaylist, 0);
                     _retryTimeout = 1000;
                     _retryCount = 0;
+                    dispatchHLSEvent(HLSEvent.WARNING,code, txt);
                     return;
                 } else {
                     // if level > 0 and in autolevel, and switch down on level error is activated, trigger LEVEL_LOADING_ABORTED
                     if(_loadLevel && _hls.autoLevel && HLSSettings.switchDownOnLevelError) {
                         _hls.dispatchEvent(new HLSEvent(HLSEvent.LEVEL_LOADING_ABORTED, _loadLevel));
                         return;
-                    } else {
-                        code = HLSError.MANIFEST_LOADING_IO_ERROR;
-                        txt = "Cannot load M3U8: " + event.text;
                     }
                 }
             }
-            dispatchHLSError(code, txt);
+            dispatchHLSEvent(HLSEvent.ERROR,code, txt);
         }
 
-        private function dispatchHLSError(code:int, txt:String):void {
+        private function dispatchHLSEvent(event : String,code:int, txt:String):void {
             var hlsError : HLSError = new HLSError(code, _url, txt);
-            _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));
+            _hls.dispatchEvent(new HLSEvent(event, hlsError));
         }
 
         /** Return the current manifest. **/

@@ -223,7 +223,7 @@ package org.mangui.hls {
          *
          * Default is 4000
          */
-        public static var fragmentLoadMaxRetryTimeout : Number = 4000
+        public static var fragmentLoadMaxRetryTimeout : Number = 4000;
 
         /**
          * fragmentLoadSkipAfterMaxRetry
@@ -253,7 +253,7 @@ package org.mangui.hls {
          *
          * Default is 1
          */
-        public static var initialLiveManifestSize: uint = 1;
+        public static var initialLiveManifestSize : uint = 1;
 
         /**
          * manifestLoadMaxRetry
@@ -277,14 +277,13 @@ package org.mangui.hls {
 
         /**
          * manifestRedundantLoadmaxRetry
-         * 
+		 *
          * max nb of looping over the redundant streams.
          *   >0  means looping over the stream array 2 or more times
          *    0  means looping exactly once (no retries) - default behaviour
          *   -1  means infinite retry
          */
-        public static var manifestRedundantLoadmaxRetry : int = 3;
-            
+         public static var manifestRedundantLoadmaxRetry : int = 3;
         /**
          * startFromBitrate
          *

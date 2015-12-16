@@ -128,8 +128,32 @@ package org.mangui.hls.model {
 
             for (var i : int = firstIndex; i <= lastIndex; i++) {
                 var frag : Fragment = fragments[i];
+                var start : Number = frag.data.pts_start_computed;
+                var duration :Number = frag.duration;
+                var end : Number = start + 1000*duration;
+
+                // CONFIG::LOGGING {
+                //     Log.debug("getSeqNumNearestPTS: pts/start/end/duration:" + pts + '/' + start + '/' + end + '/' + duration);
+                // }
                 /* check nearest fragment */
-                if ( frag.data.valid && (frag.duration >= 0) && (Math.abs(frag.data.pts_start_computed - pts) < Math.abs(frag.data.pts_start_computed + 1000 * frag.duration - pts))) {
+                if ( frag.data.valid &&
+                    (duration >= 0) &&
+                    // if PTS is closer from start
+                    ((Math.abs(start - pts) < Math.abs(end - pts))
+                    //  start PTS                     end
+                    //    *----|-----------------------*
+                    //
+                    //  PTS start                 end
+                    //   |--*-----------------------*
+                    //
+                    //
+                    // OR if PTS is bigger than start PTS AND more than 10% before frag end
+                    //
+                    //  start                   PTS  end
+                    //    *----------------------|-----*
+                    //                             <10%>
+                    || ((pts > start) &&
+                        (end - pts ) > 100*duration))) {
                     return frag.seqnum;
                 }
             }

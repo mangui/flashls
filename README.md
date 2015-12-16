@@ -4,11 +4,12 @@ An Open-source HLS Flash plugin that allows you to play HLS streams.
 
 The plugin is compatible with the following players:
 
-  - [Flowplayer](#flowplayer) 3.2.12
+  - [Clappr](https://github.com/globocom/clappr) - a very easy open source player to use and to extend.
+  - [Flowplayer Flash](#flowplayer) 3.2.12
+  - [Flowplayer 6.x](https://flowplayer.org/news/)
+  - [MediaElement.js][3] (integrated in MediaElement.js since 2.15.0)  
   - [OSMF 2.0](#strobe-media-playback-smp-and-other-osmf-based-players) based players (such as SMP and GrindPlayer)
   - [Video.js][1] 4.6, 4.7, 4.8 (adaptation done here [https://github.com/mangui/video-js-swf][2])
-  - [MediaElement.js][3] (adaptation done here [https://github.com/mangui/mediaelement][4], now integrated in official MediaElement.js release since 2.15.0)
-  - [Clappr](https://github.com/globocom/clappr) - a very easy open source player to use and to extend.
 
 ## Features
 
@@ -20,7 +21,8 @@ The plugin is compatible with the following players:
       - instant switching : playback will be paused, whole buffer will be flushed, and fragments matching with new quality level and current playback position will be fetched, then playback will resume.
       - smooth switching : buffer will be flushed on next fragment boundary, and fragments matching with new quality level and next fragment position will be fetched. this allows a smooth (and still fast) quality switch, usually without interrupting the playback.
       - bandwidth conservative switching : buffer will not be flushed, but next fragment to be buffered will use the newly selected quality level.
-    - Serial segment fetching method from http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
+    - ABR algorithm : Serial segment fetching method from [Rate adaptation for dynamic adaptive streaming over HTTP in
+content distribution network, Chenghao Liu,Imed Bouazizi, Miska M. Hannuksela,Moncef Gabbouj](docs/10.1.1.300.5957.pdf)
     - Emergency quality switch-down to avoid buffering in case of sudden bandwidth drop
   - Alternate Audio Track Rendition
     - Master Playlist with alternative Audio
@@ -240,10 +242,6 @@ If you'd like to support future development and new product features, please mak
 
 ---
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mangui/flashls/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
-
   [1]: http://www.videojs.com
   [2]: https://github.com/mangui/video-js-swf
   [3]: http://mediaelementjs.com
-  [4]: https://github.com/mangui/mediaelement

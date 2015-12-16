@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls.controller {
+    import flash.display.Stage;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
     import org.mangui.hls.event.HLSEvent;
@@ -190,7 +191,25 @@ package org.mangui.hls.controller {
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
                 if (_hls.stage && maxLevelsCount) {
-                    var maxLevel : Level = this._maxUniqueLevels[0], maxLevelIdx : int = maxLevel.index, sWidth : Number = this._hls.stage.stageWidth, sHeight : Number = this._hls.stage.stageHeight, lWidth : int, lHeight : int, i : int;
+                    var maxLevel : Level = this._maxUniqueLevels[0],
+                    maxLevelIdx : int = maxLevel.index,
+                    stage : Stage = _hls.stage,
+                    sWidth : Number = stage.stageWidth,
+                    sHeight : Number = stage.stageHeight,
+                    lWidth : int,
+                    lHeight : int,
+                    i : int;
+
+                   // retina display support
+                   // contentsScaleFactor was added in FP11.5, but this allows us to include the option in all builds
+                    try {
+                        var contentsScaleFactor : int =  stage['contentsScaleFactor'];
+                        sWidth*=contentsScaleFactor;
+                        sHeight*=contentsScaleFactor;
+                    } catch(e : Error) {
+                       // Ignore errors, we're running in FP < 11.5
+                    }
+
 
                     switch (HLSSettings.maxLevelCappingMode) {
                         case HLSMaxLevelCappingMode.UPSCALE:
