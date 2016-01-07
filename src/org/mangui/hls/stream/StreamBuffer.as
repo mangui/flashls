@@ -973,9 +973,9 @@ package org.mangui.hls.stream {
             var clipping_position : Number;
 
             if(videoExpected) {
-                // find last video keyframe before clipping_position : loop through header tags and find last AVC_HEADER before clipping position
-                for each (var data : FLVData in _headerTags) {
-                    if ((data.positionAbsolute - _liveSlidingMain ) <= clipping_position0 && data.tag.type == FLVTag.AVC_HEADER) {
+                // find last video keyframe before clipping_position : loop through video tags and find last keyframe before clipping position
+                for each (var data : FLVData in _videoTags) {
+                    if ((data.positionAbsolute - _liveSlidingMain ) <= clipping_position0 && data.tag.keyframe) {
                         clipping_position = data.positionAbsolute - _liveSlidingMain;
                     }
                 }
