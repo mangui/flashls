@@ -220,6 +220,11 @@ package org.mangui.hls.demux {
         /** Parse a limited amount of packets each time to avoid blocking **/
         private function _parseTimer(e : Event) : void {
             var start_time : int = getTimer();
+            // if any tags left,
+            if (_tags.length) {
+                _callback_progress(_tags);
+                _tags = new Vector.<FLVTag>();
+            }
             /** Byte data to be read **/
             var data : ByteArray = getNextTSBuffer(_readPosition);
             // dont spend more than 10ms demuxing TS packets to avoid loosing frames
@@ -231,23 +236,29 @@ package org.mangui.hls.demux {
                     data = getNextTSBuffer(_readPosition);
                 }
             }
-            if (_tags.length) {
-                _callback_progress(_tags);
-                _tags = new Vector.<FLVTag>();
-            }
-            // check if we have finished with reading this TS fragment
-            if (_dataComplete && _readPosition == _totalBytes) {
-                // free ByteArray
-                _dataVector = null;
-                // first check if TS parsing was successful
-                CONFIG::LOGGING {
-                    if (_pmtParsed == false) {
-                        Log.error("TS: no PMT found, report parsing complete");
+            // if we have spare time
+            if((getTimer() - start_time) < 10) {
+                if (_tags.length) {
+                    _callback_progress(_tags);
+                    _tags = new Vector.<FLVTag>();
+                }
+                // if we have spare time
+                if((getTimer() - start_time) < 10) {
+                    // check if we have finished with reading this TS fragment
+                    if (_dataComplete && _readPosition == _totalBytes) {
+                        // free ByteArray
+                        _dataVector = null;
+                        // first check if TS parsing was successful
+                        CONFIG::LOGGING {
+                            if (_pmtParsed == false) {
+                                Log.error("TS: no PMT found, report parsing complete");
+                            }
+                        }
+                        _timer.stop();
+                        _flush();
+                        _callback_complete();
                     }
                 }
-                _timer.stop();
-                _flush();
-                _callback_complete();
             }
         }
 
