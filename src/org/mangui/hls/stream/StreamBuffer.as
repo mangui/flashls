@@ -225,7 +225,7 @@ package org.mangui.hls.stream {
                             // check if any overlapping occurs, let 500ms tolerance
                             if(startPosition+0.5 < max_audio_pos && startPosition+0.5 < max_video_pos) {
                                 CONFIG::LOGGING {
-                                    Log.warn("fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition+"/"+ end + "/" + max_audio_pos+"/"+max_video_pos);
+                                    Log.warn("fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition.toFixed(3)+"/"+ end.toFixed(3) + "/" + max_audio_pos.toFixed(3)+"/"+max_video_pos.toFixed(3));
                                 }
                                 _overlappingTags = _overlappingTags.concat(tags);
                                 // filter out overlapping tags
