@@ -225,7 +225,7 @@ package org.mangui.hls.stream {
                             // check if any overlapping occurs, let 500ms tolerance
                             if(startPosition+0.5 < max_audio_pos && startPosition+0.5 < max_video_pos) {
                                 CONFIG::LOGGING {
-                                    Log.warn("fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition+"/"+ end + "/" + max_audio_pos+"/"+max_video_pos);
+                                    Log.warn("fragment overlapping with buffered one, start/end/max_audio_pos/max_video_pos:"+startPosition.toFixed(3)+"/"+ end.toFixed(3) + "/" + max_audio_pos.toFixed(3)+"/"+max_video_pos.toFixed(3));
                                 }
                                 _overlappingTags = _overlappingTags.concat(tags);
                                 // filter out overlapping tags
@@ -973,9 +973,9 @@ package org.mangui.hls.stream {
             var clipping_position : Number;
 
             if(videoExpected) {
-                // find last video keyframe before clipping_position : loop through header tags and find last AVC_HEADER before clipping position
-                for each (var data : FLVData in _headerTags) {
-                    if ((data.positionAbsolute - _liveSlidingMain ) <= clipping_position0 && data.tag.type == FLVTag.AVC_HEADER) {
+                // find last video keyframe before clipping_position : loop through video tags and find last keyframe before clipping position
+                for each (var data : FLVData in _videoTags) {
+                    if ((data.positionAbsolute - _liveSlidingMain ) <= clipping_position0 && data.tag.keyframe) {
                         clipping_position = data.positionAbsolute - _liveSlidingMain;
                     }
                 }

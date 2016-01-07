@@ -96,20 +96,23 @@ The plugin accepts several **optional** configuration options, such as:
     - "KEYFRAME" - Seek to last keyframe before requested position
   - `hls_manifestloadmaxretry` (default -1): max number of Manifest load retries after I/O Error.
     - if any I/O error is met during initial Manifest load, it will not be reloaded. an HLSError will be triggered immediately.
-    - After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
+    - After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values:
         - 0, means no retry, error message will be triggered automatically
         - -1 means infinite retry
   - `hls_keyloadmaxretry` (default -1): max number of key load retries after I/O Error.
-      * any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
-          * 0, means no retry, error message will be triggered automatically
-          * -1 means infinite retry
-  - `hls_fragmentloadmaxretry` (default 4s): max number of Fragment load retries after I/O Error.
-      * any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
-          * 0, means no retry, error message will be triggered automatically
-          * -1 means infinite retry
+    - any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  Please note specific handling for these 2 values:
+        - 0, means no retry, error message will be triggered automatically
+        - -1 means infinite retry
+  - `hls_fragmentloadmaxretry` (default 4s): max number of Fragment load retries after I/O Error. 
+    - Any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s). Please note specific handling for these 2 values:
+        - 0, means no retry, error message will be triggered automatically
+        - -1 means infinite retry
   - `hls_fragmentloadskipaftermaxretry` (default true): control behaviour in case fragment load still fails after max retry timeout
-          * true : fragment will be skipped and next one will be loaded.
-          * false : an I/O Error will be raised.
+        - true : fragment will be skipped and next one will be loaded.
+        - false : an I/O Error will be raised.
+  - `hls_maxskippedfragments` (default 5): Maximum count of skipped fragments in a row before an I/O Error will be raised.
+    - 0 - no skip (same as fragmentLoadSkipAfterMaxRetry = false).
+    - -1 - no limit for skipping, skip till the end of the playlist.
   - `hls_capleveltostage` (default false) : limit levels usable in auto-quality by the stage dimensions (width and height)
     - true : level width and height (defined in m3u8 playlist) will be compared with the player width and height (stage.stageWidth and stage.stageHeight). Max level will be set depending on the `hls_maxlevelcappingmode` option. Note: this setting is ignored in manual mode so all the levels could be selected manually.
     - false : levels will not be limited. All available levels could be used in auto-quality mode taking only bandwidth into consideration.

@@ -180,7 +180,7 @@ package org.mangui.hls.demux {
         }
 
         private function getNextTSBuffer(start : int) : ByteArray {
-            if(start + 188 <= _totalBytes) {
+            if(_dataVector && start + 188 <= _totalBytes) {
                 // find element matching with start offset
                 for(var i : int = 0, offset : int = _dataOffset; i < _dataVector.length; i++) {
                     var buffer : ByteArray = _dataVector[i], bufferLength : int = buffer.length;
@@ -220,6 +220,11 @@ package org.mangui.hls.demux {
         /** Parse a limited amount of packets each time to avoid blocking **/
         private function _parseTimer(e : Event) : void {
             var start_time : int = getTimer();
+            // if any tags left,
+            if (_tags.length) {
+                _callback_progress(_tags);
+                _tags = new Vector.<FLVTag>();
+            }
             /** Byte data to be read **/
             var data : ByteArray = getNextTSBuffer(_readPosition);
             // dont spend more than 10ms demuxing TS packets to avoid loosing frames
@@ -231,23 +236,29 @@ package org.mangui.hls.demux {
                     data = getNextTSBuffer(_readPosition);
                 }
             }
-            if (_tags.length) {
-                _callback_progress(_tags);
-                _tags = new Vector.<FLVTag>();
-            }
-            // check if we have finished with reading this TS fragment
-            if (_dataComplete && _readPosition == _totalBytes) {
-                // free ByteArray
-                _dataVector = null;
-                // first check if TS parsing was successful
-                CONFIG::LOGGING {
-                    if (_pmtParsed == false) {
-                        Log.error("TS: no PMT found, report parsing complete");
+            // if we have spare time
+            if((getTimer() - start_time) < 10) {
+                if (_tags.length) {
+                    _callback_progress(_tags);
+                    _tags = new Vector.<FLVTag>();
+                }
+                // if we have spare time
+                if((getTimer() - start_time) < 10) {
+                    // check if we have finished with reading this TS fragment
+                    if (_dataComplete && _readPosition == _totalBytes) {
+                        // free ByteArray
+                        _dataVector = null;
+                        // first check if TS parsing was successful
+                        CONFIG::LOGGING {
+                            if (_pmtParsed == false) {
+                                Log.error("TS: no PMT found, report parsing complete");
+                            }
+                        }
+                        _timer.stop();
+                        _flush();
+                        _callback_complete();
                     }
                 }
-                _timer.stop();
-                _flush();
-                _callback_complete();
             }
         }
 
@@ -518,94 +529,97 @@ package org.mangui.hls.demux {
                     // We already know it's 6, so skip first byte
                     pes.data.position = frame.start + 1;
 
-                    // get the SEI payload type
-                    var payload_type : uint = pes.data.readUnsignedByte();
+                    // we need at least 12 bytes to retrieve Caption length
+                    if(pes.data.bytesAvailable > 12) {
+                        // get the SEI payload type
+                        var payload_type : uint = pes.data.readUnsignedByte();
 
-                    if (payload_type == 4)
-                    {
-                        var payload_size : uint = 0;
-
-                        do {
-                            payload_size = pes.data.readUnsignedByte();
-                        }
-                        while(payload_size === 255)
-
-                        var country_code : uint = pes.data.readUnsignedByte();
-
-                        if (country_code == 181)
+                        if (payload_type == 4)
                         {
-                            var provider_code : uint = pes.data.readUnsignedShort();
+                            var payload_size : uint = 0;
 
-                            if (provider_code == 49)
+                            do {
+                                payload_size = pes.data.readUnsignedByte();
+                            }
+                            while(payload_size === 255)
+
+                            var country_code : uint = pes.data.readUnsignedByte();
+
+                            if (country_code == 181)
                             {
-                                var user_structure : uint = pes.data.readUnsignedInt();
+                                var provider_code : uint = pes.data.readUnsignedShort();
 
-                                if (user_structure == 0x47413934) // GA94
+                                if (provider_code == 49)
                                 {
-                                    var user_data_type : uint = pes.data.readUnsignedByte();
+                                    var user_structure : uint = pes.data.readUnsignedInt();
 
-                                    // CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
-                                    if (user_data_type == 3)
+                                    if (user_structure == 0x47413934) // GA94
                                     {
-                                        // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
-                                        var byte:uint = pes.data.readUnsignedByte();
+                                        var user_data_type : uint = pes.data.readUnsignedByte();
 
-                                        // get the total number of cc_datas
-                                        var total:uint = 31 & byte;
-                                        var count:uint = 0;
-
-                                        // supposedly a flag to process the cc_datas or not
-                                        // isn't working for me, so i don't use it yet
-                                        var process:Boolean = !((64 & byte) == 0);
-
-                                        var size:uint = total * 3;
-
-                                        // em_data, do we need? It's not used for anything, but it's there, so i need to pull it out
-                                        var otherByte:uint = pes.data.readUnsignedByte();
-
-                                        if (pes.data.bytesAvailable >= size)
+                                        // CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
+                                        if (user_data_type == 3)
                                         {
-                                            // ByteArray for onCaptionInfo event
-                                            var sei : ByteArray = new ByteArray();
+                                            // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
+                                            var byte:uint = pes.data.readUnsignedByte();
 
-                                            // onCaptionInfo payloads need to know the size of the binary data
-                                            // there's two two bytes we just read, plus the cc_datas, which are 3 bytes each
-                                            sei.writeUnsignedInt(2+3*total);
+                                            // get the total number of cc_datas
+                                            var total:uint = 31 & byte;
+                                            var count:uint = 0;
 
-                                            // write those two bytes
-                                            sei.writeByte(byte);
-                                            sei.writeByte(otherByte);
+                                            // supposedly a flag to process the cc_datas or not
+                                            // isn't working for me, so i don't use it yet
+                                            var process:Boolean = !((64 & byte) == 0);
 
-                                            // write the cc_datas
-                                            pes.data.readBytes(sei, 6, 3*total);
+                                            var size:uint = total * 3;
 
-                                            pes.data.position -= total * 3;
+                                            // em_data, do we need? It's not used for anything, but it's there, so i need to pull it out
+                                            var otherByte:uint = pes.data.readUnsignedByte();
 
-                                            // onCaptionInfo expects Base64 data...
-                                            var sei_data:String = Base64.encode(sei);
+                                            if (pes.data.bytesAvailable >= size)
+                                            {
+                                                // ByteArray for onCaptionInfo event
+                                                var sei : ByteArray = new ByteArray();
 
-                                            var cc_data:Object = {
-                                                type: "708",
-                                                data: sei_data
-                                            };
+                                                // onCaptionInfo payloads need to know the size of the binary data
+                                                // there's two two bytes we just read, plus the cc_datas, which are 3 bytes each
+                                                sei.writeUnsignedInt(2+3*total);
 
-                                            // add a new FLVTag with the onCaptionInfo call
-                                            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+                                                // write those two bytes
+                                                sei.writeByte(byte);
+                                                sei.writeByte(otherByte);
 
-                                            var data : ByteArray = new ByteArray();
-                                            data.objectEncoding = ObjectEncoding.AMF0;
-                                            data.writeObject("onCaptionInfo");
-                                            data.objectEncoding = ObjectEncoding.AMF3;
-                                            data.writeByte(0x11);
-                                            data.writeObject(cc_data);
-                                            tag.push(data, 0, data.length);
-                                            tag.build();
-                                            _tags.push(tag);
-                                        }
-                                        else
-                                        {
-                                            CONFIG::LOGGING {
-                                                Log.info("not enough bytes!");
+                                                // write the cc_datas
+                                                pes.data.readBytes(sei, 6, 3*total);
+
+                                                pes.data.position -= total * 3;
+
+                                                // onCaptionInfo expects Base64 data...
+                                                var sei_data:String = Base64.encode(sei);
+
+                                                var cc_data:Object = {
+                                                    type: "708",
+                                                    data: sei_data
+                                                };
+
+                                                // add a new FLVTag with the onCaptionInfo call
+                                                var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+
+                                                var data : ByteArray = new ByteArray();
+                                                data.objectEncoding = ObjectEncoding.AMF0;
+                                                data.writeObject("onCaptionInfo");
+                                                data.objectEncoding = ObjectEncoding.AMF3;
+                                                data.writeByte(0x11);
+                                                data.writeObject(cc_data);
+                                                tag.push(data, 0, data.length);
+                                                tag.build();
+                                                _tags.push(tag);
+                                            }
+                                            else
+                                            {
+                                                CONFIG::LOGGING {
+                                                    Log.warn("not enough bytes to extract caption!");
+                                                }
                                             }
                                         }
                                     }
