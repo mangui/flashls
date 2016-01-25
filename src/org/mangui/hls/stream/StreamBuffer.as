@@ -710,6 +710,7 @@ package org.mangui.hls.stream {
         private function filterOverlappingTags(tags : Vector.<FLVTag>, overlap : Number) : Vector.<FLVTag> {
             var aacIdx : int,avcIdx : int,disIdx : int,metIdx : int, videoIdx : int,audioIdx : int, lastIdx : int;
             var first_pts : Number = tags[0].pts + 1000*overlap;
+            var audio_dts : Number, video_dts : Number;
             var flvData : FLVData = getNextTag(false);
             if(flvData) {
                 first_pts = Math.max(first_pts,flvData.tag.pts);
@@ -717,6 +718,7 @@ package org.mangui.hls.stream {
             var filteredTags : Vector.<FLVTag>=  new Vector.<FLVTag>();
             var filteredDuration : Number = 0;
             aacIdx = avcIdx = disIdx = metIdx = videoIdx = audioIdx = lastIdx = -1;
+            audio_dts = video_dts = Number.POSITIVE_INFINITY;
             for (var i : int = 0; i < tags.length; i++) {
                 var tag : FLVTag = tags[i];
                 switch(tag.type) {
@@ -744,6 +746,7 @@ package org.mangui.hls.stream {
                         // retrieve first keyframe after first_pts
                         if (videoIdx == -1 && tag.pts > first_pts && tag.keyframe) {
                             lastIdx = videoIdx = i;
+                            video_dts = tag.dts;
                             CONFIG::LOGGING {
                                 Log.debug("found AVC_NALU_K after overlap @PTS:" + tag.pts);
                             }
@@ -756,6 +759,7 @@ package org.mangui.hls.stream {
                         // retrieve first frame after first_pts
                         if (audioIdx == -1 && tag.pts >  first_pts) {
                             lastIdx = audioIdx = i;
+                            audio_dts = tag.dts;
                         } else if (audioIdx >=0) {
                             lastIdx = i;
                         }
@@ -768,7 +772,7 @@ package org.mangui.hls.stream {
             if(lastIdx >=0) {
                 filteredDuration = tags[lastIdx].pts - first_pts;
                 CONFIG::LOGGING {
-                    Log.debug("filterOverlappingTags : filtered duration:" + filteredDuration);
+                    Log.debug("filterOverlappingTags : filtered duration:" + Math.round(filteredDuration));
                 }
             }
 
@@ -781,19 +785,20 @@ package org.mangui.hls.stream {
                 // modify PTS for DISCONTINUITY/METADATA/AAC_HEADER/AVC_HEADER tag
                 // and push as filtered tag
                 if(disIdx >=0) {
-                    tags[disIdx].pts = tags[disIdx].dts = Math.min(tags[audioIdx].dts,tags[videoIdx].dts);
+                    tags[disIdx].pts = tags[disIdx].dts = Math.min(audio_dts,video_dts);
                     filteredTags.push(tags[disIdx]);
                 }
+
                 if(metIdx >=0) {
-                    tags[metIdx].pts = tags[metIdx].dts = Math.min(tags[audioIdx].dts,tags[videoIdx].dts);
+                    tags[metIdx].pts = tags[metIdx].dts = Math.min(audio_dts,video_dts);
                     filteredTags.push(tags[metIdx]);
                 }
                 if(aacIdx >=0) {
-                    tags[aacIdx].pts = tags[aacIdx].dts = tags[audioIdx].dts;
+                    tags[aacIdx].pts = tags[aacIdx].dts = audio_dts;
                     filteredTags.push(tags[aacIdx]);
                 }
                 if(avcIdx >=0) {
-                    tags[avcIdx].pts = tags[avcIdx].dts = tags[videoIdx].dts;
+                    tags[avcIdx].pts = tags[avcIdx].dts = video_dts;
                     filteredTags.push(tags[avcIdx]);
                 }
 
