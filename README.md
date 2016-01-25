@@ -249,6 +249,8 @@ After a successful build you will find fresh binaries in the `bin/debug` and `bi
 |<img src="https://flowplayer.org/media/img/logo-blue.png" width="160">  |[FlowPlayer](http://www.flowplayer.org/)|
 |<img src="http://tidal.com/images/tidal-large-black.c8af31d9.png" width="160">  |[Tidal](https://listen.tidal.com/)|
 |<img src="https://www.ubicast.eu/static/website/img/header/logo_ubicast.svg" width="160">  |[Ubicast](https://www.ubicast.eu)|
+|<img src="https://cloud.githubusercontent.com/assets/244265/12556435/dfaceb48-c353-11e5-971b-2c4429725469.png" width="160">  |[globo.com](https://www.globo.com)|
+|<img src="https://cloud.githubusercontent.com/assets/244265/12556385/999aa884-c353-11e5-9102-79df54384498.png" width="160">  |[The New York Times](https://www.nytimes.com)|
 
 ## Donation
 
