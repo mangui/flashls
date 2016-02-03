@@ -127,6 +127,9 @@
             var audioTrait : AudioTrait = new NetStreamAudioTrait(_stream);
             addTrait(MediaTraitType.AUDIO, audioTrait);
 
+            var ccTrait : HLSClosedCaptionsTrait = new HLSClosedCaptionsTrait(_hls);
+            addTrait(HLSMediaTraitType.CLOSED_CAPTIONS, ccTrait);
+
             var bufferTrait : BufferTrait = new HLSBufferTrait(_hls);
             addTrait(MediaTraitType.BUFFER, bufferTrait);
 
