@@ -19,6 +19,8 @@ package org.mangui.hls.model {
         public var codec_h264 : Boolean;
         /** Level Bitrate. **/
         public var bitrate : uint;
+        /** captions . **/
+        public var closed_captions : String;
         /** Level Name. **/
         public var name : String;
         /** level index (sorted by bitrate) **/

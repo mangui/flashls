@@ -348,6 +348,8 @@ package org.mangui.hls.playlist {
                             }
                         } else if (param.indexOf('AUDIO') > -1) {
                             level.audio_stream_id = (param.split('=')[1] as String).replace(replacedoublequote, "").replace(trimwhitespace, "");
+                        } else if (param.indexOf('CLOSED-CAPTIONS') > -1) {
+                            level.closed_captions = (param.split('=')[1] as String).replace(replacedoublequote, "").replace(trimwhitespace, "");
                         } else if (param.indexOf('NAME') > -1) {
                             level.name = (param.split('=')[1] as String).replace(replacedoublequote, "");
                         }
