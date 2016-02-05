@@ -183,8 +183,8 @@ package org.mangui.hls.stream {
                             seek(-1);
                         }
                         return;
-                    } else if (buffer <= 0.1) {
-                        // playing and buffer <= 0.1 and not EOS, pause playback
+                    } else if (buffer <= 0.1 && !reachedEnd) {
+                        // playing and buffer <= 0.1 and not reachedEnd and not EOS, pause playback
                         super.pause();
                         // low buffer condition and play state. switch to play buffering state
                         _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
