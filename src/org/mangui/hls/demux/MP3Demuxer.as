@@ -22,6 +22,7 @@
         private var _callback_audioselect : Function;
         private var _callback_progress : Function;
         private var _callback_complete : Function;
+        private var _callback_error : Function;
         private var _callback_id3tag : Function;
 
         /** append new data */
@@ -67,6 +68,7 @@
                 } else {
                     audioTag.push(_data, frames[i].start, _data.length - frames[i].start);
                 }
+                audioTag.build();
                 audioTags.push(audioTag);
                 i++;
             }
@@ -85,10 +87,15 @@
             _callback_complete();
         }
 
-        public function MP3Demuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_id3tag : Function) : void {
+        public function MP3Demuxer(callback_audioselect : Function,
+                                   callback_progress : Function,
+                                   callback_complete : Function,
+                                   callback_error : Function,
+                                   callback_id3tag : Function) : void {
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
+            _callback_error = callback_error;
             _callback_id3tag = callback_id3tag;
         };
 

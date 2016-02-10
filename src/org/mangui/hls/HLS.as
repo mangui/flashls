@@ -14,7 +14,6 @@ package org.mangui.hls {
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
     import org.mangui.hls.event.HLSEvent;
-    import org.mangui.hls.handler.StatsHandler;
     import org.mangui.hls.loader.AltAudioLevelLoader;
     import org.mangui.hls.loader.LevelLoader;
     import org.mangui.hls.model.AudioTrack;
@@ -33,7 +32,6 @@ package org.mangui.hls {
         private var _audioTrackController : AudioTrackController;
         private var _levelController : LevelController;
         private var _streamBuffer : StreamBuffer;
-        private var _statsHandler : StatsHandler;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
         /** HLS URLStream/URLLoader **/
@@ -52,7 +50,6 @@ package org.mangui.hls {
             _altAudioLevelLoader = new AltAudioLevelLoader(this);
             _audioTrackController = new AudioTrackController(this);
             _levelController = new LevelController(this);
-            _statsHandler = new StatsHandler(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
             _hlsURLStream = URLStream as Class;
             _hlsURLLoader = URLLoader as Class;
@@ -71,8 +68,13 @@ package org.mangui.hls {
                 }
                 _hlsNetStream.close();
             }
-            return super.dispatchEvent(event);
-        };
+
+            if (hasEventListener(event.type)) {
+                return super.dispatchEvent(event);
+            }
+
+            return false;
+        }
 
         private function _levelSwitchHandler(event : HLSEvent) : void {
             _level = event.level;
@@ -85,7 +87,6 @@ package org.mangui.hls {
             _audioTrackController.dispose();
             _levelController.dispose();
             _hlsNetStream.dispose_();
-            _statsHandler.dispose();
             _streamBuffer.dispose();
             _levelLoader = null;
             _altAudioLevelLoader = null;
@@ -148,7 +149,7 @@ package org.mangui.hls {
             _streamBuffer.nextLevel = level;
         };
 
-        /*  set quality level for last loaded fragment (-1 for automatic level selection) */
+        /*  set quality level for next loaded fragment (-1 for automatic level selection) */
         public function set loadLevel(level : int) : void {
             _manual_level = level;
         };
@@ -201,6 +202,17 @@ package org.mangui.hls {
         /** Return the current seek state. **/
         public function get seekState() : String {
             return _hlsNetStream.seekState;
+        };
+
+        /** Return the current watched time **/
+        public function get watched() : Number {
+            return _hlsNetStream.watched;
+        };
+
+
+        /** Return the total nb of dropped video frames since last call to hls.load() **/
+        public function get droppedFrames() : Number {
+            return _hlsNetStream.droppedFrames;
         };
 
         /** Return the type of stream (VOD/LIVE). **/
@@ -278,11 +290,6 @@ package org.mangui.hls {
         public function get URLloader() : Class {
             return _hlsURLLoader;
         }
-        /* retrieve playback session stats */
-        public function get stats() : Object {
-            return _statsHandler.stats;
-        }
-
         /* start/restart playlist/fragment loading.
            this is only effective if MANIFEST_PARSED event has been triggered already */
         public function startLoad() : void {

@@ -83,6 +83,7 @@ package org.mangui.hls.model {
                 data.writeObject(id3_tag.data);
             }
             tag.push(data, 0, data.length);
+            tag.build();
             return tag;
         }
 
@@ -95,6 +96,7 @@ package org.mangui.hls.model {
             data.writeObject(this.seqnum);
             data.writeObject(this.duration);
             tag.push(data, 0, data.length);
+            tag.build();
             return tag;
         }
 

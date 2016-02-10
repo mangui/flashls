@@ -4,11 +4,12 @@ An Open-source HLS Flash plugin that allows you to play HLS streams.
 
 The plugin is compatible with the following players:
 
-  - [Flowplayer](#flowplayer) 3.2.12
+  - [Clappr](https://github.com/globocom/clappr) - a very easy open source player to use and to extend.
+  - [Flowplayer Flash](#flowplayer) 3.2.12
+  - [Flowplayer 6.x](https://flowplayer.org/news/)
+  - [MediaElement.js][3] (integrated in MediaElement.js since 2.15.0)  
   - [OSMF 2.0](#strobe-media-playback-smp-and-other-osmf-based-players) based players (such as SMP and GrindPlayer)
   - [Video.js][1] 4.6, 4.7, 4.8 (adaptation done here [https://github.com/mangui/video-js-swf][2])
-  - [MediaElement.js][3] (adaptation done here [https://github.com/mangui/mediaelement][4], now integrated in official MediaElement.js release since 2.15.0)
-  - [Clappr](https://github.com/globocom/clappr) - a very easy open source player to use and to extend.
 
 ## Features
 
@@ -20,7 +21,8 @@ The plugin is compatible with the following players:
       - instant switching : playback will be paused, whole buffer will be flushed, and fragments matching with new quality level and current playback position will be fetched, then playback will resume.
       - smooth switching : buffer will be flushed on next fragment boundary, and fragments matching with new quality level and next fragment position will be fetched. this allows a smooth (and still fast) quality switch, usually without interrupting the playback.
       - bandwidth conservative switching : buffer will not be flushed, but next fragment to be buffered will use the newly selected quality level.
-    - Serial segment fetching method from http://www.cs.tut.fi/~moncef/publications/rate-adaptation-IC-2011.pdf
+    - ABR algorithm : Serial segment fetching method from [Rate adaptation for dynamic adaptive streaming over HTTP in
+content distribution network, Chenghao Liu,Imed Bouazizi, Miska M. Hannuksela,Moncef Gabbouj](docs/10.1.1.300.5957.pdf)
     - Emergency quality switch-down to avoid buffering in case of sudden bandwidth drop
   - Alternate Audio Track Rendition
     - Master Playlist with alternative Audio
@@ -63,6 +65,7 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_debug2` (default false) - Toggle _verbose debug_ traces, outputted on JS console
   - `hls_minbufferlength` (default -1) - Minimum buffer length in _seconds_ that needs to be reached before playback can start (after seeking) or restart (in case of empty buffer)
     - If set to `-1` some heuristics based on past metrics are used to define an accurate value that should prevent buffer to stall
+  - `minBufferLengthCapping` (default -1) - minimum buffer length capping value (max value) if minBufferLength is set to -1
   - `hls_lowbufferlength` (default 3) - Low buffer threshold in _seconds_. When crossing down this threshold, HLS will switch to buffering state, usually the player will report this buffering state through a rotating icon. Playback will still continue.
   - `hls_maxbufferlength` (default 300) - Maximum buffer length in _seconds_ (0 means infinite buffering)
   - `hls_maxbackbufferlength` (default 30) - Maximum back buffer length in _seconds_ (0 means infinite back buffering). back buffer is seekable without redownloading segments.
@@ -77,32 +80,39 @@ The plugin accepts several **optional** configuration options, such as:
      - if 0.5, the closest to the middle bitrate will be selected and used first.
    - -1 : automatic start level selection, playback will start from level matching download bandwidth (determined from download of first segment)
    - -2 : playback will start from the first level appearing in Manifest (regardless of its bitrate)
+  - `hls_autoStartMaxDuration` (default -1) max fragment loading duration ( bw test + fragment loading) in automatic start level selection mode (in ms)
+     - If -1 : max duration not capped
+     - If greater than 0 : max duration is capped to given value. this will avoid long playback starting time. basically if set to 2000ms, and download bandwidth test took 1500ms, we only have 500ms left to load the proper fragment ... which is not enough ... this means that flashls will stick to level 0 in that case, even if download bandwidth would be enough to select an higher bitrate
   - `hls_seekfromlevel` (default -1) - If set to true, playback will start from lowest non-audio level after any seek operation. If set to false, playback will start from level used before seeking
    - from 0 to 1 : indicates the "normalized" preferred bitrate. As such,
      - if 0, lowest non-audio bitrate is used,
      - if 1, highest bitrate is used,
      - if 0.5, the closest to the middle bitrate will be selected and used first.
    - -1 : automatic seek level selection, keep level before seek.
-  - `hls_live_flushurlcache` (default false) - If set to true, Live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player / IE version)
+  - `hls_flushliveurlcache` (default false) - If set to true, Live playlist will be flushed from URL cache before reloading (this is to workaround some cache issues with some combination of Flash Player / IE version)
+  - `hls_initiallivemanifestsize` (default 1) - Number of segments needed to start playback of Live stream.
   - `hls_seekmode`
     - "ACCURATE" - Seek to exact position
     - "KEYFRAME" - Seek to last keyframe before requested position
   - `hls_manifestloadmaxretry` (default -1): max number of Manifest load retries after I/O Error.
     - if any I/O error is met during initial Manifest load, it will not be reloaded. an HLSError will be triggered immediately.
-    - After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
+    - After initial load, any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values:
         - 0, means no retry, error message will be triggered automatically
         - -1 means infinite retry
   - `hls_keyloadmaxretry` (default -1): max number of key load retries after I/O Error.
-      * any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
-          * 0, means no retry, error message will be triggered automatically
-          * -1 means infinite retry
-  - `hls_fragmentloadmaxretry` (default 4s): max number of Fragment load retries after I/O Error.
-      * any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  please note specific handling for these 2 values :
-          * 0, means no retry, error message will be triggered automatically
-          * -1 means infinite retry
+    - any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s).  Please note specific handling for these 2 values:
+        - 0, means no retry, error message will be triggered automatically
+        - -1 means infinite retry
+  - `hls_fragmentloadmaxretry` (default 4s): max number of Fragment load retries after I/O Error. 
+    - Any I/O error will trigger retries every 1s,2s,4s,8s (exponential, capped to 64s). Please note specific handling for these 2 values:
+        - 0, means no retry, error message will be triggered automatically
+        - -1 means infinite retry
   - `hls_fragmentloadskipaftermaxretry` (default true): control behaviour in case fragment load still fails after max retry timeout
-          * true : fragment will be skipped and next one will be loaded.
-          * false : an I/O Error will be raised.
+        - true : fragment will be skipped and next one will be loaded.
+        - false : an I/O Error will be raised.
+  - `hls_maxskippedfragments` (default 5): Maximum count of skipped fragments in a row before an I/O Error will be raised.
+    - 0 - no skip (same as fragmentLoadSkipAfterMaxRetry = false).
+    - -1 - no limit for skipping, skip till the end of the playlist.
   - `hls_capleveltostage` (default false) : limit levels usable in auto-quality by the stage dimensions (width and height)
     - true : level width and height (defined in m3u8 playlist) will be compared with the player width and height (stage.stageWidth and stage.stageHeight). Max level will be set depending on the `hls_maxlevelcappingmode` option. Note: this setting is ignored in manual mode so all the levels could be selected manually.
     - false : levels will not be limited. All available levels could be used in auto-quality mode taking only bandwidth into consideration.
@@ -114,6 +124,7 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_fpsdroppedmonitoringthreshold` (default 0.2) : every fpsDroppedMonitoringPeriod, dropped FPS will be compared to displayed FPS. if during that period, ratio of (dropped FPS/displayed FPS) is greater or equal than hls_fpsdroppedmonitoringthreshold, HLSEvent.FPS_DROP event will be fired.
   - `hls_caplevelonfpsdrop` (default true) : Limit levels usable in auto-quality when FPS drop is detected.i.e. if frame drop is detected on level 5, auto level will be capped to level 4. Note: this setting is ignored in manual mode so all the levels could be selected manually.
   - `hls_smoothautoswitchonfpsdrop` (default true) : force a smooth level switch Limit when FPS drop is detected in auto-quality. i.e. if frame drop is detected on level 5, it will trigger an auto quality level switch to level 4 for next fragment. Note: this setting is active only if capLevelonFPSDrop==true.
+  - `hls_switchdownonlevelerror` (default true) : if level loading fails, and if in auto mode, and we are not on lowest level, don't report Level loading error straight-away, try to switch down first
 
 ## hls API
 hls API and events are described [here](API.md)
@@ -226,6 +237,21 @@ After a successful build you will find fresh binaries in the `bin/debug` and `bi
 
   - [MPL 2.0](https://github.com/mangui/flashls/blob/master/LICENSE)
 
+
+## they use flashls in production !
+
+
+|Logo|Company|
+|:-:|:-:|
+|<img src="https://s3.amazonaws.com/BURC_Pages/downloads/a-smile_color.jpg" width="80">   |   [Amazon](http://www.amazon.com)|
+|<img src="https://bitdash-a.akamaihd.net/webpages/bitmovin-logo.png" width="160">   |[Bitmovin](http://www.bitmovin.com)|
+|<img src="http://press.dailymotion.com/fr/wp-content/uploads/sites/4/2010/06/LOGO-PRESS-BLOG.png" width="80">   |[Dailymotion](http://www.dailymotion.com)|
+|<img src="https://flowplayer.org/media/img/logo-blue.png" width="160">  |[FlowPlayer](http://www.flowplayer.org/)|
+|<img src="https://cloud.githubusercontent.com/assets/244265/12556435/dfaceb48-c353-11e5-971b-2c4429725469.png" width="160">  |[globo.com](https://www.globo.com)|
+|<img src="http://tidal.com/images/tidal-large-black.c8af31d9.png" width="160">  |[Tidal](https://listen.tidal.com/)|
+|<img src="https://cloud.githubusercontent.com/assets/244265/12556385/999aa884-c353-11e5-9102-79df54384498.png" width="160">  |[The New York Times](https://www.nytimes.com)|
+|<img src="https://www.ubicast.eu/static/website/img/header/logo_ubicast.svg" width="160">  |[Ubicast](https://www.ubicast.eu)|
+
 ## Donation
 
 If you'd like to support future development and new product features, please make a donation via PayPal. These donations are used to cover my ongoing expenses - web hosting, domain registrations, and software and hardware purchases.
@@ -234,10 +260,6 @@ If you'd like to support future development and new product features, please mak
 
 ---
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mangui/flashls/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
-
   [1]: http://www.videojs.com
   [2]: https://github.com/mangui/video-js-swf
   [3]: http://mediaelementjs.com
-  [4]: https://github.com/mangui/mediaelement

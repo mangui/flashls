@@ -58,6 +58,7 @@ package org.mangui.hls.demux {
         private var _callback_audioselect : Function;
         private var _callback_progress : Function;
         private var _callback_complete : Function;
+        private var _callback_error : Function;
         private var _callback_videometadata : Function;
         /* current audio PES */
         private var _curAudioPES : ByteArray;
@@ -78,6 +79,7 @@ package org.mangui.hls.demux {
         private var _timer : Timer;
         private var _totalBytes : uint;
         private var _audioOnly : Boolean;
+        private var _audioFound : Boolean;
         private var _audioSelected : Boolean;
 
         public static function probe(data : ByteArray) : Boolean {
@@ -102,7 +104,12 @@ package org.mangui.hls.demux {
         }
 
         /** Transmux the M2TS file into an FLV file. **/
-        public function TSDemuxer(callback_audioselect : Function, callback_progress : Function, callback_complete : Function, callback_videometadata : Function, audioOnly : Boolean) {
+        public function TSDemuxer(callback_audioselect : Function,
+                                  callback_progress : Function,
+                                  callback_complete : Function,
+                                  callback_error : Function,
+                                  callback_videometadata : Function,
+                                  audioOnly : Boolean) {
             _avcc = null;
             _curAudioPES = null;
             _curVideoPES = null;
@@ -113,6 +120,7 @@ package org.mangui.hls.demux {
             _callback_audioselect = callback_audioselect;
             _callback_progress = callback_progress;
             _callback_complete = callback_complete;
+            _callback_error = callback_error;
             _callback_videometadata = callback_videometadata;
             _pmtParsed = false;
             _unknownPIDFound = false;
@@ -122,6 +130,7 @@ package org.mangui.hls.demux {
             _tags = new Vector.<FLVTag>();
             _timer = new Timer(0, 0);
             _audioOnly = audioOnly;
+            _audioFound = false;
             _audioSelected = true;
         };
 
@@ -155,6 +164,7 @@ package org.mangui.hls.demux {
             _avcc = null;
             _tags = new Vector.<FLVTag>();
             _timer.stop();
+            _timer.removeEventListener(TimerEvent.TIMER, _parseTimer);
         }
 
         public function notifycomplete() : void {
@@ -170,7 +180,7 @@ package org.mangui.hls.demux {
         }
 
         private function getNextTSBuffer(start : int) : ByteArray {
-            if(start + 188 <= _totalBytes) {
+            if(_dataVector && start + 188 <= _totalBytes) {
                 // find element matching with start offset
                 for(var i : int = 0, offset : int = _dataOffset; i < _dataVector.length; i++) {
                     var buffer : ByteArray = _dataVector[i], bufferLength : int = buffer.length;
@@ -210,33 +220,45 @@ package org.mangui.hls.demux {
         /** Parse a limited amount of packets each time to avoid blocking **/
         private function _parseTimer(e : Event) : void {
             var start_time : int = getTimer();
+            // if any tags left,
+            if (_tags.length) {
+                _callback_progress(_tags);
+                _tags = new Vector.<FLVTag>();
+            }
             /** Byte data to be read **/
             var data : ByteArray = getNextTSBuffer(_readPosition);
-            // dont spend more than 20ms demuxing TS packets to avoid loosing frames
-            while(data  != null && ((getTimer() - start_time) < 20)) {
+            // dont spend more than 10ms demuxing TS packets to avoid loosing frames
+            // if frame rate is 60fps, we have 1000/60 = 16.6ms budget total per frame
+            while(data  != null && ((getTimer() - start_time) < 10)) {
                 _parseTSPacket(data);
                 _readPosition+=PACKETSIZE;
                 if(data.bytesAvailable < PACKETSIZE) {
                     data = getNextTSBuffer(_readPosition);
                 }
             }
-            if (_tags.length) {
-                _callback_progress(_tags);
-                _tags = new Vector.<FLVTag>();
-            }
-            // check if we have finished with reading this TS fragment
-            if (_dataComplete && _readPosition == _totalBytes) {
-                // free ByteArray
-                _dataVector = null;
-                // first check if TS parsing was successful
-                CONFIG::LOGGING {
-                    if (_pmtParsed == false) {
-                        Log.error("TS: no PMT found, report parsing complete");
+            // if we have spare time
+            if((getTimer() - start_time) < 10) {
+                if (_tags.length) {
+                    _callback_progress(_tags);
+                    _tags = new Vector.<FLVTag>();
+                }
+                // if we have spare time
+                if((getTimer() - start_time) < 10) {
+                    // check if we have finished with reading this TS fragment
+                    if (_dataComplete && _readPosition == _totalBytes) {
+                        // free ByteArray
+                        _dataVector = null;
+                        // first check if TS parsing was successful
+                        CONFIG::LOGGING {
+                            if (_pmtParsed == false) {
+                                Log.error("TS: no PMT found, report parsing complete");
+                            }
+                        }
+                        _timer.stop();
+                        _flush();
+                        _callback_complete();
                     }
                 }
-                _timer.stop();
-                _flush();
-                _callback_complete();
             }
         }
 
@@ -283,6 +305,7 @@ package org.mangui.hls.demux {
                         if (_curNalUnit && _curNalUnit.length) {
                             _curVideoTag.push(_curNalUnit, 0, _curNalUnit.length);
                         }
+                        _curVideoTag.build();
                         _tags.push(_curVideoTag);
                         _curVideoTag = null;
                         _curNalUnit = null;
@@ -367,6 +390,7 @@ package org.mangui.hls.demux {
                     Log.debug("TS/AAC: insert ADIF TAG");
                 }
                 adifTag.push(adif, 0, adif.length);
+                adifTag.build();
                 _tags.push(adifTag);
                 _adifTagInserted = true;
             }
@@ -379,6 +403,7 @@ package org.mangui.hls.demux {
                 stamp = Math.round(pes.pts + j * 1024 * 1000 / frame.rate);
                 var curAudioTag : FLVTag = new FLVTag(FLVTag.AAC_RAW, stamp, stamp, false);
                 curAudioTag.push(pes.data, frame.start, frame.length);
+                curAudioTag.build();
                 _tags.push(curAudioTag);
             }
             if (frame) {
@@ -412,6 +437,7 @@ package org.mangui.hls.demux {
             _audioPESfound=true;
             var tag : FLVTag = new FLVTag(FLVTag.MP3_RAW, pes.pts, pes.dts, false);
             tag.push(pes.data, pes.payload, pes.data.length - pes.payload);
+            tag.build();
             _tags.push(tag);
         };
 
@@ -464,6 +490,7 @@ package org.mangui.hls.demux {
                         }
                         // only push current tag if AVC HEADER has been pushed already
                         if(_avcc) {
+                            _curVideoTag.build();
                             _tags.push(_curVideoTag);
                         }
                         CONFIG::LOGGING {
@@ -502,94 +529,97 @@ package org.mangui.hls.demux {
                     // We already know it's 6, so skip first byte
                     pes.data.position = frame.start + 1;
 
-                    // get the SEI payload type
-                    var payload_type : uint = pes.data.readUnsignedByte();
+                    // we need at least 12 bytes to retrieve Caption length
+                    if(pes.data.bytesAvailable > 12) {
+                        // get the SEI payload type
+                        var payload_type : uint = pes.data.readUnsignedByte();
 
-                    if (payload_type == 4)
-                    {
-                        var payload_size : uint = 0;
-
-                        do {
-                            payload_size = pes.data.readUnsignedByte();
-                        }
-                        while(payload_size === 255)
-
-                        var country_code : uint = pes.data.readUnsignedByte();
-
-                        if (country_code == 181) 
+                        if (payload_type == 4)
                         {
-                            var provider_code : uint = pes.data.readUnsignedShort();
+                            var payload_size : uint = 0;
 
-                            if (provider_code == 49)
+                            do {
+                                payload_size = pes.data.readUnsignedByte();
+                            }
+                            while(payload_size === 255)
+
+                            var country_code : uint = pes.data.readUnsignedByte();
+
+                            if (country_code == 181)
                             {
-                                var user_structure : uint = pes.data.readUnsignedInt();
+                                var provider_code : uint = pes.data.readUnsignedShort();
 
-                                if (user_structure == 0x47413934) // GA94
+                                if (provider_code == 49)
                                 {
-                                    var user_data_type : uint = pes.data.readUnsignedByte();                                    
+                                    var user_structure : uint = pes.data.readUnsignedInt();
 
-                                    // CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
-                                    if (user_data_type == 3)
+                                    if (user_structure == 0x47413934) // GA94
                                     {
-                                        // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
-                                        var byte:uint = pes.data.readUnsignedByte();
-                                    
-                                        // get the total number of cc_datas
-                                        var total:uint = 31 & byte;
-                                        var count:uint = 0;
+                                        var user_data_type : uint = pes.data.readUnsignedByte();
 
-                                        // supposedly a flag to process the cc_datas or not
-                                        // isn't working for me, so i don't use it yet
-                                        var process:Boolean = !((64 & byte) == 0);
-
-                                        var size:uint = total * 3;
-
-                                        // em_data, do we need? It's not used for anything, but it's there, so i need to pull it out
-                                        var otherByte:uint = pes.data.readUnsignedByte();
-
-                                        if (pes.data.bytesAvailable >= size)
+                                        // CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
+                                        if (user_data_type == 3)
                                         {
-                                            // ByteArray for onCaptionInfo event
-                                            var sei : ByteArray = new ByteArray();
+                                            // cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
+                                            var byte:uint = pes.data.readUnsignedByte();
 
-                                            // onCaptionInfo payloads need to know the size of the binary data
-                                            // there's two two bytes we just read, plus the cc_datas, which are 3 bytes each
-                                            sei.writeUnsignedInt(2+3*total);
+                                            // get the total number of cc_datas
+                                            var total:uint = 31 & byte;
+                                            var count:uint = 0;
 
-                                            // write those two bytes
-                                            sei.writeByte(byte);
-                                            sei.writeByte(otherByte);
+                                            // supposedly a flag to process the cc_datas or not
+                                            // isn't working for me, so i don't use it yet
+                                            var process:Boolean = !((64 & byte) == 0);
 
-                                            // write the cc_datas
-                                            pes.data.readBytes(sei, 6, 3*total);
+                                            var size:uint = total * 3;
 
-                                            pes.data.position -= total * 3;
+                                            // em_data, do we need? It's not used for anything, but it's there, so i need to pull it out
+                                            var otherByte:uint = pes.data.readUnsignedByte();
 
-                                            // onCaptionInfo expects Base64 data...
-                                            var sei_data:String = Base64.encode(sei);
+                                            if (pes.data.bytesAvailable >= size)
+                                            {
+                                                // ByteArray for onCaptionInfo event
+                                                var sei : ByteArray = new ByteArray();
 
-                                            var cc_data:Object = {
-                                                type: "708",
-                                                data: sei_data
-                                            };
+                                                // onCaptionInfo payloads need to know the size of the binary data
+                                                // there's two two bytes we just read, plus the cc_datas, which are 3 bytes each
+                                                sei.writeUnsignedInt(2+3*total);
 
-                                            // add a new FLVTag with the onCaptionInfo call
-                                            var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+                                                // write those two bytes
+                                                sei.writeByte(byte);
+                                                sei.writeByte(otherByte);
 
-                                            var data : ByteArray = new ByteArray();
-                                            data.objectEncoding = ObjectEncoding.AMF0;
-                                            data.writeObject("onCaptionInfo");
-                                            data.objectEncoding = ObjectEncoding.AMF3;
-                                            data.writeByte(0x11);
-                                            data.writeObject(cc_data);
-                                            tag.push(data, 0, data.length);
+                                                // write the cc_datas
+                                                pes.data.readBytes(sei, 6, 3*total);
 
-                                            _tags.push(tag);
-                                        }
-                                        else
-                                        {
-                                            CONFIG::LOGGING {
-                                                Log.info("not enough bytes!");                                
+                                                pes.data.position -= total * 3;
+
+                                                // onCaptionInfo expects Base64 data...
+                                                var sei_data:String = Base64.encode(sei);
+
+                                                var cc_data:Object = {
+                                                    type: "708",
+                                                    data: sei_data
+                                                };
+
+                                                // add a new FLVTag with the onCaptionInfo call
+                                                var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+
+                                                var data : ByteArray = new ByteArray();
+                                                data.objectEncoding = ObjectEncoding.AMF0;
+                                                data.writeObject("onCaptionInfo");
+                                                data.objectEncoding = ObjectEncoding.AMF3;
+                                                data.writeByte(0x11);
+                                                data.writeObject(cc_data);
+                                                tag.push(data, 0, data.length);
+                                                tag.build();
+                                                _tags.push(tag);
+                                            }
+                                            else
+                                            {
+                                                CONFIG::LOGGING {
+                                                    Log.warn("not enough bytes to extract caption!");
+                                                }
                                             }
                                         }
                                     }
@@ -597,17 +627,26 @@ package org.mangui.hls.demux {
                             }
                         }
                     }
+                } else if (frame.type == 0) {
+                    // report parsing error
+                    if(_callback_error != null) {
+                        _callback_error("TS: invalid NALu type found, corrupted fragment ?");
+                        return;
+                    }
                 }
             }
             // if both SPS and PPS have been found, build AVCC and push tag if needed
             if (sps_found && pps_found) {
                 var avcc : ByteArray = AVCC.getAVCC(sps, ppsvect);
                 // only push AVCC tag if never pushed or avcc different from previous one
-                _avcc = avcc;
-                var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
-                avccTag.push(avcc, 0, avcc.length);
-                // Log.debug("TS:AVC:push AVC HEADER");
-                _tags.push(avccTag);
+                if (_avcc == null || !compareByteArray(_avcc, avcc)) {
+                    _avcc = avcc;
+                    var avccTag : FLVTag = new FLVTag(FLVTag.AVC_HEADER, pes.pts, pes.dts, true);
+                    avccTag.push(avcc, 0, avcc.length);
+                    avccTag.build();
+                    // Log.debug("TS:AVC:push AVC HEADER");
+                    _tags.push(avccTag);
+                }
             }
 
             /*
@@ -659,6 +698,26 @@ package org.mangui.hls.demux {
             }
         }
 
+        // return true if same Byte Array
+        private function compareByteArray(ba1 : ByteArray, ba2 : ByteArray) : Boolean {
+            // compare the lengths
+            var size : uint = ba1.length;
+            if (ba1.length == ba2.length) {
+                ba1.position = 0;
+                ba2.position = 0;
+
+                // then the bytes
+                while (ba1.position < size) {
+                    var v1 : int = ba1.readByte();
+                    if (v1 != ba2.readByte()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
         /** parse ID3 PES packet **/
         private function _parseID3PES(pes : PES) : void {
             // note: apple spec does not include having PTS in ID3!!!!
@@ -692,6 +751,7 @@ package org.mangui.hls.demux {
             // then write the ByteArray
             data.writeObject(pespayload);
             tag.push(data, 0, data.length);
+            tag.build();
             _tags.push(tag);
         }
 
@@ -715,7 +775,10 @@ package org.mangui.hls.demux {
                     }
                     data.position = pos_end + 1;
                 } else {
-                    throw new Error("TS: Could not parse file: sync byte not found @ offset/len " + data.position + "/" + data.length);
+                    if(_callback_error != null) {
+                        _callback_error("TS: Could not parse file: sync byte not found @ offset/len " + data.position + "/" + data.length);
+                        return;
+                    }
                 }
             }
             todo--;
@@ -774,10 +837,10 @@ package org.mangui.hls.demux {
                             }
                             _pmtParsed = true;
                             _readPosition = 0;
-                            _unknownPIDFound = false;
                             return;
                         }
                         _pmtParsed = true;
+                        _unknownPIDFound = false;
                     }
                     break;
                 case _audioId:
@@ -862,10 +925,14 @@ package org.mangui.hls.demux {
                 default:
                 /* check for unknown PID :
                     video PID not defined and stream is not audio only OR
-                    audio PID not defined and audio selected
+                    audio PID not defined and audio not found
                     adding this condition is useful to avoid reporting unknown PIDs for streams with multiple audio PIDs for example ...
                 */
-                    if((_avcId ==-1 && !_audioOnly) || (_audioId ==-1 && _audioSelected)) {
+                    if((_avcId ==-1 && !_audioOnly) ||
+                       (_audioId ==-1 && !_audioFound)) {
+                        CONFIG::LOGGING {
+                            Log.debug("TS: unknown PID:" + pid);
+                        }
                         _unknownPIDFound = true;
                     }
                     break;
@@ -886,13 +953,11 @@ package org.mangui.hls.demux {
             data.position += 1;
             // get section length
             var sectionLen : uint = data.readUnsignedShort() & 0x3FF;
-            // Check the section length for a single PMT.
-            if (sectionLen > 13) {
-                throw new Error("TS: Multiple PMT entries are not supported.");
+            if (sectionLen >= 13) {
+                // Grab the first PMT ID
+                data.position += 7;
+                _pmtId = data.readUnsignedShort() & 8191;
             }
-            // Grab the PMT ID.
-            data.position += 7;
-            _pmtId = data.readUnsignedShort() & 8191;
             return 13 + pointerField;
         };
 
@@ -964,6 +1029,7 @@ package org.mangui.hls.demux {
             }
             // provide audio track List to audio select callback. this callback will return the selected audio track
             var audioPID : int;
+            _audioFound = (audioList.length > 0);
             var audioTrack : AudioTrack = _callback_audioselect(audioList);
             if (audioTrack) {
                 audioPID = audioTrack.id;

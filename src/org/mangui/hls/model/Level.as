@@ -95,16 +95,23 @@ package org.mangui.hls.model {
             return fragments[len - 1];
         };
 
-        /** Return the sequence number from a given program date **/
-        public function getSeqNumFromProgramDate(program_date : Number) : int {
+        /** Return the sequence number nearest a given program date **/
+        public function getSeqNumNearestProgramDate(program_date : Number) : int {
             if (program_date < fragments[0].program_date)
                 return -1;
 
             var len : int = fragments.length;
-            for (var i : int = 0; i < len; i++) {
-                /* check whether fragment contains current position */
-                if (fragments[i].data.valid && fragments[i].program_date <= program_date && fragments[i].program_date + 1000 * fragments[i].duration > program_date) {
-                    return (start_seqnum + i);
+            if(len) {
+                if (program_date > (fragments[len-1].program_date + 1000*fragments[len-1].duration))
+                    return -1;
+
+                for (var i : int = 0; i < len; i++) {
+                    var frag : Fragment = fragments[i];
+                    /* check whether fragment contains current position */
+                    if (frag.data.valid &&
+                        Math.abs(frag.program_date - program_date) < Math.abs(frag.program_date + 1000 * frag.duration - program_date)) {
+                        return frag.seqnum;
+                    }
                 }
             }
             return -1;
@@ -121,13 +128,43 @@ package org.mangui.hls.model {
 
             for (var i : int = firstIndex; i <= lastIndex; i++) {
                 var frag : Fragment = fragments[i];
+                var start : Number = frag.data.pts_start_computed;
+                var duration :Number = frag.duration;
+                var end : Number = start + 1000*duration;
+
+                // CONFIG::LOGGING {
+                //     Log.debug("getSeqNumNearestPTS: pts/start/end/duration:" + pts + '/' + start + '/' + end + '/' + duration);
+                // }
                 /* check nearest fragment */
-                if ( frag.data.valid && (frag.duration >= 0) && (Math.abs(frag.data.pts_start_computed - pts) < Math.abs(frag.data.pts_start_computed + 1000 * frag.duration - pts))) {
+                if ( frag.data.valid &&
+                    (duration >= 0) &&
+                    // if PTS is closer from start
+                    ((Math.abs(start - pts) < Math.abs(end - pts))
+                    //  start PTS                     end
+                    //    *----|-----------------------*
+                    //
+                    //  PTS start                 end
+                    //   |--*-----------------------*
+                    //
+                    //
+                    // OR if PTS is bigger than start PTS AND more than 10% before frag end
+                    //
+                    //  start                   PTS  end
+                    //    *----------------------|-----*
+                    //                             <10%>
+                    || ((pts > start) &&
+                        (end - pts ) > 100*duration))) {
                     return frag.seqnum;
                 }
             }
-            // requested PTS above max PTS of this level
-            return Number.POSITIVE_INFINITY;
+            // if we are not at the end of the playlist, then return first sn of next cc range
+            // this is needed to deal with PTS analysis on streams with discontinuity
+            if (lastIndex < end_seqnum) {
+                return frag.seqnum+1;
+            } else {
+                // requested PTS above max PTS of this level
+                return Number.POSITIVE_INFINITY;
+            }
         };
 
         public function getLevelstartPTS() : Number {

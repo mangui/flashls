@@ -18,8 +18,13 @@ package org.mangui.hls.stream {
     import flash.events.Event;
     import flash.events.NetStatusEvent;
     import flash.events.TimerEvent;
-    import flash.net.*;
-    import flash.utils.*;
+    import flash.net.NetConnection;
+    import flash.net.NetStream;
+    import flash.net.NetStreamAppendBytesAction;
+    import flash.net.NetStreamInfo;
+    import flash.net.NetStreamPlayOptions;
+    import flash.utils.ByteArray;
+    import flash.utils.Timer;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -61,13 +66,19 @@ package org.mangui.hls.stream {
         private var _client : HLSNetStreamClient;
         /** skipped fragment duration **/
         private var _skippedDuration : Number;
+        /** watched duration **/
+        private var _watchedDuration : Number;
+        /** dropped frames counter **/
+        private var _droppedFrames : Number;
+        /** last NetStream.time, used to check if playback is over **/
+        private var _lastNetStreamTime : Number;
 
         /** Create the buffer. **/
         public function HLSNetStream(connection : NetConnection, hls : HLS, streamBuffer : StreamBuffer) : void {
             super(connection);
             super.bufferTime = 0.1;
             _hls = hls;
-            _skippedDuration = 0;
+            _skippedDuration = _watchedDuration = _droppedFrames = _lastNetStreamTime = 0;
             _bufferThresholdController = new BufferThresholdController(hls);
             _streamBuffer = streamBuffer;
             _playbackState = HLSPlayStates.IDLE;
@@ -126,19 +137,34 @@ package org.mangui.hls.stream {
 
         /** timer function, check/update NetStream state, and append tags if needed **/
         private function _checkBuffer(e : Event) : void {
-            var buffer : Number = this.bufferLength;
+            var buffer : Number = this.bufferLength,
+                minBufferLength : Number =_bufferThresholdController.minBufferLength,
+                reachedEnd : Boolean = _streamBuffer.reachedEnd,
+                liveLoadingStalled : Boolean = _streamBuffer.liveLoadingStalled;
             // Log.info("netstream/total:" + super.bufferLength + "/" + this.bufferLength);
-            // Set playback state. no need to check buffer status if seeking
+
             if (_seekState != HLSSeekStates.SEEKING) {
-                // check low buffer condition
-                if (buffer <= 0.1) {
-                    if (_streamBuffer.reachedEnd || _streamBuffer.liveLoadingStalled) {
-                        // Last tag done? Then append sequence end.
+                if (_playbackState == HLSPlayStates.PLAYING) {
+                  /* check if play head reached end of stream.
+                        this happens when
+                            playstate is PLAYING
+                        AND last fragment has been loaded,
+                            either because we reached end of VOD or because live loading stalled ...
+                        AND NetStream is almost empty(less than 2s ... this is just for safety ...)
+                        AND StreamBuffer is empty(it means that last fragment tags have been appended in NetStream)
+                        AND playhead is not moving anymore (NetStream.time not changing overtime)
+                    */
+                    if((reachedEnd || liveLoadingStalled) &&
+                       bufferLength <= 2 &&
+                       _streamBuffer.bufferLength == 0 &&
+                       _lastNetStreamTime &&
+                       super.time == _lastNetStreamTime) {
+                        // playhead is not moving anymore ... append sequence end.
                         super.appendBytesAction(NetStreamAppendBytesAction.END_SEQUENCE);
                         super.appendBytes(new ByteArray());
-                        // reach end of playlist + playback complete (as buffer is empty).
-                        // stop timer, report event and switch to IDLE mode.
-                        if(_streamBuffer.reachedEnd) {
+                        // have we reached end of playlist ?
+                        if(reachedEnd) {
+                            // stop timer, report event and switch to IDLE mode.
                             _timer.stop();
                             CONFIG::LOGGING {
                                 Log.debug("reached end of VOD playlist, notify playback complete");
@@ -147,7 +173,7 @@ package org.mangui.hls.stream {
                             _setPlaybackState(HLSPlayStates.IDLE);
                             _setSeekState(HLSSeekStates.IDLE);
                         } else {
-                            // flush buffer and restart playback in case live loading stalled
+                            // live loading stalled : flush buffer and restart playback
                             CONFIG::LOGGING {
                                 Log.warn("loading stalled: restart playback");
                             }
@@ -157,13 +183,16 @@ package org.mangui.hls.stream {
                             seek(-1);
                         }
                         return;
-                    } else {
-                        // buffer <= 0.1 and not EOS, pause playback
+                    } else if (buffer <= 0.1 && !reachedEnd) {
+                        // playing and buffer <= 0.1 and not reachedEnd and not EOS, pause playback
                         super.pause();
+                        // low buffer condition and play state. switch to play buffering state
+                        _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
                     }
+                    _lastNetStreamTime = super.time;
                 }
                 // if buffer len is below lowBufferLength, get into buffering state
-                if (!_streamBuffer.reachedEnd && !_streamBuffer.liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
+                if (!reachedEnd && !liveLoadingStalled && buffer < _bufferThresholdController.lowBufferLength) {
                     if (_playbackState == HLSPlayStates.PLAYING) {
                         // low buffer condition and play state. switch to play buffering state
                         _setPlaybackState(HLSPlayStates.PLAYING_BUFFERING);
@@ -173,10 +202,10 @@ package org.mangui.hls.stream {
                     }
                 }
                 // if buffer len is above minBufferLength, get out of buffering state
-                if (buffer >= _bufferThresholdController.minBufferLength || _streamBuffer.reachedEnd || _streamBuffer.liveLoadingStalled) {
+                if (buffer >= minBufferLength || reachedEnd || liveLoadingStalled) {
                     if (_playbackState == HLSPlayStates.PLAYING_BUFFERING) {
                         CONFIG::LOGGING {
-                            Log.debug("resume playback");
+                            Log.debug("resume playback, minBufferLength/bufferLength:"+minBufferLength.toFixed(2) + "/" + buffer.toFixed(2));
                         }
                         // resume playback in case it was paused, this can happen if buffer was in really low condition (less than 0.1s)
                         super.resume();
@@ -209,14 +238,18 @@ package org.mangui.hls.stream {
                 /* this is our first injection after seek(),
                 let's flush netstream now
                 this is to avoid black screen during seek command */
-                super.close();
+                _watchedDuration += super.time;
+                _droppedFrames += super.info.droppedFrames;
                 _skippedDuration = 0;
-                CONFIG::FLASH_11_1 {
-                    try {
-                        super.useHardwareDecoder = HLSSettings.useHardwareVideoDecoder;
-                    } catch(e : Error) {
-                    }
+                super.close();
+
+               // useHardwareDecoder was added in FP11.1, but this allows us to include the option in all builds
+                try {
+                    super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
+                } catch(e : Error) {
+	               // Ignore errors, we're running in FP < 11.1
                 }
+
                 super.play(null);
                 super.appendBytesAction(NetStreamAppendBytesAction.RESET_SEEK);
                 // immediatly pause NetStream, it will be resumed when enough data will be buffered in the NetStream
@@ -243,7 +276,26 @@ package org.mangui.hls.stream {
                 // }
             }
             // append all tags
+            //var otherCounter : int = 0;
             for each (var tagBuffer : FLVTag in tags) {
+                // switch(tagBuffer.type) {
+                //     case FLVTag.AAC_HEADER:
+                //     case FLVTag.AVC_HEADER:
+                //     case FLVTag.DISCONTINUITY:
+                //     case FLVTag.METADATA:
+                //         otherCounter = 0;
+                //         CONFIG::LOGGING {
+                //             Log.info('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
+                //         }
+                //         break;
+                //     default:
+                //         CONFIG::LOGGING {
+                //             if(otherCounter++< 5) {
+                //                 Log.info('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
+                //             }
+                //         }
+                //     break;
+                // }
                 // CONFIG::LOGGING {
                 //     Log.debug2('inject type/dts/pts:' + tagBuffer.typeString + '/' + tagBuffer.dts + '/' + tagBuffer.pts);
                 // }
@@ -290,6 +342,16 @@ package org.mangui.hls.stream {
         /* also include skipped duration in get time() so that play position will match fragment position */
         override public function get time() : Number {
             return super.time+_skippedDuration;
+        }
+
+        /* return nb of dropped Frames since session started */
+        public function get droppedFrames() : Number {
+            return super.info.droppedFrames + _droppedFrames;
+        }
+
+        /** Return total watched time **/
+        public function get watched() : Number {
+            return super.time + _watchedDuration;
         }
 
         override public function play(...args) : void {
@@ -405,6 +467,7 @@ package org.mangui.hls.stream {
                 Log.info("HLSNetStream:close");
             }
             super.close();
+            _watchedDuration = _skippedDuration = _lastNetStreamTime = _droppedFrames = 0;
             _streamBuffer.stop();
             _timer.stop();
             _setPlaybackState(HLSPlayStates.IDLE);
@@ -413,6 +476,7 @@ package org.mangui.hls.stream {
 
         public function dispose_() : void {
             close();
+            _timer.removeEventListener(TimerEvent.TIMER, _checkBuffer);
             _bufferThresholdController.dispose();
         }
     }

@@ -54,7 +54,7 @@
                     case 2:
                     case 3:
                         if(value) {
-                            if(value === 1) {
+                            if(value === 1 && i < len) {
                                 unitType = nalu[i] & 0x1f;
                                 if(unitType == 9) {
                                     audFound = true;

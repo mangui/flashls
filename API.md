@@ -89,6 +89,29 @@ by monitoring the below event, that will be triggered for every seek state chang
 HLSEvent.SEEK_STATE
 ```
 
+### monitoring playback position, buffer progress, live playlist sliding, watched time ...
+
+#### hls.position
+return current playback relative position( relative to live main playlist sliding), in seconds
+
+#### hls.liveSlidingMain
+Return the live main playlist sliding since previous out of buffer ```seek()```, in seconds 
+
+#### hls.liveSlidingAltAudio
+Return the live alternate audio playlist sliding since previous out of buffer ```seek()```,in seconds
+
+#### hls.stream.bufferLength
+Return the current buffer length, in seconds
+
+#### hls.stream.backBufferLength
+Return the current back buffer length, in seconds
+
+#### hls.watched
+Return the current watched time in seconds, since last call to ```hls.load(URL)```
+
+#### hls.droppedFrames
+Return the total number of dropped video frames, since last call to ```hls.load(URL)```
+
 ## Controlling Quality Switch
 
 by default flashls handles quality switch automatically, using heuristics.
@@ -141,43 +164,6 @@ get/set : capping/max level value that could be used by automatic level selectio
 
 default value is -1 (no level capping)
 
-
-#### hls.stats
-get : return playback session stats
-
-```js
-{
-  tech : 'flashls',
-  levelNb : total nb of quality level referenced in Manifest
-  levelStart : first quality level experienced by End User
-  autoLevelMin : min quality level experienced by End User (in auto mode)
-  autoLevelMax : max quality level experienced by End User (in auto mode)
-  autoLevelAvg : avg quality level experienced by End User (in auto mode)
-  autoLevelLast : last quality level experienced by End User (in auto mode)
-  autoLevelSwitch : nb of quality level switch in auto mode
-  autoLevelCappingMin : min auto quality level capping value
-  autoLevelCappingMax : max auto quality level capping value
-  autoLevelCappingLast : last auto quality level capping value
-  manualLevelMin : min quality level experienced by End User (in manual mode)
-  manualLevelMax : max quality level experienced by End User (in manual mode)
-  manualLevelLast : last quality level experienced by End User (in manual mode)
-  manualLevelSwitch : nb of quality level switch in manual mode
-  fragLastKbps : last fragment load bandwidth  
-  fragMinKbps : min fragment load bandwidth
-  fragMaxKbps : max fragment load bandwidth
-  fragAvgKbps : avg fragment load bandwidth
-  fragLastLatency : last fragment load latency
-  fragMinLatency : min fragment load latency
-  fragMaxLatency : max fragment load latency
-  fragAvgLatency : avg fragment load latency
-  fragBuffered : total nb of buffered fragments
-  fragBufferedBytes : total nb of buffered bytes
-  fragSkipped : total nb of skipped fragments
-  fragChangedAuto : nb of frag played (loaded in auto mode)
-  fragChangedManual : nb of frag played (loaded in manual mode)
-}
-```
-
 #### ```hls.startLoad()```
 start/restart playlist/fragment loading. this is only effective if MANIFEST_PARSED event has been triggered
 
@@ -218,7 +204,7 @@ full list of Events is described below :
     -  data: { loadMetrics : HLSLoadMetrics }
   - `HLSEvent.FRAGMENT_PLAYING`  - triggered when playback switches to a new fragment
   	-  data: { playMetrics : HLSPlayMetrics }
-  - `HLSEvent.FRAGMENT_SKIPPED`  - triggered when a fragment has been skipped because of fragment load I/O error
+  - `HLSEvent.FRAGMENT_SKIPPED`  - triggered when a fragment has been skipped because of fragment load I/O or parsing error
     -  data: { duration : skipped fragment duration }
   - `HLSEvent.AUDIO_TRACKS_LIST_CHANGE`  - triggered when available audio tracks list changes
   	-  data: none
@@ -232,6 +218,8 @@ full list of Events is described below :
   	-  data: { loadMetrics : HLSLoadMetrics }
   - `HLSEvent.LAST_VOD_FRAGMENT_LOADED`  - triggered when last fragment of a VoD playlist has been successfully loaded
   	-  data: none
+  - `HLSEvent.WARNING`  - triggered when any warning (potentially recoverable error) occurs
+    -  data: { error : HLSError}
   - `HLSEvent.ERROR`  - triggered when any error occurs
   	-  data: { error : HLSError}
   - `HLSEvent.MEDIA_TIME`  - triggered when media position gets updated

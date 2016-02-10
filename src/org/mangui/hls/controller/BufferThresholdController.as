@@ -16,10 +16,6 @@ package org.mangui.hls.controller {
     public class BufferThresholdController {
         /** Reference to the HLS controller. **/
         private var _hls : HLS;
-        // max nb of samples used for bw checking. the bigger it is, the more conservative it is.
-        private static const MAX_SAMPLES : int = 30;
-        private var _bw : Vector.<Number>;
-        private var _nbSamples : uint;
         private var _targetduration : Number;
         private var _minBufferLength : Number;
 
@@ -55,9 +51,7 @@ package org.mangui.hls.controller {
         }
 
         private function _manifestLoadedHandler(event : HLSEvent) : void {
-            _nbSamples = 0;
             _targetduration = event.levels[_hls.startLevel].targetduration;
-            _bw = new Vector.<Number>(MAX_SAMPLES,true);
             _minBufferLength = _targetduration;
         };
 
@@ -65,34 +59,18 @@ package org.mangui.hls.controller {
             var metrics : HLSLoadMetrics = event.loadMetrics;
             // only monitor main fragment metrics for buffer threshold computing
             if(metrics.type == HLSLoaderTypes.FRAGMENT_MAIN) {
-                var cur_bw : int = metrics.bandwidth;
-                _bw[_nbSamples % MAX_SAMPLES] = cur_bw;
-                _nbSamples++;
-
-                // compute min bw on MAX_SAMPLES
-                var minBw : Number = Number.POSITIVE_INFINITY;
-                var samples_max : int = Math.min(_nbSamples, MAX_SAMPLES);
-                for (var i : int = 0; i < samples_max; i++) {
-                    minBw = Math.min(minBw, _bw[i]);
-                }
-
-                // give more weight to current bandwidth
-                var bw_ratio : Number = 2 * cur_bw / (minBw + cur_bw);
-
-                /* predict time to dl next segment using a conservative approach.
-                 *
-                 * heuristic is as follow :
-                 *
-                 * time to dl next segment = time to dl current segment *  (playlist target duration / current segment duration) * bw_ratio
-                 *                           \---------------------------------------------------------------------------------/
-                 *                                  this part is a simple rule by 3, assuming we keep same dl bandwidth
-                 *  bw ratio is the conservative factor, assuming that next segment will be downloaded with min bandwidth
-                 */
-                _minBufferLength = metrics.processing_duration * (_targetduration / metrics.duration) * bw_ratio;
+                /* set min buf len to be the time to process a complete segment, using current processing rate */
+                _minBufferLength = metrics.processing_duration * (_targetduration / metrics.duration);
                 // avoid min > max
                 if (HLSSettings.maxBufferLength) {
                     _minBufferLength = Math.min(HLSSettings.maxBufferLength, _minBufferLength);
                 }
+
+                // avoid _minBufferLength > minBufferLengthCapping
+                if (HLSSettings.minBufferLengthCapping > 0) {
+                    _minBufferLength = Math.min(HLSSettings.minBufferLengthCapping, _minBufferLength);
+                }
+
                 CONFIG::LOGGING {
                     Log.debug2("AutoBufferController:minBufferLength:" + _minBufferLength);
                 }

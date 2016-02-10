@@ -58,6 +58,17 @@ package org.mangui.hls {
          */
         public static var minBufferLength : Number = -1;
 
+
+        /**
+         * minBufferLengthCapping
+         *
+         * Defines minimum buffer length capping value (max value) if minBufferLength is set to -1
+         *
+         * Default is -1 = no capping
+         */
+        public static var minBufferLengthCapping : Number = -1;
+
+
         /**
          * maxBufferLength
          *
@@ -87,6 +98,15 @@ package org.mangui.hls {
          * Default is 3
          */
         public static var lowBufferLength : Number = 3;
+
+        /**
+         * mediaTimeUpdatePeriod
+         *
+         * time update period in ms
+         * period at which HLSEvent.MEDIA_TIME will be triggered
+         * Default is 100 ms
+         */
+        public static var mediaTimePeriod : int = 100;
 
         /**
          * fpsDroppedMonitoringPeriod
@@ -119,9 +139,9 @@ package org.mangui.hls {
          *
          * Note: this setting is ignored in manual mode so all the levels could be selected manually.
          *
-         * Default is true
+         * Default is false
          */
-        public static var capLevelonFPSDrop : Boolean = true;
+        public static var capLevelonFPSDrop : Boolean = false;
 
         /**
          * smoothAutoSwitchonFPSDrop
@@ -137,6 +157,18 @@ package org.mangui.hls {
          * Default is true
          */
         public static var smoothAutoSwitchonFPSDrop : Boolean = true;
+
+        /**
+         * switchDownOnLevelError
+         *
+         * if level loading fails, and if in auto mode, and we are not on lowest level
+         * don't report Level loading error straight-away, try to switch down first
+         *      true -  enabled
+         *      false - disabled
+         *
+         * Default is true
+         */
+        public static var switchDownOnLevelError : Boolean = true;
 
         /**
          * seekMode
@@ -191,7 +223,7 @@ package org.mangui.hls {
          *
          * Default is 4000
          */
-        public static var fragmentLoadMaxRetryTimeout : Number = 4000
+        public static var fragmentLoadMaxRetryTimeout : Number = 4000;
 
         /**
          * fragmentLoadSkipAfterMaxRetry
@@ -205,6 +237,17 @@ package org.mangui.hls {
         public static var fragmentLoadSkipAfterMaxRetry : Boolean = true;
 
         /**
+         * maxSkippedFragments
+         *
+         * Maximum count of skipped fragments in a row before an I/O Error will be raised.
+         *      0 - no skip (same as fragmentLoadSkipAfterMaxRetry = false)
+         *      -1 - no limit for skipping, skip till the end of the playlist 
+         *
+         * Default is 5.
+         */
+        public static var maxSkippedFragments : int = 5;
+
+        /**
          * flushLiveURLCache
          *
          * If set to true, live playlist will be flushed from URL cache before reloading
@@ -213,6 +256,15 @@ package org.mangui.hls {
          * Default is false
          */
         public static var flushLiveURLCache : Boolean = false;
+
+        /**
+         * initialLiveManifestSize
+         *
+         * Number of segments needed to start playback of Live stream.
+         *
+         * Default is 1
+         */
+        public static var initialLiveManifestSize : uint = 1;
 
         /**
          * manifestLoadMaxRetry
@@ -234,6 +286,15 @@ package org.mangui.hls {
          */
         public static var manifestLoadMaxRetryTimeout : Number = 64000;
 
+		/**
+		 * manifestRedundantLoadmaxRetry
+		 *
+		 * max nb of looping over the redundant streams.
+		 *   >0  means looping over the stream array 2 or more times
+		 *    0  means looping exactly once (no retries) - default behaviour
+		 *   -1  means infinite retry
+		 */
+         public static var manifestRedundantLoadmaxRetry : int = 3;
         /**
          * startFromBitrate
          *
@@ -256,6 +317,18 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var startFromLevel : Number = -1;
+
+
+        /**
+         * autoStartMaxDuration
+         *
+         * max fragment loading duration in automatic start level selection mode (in ms)
+         * -1 : max duration not capped
+         * other : max duration is capped to avoid long playback starting time
+         *
+         * Default is -1
+         */
+        public static var autoStartMaxDuration : Number = -1;
 
         /**
          * seekFromLevel

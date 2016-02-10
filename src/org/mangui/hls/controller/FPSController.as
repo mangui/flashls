@@ -53,6 +53,7 @@
             _hls.removeEventListener(HLSEvent.PLAYBACK_STATE, _playbackStateHandler);
             _hls.removeEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
             if(_timer) {
+              _timer.removeEventListener(TimerEvent.TIMER, _checkFPS);
               _timer.stop();
             }
             if(_hls.stage) {
