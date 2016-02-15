@@ -12,8 +12,6 @@
     /** Constants and utilities for the H264 video format. **/
     public class Nalu {
 
-		private static var scratchEscapePositions:Array = new Array(10);
-		
         private static var _audNalu : ByteArray;
         // static initializer
         {
@@ -144,7 +142,8 @@
 		
 		public static function unescapeStream(data : ByteArray, position: int,limit: uint):int {
 			var scratchEscapeCount:int = 0;
-			
+			var scratchEscapePositions:Array = new Array(10);
+					
 			while (position < limit) {
 				position = findNextUnescapeIndex(data, position, limit);
 				if (position < limit) {
