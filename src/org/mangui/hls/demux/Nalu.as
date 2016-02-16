@@ -142,16 +142,13 @@
 		
 		public static function unescapeStream(data : ByteArray, position: int,limit: uint):int {
 			var scratchEscapeCount:int = 0;
-			var scratchEscapePositions:Array = new Array(10);
+			var scratchEscapePositions:Array = new Array();
 					
 			while (position < limit) {
 				position = findNextUnescapeIndex(data, position, limit);
 				if (position < limit) {
-					if (scratchEscapePositions.length <= scratchEscapeCount) {
-						// Grow scratchEscapePositions to hold a larger number of positions.
-						scratchEscapePositions = scratchEscapePositions.concat(new Array(10));
-					}
-					scratchEscapePositions[scratchEscapeCount++] = position;
+					scratchEscapeCount++;
+					scratchEscapePositions.push(position);
 					position += 3;
 				}
 			}
