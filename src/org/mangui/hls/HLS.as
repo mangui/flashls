@@ -259,7 +259,13 @@ package org.mangui.hls {
         public function set audioTrack(val : int) : void {
             _audioTrackController.audioTrack = val;
         }
-
+        
+        /** How many audio tracks does the current media have? */
+        public function get numAudioTracks():uint
+        {
+            return !!audioTracks ? audioTracks.length : 0;
+        }
+        
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;
