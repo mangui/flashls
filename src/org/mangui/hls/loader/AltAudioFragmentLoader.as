@@ -658,6 +658,7 @@ package org.mangui.hls.loader {
                 return;
             var hlsError : HLSError;
             var fragData : FragmentData = _fragCurrent.data;
+            
             if (!fragData.audio_found && !fragData.video_found) {
                 hlsError = new HLSError(HLSError.FRAGMENT_PARSING_ERROR, _fragCurrent.url, "error parsing fragment, no tag found");
                 _hls.dispatchEvent(new HLSEvent(HLSEvent.ERROR, hlsError));

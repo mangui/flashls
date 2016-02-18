@@ -51,10 +51,17 @@ package org.mangui.hls.model {
             this.byterange_start_offset = byterange_start_offset;
             this.byterange_end_offset = byterange_end_offset;
             this.tag_list = tag_list;
+            
             data = new FragmentData();
             // CONFIG::LOGGING {
             // Log.info("Frag["+seqnum+"]:duration/start_time,cc="+duration+","+start_time+","+continuity);
             // }
+            
+            // TODO Is there a better way to do this?
+            if (url.toLowerCase().indexOf(".webvtt") != -1)
+            {
+                data.subtitles_found = true;
+            }
         };
 
         public function getMetadataTag() : FLVTag {

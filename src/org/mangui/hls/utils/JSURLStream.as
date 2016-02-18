@@ -145,8 +145,8 @@ package org.mangui.hls.utils {
             CONFIG::LOGGING {
             Log.debug("resourceLoaded and decoded");
             }
-	     _timer.stop();
-	     this.dispatchEvent(new Event(Event.COMPLETE));
+         _timer.stop();
+         this.dispatchEvent(new Event(Event.COMPLETE));
         }
 
         /** decrypt a small chunk of packets each time to avoid blocking **/

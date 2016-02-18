@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mangui.hls {
-    import org.mangui.hls.constant.HLSSeekMode;
     import org.mangui.hls.constant.HLSMaxLevelCappingMode;
+    import org.mangui.hls.constant.HLSSeekMode;
 
     public final class HLSSettings extends Object {
         /**
@@ -286,14 +286,14 @@ package org.mangui.hls {
          */
         public static var manifestLoadMaxRetryTimeout : Number = 64000;
 
-		/**
-		 * manifestRedundantLoadmaxRetry
+        /**
+         * manifestRedundantLoadmaxRetry
 		 *
-		 * max nb of looping over the redundant streams.
-		 *   >0  means looping over the stream array 2 or more times
-		 *    0  means looping exactly once (no retries) - default behaviour
-		 *   -1  means infinite retry
-		 */
+         * max nb of looping over the redundant streams.
+         *   >0  means looping over the stream array 2 or more times
+         *    0  means looping exactly once (no retries) - default behaviour
+         *   -1  means infinite retry
+         */
          public static var manifestRedundantLoadmaxRetry : int = 3;
         /**
          * startFromBitrate
@@ -341,6 +341,68 @@ package org.mangui.hls {
          */
         public static var seekFromLevel : Number = -1;
 
+		/**
+		 * autoSelectDefaultSubtitles
+		 * 
+		 * Should a subtitles track automatically be selected if it is flagged 
+		 * as DEFAULT=YES?
+		 * 
+		 * Default is false
+		 */
+		public static var autoSelectDefaultSubtitles:Boolean = false;
+		
+        /**
+         * autoSelectSubtitles
+         * 
+         * Should a subtitles track automatically be selected if it is flagged 
+         * as AUTOSELECT=YES and the language matches the current system locale?
+		 * If true, these subtitles will always be selected in preference to 
+		 * default subtitles. 
+         * 
+         * Default is true 
+         */
+        public static var autoSelectSubtitles:Boolean = true;
+        
+        /**
+         * autoSelectForcedSubtitles
+         * 
+         * Should a subtitles track automatically be selected is it is flagged 
+         * as FORCED=YES? If true, forced subtitles will always be selected 
+		 * in preference to all others.
+         * 
+         * Default is true 
+         */
+        public static var autoSelectForcedSubtitles:Boolean = true;
+        
+        /**
+         * keepEmptySubtitles
+         * 
+         * By default, empty subtitles are ignored and a generic empty subtitle
+         * is used to fill the gaps to minimize the number of SUBTITLES_CHANGE
+         * it is necessary to dispatch.
+         * 
+         * When set to true, all subtitles will be parsed and dispatched, even
+         * if they have no content.
+         * 
+         * Default is false
+         */
+        public static var keepEmptySubtitles:Boolean = false;
+        
+        /**
+         * ignoreGapsInLiveSubtitles
+         * 
+         * By default, when there is a gap between subtitles for live streams
+         * a generic empty subtitle is dispatched to tell the listener that 
+         * the currently displayed subtitles should be cleared.
+         * 
+         * However, if your live stream already include empty subtitles to
+         * fill these gaps, you may prefer to use this option, in combination
+         * with keepEmptySubtitles, to suppress these events. 
+         * 
+         * Default is false
+         */
+        public static var ignoreGapsInLiveSubtitles:Boolean = false;
+        
         /**
          * useHardwareVideoDecoder
          *

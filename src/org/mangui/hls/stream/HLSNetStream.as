@@ -21,7 +21,6 @@ package org.mangui.hls.stream {
     import flash.net.NetConnection;
     import flash.net.NetStream;
     import flash.net.NetStreamAppendBytesAction;
-    import flash.net.NetStreamInfo;
     import flash.net.NetStreamPlayOptions;
     import flash.utils.ByteArray;
     import flash.utils.Timer;
@@ -29,23 +28,27 @@ package org.mangui.hls.stream {
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
-    /** Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
+    /** 
+	 * Class that overrides standard flash.net.NetStream class, keeps the buffer filled, handles seek and play state
      *
      * play state transition :
-     * 				FROM								TO								condition
-     *  HLSPlayStates.IDLE              	HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
+	 * 
+     *  FROM                                TO                                  CONDITION
+	 * ------------------------------------------------------------------------------------------------------------------
+     *  HLSPlayStates.IDLE                  HLSPlayStates.PLAYING_BUFFERING     idle => play()/play2() called
      *  HLSPlayStates.IDLE                  HLSPlayStates.PAUSED_BUFFERING      idle => seek() called
-     *  HLSPlayStates.PLAYING_BUFFERING  	HLSPlayStates.PLAYING  				buflen > minBufferLength
-     *  HLSPlayStates.PAUSED_BUFFERING  	HLSPlayStates.PAUSED  				buflen > minBufferLength
-     *  HLSPlayStates.PLAYING  				HLSPlayStates.PLAYING_BUFFERING  	buflen < lowBufferLength
-     *  HLSPlayStates.PAUSED  				HLSPlayStates.PAUSED_BUFFERING  	buflen < lowBufferLength
+     *  HLSPlayStates.PLAYING_BUFFERING     HLSPlayStates.PLAYING               buflen > minBufferLength
+     *  HLSPlayStates.PAUSED_BUFFERING      HLSPlayStates.PAUSED                buflen > minBufferLength
+     *  HLSPlayStates.PLAYING               HLSPlayStates.PLAYING_BUFFERING     buflen < lowBufferLength
+     *  HLSPlayStates.PAUSED                HLSPlayStates.PAUSED_BUFFERING      buflen < lowBufferLength
      *
      * seek state transition :
      *
-     *              FROM                                TO                              condition
-     *  HLSSeekStates.IDLE/SEEKED           HLSSeekStates.SEEKING     play()/play2()/seek() called
-     *  HLSSeekStates.SEEKING               HLSSeekStates.SEEKED      upon first FLV tag appending after seek
-     *  HLSSeekStates.SEEKED                HLSSeekStates.IDLE        upon playback complete or stop() called
+     *  FROM                                TO                                  CONDITION
+	 * ------------------------------------------------------------------------------------------------------------------
+     *  HLSSeekStates.IDLE/SEEKED           HLSSeekStates.SEEKING               play()/play2()/seek() called
+     *  HLSSeekStates.SEEKING               HLSSeekStates.SEEKED                upon first FLV tag appending after seek
+     *  HLSSeekStates.SEEKED                HLSSeekStates.IDLE                  upon playback complete or stop() called
      */
     public class HLSNetStream extends NetStream {
         /** Reference to the framework controller. **/
@@ -247,7 +250,7 @@ package org.mangui.hls.stream {
                 try {
                     super['useHardwareDecoder'] = HLSSettings.useHardwareVideoDecoder;
                 } catch(e : Error) {
-	               // Ignore errors, we're running in FP < 11.1
+                   // Ignore errors, we're running in FP < 11.1
                 }
 
                 super.play(null);

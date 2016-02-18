@@ -7,6 +7,10 @@
     import flash.utils.ByteArray;
     import flash.events.Event;
 
+    CONFIG::LOGGING {
+        import org.mangui.hls.utils.Log;
+    }
+
     /**
      * Contains Utility functions for AES-128 CBC Decryption
      */
@@ -78,7 +82,15 @@
             var start_time : int = getTimer();
             var decrypted : Boolean;
             do {
-                decrypted = _decryptChunk();
+                try {
+                    decrypted = _decryptChunk(); 
+                } catch (e:Error) {
+                    // If _decryptChunk fails, give up and move on
+                    CONFIG::LOGGING {
+                        Log.error("Decryption error: "+e.message);
+                    }
+                    decrypted = false; 
+                }
             // dont spend more than 10ms in the decrypt timer to avoid blocking/freezing video
             // if frame rate is 60fps, we have 1000/60 = 16.6ms budget total per frame
             } while (decrypted && (getTimer() - start_time) < 10);
@@ -136,7 +148,7 @@
                 src[1] = crypt.readUnsignedInt();
                 src[2] = crypt.readUnsignedInt();
                 src[3] = crypt.readUnsignedInt();
-
+                
                 // AES decrypt src vector into dst vector
                 _key.decrypt128(src, dst);
 

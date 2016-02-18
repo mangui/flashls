@@ -377,7 +377,7 @@ package org.mangui.hls.loader {
                 // now load fragment
                 try {
                     CONFIG::LOGGING {
-                        Log.debug("loading fragment:" + _fragCurrent.url);
+                        Log.debug("loading fragment: " + _fragCurrent.url);
                     }
                     _fragCurrent.data.bytes = null;
                     _hls.dispatchEvent(new HLSEvent(HLSEvent.FRAGMENT_LOADING, _fragCurrent.url));
@@ -1014,6 +1014,7 @@ package org.mangui.hls.loader {
                  * if audio not expected, PTS analysis is done on video
                  * the check below ensures that we can compute min/max PTS
                  */
+                
                 if ((_demux.audioExpected && fragData.audio_found) || (!_demux.audioExpected && fragData.video_found)) {
                     if (_ptsAnalyzing == true) {
                         var levelObj : Level = _levels[_hls.loadLevel];

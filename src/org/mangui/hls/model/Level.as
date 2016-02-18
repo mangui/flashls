@@ -49,6 +49,8 @@ package org.mangui.hls.model {
         public var duration : Number;
         /**  Audio Identifier **/
         public var audio_stream_id : String;
+        /**  Subtitles Identifier **/
+        public var subtitles_stream_id : String;
 
         /** Create the quality level. **/
         public function Level() : void {
@@ -176,8 +178,9 @@ package org.mangui.hls.model {
 
         /** Return the fragment index from fragment sequence number **/
         public function getFragmentfromSeqNum(seqnum : Number) : Fragment {
+            // TODO Why does index sometimes return -2 (particularly during live streams)?
             var index : int = getIndexfromSeqNum(seqnum);
-            if (index != -1) {
+            if (index > -1) {
                 return fragments[index];
             } else {
                 return null;
@@ -258,7 +261,7 @@ package org.mangui.hls.model {
             }
             if(continuity_offset) {
                 CONFIG::LOGGING {
-                    Log.debug("updateFragments: discontinuity sliding from live playlist,take into account discontinuity drift:" + continuity_offset);
+                    Log.debug("updateFragments: discontinuity sliding from live playlist, take into account discontinuity drift:" + continuity_offset);
                 }
                 for (i = 0; i < len; i++) {
                      _fragments[i].continuity+= continuity_offset;
@@ -352,13 +355,17 @@ package org.mangui.hls.model {
         }
 
         public function updateFragment(seqnum : Number, valid : Boolean, min_pts : Number = 0, max_pts : Number = 0) : void {
+            
             // CONFIG::LOGGING {
             // Log.info("updatePTS : seqnum/min/max:" + seqnum + '/' + min_pts + '/' + max_pts);
             // }
             // get fragment from seqnum
+            
             var fragIdx : int = getIndexfromSeqNum(seqnum);
+            
             if (fragIdx != -1) {
                 var frag : Fragment = fragments[fragIdx];
+                
                 // update fragment start PTS + duration
                 if (valid) {
                     frag.data.pts_start = min_pts;

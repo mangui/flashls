@@ -12,20 +12,21 @@ package org.mangui.hls.loader {
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
-
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.DataUri;
     import org.mangui.hls.playlist.Manifest;
+    import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -59,6 +60,8 @@ package org.mangui.hls.loader {
         private var _redundantRetryCount:int;
         /* alt audio tracks */
         private var _altAudioTracks : Vector.<AltAudioTrack>;
+        /* subtitle tracks */
+        private var _subtitlesPlaylistTracks : Vector.<SubtitlesPlaylistTrack>;
         /* manifest load metrics */
         private var _metrics : HLSLoadMetrics;
 
@@ -112,7 +115,7 @@ package org.mangui.hls.loader {
                     }
                     // try next redundant stream
                     if (_levels[_loadLevel].redundantStreamId < _levels[_loadLevel].redundantStreamsNb) {
-                        _levels[_loadLevel].redundantStreamId++;
+                    _levels[_loadLevel].redundantStreamId++;
                     }
                     // retry primary stream if the last redundant stream has failed and HLSSettings.manifestRedundantLoadmaxRetry allows
                     else if ((HLSSettings.manifestRedundantLoadmaxRetry > 0 && _redundantRetryCount < HLSSettings.manifestRedundantLoadmaxRetry ) || HLSSettings.manifestRedundantLoadmaxRetry==-1 ) {
@@ -158,6 +161,10 @@ package org.mangui.hls.loader {
             return _altAudioTracks;
         }
 
+        public function get subtitlesPlaylistTracks() : Vector.<SubtitlesPlaylistTrack> {
+            return _subtitlesPlaylistTracks;
+        }
+
         /** Load the manifest file. **/
         public function load(url : String) : void {
             if(!_urlloader) {
@@ -179,6 +186,7 @@ package org.mangui.hls.loader {
             _retryCount = 0;
             _redundantRetryCount = 0;
             _altAudioTracks = null;
+            _subtitlesPlaylistTracks = null;
             _loadManifest();
         }
 
@@ -315,6 +323,18 @@ package org.mangui.hls.loader {
                             CONFIG::LOGGING {
                                 if (_altAudioTracks.length > 0) {
                                     Log.debug(_altAudioTracks.length + " alternate audio tracks found");
+                                }
+                            }
+                        }
+                        if (string.indexOf(Manifest.SUBTITLES) > 0) {
+                            CONFIG::LOGGING {
+                                Log.debug("subtitles level found");
+                            }
+                            // parse subtitles tracks
+                            _subtitlesPlaylistTracks = Manifest.extractSubtitlesTracks(string, _url);
+                            CONFIG::LOGGING {
+                                if (_subtitlesPlaylistTracks.length > 0) {
+                                    Log.debug(_subtitlesPlaylistTracks.length + " subtitle tracks found");
                                 }
                             }
                         }

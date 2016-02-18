@@ -38,6 +38,8 @@ package org.mangui.hls.playlist {
         public static const ENDLIST : String = '#EXT-X-ENDLIST';
         /** Tag that provides info related to alternative audio tracks */
         public static const ALTERNATE_AUDIO : String = '#EXT-X-MEDIA:TYPE=AUDIO,';
+        /** Tag that provides info related to alternative audio tracks */
+        public static const SUBTITLES : String = '#EXT-X-MEDIA:TYPE=SUBTITLES,';
         /** Tag that provides info related to alternative rendition */
         private static const MEDIA : String = '#EXT-X-MEDIA:';
         /** Tag that provides the sequence number. **/
@@ -348,6 +350,8 @@ package org.mangui.hls.playlist {
                             }
                         } else if (param.indexOf('AUDIO') > -1) {
                             level.audio_stream_id = (param.split('=')[1] as String).replace(replacedoublequote, "").replace(trimwhitespace, "");
+                        } else if (param.indexOf('SUBTITLES') > -1) {
+                            level.subtitles_stream_id = (param.split('=')[1] as String).replace(replacedoublequote, "").replace(trimwhitespace, "");
                         } else if (param.indexOf('CLOSED-CAPTIONS') > -1) {
                             level.closed_captions = (param.split('=')[1] as String).replace(replacedoublequote, "").replace(trimwhitespace, "");
                         } else if (param.indexOf('NAME') > -1) {
@@ -396,7 +400,6 @@ package org.mangui.hls.playlist {
 
                     // #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="bipbop_audio",LANGUAGE="eng",NAME="BipBop Audio 1",AUTOSELECT=YES,DEFAULT=YES
                     // #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="bipbop_audio",LANGUAGE="eng",NAME="BipBop Audio 2",AUTOSELECT=NO,DEFAULT=NO,URI="alternate_audio_aac_sinewave/prog_index.m3u8"
-                    // #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,LANGUAGE="eng",URI="captions.m3u8"
 
                     var uri : String = params['URI'];
                     if (uri) {
@@ -411,6 +414,31 @@ package org.mangui.hls.playlist {
             return altAudioTracks;
         };
 
+        /** Extract Alternate Audio Tracks from manifest data. **/
+        public static function extractSubtitlesTracks(data : String, base : String = '') : Vector.<SubtitlesPlaylistTrack> {
+            var subtitlesTracks : Vector.<SubtitlesPlaylistTrack> = new Vector.<SubtitlesPlaylistTrack>();
+            var lines : Array = data.split("\n");
+            var i : int = 0;
+            while (i < lines.length) {
+                var line : String = lines[i++];
+                if (line.indexOf(MEDIA) == 0) {
+                    var params : Object = _parseAlternateRendition(line);
+
+                    // #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="English",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,LANGUAGE="eng",URI="captions.m3u8"
+
+                    var uri : String = params['URI'];
+                    if (uri) {
+                        uri = _extractURL(uri, base);
+                    }
+                    if (params['TYPE'] == 'SUBTITLES') {
+                        var subtitle : SubtitlesPlaylistTrack = new SubtitlesPlaylistTrack(params['GROUP-ID'], params['LANGUAGE'], params['NAME'], params['AUTOSELECT'] == 'YES', params['DEFAULT'] == 'YES', params['FORCED'] == 'YES', uri);
+                        subtitlesTracks.push(subtitle);
+                    }
+                }
+            }
+            return subtitlesTracks;
+        };
+        
         private static const RENDITION_STATE_READKEY : Number = 1;
         private static const RENDITION_STATE_READVALUESTART : Number = 2;
         private static const RENDITION_STATE_READSIMPLEVALUE : Number = 3;
