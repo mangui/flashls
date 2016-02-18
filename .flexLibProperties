@@ -9,11 +9,8 @@
     <classEntry path="org.mangui.osmf.plugins.loader.HLSNetLoader"/>
     <classEntry path="org.mangui.osmf.plugins.traits.HLSAlternativeAudioTrait"/>
     <classEntry path="org.mangui.osmf.plugins.traits.HLSBufferTrait"/>
-    <classEntry path="org.mangui.osmf.plugins.traits.HLSClosedCaptionsState"/>
-    <classEntry path="org.mangui.osmf.plugins.traits.HLSClosedCaptionsTrait"/>
     <classEntry path="org.mangui.osmf.plugins.traits.HLSDisplayObjectTrait"/>
     <classEntry path="org.mangui.osmf.plugins.traits.HLSDynamicStreamTrait"/>
-    <classEntry path="org.mangui.osmf.plugins.traits.HLSMediaTraitType"/>
     <classEntry path="org.mangui.osmf.plugins.traits.HLSNetStreamLoadTrait"/>
     <classEntry path="org.mangui.osmf.plugins.traits.HLSPlayTrait"/>
     <classEntry path="org.mangui.osmf.plugins.traits.HLSSeekTrait"/>
