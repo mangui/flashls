@@ -19,6 +19,8 @@ package org.mangui.hls.model {
         public var codec_h264 : Boolean;
         /** Level Bitrate. **/
         public var bitrate : uint;
+        /** captions . **/
+        public var closed_captions : String;
         /** Level Name. **/
         public var name : String;
         /** level index (sorted by bitrate) **/
@@ -157,8 +159,14 @@ package org.mangui.hls.model {
                     return frag.seqnum;
                 }
             }
-            // requested PTS above max PTS of this level
-            return Number.POSITIVE_INFINITY;
+            // if we are not at the end of the playlist, then return first sn of next cc range
+            // this is needed to deal with PTS analysis on streams with discontinuity
+            if (lastIndex < end_seqnum) {
+                return frag.seqnum+1;
+            } else {
+                // requested PTS above max PTS of this level
+                return Number.POSITIVE_INFINITY;
+            }
         };
 
         public function getLevelstartPTS() : Number {

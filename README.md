@@ -237,6 +237,21 @@ After a successful build you will find fresh binaries in the `bin/debug` and `bi
 
   - [MPL 2.0](https://github.com/mangui/flashls/blob/master/LICENSE)
 
+
+## they use flashls in production !
+
+
+|Logo|Company|
+|:-:|:-:|
+|<img src="https://s3.amazonaws.com/BURC_Pages/downloads/a-smile_color.jpg" width="80">   |   [Amazon](http://www.amazon.com)|
+|<img src="https://bitdash-a.akamaihd.net/webpages/bitmovin-logo.png" width="160">   |[Bitmovin](http://www.bitmovin.com)|
+|<img src="http://press.dailymotion.com/fr/wp-content/uploads/sites/4/2010/06/LOGO-PRESS-BLOG.png" width="80">   |[Dailymotion](http://www.dailymotion.com)|
+|<img src="https://flowplayer.org/media/img/logo-blue.png" width="160">  |[FlowPlayer](http://www.flowplayer.org/)|
+|<img src="https://cloud.githubusercontent.com/assets/244265/12556435/dfaceb48-c353-11e5-971b-2c4429725469.png" width="160">  |[globo.com](https://www.globo.com)|
+|<img src="http://tidal.com/images/tidal-large-black.c8af31d9.png" width="160">  |[Tidal](https://listen.tidal.com/)|
+|<img src="https://cloud.githubusercontent.com/assets/244265/12556385/999aa884-c353-11e5-9102-79df54384498.png" width="160">  |[The New York Times](https://www.nytimes.com)|
+|<img src="https://www.ubicast.eu/static/website/img/header/logo_ubicast.svg" width="160">  |[Ubicast](https://www.ubicast.eu)|
+
 ## Donation
 
 If you'd like to support future development and new product features, please make a donation via PayPal. These donations are used to cover my ongoing expenses - web hosting, domain registrations, and software and hardware purchases.

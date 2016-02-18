@@ -3,8 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  package org.mangui.osmf.plugins.traits {
     import org.mangui.hls.HLS;
+    import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSEvent;
     import org.osmf.traits.TimeTrait;
+    import org.osmf.events.TimeEvent;
 
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
@@ -31,6 +33,15 @@
             _hls.removeEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
             _hls.removeEventListener(HLSEvent.PLAYBACK_COMPLETE, _playbackComplete);
             super.dispose();
+        }
+
+        override protected function signalComplete():void
+        {
+            // live streams shouldn't end based on TimeTrait
+            if (_hls.type !== HLSTypes.LIVE)
+            {
+                dispatchEvent(new TimeEvent(TimeEvent.COMPLETE));
+            }
         }
 
         /** Update playback position/duration **/

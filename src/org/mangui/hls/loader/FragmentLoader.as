@@ -8,7 +8,7 @@ package org.mangui.hls.loader {
     import flash.utils.ByteArray;
     import flash.utils.Timer;
     import flash.utils.getTimer;
-    
+
     import org.mangui.hls.HLS;
     import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
@@ -234,6 +234,7 @@ package org.mangui.hls.loader {
                         _switchLevel = true;
 
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
+                        // to avoid loading outdated fragments
                         if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _levelLastLoaded != level)) {
                             // playlist not yet received
                             CONFIG::LOGGING {
@@ -811,11 +812,17 @@ package org.mangui.hls.loader {
                     last_seqnum--;
                     if (last_seqnum == Number.POSITIVE_INFINITY) {
                         /* requested PTS above max PTS of this level:
-                         * this case could happen when switching level at the edge of live playlist,
+                         * this case could happen when loading is completed
+                         * or when switching level at the edge of live playlist,
                          * in case playlist of new level is outdated
-                         * return 1 to retry loading later.
                          */
-                        return LOADING_WAITING_LEVEL_UPDATE;
+                        if (_hls.type == HLSTypes.VOD) {
+                            // if VOD playlist, loading is completed
+                            return LOADING_COMPLETED;
+                        } else {
+                            // if live playlist, loading is pending on manifest update
+                            return LOADING_WAITING_LEVEL_UPDATE;
+                        }
                     } else if (last_seqnum < -1) {
                         // if we are here, it means that we have no PTS info for this continuity index, we need to do some PTS probing to find the right seqnum
                         /* we need to perform PTS analysis on fragments from same continuity range
