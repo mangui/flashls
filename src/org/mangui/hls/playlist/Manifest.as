@@ -20,6 +20,7 @@ package org.mangui.hls.playlist {
     import org.mangui.hls.model.Level;
     import org.mangui.hls.utils.DateUtil;
     import org.mangui.hls.utils.Hex;
+    import org.mangui.hls.utils.StringUtil;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -144,7 +145,7 @@ package org.mangui.hls.playlist {
         /** Extract fragments from playlist data. **/
         public static function getFragments(data : String, base : String, level : int) : Vector.<Fragment> {
             var fragments : Vector.<Fragment> = new Vector.<Fragment>();
-            var lines : Array = data.split("\n");
+            var lines : Vector.<String> = StringUtil.toLines(data);
             // fragment seqnum
             var seqnum : int = 0;
             // fragment start time (in sec)
@@ -313,7 +314,7 @@ package org.mangui.hls.playlist {
             var levels : Vector.<Level> = new Vector.<Level>();
             var bitrateDictionary : Dictionary = new Dictionary();
             var level : Level;
-            var lines : Array = data.split("\n");
+            var lines : Vector.<String> = StringUtil.toLines(data);
             var level_found : Boolean = false;
             var i : int = 0;
             while (i < lines.length) {
@@ -387,7 +388,7 @@ package org.mangui.hls.playlist {
         /** Extract Alternate Audio Tracks from manifest data. **/
         public static function extractAltAudioTracks(data : String, base : String = '') : Vector.<AltAudioTrack> {
             var altAudioTracks : Vector.<AltAudioTrack> = new Vector.<AltAudioTrack>();
-            var lines : Array = data.split("\n");
+            var lines : Vector.<String> = StringUtil.toLines(data);
             var i : int = 0;
             while (i < lines.length) {
                 var line : String = lines[i++];
@@ -490,7 +491,7 @@ package org.mangui.hls.playlist {
         };
 
         public static function getTargetDuration(data : String) : Number {
-            var lines : Array = data.split("\n");
+            var lines : Vector.<String> = StringUtil.toLines(data);
             var i : int = 0;
             var targetduration : Number = 0;
 
