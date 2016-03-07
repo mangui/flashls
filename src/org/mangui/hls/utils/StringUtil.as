@@ -77,5 +77,31 @@ package org.mangui.hls.utils
 			
 			return Vector.<String>(lines);
 		}
+		
+		/**
+		 * Removes all HTML tags from the String and returns it as plain text
+		 * 
+		 * @param	str		HTML string
+		 * @returns			String without HTML tags
+		 * @example			StringUtil.removeHtmlTags("<p>Bonjour!</p>"); // Returns "Bonjour!"
+		 */
+		public static function removeHtmlTags(str:String):String
+		{
+			var tagExp:RegExp = /(<([^>]+)>)/ig;
+			return (str || "").replace(tagExp, '');
+		}
+		
+		/**
+		 * Converts strings containing Windows (\r\n), MacOS (\r) and other 
+		 * non-standard line breaks (\n\r) into strings using only Linux-style
+		 * line breaks (\n).
+		 * 
+		 * @param	str		String containing non-Linux line breaks
+		 * @returns			String containly only Linux-style line breaks 
+		 */
+		public static function toLinux(str:String):String
+		{
+			return (str || "").replace(/\r\n|\n\r|\r/g, "\n");
+		}
 	}
 }
