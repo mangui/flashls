@@ -128,7 +128,7 @@ package org.mangui.hls.playlist {
         /** loading complete handler **/
         private function _loadCompleteHandler(event : Event) : void {
             _metrics.loading_end_time = getTimer();
-            onLoadedData(StringUtil.toLinux(String(_urlloader.data)));
+            onLoadedData(StringUtil.toLF(String(_urlloader.data)));
         };
 
         private function onLoadedData(data : String) : void {

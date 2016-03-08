@@ -92,14 +92,14 @@ package org.mangui.hls.utils
 		}
 		
 		/**
-		 * Converts strings containing Windows (\r\n), MacOS (\r) and other 
-		 * non-standard line breaks (\n\r) into strings using only Linux-style
-		 * line breaks (\n).
+		 * Converts strings containing Windows (CR-LF), MacOS (CR) and other 
+		 * non-standard line breaks (LF-CR) into strings using only Linux-style
+		 * line breaks (LF).
 		 * 
 		 * @param	str		String containing non-Linux line breaks
 		 * @returns			String containly only Linux-style line breaks 
 		 */
-		public static function toLinux(str:String):String
+		public static function toLF(str:String):String
 		{
 			return (str || "").replace(/\r\n|\n\r|\r/g, "\n");
 		}
