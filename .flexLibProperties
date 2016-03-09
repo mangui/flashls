@@ -17,8 +17,6 @@
     <classEntry path="org.mangui.osmf.plugins.traits.HLSSeekTrait"/>
     <classEntry path="org.mangui.osmf.plugins.traits.HLSTimeTrait"/>
     <classEntry path="org.mangui.osmf.plugins.utils.ErrorManager"/>
-    <classEntry path="org.mangui.hls.loader.SubtitlesFragmentLoader"/>
-    <classEntry path="org.mangui.hls.utils.hls_internal"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>
