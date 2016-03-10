@@ -66,7 +66,7 @@ package org.mangui.hls.utils
 		 */
 		public static function toLines(str:String):Vector.<String>
 		{
-			var lines:Array = (str || "").split("\n");
+			var lines:Array = toLF(str).split("\n");
 			var i:uint;
 			var length:uint = lines.length;
 			
