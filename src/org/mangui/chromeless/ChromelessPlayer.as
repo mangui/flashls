@@ -170,6 +170,10 @@ package org.mangui.chromeless {
             _trigger("levelLoaded", event.loadMetrics);
         };
 
+        protected function _levelEndlistHandler(event : HLSEvent) : void {
+            _trigger("levelEndlist", event.level);
+        };
+
         protected function _audioLevelLoadedHandler(event : HLSEvent) : void {
             _trigger("audioLevelLoaded", event.loadMetrics);
         };
@@ -503,6 +507,7 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
             _hls.addEventListener(HLSEvent.AUDIO_LEVEL_LOADED, _audioLevelLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            _hls.addEventListener(HLSEvent.LEVEL_ENDLIST, _levelEndlistHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_PLAYING, _fragmentPlayingHandler);
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.MEDIA_TIME, _mediaTimeHandler);
