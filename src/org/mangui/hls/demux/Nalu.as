@@ -124,5 +124,52 @@
         public static function get AUD():ByteArray {
             return _audNalu;
         }
+		
+		private static function findNextUnescapeIndex(bytes : ByteArray, offset:int, limit:int):int {
+			for (var i:int = offset; i < limit - 2; i++) {
+				if (bytes[i] == 0x00 && bytes[i + 1] == 0x00 && bytes[i + 2] == 0x03) {
+					return i;
+				}
+			}
+			return limit;
+		}
+		
+		private static function arrayCopy(src:ByteArray,  srcPos:int, dest:ByteArray, destPos:int, length:int):void {
+			var iterations:int = Math.min(Math.min(length, src.length - srcPos), dest.length - destPos);
+			for(var i:int = 0; i < iterations; i++)
+				dest[destPos + i] = src[srcPos + i];
+		}
+		
+		public static function unescapeStream(data : ByteArray, position: int,limit: uint):int {
+			var scratchEscapeCount:int = 0;
+			var scratchEscapePositions:Array = new Array();
+					
+			while (position < limit) {
+				position = findNextUnescapeIndex(data, position, limit);
+				if (position < limit) {
+					scratchEscapeCount++;
+					scratchEscapePositions.push(position);
+					position += 3;
+				}
+			}
+			
+			var unescapedLength:int = limit - scratchEscapeCount;
+			var escapedPosition:int = 0; // The position being read from.
+			var unescapedPosition:int = 0; // The position being written to.
+			for (var i:int = 0; i < scratchEscapeCount; i++) {
+				var nextEscapePosition:int = scratchEscapePositions[i];
+				var copyLength:int = nextEscapePosition - escapedPosition;
+				arrayCopy(data, escapedPosition, data, unescapedPosition, copyLength);
+				unescapedPosition += copyLength;
+				data[unescapedPosition++] = 0;
+				data[unescapedPosition++] = 0;
+				escapedPosition += copyLength + 3;
+			}
+			
+			var remainingLength:int = unescapedLength - unescapedPosition;
+			arrayCopy(data, escapedPosition, data, unescapedPosition, remainingLength);
+			
+			return unescapedLength;
+		}
     }
 }
