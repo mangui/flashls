@@ -221,67 +221,67 @@ package org.mangui.hls.demux {
 		private function readCC(pes : PES):void
 		{
 			var country_code : uint = pes.data.readUnsignedByte();
-			
+
 			if (country_code == 181)
 			{
 				var provider_code : uint = pes.data.readUnsignedShort();
-				
+
 				if (provider_code == 49)
 				{
 					var user_structure : uint = pes.data.readUnsignedInt();
-					
+
 					if (user_structure == 0x47413934) // GA94
 					{
 						var user_data_type : uint = pes.data.readUnsignedByte();
-						
+
 						// CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
 						if (user_data_type == 3)
 						{
 							// cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
 							var byte:uint = pes.data.readUnsignedByte();
-							
+
 							// get the total number of cc_datas
 							var total:uint = 31 & byte;
 							var count:uint = 0;
-							
+
 							// supposedly a flag to process the cc_datas or not
 							// isn't working for me, so i don't use it yet
 							var process:Boolean = !((64 & byte) == 0);
-							
+
 							var size:uint = total * 3;
-							
+
 							// em_data, do we need? It's not used for anything, but it's there, so i need to pull it out
 							var otherByte:uint = pes.data.readUnsignedByte();
-							
+
 							if (pes.data.bytesAvailable >= size)
 							{
 								// ByteArray for onCaptionInfo event
 								var sei : ByteArray = new ByteArray();
-								
+
 								// onCaptionInfo payloads need to know the size of the binary data
 								// there's two two bytes we just read, plus the cc_datas, which are 3 bytes each
 								sei.writeUnsignedInt(2+3*total);
-								
+
 								// write those two bytes
 								sei.writeByte(byte);
 								sei.writeByte(otherByte);
-								
+
 								// write the cc_datas
 								pes.data.readBytes(sei, 6, 3*total);
-								
+
 								pes.data.position -= total * 3;
-								
+
 								// onCaptionInfo expects Base64 data...
 								var sei_data:String = Base64.encode(sei);
-								
+
 								var cc_data:Object = {
 									type: "708",
 									data: sei_data
 								};
-								
+
 								// add a new FLVTag with the onCaptionInfo call
 								var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
-								
+
 								var data : ByteArray = new ByteArray();
 								data.objectEncoding = ObjectEncoding.AMF0;
 								data.writeObject("onCaptionInfo");
@@ -303,7 +303,7 @@ package org.mangui.hls.demux {
 				}
 			}
 		}
-		
+
         /** Parse a limited amount of packets each time to avoid blocking **/
         private function _parseTimer(e : Event) : void {
             var start_time : int = getTimer();
@@ -612,16 +612,16 @@ package org.mangui.hls.demux {
                     pes.data.readBytes(pps, 0, frame.length);
                     ppsvect.push(pps);
                 } else if (frame.type == 6) {
-					
+
 					//unescape Emulation Prevention bytes
 					Nalu.unescapeStream(pes.data,frame.start,frame.start + frame.length);
-					
+
 					// We already know it's 6, so skip first byte
 					pes.data.position = frame.start + 1;
-					
+
 					// we need at least 12 bytes to retrieve Caption length
 					if(pes.data.bytesAvailable > 12) {
-						
+
 						// get the SEI payload type
 						var payload_type : uint = 0;
 						var payload_size : uint = 0;
@@ -634,7 +634,7 @@ package org.mangui.hls.demux {
 							// Parse payload size.
 							payload_size = 0;
 							do {
-								payload_size += pes.data.readUnsignedByte();								
+								payload_size += pes.data.readUnsignedByte();
 							} while (pes.data.bytesAvailable!=0 && payload_size == 0xFF);
 							// Process the payload. We only support EIA-608 payloads currently.
 							if (payload_type == 4) {
@@ -844,21 +844,22 @@ package org.mangui.hls.demux {
                                 Log.warn("TS: reparsing PMT, unknown PID found");
                             }
                         }
-                        todo -= _parsePMT(stt,data);
-                        // if PMT was not parsed before, and some unknown packets have been skipped in between,
-                        // rewind to beginning of the stream, it helps recovering bad segmented content
-                        // in theory there should be no A/V packets before PAT/PMT)
-                        if (_pmtParsed == false && _unknownPIDFound == true) {
-                            CONFIG::LOGGING {
-                                Log.warn("TS: late PMT found, rewinding at beginning of TS");
-                            }
-                            _pmtParsed = true;
-                            _readPosition = 0;
-                            return;
+                    }
+                    // always reparse PMT
+                    todo -= _parsePMT(stt,data);
+                    // if PMT was not parsed before, and some unknown packets have been skipped in between,
+                    // rewind to beginning of the stream, it helps recovering bad segmented content
+                    // in theory there should be no A/V packets before PAT/PMT)
+                    if (_pmtParsed == false && _unknownPIDFound == true) {
+                        CONFIG::LOGGING {
+                            Log.warn("TS: late PMT found, rewinding at beginning of TS");
                         }
                         _pmtParsed = true;
-                        _unknownPIDFound = false;
+                        _readPosition = 0;
+                        return;
                     }
+                    _pmtParsed = true;
+                    _unknownPIDFound = false;
                     break;
                 case _audioId:
                     if (_pmtParsed == false) {
@@ -1012,9 +1013,11 @@ package org.mangui.hls.demux {
                 } else if (typ == 0x1B) {
                     // ITU-T Rec. H.264 and ISO/IEC 14496-10 (lower bit-rate video)
                     if(_audioOnly == false) {
-                        _avcId = sid;
-                        CONFIG::LOGGING {
-                            Log.debug("TS: Selected video PID: " + _avcId);
+                        if(_avcId != sid) {
+                            _avcId = sid;
+                            CONFIG::LOGGING {
+                                Log.debug("TS: Selected video PID: " + _avcId);
+                            }
                         }
                     } else {
                         CONFIG::LOGGING {
@@ -1027,9 +1030,11 @@ package org.mangui.hls.demux {
                     audioList.push(new AudioTrack('TS/MP3 ' + audioList.length, AudioTrack.FROM_DEMUX, sid, (audioList.length == 0), false));
                 } else if (typ == 0x15) {
                     // ID3 pid
-                    _id3Id = sid;
-                    CONFIG::LOGGING {
-                        Log.debug("TS: Selected ID3 PID: " + _id3Id);
+                    if(_id3Id != sid) {
+                        _id3Id = sid;
+                        CONFIG::LOGGING {
+                            Log.debug("TS: Selected ID3 PID: " + _id3Id);
+                        }
                     }
                 }
                 // es_info_length
@@ -1039,34 +1044,37 @@ package org.mangui.hls.demux {
                 read += sel + 5;
             }
 
-            CONFIG::LOGGING {
-                if (audioList.length) {
-                    Log.debug("TS: Found " + audioList.length + " audio tracks");
-                }
-            }
             // provide audio track List to audio select callback. this callback will return the selected audio track
             var audioPID : int;
-            _audioFound = (audioList.length > 0);
-            var audioTrack : AudioTrack = _callback_audioselect(audioList);
-            if (audioTrack) {
-                audioPID = audioTrack.id;
-                _audioIsAAC = audioTrack.isAAC;
-                _audioSelected = true;
+            var audioFound : Boolean = (audioList.length > 0);
+            if (audioFound != _audioFound) {
                 CONFIG::LOGGING {
-                    Log.debug("TS: selected " + (_audioIsAAC ? "AAC" : "MP3") + " PID: " + audioPID);
+                    if (audioFound) {
+                        Log.debug("TS: Found " + audioList.length + " audio tracks");
+                    }
                 }
-            } else {
-                audioPID = -1;
-                _audioSelected = false;
-                CONFIG::LOGGING {
-                    Log.debug("TS: no audio selected");
+                _audioFound = audioFound;
+                var audioTrack : AudioTrack = _callback_audioselect(audioList);
+                if (audioTrack) {
+                    audioPID = audioTrack.id;
+                    _audioIsAAC = audioTrack.isAAC;
+                    _audioSelected = true;
+                    CONFIG::LOGGING {
+                        Log.debug("TS: selected " + (_audioIsAAC ? "AAC" : "MP3") + " PID: " + audioPID);
+                    }
+                } else {
+                    audioPID = -1;
+                    _audioSelected = false;
+                    CONFIG::LOGGING {
+                        Log.debug("TS: no audio selected");
+                    }
                 }
-            }
-            // in case audio PID change, flush any partially parsed audio PES packet
-            if (audioPID != _audioId) {
-                _curAudioPES = null;
-                _adtsFrameOverflow = null;
-                _audioId = audioPID;
+                // in case audio PID change, flush any partially parsed audio PES packet
+                if (audioPID != _audioId) {
+                    _curAudioPES = null;
+                    _adtsFrameOverflow = null;
+                    _audioId = audioPID;
+                }
             }
             return len + pointerField;
         };
