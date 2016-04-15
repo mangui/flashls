@@ -33,7 +33,7 @@ package org.mangui.hls.controller {
             // Prevents crash when reading hls.audioTracks.length before audio tracks are initialized
             _audioTracks = new Vector.<AudioTrack>();
         }
-		
+
         public function dispose() : void {
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
