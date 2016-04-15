@@ -29,8 +29,11 @@ package org.mangui.hls.controller {
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
+            
+            // Prevents crash when reading hls.audioTracks.length before audio tracks are initialized
+            _audioTracks = new Vector.<AudioTrack>();
         }
-
+		
         public function dispose() : void {
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.LEVEL_LOADED, _levelLoadedHandler);
