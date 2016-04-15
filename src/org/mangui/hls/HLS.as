@@ -259,7 +259,7 @@ package org.mangui.hls {
         public function set audioTrack(val : int) : void {
             _audioTrackController.audioTrack = val;
         }
-        
+
         /* set stage */
         public function set stage(stage : Stage) : void {
             _stage = stage;
