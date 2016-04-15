@@ -1021,21 +1021,32 @@ package org.mangui.hls.loader {
                         levelObj.updateFragment(_fragCurrent.seqnum, true, fragData.pts_min, fragData.pts_min + _fragCurrent.duration * 1000);
                         /* in case we are probing PTS, retrieve PTS info and synchronize playlist PTS / sequence number */
                         CONFIG::LOGGING {
-                            Log.debug("analyzed  PTS " + _fragCurrent.seqnum + " of [" + (levelObj.start_seqnum) + "," + (levelObj.end_seqnum) + "],level " + _hls.loadLevel + " m PTS:" + fragData.pts_min);
+                            Log.debug("analyzed PTS " + _fragCurrent.seqnum + " of [" + (levelObj.start_seqnum) + "," + (levelObj.end_seqnum) + "],level " + _hls.loadLevel + " m PTS:" + fragData.pts_min);
                         }
                         /* check if fragment loaded for PTS analysis is the next one
                         if this is the expected one, then continue
                         if not, then cancel current fragment loading, next call to loadnextfragment() will load the right seqnum
                          */
-                        var next_pts : Number = _fragPrevious.data.pts_start_computed + 1000*_fragPrevious.duration;
-                        var next_seqnum : Number = levelObj.getSeqNumNearestPTS(next_pts, _fragCurrent.continuity);
+                        var next_pts:Number;
+                        var next_seqnum:Number;
+                        
+                        // Resolves intermittent issue that causes the player to crash due to missing previous fragment data while seeking
+                        if (_fragPrevious && _fragPrevious.data) {
+                            next_pts = _fragPrevious.data.pts_start_computed + 1000*_fragPrevious.duration;
+                            next_seqnum = levelObj.getSeqNumNearestPTS(next_pts, _fragCurrent.continuity);
+                        } else {
+                            CONFIG::LOGGING {
+                                Log.debug("Previous fragment data not found while analyzing PTS!");
+                            }
+                        }
+                        
                         CONFIG::LOGGING {
                             Log.debug("analyzed PTS : getSeqNumNearestPTS(level,pts,cc:" + _hls.loadLevel + "," + next_pts + "," + _fragCurrent.continuity + ")=" + next_seqnum);
                         }
                         // CONFIG::LOGGING {
                         // Log.info("seq/next:"+ _seqnum+"/"+ next_seqnum);
                         // }
-                        if (next_seqnum != _fragCurrent.seqnum) {
+                        if (next_seqnum !== _fragCurrent.seqnum) {
                             // stick to same level after PTS analysis
                             _levelNext = _hls.loadLevel;
                             CONFIG::LOGGING {

@@ -54,3 +54,4 @@ crashlytics-build.properties
 
 # Flash Builder
 /bin/flashls.swc
+/bin-temp

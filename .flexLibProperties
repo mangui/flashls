@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <flexLibProperties includeAllClasses="false" useMultiPlatformConfig="false" version="3">
   <includeClasses>
+    <classEntry path="org.mangui.hls.utils.StringUtil"/>
     <classEntry path="org.mangui.osmf.plugins.HLSDynamicPlugin"/>
     <classEntry path="org.mangui.osmf.plugins.HLSMediaElement"/>
     <classEntry path="org.mangui.osmf.plugins.HLSPlugin"/>
