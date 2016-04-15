@@ -66,7 +66,7 @@ package org.mangui.hls.utils
 		 */
 		public static function toLines(str:String):Vector.<String>
 		{
-			var lines:Array = (str || "").split("\n");
+			var lines:Array = toLF(str).split("\n");
 			var i:uint;
 			var length:uint = lines.length;
 			
@@ -76,19 +76,6 @@ package org.mangui.hls.utils
 			}
 			
 			return Vector.<String>(lines);
-		}
-		
-		/**
-		 * Removes all HTML tags from the String and returns it as plain text
-		 * 
-		 * @param	str		HTML string
-		 * @returns			String without HTML tags
-		 * @example			StringUtil.removeHtmlTags("<p>Bonjour!</p>"); // Returns "Bonjour!"
-		 */
-		public static function removeHtmlTags(str:String):String
-		{
-			var tagExp:RegExp = /(<([^>]+)>)/ig;
-			return (str || "").replace(tagExp, '');
 		}
 		
 		/**
