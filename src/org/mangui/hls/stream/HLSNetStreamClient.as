@@ -31,13 +31,13 @@
             var r : * = null;
 
             if (_callbacks && _callbacks.hasOwnProperty(methodName)) {
-                r = _callbacks[methodName](args);
+                r = _callbacks[methodName].apply(_callbacks, args);
             }
 
             if (_delegate && _delegate.hasOwnProperty(methodName)) {
-                r = _delegate[methodName](args);
+				r = _delegate[methodName].apply(_delegate, args);
             }
-
+			
             return r;
         }
 
