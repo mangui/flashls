@@ -48,7 +48,7 @@ package org.mangui.hls.loader {
         /** next level (-1 if not defined yet) **/
         private var _levelNext : int = -1;
         /** Reference to the manifest levels. **/
-        private var _levels : Vector.<Level>;
+        private var _levels : Vector.<Level> = new Vector.<Level>(); // Initializing it here prevents crash after IOError loading playlist
         /** Util for loading the fragment. **/
         private var _fragstreamloader : URLStream;
         /** Util for loading the key. **/
