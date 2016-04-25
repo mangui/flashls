@@ -28,16 +28,13 @@
         }
 
         override flash_proxy function callProperty(methodName : *, ... args) : * {
-            var r : * = null;
-
+            var r : *;
             if (_callbacks && _callbacks.hasOwnProperty(methodName)) {
-                r = _callbacks[methodName].apply(_callbacks, args);
+                r = _callbacks[methodName].apply(null, args);
             }
-
             if (_delegate && _delegate.hasOwnProperty(methodName)) {
-				r = _delegate[methodName].apply(_delegate, args);
+				r = _delegate[methodName].apply(null, args);
             }
-			
             return r;
         }
 
@@ -46,11 +43,9 @@
             if (_callbacks && _callbacks.hasOwnProperty(name)) {
                 r = _callbacks[name];
             }
-
             if (_delegate && _delegate.hasOwnProperty(name)) {
                 r = _delegate[name];
             }
-
             return r;
         }
 
