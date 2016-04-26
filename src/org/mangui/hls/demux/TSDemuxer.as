@@ -836,8 +836,8 @@ package org.mangui.hls.demux {
                     }
                     break;
                 case _pmtId:
-                    if (_pmtParsed == false || _unknownPIDFound == true) {
-                        CONFIG::LOGGING {
+                    CONFIG::LOGGING {
+                        if (_pmtParsed == false || _unknownPIDFound == true) {
                             if(_pmtParsed == false) {
                                 Log.debug("TS: PMT found");
                             } else {
