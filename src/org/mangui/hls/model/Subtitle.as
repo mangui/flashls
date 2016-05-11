@@ -23,7 +23,8 @@ package org.mangui.hls.model
 		 */
 		public static function toSubtitle(data:Object):Subtitle
 		{
-			return new Subtitle(data.htmlText || data.text, 
+			return new Subtitle(data.trackid,
+				data.htmlText || data.text, 
 				data.startPTS, data.endPTS, 
 				data.startPosition, data.endPosition, 
 				data.startDate, data.endDate);

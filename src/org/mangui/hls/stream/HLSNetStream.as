@@ -134,7 +134,7 @@ package org.mangui.hls.stream {
 		}
 		
 		protected function onTextData(data:Object) : void {
-			if (_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE)) {
+			if (_hls.hasEventListener(HLSEvent.SUBTITLES_CHANGE) && data.trackid == _hls.subtitlesTrack) {
 				_hls.dispatchEvent(new HLSEvent(HLSEvent.SUBTITLES_CHANGE, Subtitle.toSubtitle(data)));
 			}
 		}
