@@ -12,20 +12,21 @@ package org.mangui.hls.loader {
     import flash.utils.clearTimeout;
     import flash.utils.getTimer;
     import flash.utils.setTimeout;
-
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSTypes;
     import org.mangui.hls.event.HLSError;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSLoadMetrics;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.playlist.DataUri;
     import org.mangui.hls.playlist.Manifest;
+    import org.mangui.hls.playlist.SubtitlesPlaylistTrack;
 
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
@@ -53,13 +54,15 @@ package org.mangui.hls.loader {
         private var _manifestLoading : Manifest;
         /** is this loader closed **/
         private var _closed : Boolean = false;
-        /* playlist retry timeout */
+        /** playlist retry timeout */
         private var _retryTimeout : Number;
         private var _retryCount : int;
         private var _redundantRetryCount:int;
-        /* alt audio tracks */
+        /** alt audio tracks */
         private var _altAudioTracks : Vector.<AltAudioTrack>;
-        /* manifest load metrics */
+		/** subtitle tracks */
+		private var _subtitlesPlaylistTracks : Vector.<SubtitlesPlaylistTrack>;
+        /** manifest load metrics */
         private var _metrics : HLSLoadMetrics;
 
         /** Setup the loader. **/
@@ -157,6 +160,10 @@ package org.mangui.hls.loader {
         public function get altAudioTracks() : Vector.<AltAudioTrack> {
             return _altAudioTracks;
         }
+		
+		public function get subtitlesPlaylistTracks() : Vector.<SubtitlesPlaylistTrack> {
+			return _subtitlesPlaylistTracks;
+		}
 
         /** Load the manifest file. **/
         public function load(url : String) : void {
@@ -179,6 +186,7 @@ package org.mangui.hls.loader {
             _retryCount = 0;
             _redundantRetryCount = 0;
             _altAudioTracks = null;
+			_subtitlesPlaylistTracks = null;
             _loadManifest();
         }
 
@@ -318,6 +326,18 @@ package org.mangui.hls.loader {
                                 }
                             }
                         }
+						if (string.indexOf(Manifest.SUBTITLES) > 0) {
+							CONFIG::LOGGING {
+								Log.debug("subtitles level found");
+							}
+							// parse subtitles tracks
+							_subtitlesPlaylistTracks = Manifest.extractSubtitlesTracks(string, _url);
+							CONFIG::LOGGING {
+								if (_subtitlesPlaylistTracks.length > 0) {
+									Log.debug(_subtitlesPlaylistTracks.length + " subtitle tracks found");
+								}
+							}
+						}
                     } else {
                         errorTxt = "No level found in Manifest";
                     }
