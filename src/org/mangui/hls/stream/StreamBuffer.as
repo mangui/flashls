@@ -863,7 +863,7 @@ package org.mangui.hls.stream {
                 for (var i : int = 0; i < tags.length; i++) {
                     var data : FLVData = tags[i];
 					if (isNaN(data.positionAbsolute)) {
-						tags.splice(i,1);
+						tags.splice(i--, 1);
 						continue;
 					}
                     if (data.positionAbsolute <= absoluteStartPosition) {
