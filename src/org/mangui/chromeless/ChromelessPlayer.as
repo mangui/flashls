@@ -251,6 +251,10 @@ package org.mangui.chromeless {
             _trigger("id3Updated", event.ID3Data);
         }
 
+        protected function _liveLoadingStalledHandler(event : HLSEvent) : void {
+            _trigger("liveLoadingStalled");
+        };
+
         /** Javascript getters. **/
         protected function _getCurrentLevel() : int {
             return _hls.currentLevel;
@@ -520,10 +524,11 @@ package org.mangui.chromeless {
             _hls.addEventListener(HLSEvent.FPS_DROP, _fpsDropHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP_LEVEL_CAPPING, _fpsDropLevelCappingHandler);
             _hls.addEventListener(HLSEvent.FPS_DROP_SMOOTH_LEVEL_SWITCH, _fpsDropSmoothLevelSwitchHandler);
+            _hls.addEventListener(HLSEvent.LIVE_LOADING_STALLED, _liveLoadingStalledHandler);
 
             if (available && stage.stageVideos.length > 0) {
                 _stageVideo = stage.stageVideos[0];
-                _stageVideo.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange)
+                _stageVideo.addEventListener(StageVideoEvent.RENDER_STATE, _onStageVideoStateChange);
                 _stageVideo.viewPort = new Rectangle(0, 0, stage.stageWidth, stage.stageHeight);
                 _stageVideo.attachNetStream(_hls.stream);
             } else {
