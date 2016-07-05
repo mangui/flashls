@@ -472,7 +472,7 @@ package org.mangui.hls.playlist {
                         break;
                     case RENDITION_STATE_READSIMPLEVALUE:
                         if (c == ",") {
-                            variables[key] = value;
+                            variables[StringUtil.trim(key)] = value;
                             key = "";
                             value = "";
                             state = RENDITION_STATE_READKEY;
@@ -489,7 +489,7 @@ package org.mangui.hls.playlist {
                         break;
                     case STATE_READQUOTEDVALUE_END:
                         if (c == ",") {
-                            variables[key] = value;
+                            variables[StringUtil.trim(key)] = value;
                             key = "";
                             value = "";
                             state = RENDITION_STATE_READKEY;
@@ -499,7 +499,7 @@ package org.mangui.hls.playlist {
             }
 
             if (key) {
-                variables[key] = value;
+                variables[StringUtil.trim(key)] = value;
             }
 
             return variables;
