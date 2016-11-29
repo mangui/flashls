@@ -8,6 +8,8 @@
     import org.mangui.hls.model.Level;
     import org.mangui.hls.event.HLSEvent;
 
+    import flash.events.Event;
+
     CONFIG::LOGGING {
         import org.mangui.hls.utils.Log;
     }
@@ -38,12 +40,17 @@
             _hls = hls;
             _hls.addEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.addEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+            _hls.addEventListener(HLSEvent.STAGE_SET, _stageSetHandler);
         }
         ;
 
         public function dispose() : void {
             _hls.removeEventListener(HLSEvent.MANIFEST_LOADED, _manifestLoadedHandler);
             _hls.removeEventListener(HLSEvent.FRAGMENT_LOADED, _fragmentLoadedHandler);
+
+            if (_hls.stage) {
+                _hls.stage.removeEventListener(Event.RESIZE, _resizeHandler);
+            }
         }
 
         private function _fragmentLoadedHandler(event : HLSEvent) : void {
@@ -101,6 +108,24 @@
         }
         ;
 
+        private function _stageSetHandler(event:HLSEvent) : void {
+            if (!HLSSettings.capLevelToStage) {
+                return;
+            }
+
+            if (!HLSSettings.refreshLevelsOnResize) {
+                return;
+            }
+
+            _hls.stage.addEventListener(Event.RESIZE, _resizeHandler);
+        }
+
+        private function _resizeHandler(event:Event) : void {
+            if (HLSSettings.capLevelToStage && HLSSettings.refreshLevelsOnResize) {
+                _maxUniqueLevels = _maxLevelsWithUniqueDimensions;
+            }
+        }
+
         public function getbestlevel(download_bandwidth : Number) : int {
             var max_level : int = _max_level;
             for (var i : int = max_level; i >= 0; i--) {
@@ -134,7 +159,13 @@
                 var maxLevelsCount : int = _maxUniqueLevels.length;
 
                 if (_hls.stage && maxLevelsCount) {
-                    var maxLevel : Level = this._maxUniqueLevels[0], maxLevelIdx : int = maxLevel.index, sWidth : Number = this._hls.stage.stageWidth, sHeight : Number = this._hls.stage.stageHeight, lWidth : int, lHeight : int, i : int;
+                    var maxLevel : Level = this._maxUniqueLevels[0],
+                        maxLevelIdx : int = maxLevel.index,
+                        sWidth : Number = this._hls.stage.stageWidth,
+                        sHeight : Number = this._hls.stage.stageHeight,
+                        lWidth : int,
+                        lHeight : int,
+                        i : int;
 
                     switch (HLSSettings.maxLevelCappingMode) {
                         case HLSMaxLevelCappingMode.UPSCALE:
@@ -208,11 +239,11 @@
                 }
                 switch_to_level = current_level + 1;
             }
-            
             /* to switch level down :
             rsft should be smaller than switch up condition,
             or the current level is greater than max level
-             */ else if ((current_level > max_level && current_level > 0) || (current_level > 0 && (sftm < 1 - _switchdown[current_level]))) {
+             */
+            else if ((current_level > max_level && current_level > 0) || (current_level > 0 && (sftm < 1 - _switchdown[current_level]))) {
                 CONFIG::LOGGING {
                     Log.debug("sftm < 1-_switchdown[current_level]=" + _switchdown[current_level]);
                 }
