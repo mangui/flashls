@@ -653,7 +653,7 @@ package org.mangui.hls.demux {
                 }
             }
             // if both SPS and PPS have been found, build AVCC and push tag if needed
-            if (sps_found && pps_found) {
+            if (sps_found && pps_found && sps.length >= 4) {
                 var avcc : ByteArray = AVCC.getAVCC(sps, ppsvect);
                 // only push AVCC tag if never pushed or avcc different from previous one
                 if (_avcc == null || !compareByteArray(_avcc, avcc)) {
