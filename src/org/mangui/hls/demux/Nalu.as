@@ -124,52 +124,49 @@
         public static function get AUD():ByteArray {
             return _audNalu;
         }
-		
-		private static function findNextUnescapeIndex(bytes : ByteArray, offset:int, limit:int):int {
-			for (var i:int = offset; i < limit - 2; i++) {
-				if (bytes[i] == 0x00 && bytes[i + 1] == 0x00 && bytes[i + 2] == 0x03) {
-					return i;
-				}
-			}
-			return limit;
-		}
-		
-		private static function arrayCopy(src:ByteArray,  srcPos:int, dest:ByteArray, destPos:int, length:int):void {
-			var iterations:int = Math.min(Math.min(length, src.length - srcPos), dest.length - destPos);
-			for(var i:int = 0; i < iterations; i++)
-				dest[destPos + i] = src[srcPos + i];
-		}
-		
-		public static function unescapeStream(data : ByteArray, position: int,limit: uint):int {
-			var scratchEscapeCount:int = 0;
-			var scratchEscapePositions:Array = new Array();
-					
-			while (position < limit) {
-				position = findNextUnescapeIndex(data, position, limit);
-				if (position < limit) {
-					scratchEscapeCount++;
-					scratchEscapePositions.push(position);
-					position += 3;
-				}
-			}
-			
-			var unescapedLength:int = limit - scratchEscapeCount;
-			var escapedPosition:int = 0; // The position being read from.
-			var unescapedPosition:int = 0; // The position being written to.
-			for (var i:int = 0; i < scratchEscapeCount; i++) {
-				var nextEscapePosition:int = scratchEscapePositions[i];
-				var copyLength:int = nextEscapePosition - escapedPosition;
-				arrayCopy(data, escapedPosition, data, unescapedPosition, copyLength);
-				unescapedPosition += copyLength;
-				data[unescapedPosition++] = 0;
-				data[unescapedPosition++] = 0;
-				escapedPosition += copyLength + 3;
-			}
-			
-			var remainingLength:int = unescapedLength - unescapedPosition;
-			arrayCopy(data, escapedPosition, data, unescapedPosition, remainingLength);
-			
-			return unescapedLength;
+
+        /**
+          * remove Emulation Prevention bytes from a RBSP
+          */
+		public static function unescapeStream(data : ByteArray):ByteArray {
+            var length : uint = data.length;
+            var EPBPositions : Vector.<uint> = new Vector.<uint>();
+            var i : uint = 1;
+            var newLength : uint;
+            var newData : ByteArray;
+
+            // Find all `Emulation Prevention Bytes`
+            while (i < length - 2) {
+              if (data[i] === 0 &&
+                  data[i + 1] === 0 &&
+                  data[i + 2] === 0x03) {
+                EPBPositions.push(i + 2);
+                i += 2;
+              } else {
+                i++;
+              }
+            }
+
+            // If no Emulation Prevention Bytes were found just return the original
+            // array
+            if (EPBPositions.length === 0) {
+              return data;
+            }
+            // Create a new array to hold the NAL unit data
+            newLength = length - EPBPositions.length;
+            newData = new ByteArray();
+            newData.length = newLength;
+            var sourceIndex : uint = 0;
+            for (i = 0; i < newLength; sourceIndex++, i++) {
+              if (EPBPositions.length && sourceIndex === EPBPositions[0]) {
+                // Skip this byte
+                sourceIndex++;
+                // Remove this position index
+                EPBPositions.shift();
+              }
+              newData[i] = data[sourceIndex];
+            }
+            return newData;
 		}
     }
 }

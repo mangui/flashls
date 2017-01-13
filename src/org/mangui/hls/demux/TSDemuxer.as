@@ -617,8 +617,7 @@ package org.mangui.hls.demux {
                     pes.data.position = frame.start;
                     pes.data.readBytes(sei, 0, frame.length);
                     //unescape Emulation Prevention bytes
-                    sei.length = Nalu.unescapeStream(sei,0,sei.length);
-
+                    sei = Nalu.unescapeStream(sei);
 
                     // We already know it's 6, so skip first byte
                     sei.position = 1;
