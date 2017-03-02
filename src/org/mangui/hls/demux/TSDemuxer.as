@@ -652,7 +652,7 @@ package org.mangui.hls.demux {
                             Log.debug("TS: SEI parsing error : " + error.message);
                         }
                     }
-                } else if (frame.type == 0) {
+                } else if (frame.type == 0 && frame.length) {
                     // report parsing error
                     if(_callback_error != null) {
                         _callback_error("TS: invalid NALu type found, corrupted fragment ?");
