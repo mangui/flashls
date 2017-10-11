@@ -83,7 +83,7 @@ package org.mangui.hls.playlist {
             _urlloader.addEventListener(IOErrorEvent.IO_ERROR, error);
             _urlloader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, error);
 
-            if (flushLiveURLcache && type == HLSTypes.LIVE) {
+            if (flushLiveURLcache && (!type || type == HLSTypes.LIVE)) {
                 /*
                 add time parameter to force reload URL, there are some issues with browsers/CDN reloading from cache even if the URL has been updated ...
                 see http://stackoverflow.com/questions/14448219/as3-resetting-urlloader-cache
