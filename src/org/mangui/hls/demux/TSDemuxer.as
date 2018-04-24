@@ -218,27 +218,27 @@ package org.mangui.hls.demux {
         }
 
 		//Read CC track
-		private function readCC(pes : PES):void
+		private function readCC(seiData : ByteArray, pts : Number):void
 		{
-			var country_code : uint = pes.data.readUnsignedByte();
+			var country_code : uint = seiData.readUnsignedByte();
 
 			if (country_code == 181)
 			{
-				var provider_code : uint = pes.data.readUnsignedShort();
+				var provider_code : uint = seiData.readUnsignedShort();
 
 				if (provider_code == 49)
 				{
-					var user_structure : uint = pes.data.readUnsignedInt();
+					var user_structure : uint = seiData.readUnsignedInt();
 
 					if (user_structure == 0x47413934) // GA94
 					{
-						var user_data_type : uint = pes.data.readUnsignedByte();
+						var user_data_type : uint = seiData.readUnsignedByte();
 
 						// CEA-608 wrapped in 708 ( user_data_type == 4 is raw 608, not handled yet )
 						if (user_data_type == 3)
 						{
 							// cc -- the first 8 bits are 1-Boolean-0 and the 5 bits for the number of CCs
-							var byte:uint = pes.data.readUnsignedByte();
+							var byte:uint = seiData.readUnsignedByte();
 
 							// get the total number of cc_datas
 							var total:uint = 31 & byte;
@@ -251,9 +251,9 @@ package org.mangui.hls.demux {
 							var size:uint = total * 3;
 
 							// em_data, do we need? It's not used for anything, but it's there, so i need to pull it out
-							var otherByte:uint = pes.data.readUnsignedByte();
+							var otherByte:uint = seiData.readUnsignedByte();
 
-							if (pes.data.bytesAvailable >= size)
+							if (seiData.bytesAvailable >= size)
 							{
 								// ByteArray for onCaptionInfo event
 								var sei : ByteArray = new ByteArray();
@@ -267,9 +267,9 @@ package org.mangui.hls.demux {
 								sei.writeByte(otherByte);
 
 								// write the cc_datas
-								pes.data.readBytes(sei, 6, 3*total);
+								seiData.readBytes(sei, 6, 3*total);
 
-								pes.data.position -= total * 3;
+								seiData.position -= total * 3;
 
 								// onCaptionInfo expects Base64 data...
 								var sei_data:String = Base64.encode(sei);
@@ -280,7 +280,7 @@ package org.mangui.hls.demux {
 								};
 
 								// add a new FLVTag with the onCaptionInfo call
-								var tag:FLVTag = new FLVTag(FLVTag.METADATA, pes.pts, pes.pts, false);
+								var tag:FLVTag = new FLVTag(FLVTag.METADATA, pts, pts, false);
 
 								var data : ByteArray = new ByteArray();
 								data.objectEncoding = ObjectEncoding.AMF0;
@@ -613,38 +613,46 @@ package org.mangui.hls.demux {
                     ppsvect.push(pps);
                 } else if (frame.type == 6) {
 
-					//unescape Emulation Prevention bytes
-					Nalu.unescapeStream(pes.data,frame.start,frame.start + frame.length);
+                    var sei : ByteArray = new ByteArray();
+                    pes.data.position = frame.start;
+                    pes.data.readBytes(sei, 0, frame.length);
+                    //unescape Emulation Prevention bytes
+                    sei = Nalu.unescapeStream(sei);
 
-					// We already know it's 6, so skip first byte
-					pes.data.position = frame.start + 1;
+                    // We already know it's 6, so skip first byte
+                    sei.position = 1;
+                    try {
+                        // we need at least 12 bytes to retrieve Caption length
+                        if(sei.bytesAvailable > 12) {
 
-					// we need at least 12 bytes to retrieve Caption length
-					if(pes.data.bytesAvailable > 12) {
-
-						// get the SEI payload type
-						var payload_type : uint = 0;
-						var payload_size : uint = 0;
-						while (pes.data.position < frame.start + frame.length) {
-							// Parse payload type.
-							payload_type= 0;
-							do {
-								payload_type += pes.data.readUnsignedByte();
-							} while (payload_type == 0xFF);
-							// Parse payload size.
-							payload_size = 0;
-							do {
-								payload_size += pes.data.readUnsignedByte();
-							} while (pes.data.bytesAvailable!=0 && payload_size == 0xFF);
-							// Process the payload. We only support EIA-608 payloads currently.
-							if (payload_type == 4) {
-								readCC(pes);
-							} else {
-								pes.data.position+=payload_size;
-							}
-						}
-					}
-                } else if (frame.type == 0) {
+                            // get the SEI payload type
+                            var payload_type : uint = 0;
+                            var payload_size : uint = 0;
+                            while (sei.position < sei.length) {
+                                // Parse payload type.
+                                payload_type= 0;
+                                do {
+                                    payload_type += sei.readUnsignedByte();
+                                } while (payload_type == 0xFF);
+                                // Parse payload size.
+                                payload_size = 0;
+                                do {
+                                    payload_size += sei.readUnsignedByte();
+                                } while (sei.bytesAvailable!=0 && payload_size == 0xFF);
+                                // Process the payload. We only support EIA-608 payloads currently.
+                                if (payload_type == 4) {
+                                    readCC(sei,pes.pts);
+                                } else {
+                                    sei.position+=payload_size;
+                                }
+                            }
+                        }
+                    } catch(error : Error) {
+                        CONFIG::LOGGING {
+                            Log.debug("TS: SEI parsing error : " + error.message);
+                        }
+                    }
+                } else if (frame.type == 0 && frame.length) {
                     // report parsing error
                     if(_callback_error != null) {
                         _callback_error("TS: invalid NALu type found, corrupted fragment ?");

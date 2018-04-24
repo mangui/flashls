@@ -27,7 +27,7 @@
          * Called from super class when plugin has been initialized with the MediaFactory from which it was loaded.
          * Used for customize HLSSettings with values provided in resource metadata (that was set eg. in flash vars)
          *  
-         * @param resource  Provides acces to the resource used to load the plugin and any associated metadata
+         * @param resource  Provides access to the resource used to load the plugin and any associated metadata
          * 
          */
         override public function initializePlugin(resource : MediaResourceBase) : void {
@@ -52,7 +52,7 @@
 
             var metadataNamespaceURLs : Vector.<String> = resource.metadataNamespaceURLs;
 
-            // set all legal params values to HLSSetings properties
+            // set all legal params values to HLSSettings properties
             for each (var key : String in metadataNamespaceURLs) {
                 Params2Settings.set(key, resource.getMetadataValue(key));
             }

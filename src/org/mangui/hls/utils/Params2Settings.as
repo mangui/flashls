@@ -54,8 +54,14 @@
                     var cName : String = getQualifiedClassName(HLSSettings[param]);
                     // AS3 bug: "getDefinitionByName" considers var value, not type, and wrongly (e.g. 3.0 >> "int"; 3.1 >> "Number").
                     var c : Class = cName === "int" ? Number : getDefinitionByName(cName) as Class;
-                    // get HLSSetting type
-                    HLSSettings[param] = c(value);
+                    
+                    // only set booleans to true if the string actually is true, otherwise false
+                    if(cName === "Boolean") {
+                        HLSSettings[param] = String(value).toLowerCase() === "true";
+                    } else { // Otherwise just cast it
+                        HLSSettings[param] = c(value);
+                    }
+
                     CONFIG::LOGGING {
                         Log.info("HLSSettings." + param + " = " + HLSSettings[param]);
                     }
