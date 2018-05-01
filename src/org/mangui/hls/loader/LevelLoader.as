@@ -87,10 +87,7 @@ package org.mangui.hls.loader {
         private function _errorHandler(event : ErrorEvent) : void {
             var txt : String = "Cannot load M3U8: " + event.text;
             var code : int = HLSError.MANIFEST_LOADING_IO_ERROR;
-            if (event is SecurityErrorEvent) {
-                code = HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
-                txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
-            } else if (event is IOErrorEvent && (HLSSettings.manifestLoadMaxRetry == -1 || _retryCount < HLSSettings.manifestLoadMaxRetry)) {
+            if (event is IOErrorEvent && (HLSSettings.manifestLoadMaxRetry == -1 || _retryCount < HLSSettings.manifestLoadMaxRetry)) {
                 CONFIG::LOGGING {
                     Log.warn("I/O Error while trying to load Playlist, retry in " + _retryTimeout + " ms");
                 }
@@ -105,6 +102,10 @@ package org.mangui.hls.loader {
                 dispatchHLSEvent(HLSEvent.WARNING,code, txt);
                 return;
             } else {
+                if (event is SecurityErrorEvent) {
+                    code = HLSError.MANIFEST_LOADING_CROSSDOMAIN_ERROR;
+                    txt = "Cannot load M3U8: crossdomain access denied:" + event.text;
+                }
                 // if we have redundant streams left for that level, switch to it, otherwise retry primary stream
                 if(_loadLevel < _levels.length && _levels[_loadLevel].redundantStreamsNb>0 ) {
                     CONFIG::LOGGING {
