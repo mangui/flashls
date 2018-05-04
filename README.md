@@ -125,6 +125,8 @@ The plugin accepts several **optional** configuration options, such as:
   - `hls_caplevelonfpsdrop` (default true) : Limit levels usable in auto-quality when FPS drop is detected.i.e. if frame drop is detected on level 5, auto level will be capped to level 4. Note: this setting is ignored in manual mode so all the levels could be selected manually.
   - `hls_smoothautoswitchonfpsdrop` (default true) : force a smooth level switch Limit when FPS drop is detected in auto-quality. i.e. if frame drop is detected on level 5, it will trigger an auto quality level switch to level 4 for next fragment. Note: this setting is active only if capLevelonFPSDrop==true.
   - `hls_switchdownonlevelerror` (default true) : if level loading fails, and if in auto mode, and we are not on lowest level, don't report Level loading error straight-away, try to switch down first
+  - `hls_proxyUrl` (default empty string) : Defines url for proxying http requests through a proxy script on 3rd party server - such as [php-simple-proxy](https://github.com/cowboy/php-simple-proxy)  e.g. "http://xxx.xxx.xxx.xxx/simpleproxy.php?mode=native&url=". This is useful to play content where the source does not provide permission via crossdomain.xml. You should provide your own permissive crossdomain file on the server where the proxy script resides. All the traffic will be routed through this server via the proxy script so beware bandwidth costs! 
+    
 
 ## hls API
 hls API and events are described [here](API.md)

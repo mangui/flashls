@@ -11,6 +11,7 @@ package org.mangui.hls.playlist {
     import flash.utils.ByteArray;
     import flash.utils.Dictionary;
     import flash.utils.getTimer;
+    import org.mangui.hls.HLSSettings;
     
     import org.mangui.hls.HLS;
     import org.mangui.hls.constant.HLSLoaderTypes;
@@ -270,6 +271,7 @@ package org.mangui.hls.playlist {
                     tag_list.push(line);
                 } else if (extinf_found == true) {
                     var url : String = _extractURL(line, base);
+					trace( "url : " + url );
                     var fragment_decrypt_iv : ByteArray;
                     if (decrypt_url != null) {
                         /* as per HLS spec :
@@ -508,12 +510,14 @@ package org.mangui.hls.playlist {
 
         /** Extract URL (check if absolute or not). **/
         private static function _extractURL(path : String, base : String) : String {
+            if (HLSSettings.proxyUrl && HLSSettings.useProxyForFragments && base.indexOf(HLSSettings.proxyUrl) != -1) base = unescape(base.split(HLSSettings.proxyUrl)[1]);
+            var _returnUrl:String;
             var _prefix : String = null;
             var _suffix : String = null;
             // trim white space if any
             path.replace(replacespace, "");
             if (path.substr(0, 7) == 'http://' || path.substr(0, 8) == 'https://') {
-                return path;
+                return (HLSSettings.proxyUrl && HLSSettings.useProxyForFragments)?HLSSettings.proxyUrl+path:path;
             } else {
                 // Remove querystring
                 if (base.indexOf('?') > -1) {
@@ -526,14 +530,17 @@ package org.mangui.hls.playlist {
                     // suffix = domain/subdomain:1234/otherstuff
                     _prefix = base.substr(0, base.indexOf("//") + 2);
                     _suffix = base.substr(base.indexOf("//") + 2);
-                    if(path.charAt(1) == '/') {
-                            return _prefix + path.substr(2);
+                    if (path.charAt(1) == '/') {
+                            _returnUrl = _prefix + path.substr(2);
+                            return (HLSSettings.proxyUrl && HLSSettings.useProxyForFragments)?HLSSettings.proxyUrl+_returnUrl:_returnUrl;
                         } else {
                             // return http[s]://domain/subdomain:1234/path
-                            return _prefix + _suffix.substr(0, _suffix.indexOf("/")) + path;
+                            _returnUrl = _prefix + _suffix.substr(0, _suffix.indexOf("/")) + path
+                            return (HLSSettings.proxyUrl && HLSSettings.useProxyForFragments)?HLSSettings.proxyUrl + _returnUrl:_returnUrl;
                         }
                 } else {
-                    return base.substr(0, base.lastIndexOf('/') + 1) + path;
+                    _returnUrl = base.substr(0, base.lastIndexOf('/') + 1) + path
+                    return (HLSSettings.proxyUrl && HLSSettings.useProxyForFragments)?HLSSettings.proxyUrl + _returnUrl:_returnUrl;
                 }
             }
         };
