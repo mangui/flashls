@@ -48,7 +48,7 @@ package org.mangui.hls.loader {
         /** next level (-1 if not defined yet) **/
         private var _levelNext : int = -1;
         /** Reference to the manifest levels. **/
-        private var _levels : Vector.<Level>;
+        private var _levels : Vector.<Level> = new Vector.<Level>(); // Initializing it here prevents crash after IOError loading playlist
         /** Util for loading the fragment. **/
         private var _fragstreamloader : URLStream;
         /** Util for loading the key. **/
@@ -235,7 +235,7 @@ package org.mangui.hls.loader {
 
                         // check if we received playlist for choosen level. if live playlist, ensure that new playlist has been refreshed
                         // to avoid loading outdated fragments
-                        if ((_levels[level].fragments.length == 0) || (_hls.type == HLSTypes.LIVE && _levelLastLoaded != level)) {
+                        if (_levels.length < level+1 || _levels[level].fragments.length == 0 || (_hls.type == HLSTypes.LIVE && _levelLastLoaded != level)) {
                             // playlist not yet received
                             CONFIG::LOGGING {
                                 Log.debug("_checkLoading : playlist not received for level:" + level);

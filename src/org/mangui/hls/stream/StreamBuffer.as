@@ -5,8 +5,11 @@ package org.mangui.hls.stream {
     import flash.events.Event;
     import flash.events.TimerEvent;
     import flash.utils.Dictionary;
-    import flash.utils.getTimer;
     import flash.utils.Timer;
+    import flash.utils.getTimer;
+    
+    import org.mangui.hls.HLS;
+    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.constant.HLSLoaderTypes;
     import org.mangui.hls.constant.HLSPlayStates;
     import org.mangui.hls.constant.HLSSeekMode;
@@ -17,10 +20,9 @@ package org.mangui.hls.stream {
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.event.HLSMediatime;
     import org.mangui.hls.flv.FLVTag;
-    import org.mangui.hls.HLS;
-    import org.mangui.hls.HLSSettings;
     import org.mangui.hls.loader.AltAudioFragmentLoader;
     import org.mangui.hls.loader.FragmentLoader;
+    import org.mangui.hls.loader.SubtitlesFragmentLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Fragment;
     import org.mangui.hls.model.Level;
@@ -37,6 +39,7 @@ package org.mangui.hls.stream {
         private var _hls : HLS;
         private var _fragmentLoader : FragmentLoader;
         private var _altaudiofragmentLoader : AltAudioFragmentLoader;
+		private var _subtitlesFragmentLoader : SubtitlesFragmentLoader;
         /** Timer used to process FLV tags. **/
         private var _timer : Timer;
         private var _audioTags : Vector.<FLVData>,  _videoTags : Vector.<FLVData>,_metaTags : Vector.<FLVData>, _headerTags : Vector.<FLVData>;
@@ -88,6 +91,7 @@ package org.mangui.hls.stream {
             _hls = hls;
             _fragmentLoader = new FragmentLoader(hls, audioTrackController, levelController, this);
             _altaudiofragmentLoader = new AltAudioFragmentLoader(hls, this);
+			_subtitlesFragmentLoader = new SubtitlesFragmentLoader(hls, this);
             flushBuffer();
             _timer = new Timer(100, 0);
             _timer.addEventListener(TimerEvent.TIMER, _checkBuffer);
@@ -111,6 +115,7 @@ package org.mangui.hls.stream {
             _altaudiofragmentLoader.dispose();
             _fragmentLoader = null;
             _altaudiofragmentLoader = null;
+			_subtitlesFragmentLoader.dispose();
             _hls = null;
             _timer = null;
         }
@@ -292,7 +297,7 @@ package org.mangui.hls.stream {
                    useful to compute sliding when discontinuity occurs
                 */
                 _nextExpectedAbsoluteStartPosMain = nextRelativeStartPos + sliding;
-            } else {
+            } else if (fragmentType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
                 sliding = _liveSlidingAltAudio;
                 // if a new fragment is being appended
                 if(fragLevel != _fragAltAudioLevel || fragSN != _fragAltAudioSN) {
@@ -324,8 +329,8 @@ package org.mangui.hls.stream {
                    useful to compute sliding when discontinuity occurs
                 */
                 _nextExpectedAbsoluteStartPosAltAudio = nextRelativeStartPos + sliding;
-            }
-
+			}
+			
             for each (var tag : FLVTag in tags) {
 //                CONFIG::LOGGING {
 //                    Log.debug2('append type/dts/pts:' + tag.typeString + '/' + tag.dts + '/' + tag.pts);
@@ -850,11 +855,17 @@ package org.mangui.hls.stream {
             aacIdx = avcIdx = disIdx = metIdxMain = metIdxAltAudio = keyIdx = lastIdx = -1;
             var filteredTags : Vector.<FLVData>=  new Vector.<FLVData>();
             var idx2Clone : Vector.<int> = new Vector.<int>();
-
+			
+			if (isNaN(absoluteStartPosition)) return filteredTags;
+			
             // loop through all tags and find index position of header tags located before start position
             while(lastIdx ==-1) {
                 for (var i : int = 0; i < tags.length; i++) {
                     var data : FLVData = tags[i];
+					if (isNaN(data.positionAbsolute)) {
+						tags.splice(i--, 1);
+						continue;
+					}
                     if (data.positionAbsolute <= absoluteStartPosition) {
                         lastIdx = i;
                         // current tag is before requested start position
@@ -866,7 +877,7 @@ package org.mangui.hls.stream {
                             case FLVTag.METADATA:
                                 if(data.loaderType == HLSLoaderTypes.FRAGMENT_MAIN) {
                                     metIdxMain = i;
-                                } else {
+                                } else if(data.loaderType == HLSLoaderTypes.FRAGMENT_ALTAUDIO) {
                                     metIdxAltAudio = i;
                                 }
                                 break;

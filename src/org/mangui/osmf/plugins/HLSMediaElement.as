@@ -11,10 +11,13 @@
     import org.mangui.osmf.plugins.traits.*;
     import org.mangui.osmf.plugins.utils.ErrorManager;
 
+    import org.osmf.events.MediaError;
+    import org.osmf.events.MediaErrorEvent;
     import org.osmf.media.LoadableElementBase;
     import org.osmf.media.MediaElement;
     import org.osmf.media.MediaResourceBase;
     import org.osmf.media.videoClasses.VideoSurface;
+    import org.osmf.net.NetClient;
     import org.osmf.net.NetStreamAudioTrait;
     import org.osmf.net.StreamType;
     import org.osmf.net.StreamingURLResource;
@@ -28,8 +31,6 @@
     import org.osmf.traits.SeekTrait;
     import org.osmf.traits.TimeTrait;
     import org.osmf.utils.OSMFSettings;
-    import org.osmf.events.MediaError;
-    import org.osmf.events.MediaErrorEvent;
 
     CONFIG::LOGGING {
     import org.mangui.hls.utils.Log;
@@ -44,11 +45,16 @@
 
         public function HLSMediaElement(resource : MediaResourceBase, hls : HLS, duration : Number) {
             _hls = hls;
+            _hls.stream.client = new NetClient();
             _defaultduration = duration;
             super(resource, new HLSNetLoader(hls));
             _hls.addEventListener(HLSEvent.ERROR, _errorHandler);
         }
-
+        
+        public function get client():Object {
+            return _hls.stream.client;
+        }
+        
         protected function createVideo() : Video {
             return new Video();
         }

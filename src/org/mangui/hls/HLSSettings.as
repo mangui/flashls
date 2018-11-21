@@ -340,6 +340,39 @@ package org.mangui.hls {
          * Default is -1
          */
         public static var seekFromLevel : Number = -1;
+		
+		/**
+		 * subtitlesAutoSelectDefault
+		 * 
+		 * Should a subtitles track automatically be selected if it is flagged 
+		 * as DEFAULT=YES?
+		 * 
+		 * Default is false
+		 */
+		public static var subtitlesAutoSelectDefault:Boolean = false;
+		
+		/**
+		 * subtitlesAutoSelect
+		 * 
+		 * Should a subtitles track automatically be selected if it is flagged 
+		 * as AUTOSELECT=YES and the language matches the current system locale?
+		 * If true, these subtitles will always be selected in preference to 
+		 * default subtitles. 
+		 * 
+		 * Default is true 
+		 */
+		public static var subtitlesAutoSelect:Boolean = true;
+		
+		/**
+		 * subtitlesAutoSelectForced
+		 * 
+		 * Should a subtitles track automatically be selected is it is flagged 
+		 * as FORCED=YES? If true, forced subtitles will always be selected 
+		 * in preference to all others.
+		 * 
+		 * Default is true 
+		 */
+		public static var subtitlesAutoSelectForced:Boolean = true;
 
         /**
          * useHardwareVideoDecoder
