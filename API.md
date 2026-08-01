@@ -198,7 +198,7 @@ full list of Events is described below :
   	-  data: none
   - `HLSEvent.FRAGMENT_LOADING`  - triggered when a fragment loading starts
   	-  data: {url : manifest URL}
-  - `HLSEvent.FRAGMENT_LOADED`  - triggered after a fragment has been succesfully loaded
+  - `HLSEvent.FRAGMENT_LOADED`  - triggered after a fragment has been successfully loaded
   	-  data: { loadMetrics : HLSLoadMetrics }
   - `HLSEvent.FRAGMENT_LOAD_EMERGENCY_ABORTED`  - triggered when fragment loading is aborted because of a sudden bandwidth drop
     -  data: { loadMetrics : HLSLoadMetrics }
