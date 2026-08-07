@@ -46,21 +46,11 @@ package org.mangui.hls.demux {
                 // XXXX---X -------- -------X -------- -------X
 
                 var _pts : Number = Number((data.readUnsignedByte() & 0x0e)) * Number(1 << 29) + Number((data.readUnsignedShort() >> 1) << 15) + Number((data.readUnsignedShort() >> 1));
-                // check if greater than 2^32 -1
-                if (_pts > 4294967295) {
-                    // decrement 2^33
-                    _pts -= 8589934592;
-                }
                 length -= 5;
                 var _dts : Number = _pts;
                 if (flags == 3) {
                     // Grab the DTS (like PTS)
                     _dts = Number((data.readUnsignedByte() & 0x0e)) * Number(1 << 29) + Number((data.readUnsignedShort() >> 1) << 15) + Number((data.readUnsignedShort() >> 1));
-                    // check if greater than 2^32 -1
-                    if (_dts > 4294967295) {
-                        // decrement 2^33
-                        _dts -= 8589934592;
-                    }
                     length -= 5;
                 }
                 pts = Math.round(_pts / 90);
