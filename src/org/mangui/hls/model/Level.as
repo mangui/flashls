@@ -49,6 +49,8 @@ package org.mangui.hls.model {
         public var duration : Number;
         /**  Audio Identifier **/
         public var audio_stream_id : String;
+		/**  Subtitles Identifier **/
+		public var subtitles_stream_id : String;
 
         /** Create the quality level. **/
         public function Level() : void {

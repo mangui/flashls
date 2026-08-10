@@ -15,7 +15,7 @@
         private var _hls : HLS;
         private var _hasClosedCapations : String;
 
-        public function HLSClosedCaptionsTrait(hls : HLS, closed_captions : String = HLSClosedCaptionsState.UNKNOWN) {
+        public function HLSClosedCaptionsTrait(hls : HLS, closed_captions : String = "unknown") {
             CONFIG::LOGGING {
             Log.debug("HLSClosedCaptionsTrait()");
             }

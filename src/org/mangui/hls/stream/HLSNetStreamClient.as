@@ -5,8 +5,9 @@
     import flash.utils.flash_proxy;
     import flash.utils.Proxy;
 
-    /** Proxy that allows dispatching internal events fired by Netstream cues to
-     *  internal listeners as well as the traditional client object
+    /** 
+	 * Proxy that allows dispatching internal events fired by Netstream cues to
+     * internal listeners as well as the traditional client object
      */
     public class HLSNetStreamClient extends Proxy {
         private var _delegate : Object;
@@ -22,23 +23,32 @@
         public function get delegate() : Object {
             return this._delegate;
         }
+		
+		/** 
+		 * We have to create an onTextData method here otherwise the internal 
+		 * callback is never invoked. No idea why.
+		 */
+		public function onTextData(data:Object):void {
+			invokeCallback("onTextData", data);
+		}
 
         public function registerCallback(name : String, callback : Function) : void {
             _callbacks[name] = callback;
         }
+		
+		private function invokeCallback(methodName : String, ... args) : * {
+			var r : *;
+			if (_callbacks && _callbacks.hasOwnProperty(methodName)) {
+				r = _callbacks[methodName].apply(null, args);
+			}
+			if (_delegate && _delegate.hasOwnProperty(methodName)) {
+				r = _delegate[methodName].apply(null, args);
+			}
+			return r;
+		}
 
         override flash_proxy function callProperty(methodName : *, ... args) : * {
-            var r : * = null;
-
-            if (_callbacks && _callbacks.hasOwnProperty(methodName)) {
-                r = _callbacks[methodName](args);
-            }
-
-            if (_delegate && _delegate.hasOwnProperty(methodName)) {
-                r = _delegate[methodName](args);
-            }
-
-            return r;
+			return invokeCallback.apply(this, [methodName].concat(args));
         }
 
         override flash_proxy function getProperty(name : *) : * {
@@ -46,11 +56,9 @@
             if (_callbacks && _callbacks.hasOwnProperty(name)) {
                 r = _callbacks[name];
             }
-
             if (_delegate && _delegate.hasOwnProperty(name)) {
                 r = _delegate[name];
             }
-
             return r;
         }
 

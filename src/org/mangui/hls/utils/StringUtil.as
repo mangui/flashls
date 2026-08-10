@@ -79,6 +79,19 @@ package org.mangui.hls.utils
 		}
 		
 		/**
+		 * Removes all HTML tags from the String and returns it as plain text
+		 * 
+		 * @param	str		HTML string
+		 * @returns			String without HTML tags
+		 * @example			StringUtil.removeHtmlTags("<p>Bonjour!</p>"); // Returns "Bonjour!"
+		 */
+		public static function removeHtmlTags(str:String):String
+		{
+			var tagExp:RegExp = /(<([^>]+)>)/ig;
+			return (str || "").replace(tagExp, '');
+		}
+		
+		/**
 		 * Converts strings containing Windows (CR-LF), MacOS (CR) and other 
 		 * non-standard line breaks (LF-CR) into strings using only Linux-style
 		 * line breaks (LF).

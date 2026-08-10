@@ -10,14 +10,18 @@ package org.mangui.hls {
     import flash.net.NetStream;
     import flash.net.URLLoader;
     import flash.net.URLStream;
+    
     import org.mangui.hls.constant.HLSSeekStates;
     import org.mangui.hls.controller.AudioTrackController;
     import org.mangui.hls.controller.LevelController;
+    import org.mangui.hls.controller.SubtitlesTrackController;
     import org.mangui.hls.event.HLSEvent;
     import org.mangui.hls.loader.AltAudioLevelLoader;
     import org.mangui.hls.loader.LevelLoader;
+    import org.mangui.hls.loader.SubtitlesLevelLoader;
     import org.mangui.hls.model.AudioTrack;
     import org.mangui.hls.model.Level;
+    import org.mangui.hls.model.SubtitlesTrack;
     import org.mangui.hls.playlist.AltAudioTrack;
     import org.mangui.hls.stream.HLSNetStream;
     import org.mangui.hls.stream.StreamBuffer;
@@ -28,9 +32,11 @@ package org.mangui.hls {
     /** Class that manages the streaming process. **/
     public class HLS extends EventDispatcher {
         private var _levelLoader : LevelLoader;
+        private var _levelController : LevelController;
         private var _altAudioLevelLoader : AltAudioLevelLoader;
         private var _audioTrackController : AudioTrackController;
-        private var _levelController : LevelController;
+        private var _subtitlesLevelLoader : SubtitlesLevelLoader;
+        private var _subtitlesTrackController : SubtitlesTrackController;
         private var _streamBuffer : StreamBuffer;
         /** HLS NetStream **/
         private var _hlsNetStream : HLSNetStream;
@@ -51,6 +57,8 @@ package org.mangui.hls {
             _audioTrackController = new AudioTrackController(this);
             _levelController = new LevelController(this);
             _streamBuffer = new StreamBuffer(this, _audioTrackController, _levelController);
+			_subtitlesLevelLoader = new SubtitlesLevelLoader(this, _levelLoader);
+			_subtitlesTrackController = new SubtitlesTrackController(this, _streamBuffer, _levelLoader);
             _hlsURLStream = URLStream as Class;
             _hlsURLLoader = URLLoader as Class;
             // default loader
@@ -85,12 +93,15 @@ package org.mangui.hls {
             _levelLoader.dispose();
             _altAudioLevelLoader.dispose();
             _audioTrackController.dispose();
+			_subtitlesLevelLoader.dispose();
+			_subtitlesTrackController.dispose();
             _levelController.dispose();
             _hlsNetStream.dispose_();
             _streamBuffer.dispose();
             _levelLoader = null;
             _altAudioLevelLoader = null;
             _audioTrackController = null;
+			_subtitlesLevelLoader = null;
             _levelController = null;
             _hlsNetStream = null;
             _client = null;
@@ -209,7 +220,6 @@ package org.mangui.hls {
             return _hlsNetStream.watched;
         };
 
-
         /** Return the total nb of dropped video frames since last call to hls.load() **/
         public function get droppedFrames() : Number {
             return _hlsNetStream.droppedFrames;
@@ -240,6 +250,21 @@ package org.mangui.hls {
             _client = value;
         }
 
+		/** get subtitles tracks list**/
+		public function get subtitlesTracks() : Vector.<SubtitlesTrack> {
+			return _subtitlesTrackController.subtitlesTracks;
+		};
+		
+		/** get index of the selected subtitles track (index in subtitles track lists) **/
+		public function get subtitlesTrack() : int {
+			return _subtitlesTrackController.subtitlesTrack;
+		};
+		
+		/** select a subtitles track, based on its index in subtitles track lists**/
+		public function set subtitlesTrack(val : int) : void {
+			_subtitlesTrackController.subtitlesTrack = val;
+		}
+		
         /** get audio tracks list**/
         public function get audioTracks() : Vector.<AudioTrack> {
             return _audioTrackController.audioTracks;

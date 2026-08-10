@@ -10,9 +10,13 @@
         public static const LEVEL_MAIN : int = 1;
     	// playlist / level loader
         public static const LEVEL_ALTAUDIO : int = 2;
+		// playlist / level loader
+		public static const LEVEL_SUBTITLES : int = 4;
         // main fragment loader
-        public static const FRAGMENT_MAIN : int = 3;
+        public static const FRAGMENT_MAIN : int = 5;
         // alt audio fragment loader
-        public static const FRAGMENT_ALTAUDIO : int = 4;
+        public static const FRAGMENT_ALTAUDIO : int = 6;
+		// subtitles fragment loader
+		public static const FRAGMENT_SUBTITLES : int = 7;
     }
 }
